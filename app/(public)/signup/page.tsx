@@ -1,10 +1,10 @@
 "use client"
-export default function Login(){
+export default function Signup(){
 
   
     return (
         <div className = 'flex justify-center items-center '>
-            <p>Login</p>
+            <p>Signup page</p>
             
         </div>
     )
