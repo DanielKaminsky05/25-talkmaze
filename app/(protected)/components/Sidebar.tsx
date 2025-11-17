@@ -17,7 +17,7 @@ export default function SideBar(){
   }, [pathname]);
 
   return (
-    <div className='flex flex-col gap-8 w-[204px] h-full px-6 pt-6 '>
+    <div className='flex flex-col gap-8 w-auto h-full px-6 pt-6 '>
       <Image src="/logo.png" alt="Talk Maze Logo" width={204} height={68}/>
       <SideBarBox id={0} name="Home"    state={activeId === 0} link='/home'   onSelect={() => setActiveId(0)} />
       <SideBarBox id={1} name="Lessons" state={activeId === 1} link='/lesson' onSelect={() => setActiveId(1)} />
