@@ -4,14 +4,24 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import {logInUser} from "../login/actions";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
+function setEmail(email: string){
+  return email;
+}
+function setPassword(password: string){
+  return password;
+}
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
   return (
     <div className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}>
@@ -36,6 +46,8 @@ export default function LoginPage() {
               <div className="relative h-[58px]">
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e)=>setEmail(e.target.value)}
                   placeholder="Email"
                   className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
                 />
@@ -44,6 +56,8 @@ export default function LoginPage() {
               <div className="relative h-[58px]">
                 <input
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
                   placeholder="Password"
                   className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
                 />
@@ -67,6 +81,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
+                onClick={()=>logInUser(email, password)}
                 className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Login
