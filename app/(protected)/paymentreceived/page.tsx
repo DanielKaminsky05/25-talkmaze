@@ -52,7 +52,7 @@ export default function PaymentReceivedPage() {
 
     const handleDashboardReturn = () => {
         setIsNavigating(true);
-        setTimeout(() => router.push('/dashboard'), 800);
+        setTimeout(() => router.push('/home'), 800);
     };
 
     return (
