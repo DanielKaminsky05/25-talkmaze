@@ -23,7 +23,7 @@ export default function NavigationBar() {
   const title = `${prefix} ${page}`;
 
   return (
-    <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 w-full">
+    <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 max-w-full">
       {/* Back Button */}
       <div
         className="flex flex-row items-center min-w-[100px] h-[66px]"
