@@ -23,7 +23,7 @@ export default function NavigationBar() {
   const title = `${prefix} ${page}`;
 
   return (
-    <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 w-full">
+    <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 w-[78.5%]">
       {/* Back Button */}
       <div
         className="flex flex-row items-center min-w-[100px] h-[66px]"
@@ -38,7 +38,7 @@ export default function NavigationBar() {
         </p>
       </div>
       {/* Profile & Video Lesson Buttons */}
-      <div className="flex flex-row gap-4 md:gap-10 items-center">
+      <div className="flex flex-row gap-4 md:gap-10 items-center relative left-[29%]">
         <StartVideoLessonBox />
         <AvatorIcon />
       </div>

@@ -9,20 +9,19 @@ export default function Home() {
   return (
     <div 
       className="
-        w-full max-w-[1400px] 
+        flex-1
         bg-[#131b24] 
         rounded-[40px] 
         p-8 
-        mx-auto 
         my-10
         shadow-[inset_0px_24px_30px_-12px_rgba(0,0,0,0.3)]
       "
     >
       {/* INTERNAL GRID: Left Column (Lessons) + Right Column (Tokens) */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full">
         
         {/* LEFT COLUMN: Main Dashboard Content */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 w-full">
             
             {/* 1. Progress Bar */}
             <LessonProgressBar current={8} total={24} />
@@ -33,7 +32,7 @@ export default function Home() {
             </div>
 
             {/* 3. Bottom Row: Review & Up Next Cards */}
-            <div className="flex flex-wrap gap-6">
+            <div className="flex flex-wrap gap-6 grid-cols-2">
               {/* Review Lesson Card */}
               <ReviewLessonCard 
                 lessonNumber={7} 
@@ -53,7 +52,7 @@ export default function Home() {
           <TokenBar />
           
           {/* Schedule Component Placeholder */}
-            <div className="w-[402px] h-[200px] rounded-2xl bg-[#B1E7D6]/10 border-2 border-dashed border-[#B1E7D6]/40 flex items-center justify-center text-[#B1E7D6]">
+            <div className="w-[100%] h-[80%] rounded-2xl bg-[#B1E7D6]/10 border-2 border-dashed border-[#B1E7D6]/40 flex items-center justify-center text-[#B1E7D6]">
               Schedule Component Area
             </div>
         </div>

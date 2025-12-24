@@ -18,16 +18,14 @@ export default function LessonProgressBar({ current = 8, total = 24 }: LessonPro
        - max-w-full ensures it shrinks on mobile if needed 
     */
     <div 
-      className="relative bg-white rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden box-border"
+      className="relative bg-white rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden box-border w-[100%] h-[100px]"
       style={{
-        width: "729px",
-        height: "93px",
         maxWidth: "100%", // Responsive safety
         flexShrink: 0,    // Prevents squishing in flex containers
       }}
     >
       {/* Internal Padding Container to mimic specific positions */}
-      <div className="relative w-full h-full px-[15px] py-[16px]">
+      <div className="relative w-full h-full px-[15px] py-[16px] w-full">
         
         {/* Header Row */}
         <div className="flex justify-between items-center w-full mb-[18px]">

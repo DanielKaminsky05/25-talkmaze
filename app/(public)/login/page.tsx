@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import {logInUser} from "../login/actions";
+import { useRouter } from "next/navigation";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,6 +20,7 @@ function setPassword(password: string){
 }
 
 export default function LoginPage() {
+   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -81,7 +83,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                onClick={()=>logInUser(email, password)}
+                onClick={()=>router.push('/home')}
                 className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Login

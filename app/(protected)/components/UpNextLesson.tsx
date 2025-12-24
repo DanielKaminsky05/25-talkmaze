@@ -20,10 +20,10 @@ export default function NextLessonCard({
       - Rounded: 12px
     */
     <div
-      className="relative rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden shrink-0 group cursor-pointer"
+      className="relative rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden shrink-0 group cursor-pointer w-[247px] h-[171px]"
       style={{
-        width: "353px",
-        height: "244px",
+        
+       
         backgroundColor: "var(--talkmaze_green_light, #B1E7D6)",
         backgroundImage: `url(${imageUrl})`,
         backgroundSize: "cover",
@@ -89,7 +89,7 @@ export default function NextLessonCard({
         - Color: #65CFAD
       */}
       <div 
-        className="absolute left-0 top-[164px] w-[353px] h-[80px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
+        className="absolute left-0 top-[114.8px] w-[247px] h-[56px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
       >
         <span
           className="text-center"

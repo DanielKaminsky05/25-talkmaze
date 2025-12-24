@@ -40,7 +40,7 @@ export default function SideBar() {
         */}
         <div
           className={`${isSidebarOpen ? "flex" : "hidden lg:flex"} 
-            lg:flex flex-col w-[20vw] min-w-[99px] lg:w-auto 
+            lg:flex flex-col w-[18vw] min-w-[99px] lg:w-auto 
             h-full px-1.5 lg:px-6 pt-6 lg:pt-6 bg-[#1F2E3B] lg:bg-transparent
           `}
         >
