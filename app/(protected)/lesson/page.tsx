@@ -6,9 +6,8 @@ export default function Page() {
   const router = useRouter();
 
   return (
-    <div className="w-full h-screen flex justify-center px-4 overflow-hidden">
+    <div className="w-full flex justify-center px-4 overflow-hidden w-full text-white p-6 flex flex-col">
       {/* Dark container */}
-      <div className="bg-[#1f2e3b] w-full max-w-[94%] min-w-[300px] text-white rounded-2xl p-6 flex flex-col shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)]">
         
         {/* TOP DASHBOARD SECTION */}
         <div className="w-full flex justify-center shrink-0 pr-4 mb-6">
@@ -74,7 +73,6 @@ export default function Page() {
           <LessonCard lessonNumber={9} title="Speech Blocking" />
         </div>
       </div>
-    </div>
   );
 }
 

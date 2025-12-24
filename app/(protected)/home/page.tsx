@@ -8,14 +8,10 @@ import NextLessonCard from "../components/UpNextLesson";
 export default function Home() {
   return (
     <div 
-      className="
-        flex-1
-        bg-[#131b24] 
-        rounded-[40px] 
-        p-8 
-        my-10
-        shadow-[inset_0px_24px_30px_-12px_rgba(0,0,0,0.3)]
-      "
+
+     
+
+      className=" w-full p-8 mx-auto"
     >
       {/* INTERNAL GRID: Left Column (Lessons) + Right Column (Tokens) */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full">
@@ -32,7 +28,7 @@ export default function Home() {
             </div>
 
             {/* 3. Bottom Row: Review & Up Next Cards */}
-            <div className="flex flex-wrap gap-6 grid-cols-2">
+            <div className="grid gap-12 grid-cols-2 relative right-[5%] flex-1">
               {/* Review Lesson Card */}
               <ReviewLessonCard 
                 lessonNumber={7} 

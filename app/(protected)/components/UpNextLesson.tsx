@@ -89,7 +89,7 @@ export default function NextLessonCard({
         - Color: #65CFAD
       */}
       <div 
-        className="absolute left-0 top-[114.8px] w-[247px] h-[56px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
+        className="absolute left-0 top-[114.8px] w-[247px] h-[171px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
       >
         <span
           className="text-center"
