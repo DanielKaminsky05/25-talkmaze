@@ -22,7 +22,7 @@ export default function ReviewLessonCard({
     <div
       className="relative rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden shrink-0 group cursor-pointer"
       style={{
-        width: "247px",
+        width: "100%",
         height: "171px",
         backgroundColor: "var(--talkmaze_green_light, #B1E7D6)",
         // Using a background image with a blend or fallback if needed
@@ -85,7 +85,7 @@ export default function ReviewLessonCard({
         - Color: #65CFAD
       */}
       <div 
-        className="absolute left-0 top-[114.8px] w-[247px] h-[56px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
+        className="absolute left-0 top-[114.8px] w-[100%] h-[56px] bg-[#65CFAD] flex items-start justify-center pt-[16px]"
       >
         <span
           className="text-center"

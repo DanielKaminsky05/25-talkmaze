@@ -28,7 +28,7 @@ export default function Home() {
             </div>
 
             {/* 3. Bottom Row: Review & Up Next Cards */}
-            <div className="grid gap-12 grid-cols-2 relative right-[5%] flex-1">
+          <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
               {/* Review Lesson Card */}
               <ReviewLessonCard 
                 lessonNumber={7} 
