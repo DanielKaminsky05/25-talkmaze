@@ -140,6 +140,8 @@ export default function SideBar() {
                 </svg>
               }
             />
+
+            
           </nav>
         </div>
         {/* This is the button to show/hide the sidebar on mobile/tablets 
