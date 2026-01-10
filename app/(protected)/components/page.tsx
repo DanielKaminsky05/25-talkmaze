@@ -1,32 +1,24 @@
 import React from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/utils/supabase/server';
 import { RenewalCardsContainer } from './RenewalCards';
 import CurrentSubscription from './CurrentSubscription';
 import styles from './payments.module.css';
 
 // 1. ADD THIS: TypeScript needs to know what a Plan looks like in this file too
-interface plans {
-  id: number;
-  name: string;
-  description: string;
-  renewal: string;
-  currency: string;
-  stripe_price_id: string;
-  cents: number;
-  classes: number;
-  type: string;
-}
-interface RenewalCardProps{
-  renewalOptions:plans[];
+interface Plan {
+  id: string
+  name: string
+  classe
 }
 
 export default async function PaymentPage() {
   // 2. FIX: Add 'await' here because createClient is asynchronous on the server
+  const supabase = await createClient(); 
 
   // 3. FIX: Cast the result so the 'plans' variable isn't 'any'
   const { data: plans } = await supabase
-    .from('plans')
-    .select('*') as { data: plans[] | null };
+    .from('Plans')
+    .select('*') as { data: Plan[] | null };
     return (
     <div className={styles.paymentPageContainer}>
       <header className={styles.pageHeader}>
@@ -39,6 +31,12 @@ export default async function PaymentPage() {
 
         <h2 className={styles.sectionTitle}>TalkMaze Package Renewal Options</h2>
         <RenewalCardsContainer renewalOptions={plans || []} />
+
+        <div className={styles.continuePaymentContainer}>
+          <button className={styles.continuePaymentButton}>
+            Continue to payment &gt;
+          </button>
+        </div>
       </main>
     </div>
   );
