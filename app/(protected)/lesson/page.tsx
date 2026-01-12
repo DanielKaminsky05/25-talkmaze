@@ -1,41 +1,72 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export default function Page() {
   const router = useRouter();
+  const dashboardGridRef = useRef<HTMLDivElement>(null);
+  const [shouldSpanTwo, setShouldSpanTwo] = useState(true);
+
+  useEffect(() => {
+    const checkColumns = () => {
+      if (dashboardGridRef.current) {
+        const gridStyles = window.getComputedStyle(dashboardGridRef.current);
+        const gridTemplateColumns = gridStyles.gridTemplateColumns;
+        const columnCount = gridTemplateColumns.split(" ").length;
+        // Span 2 columns by default, only shrink to 1 when grid has exactly 2 columns
+        setShouldSpanTwo(columnCount !== 2);
+      }
+    };
+
+    // Small delay to ensure grid is rendered
+    setTimeout(checkColumns, 0);
+
+    const resizeObserver = new ResizeObserver(checkColumns);
+    if (dashboardGridRef.current) {
+      resizeObserver.observe(dashboardGridRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return (
     <div className="w-full flex justify-center px-4 overflow-hidden w-full text-white p-6 flex flex-col">
       {/* Dark container */}
         
         {/* TOP DASHBOARD SECTION */}
-        <div className="w-full flex justify-center shrink-0 pr-4 mb-6">
-          <div className="flex flex-wrap justify-center gap-6 w-full">
+        <div className="w-full flex justify-center shrink-0 mb-6">
+          <div
+            ref={dashboardGridRef}
+            className="grid gap-6 justify-center w-full pr-2
+                       grid-cols-[repeat(auto-fit,minmax(250px,350px))]"
+          >
             
             {/* LESSON PROGRESS BOX */}
-            <div className="bg-white text-[#1f2e3b] rounded-2xl p-5 w-full max-w-[350px] md:max-w-[724px] h-[100px] flex flex-col justify-between shadow-md">
+            <div className={`bg-white text-[#1f2e3b] rounded-2xl p-5 w-full h-[100px] flex flex-col justify-between shadow-md ${shouldSpanTwo ? 'col-span-2' : ''}`}>
               <div className="flex justify-between items-center font-bold text-sm">
                 <span>Lesson Progress</span>
                 <span className="text-gray-500">8/24</span>
               </div>
-              <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full w-1/3 bg-[#3d5a73] rounded-full"></div>
+              <div className="w-full h-4 bg-[#B1E7D6] rounded-full overflow-hidden">
+                <div className="h-full w-1/3 bg-[#2B4257] rounded-full"></div>
               </div>
             </div>
 
             {/* BADGES BOX */}
-            <div className="bg-white text-[#1f2e3b] rounded-2xl p-4 w-full max-w-[350px] h-[100px] flex flex-col shadow-md">
-               <div className="font-bold text-sm mb-2">Badges</div>
-               <div className="flex gap-2 text-2xl">
-                 <span>🧭</span>
-                 <span>🔭</span>
-                 <span>⭐️</span>
-                 <span>🏹</span>
-                 <span>🍍</span>
-                 <span>🗺️</span>
-                 <span>🐚</span>
-               </div>
+            <div className="bg-white text-[#1f2e3b] rounded-2xl p-4 w-full h-[100px] flex flex-col shadow-md border-7 border-[#B1E7D6]">
+              <div className="font-bold text-sm mb-2">Badges</div>
+              <div className="flex gap-3 text-2xl">
+                <span>🧭</span>
+                <span>🔭</span>
+                <span>⭐️</span>
+                <span>🏹</span>
+                <span>🍍</span>
+                <span>🗺️</span>
+                <span>🐚</span>
+              </div>
             </div>
 
           </div>
@@ -80,12 +111,12 @@ function LessonCard({ lessonNumber, title }: any) {
   return (
     <div className="relative w-full max-w-[350px] h-full max-h-[236px] rounded-2xl flex flex-col justify-center bg-[#adf0c6] p-4">
       {/* TOP-LEFT LESSON BOX */}
-      <div className="absolute top-[15px] left-[20px] w-[103px] h-[35px] rounded-[9px] shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] bg-white text-black flex items-center justify-center px-2 py-1">
+      <div className="absolute top-[15px] left-[20px] w-[103px] h-[35px] rounded-[9px] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)] bg-white text-black flex items-center justify-center px-2 py-1">
         <b>Lesson {lessonNumber}</b>
       </div>
 
       {/* TOP-RIGHT ICON BOX */}
-      <div className="absolute top-[15px] right-[20px] w-[67px] h-[63px] rounded-[8px] shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] text-[50px] bg-white text-black flex items-center justify-center">
+      <div className="absolute top-[15px] right-[20px] w-[67px] h-[63px] rounded-[8px] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)] text-[50px] bg-white text-black flex items-center justify-center">
         🎓
       </div>
 
