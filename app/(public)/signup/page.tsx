@@ -1,11 +1,30 @@
 "use client";
 
+import {z} from 'zod';
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import {signUpNewUser} from "../signup/actions";
 import { PassThrough } from "stream";
+import { useRouter } from "next/navigation";
+
+
+const userSchema = z.object({
+  userName: z.string().trim().min(3, "Name must be at least 3 characters long").max(50, "Name cannot exceed 50 characters"),
+  email: z.string().trim().email("Invalid email format"),
+  password: z.string()
+  .min(8, "Password must be at least 8 characters long")
+  .regex(/[A-Z]/, "Password must have at least one uppercase character")
+  .regex(/[a-z]/, "Password must have at least one lowercase character")
+  .regex(/[@$!%*?&#-~^]/, "Password must have at least one special character")
+  .regex(/\d/, "Password must have at least one number" ),
+  confirmPassword:z.string()
+})
+ .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ['confirmPassword'],
+  });
 
 
 const inter = Inter({
@@ -13,27 +32,65 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-function setEmail(email: string){
-  return email;
-}
-function setPassword(password: string){
-  return password;
-}
-
-// export async function handleSubmit(email, password){
-//   //FILL IN
-// }
-// const handleSubmit = async (event: React.FormEvent) =>{
-//   event.preventDefault(); //prevent browser from reloading page
-
-//   await signUpNewUser(email, password);
-// }
+  const ErrorMessage = ({ message }: {message?: string[]})=>{
+    if (!message || message.length ===0) return null;
+    return(
+      <p className="text-red-600 text-sm mt-1 ml-1 mb-1">{message[0]}</p>
+    );
+  }
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [userName, setUserName] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [errors, setErrors] = useState<formErrors>({});
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
+  const  [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrors({});
+
+  const formDataToValidate = {
+    userName: userName,
+    email: email,
+    password: password,
+    confirmPassword: confirmPassword
+  }
+
+    const result = userSchema.safeParse(formDataToValidate);
+
+       //Redirects the user to the home page if successful:
+      if(result.success){
+          await signUpNewUser(email, password);
+          router.push('/home')
+      }else{
+        console.log(result.error.flatten().fieldErrors);
+
+        const formattedErrors = result.error.flatten().fieldErrors;
+        setErrors({
+          userName: formattedErrors.userName,
+          email: formattedErrors.email,
+          password: formattedErrors.password,
+          confirmPassword: formattedErrors.confirmPassword
+        });
+        
+      }
+  }
+
+     type formErrors = {
+    userName?: string[];
+    email?: string[];
+    password?: string[];
+    confirmPassword?: string[];
+  }
 
   return (
     <div className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}>
@@ -57,34 +114,48 @@ export default function SignupPage() {
               />
             </div>
 
- 
-            <form className="flex flex-col gap-[18px]">
-              
-              <div className="relative h-[58px]">
+            <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
+          
+              {/**Name field div: */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
                 <input
                   type="text"
                   placeholder="Name"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  value={userName}
+                  //add red border if error
+                  className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.userName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                  onChange={(e)=>setUserName(e.target.value)}
                 />
+                </div>
+                <div>
+                    <ErrorMessage message={errors.userName} />
+                </div>
               </div>
 
-              <div className="relative h-[58px]">
+              {/**email field div: */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
                 <input
                   type="email"
                   value={email}
                   onChange={(e)=>setEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.email ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
                 />
+                </div>
+              <ErrorMessage message={errors.email} />
               </div>
 
-              <div className="relative h-[58px]">
+              {/**password field div: */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e)=>setPassword(e.target.value)}
                   placeholder="Password"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.password ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
                 />
                 <button
                   type="button"
@@ -102,13 +173,20 @@ export default function SignupPage() {
                     </svg>
                   )}
                 </button>
+                </div>
+
+                <ErrorMessage message={errors.password} />
               </div>
 
-              <div className="relative h-[58px]">
+              {/**confirm password field div: */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm Password"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className= {`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.password ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
                 />
                  <button
                   type="button"
@@ -126,16 +204,16 @@ export default function SignupPage() {
                     </svg>
                   )}
                 </button>
+                </div>
+                <ErrorMessage message={errors.confirmPassword} />
               </div>
-
               <button
                 type="submit"
-                //onSubmit={handleSubmit}
-                onClick={()=>signUpNewUser(email, password)}
                 className="w-full h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Create an Account
               </button>
+             
 
               <div className="text-center mt-2">
                 <p className="text-[#1F2E3B]">
