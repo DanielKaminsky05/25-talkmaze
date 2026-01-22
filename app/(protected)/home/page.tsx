@@ -5,9 +5,6 @@ import TokenBar from "../components/TokensBar";
 import ReviewLessonCard from "../components/ReviewLesson";
 import NextLessonCard from "../components/UpNextLesson";
 
-<<<<<<< HEAD
-=======
-"use client"
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react";
@@ -32,7 +29,7 @@ import { relative } from "path";
 //     }
 
 
->>>>>>> Signup/LogIn
+
 export default function Home() {
   const pathname = usePathname();
     const [activeId, setActiveId] = useState(0);
@@ -42,7 +39,6 @@ export default function Home() {
     }, [pathname]);
 
   return (
-<<<<<<< HEAD
     <div 
 
      
@@ -93,17 +89,3 @@ export default function Home() {
     </div>
   );
 }
-=======
-    <div className="flex flex-1 justify-center items-center relative">
-      <p>This is home</p>
-
-      <div style = {{position: "relative", left:-810, bottom:-450 }} className = 'flex flex-col gap-8 w-[204px] h-full px-6 pt-6 '>
-        {/* <Image src="/logo.png" alt="Talk Maze Logo" width={204} height={68}/> */}
-        <SideBarBox id={0} name="Sign out"    state={true} link='../login'   onSelect={() => setActiveId(4)} /> 
-      </div>
-      
-    </div>
-  );
-}
-//CHANGE setActiveI to handleSubmit!!!!!!!!!!!!!!!!!!!!!!!!
->>>>>>> Signup/LogIn

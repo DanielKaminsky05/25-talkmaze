@@ -30,24 +30,26 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   // IMPORTANT: Don't remove getClaims()
-  const { data } = await supabase.auth.getClaims()
 
-  const user = data?.claims
+  let claims = null
+  try{
+    const { data } = await supabase.auth.getClaims()
+    claims = data?.claims ?? null
+  }catch(e){
+    claims = null
+  }
+  
+
+  const user = claims
 
   if (
-
-
-    0
-    /*
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') && 
     !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/')
 
-    */
-    
-
+  
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
