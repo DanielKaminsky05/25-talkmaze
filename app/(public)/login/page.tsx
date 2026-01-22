@@ -4,11 +4,9 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-<<<<<<< HEAD
-import {logInUser} from "../login/actions";
-=======
+
 import {logInUser} from "./actions";
->>>>>>> Signup/LogIn
+
 import { useRouter } from "next/navigation";
 
 const inter = Inter({
@@ -17,11 +15,8 @@ const inter = Inter({
 });
 
 export default function LoginPage() {
-<<<<<<< HEAD
-   const router = useRouter();
-=======
+
   const router = useRouter();
->>>>>>> Signup/LogIn
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -102,10 +97,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-<<<<<<< HEAD
-                onClick={()=>router.push('/home')}
-=======
->>>>>>> Signup/LogIn
+
                 className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Login
