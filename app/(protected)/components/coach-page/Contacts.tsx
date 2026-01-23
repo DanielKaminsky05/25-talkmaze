@@ -3,11 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ContactsList from "./contact-list/ContactsList";
 import ContactsFilterInput from "./contact-list/ContactsFilterInput";
-
-type Contact = {
-  id: string;
-  name: string;
-};
+import { Contact } from "@/lib/types/contact";
 
 interface ContactsProps {
   contacts: Contact[];
