@@ -1,12 +1,12 @@
 export type Contact = {
-  id: number;
-  displayName: string;
+  id: string;
+  name: string;
 };
 
 export type ContactsListProps = {
   contacts?: Contact[];
   filter?: string;
-  onContactClick?: (contactId: number) => void;
+  onContactClick?: (contactId: string) => void;
 };
 
 export default function ContactsList({
@@ -18,7 +18,7 @@ export default function ContactsList({
   const filterString = filter.trim().toLowerCase();
   const visible = filterString
     ? contacts.filter((c) =>
-        c.displayName.toLowerCase().includes(filterString)
+        c.name.toLowerCase().includes(filterString)
       )
     : contacts;
 
@@ -48,7 +48,7 @@ export default function ContactsList({
               />
             </svg>
           </div>
-          <p className="ml-3 text-[#1f2e3b]">{c.displayName}</p>
+          <p className="ml-3 text-[#1f2e3b]">{c.name}</p>
           <div
             className="w-6 h-6 rounded-full border-2 border-[#1F2E3B]
            text-[#1F2E3B] text-center ml-auto"
