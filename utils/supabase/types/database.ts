@@ -465,8 +465,8 @@ export type Database = {
         Row: {
           account_id: string
           created_at: string
-          field: string | null
           id: string
+          name: string | null
           Student_Plan: string | null
           tw_id: string | null
           updated_at: string
@@ -474,8 +474,8 @@ export type Database = {
         Insert: {
           account_id: string
           created_at?: string
-          field?: string | null
           id?: string
+          name?: string | null
           Student_Plan?: string | null
           tw_id?: string | null
           updated_at?: string
@@ -483,8 +483,8 @@ export type Database = {
         Update: {
           account_id?: string
           created_at?: string
-          field?: string | null
           id?: string
+          name?: string | null
           Student_Plan?: string | null
           tw_id?: string | null
           updated_at?: string
