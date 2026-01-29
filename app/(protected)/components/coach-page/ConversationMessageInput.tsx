@@ -1,15 +1,24 @@
 "use client";
 
 import { sendMessage } from "@/utils/supabase/actions/messages";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ConversationMessageInput({
   conversationId,
 }: {
   conversationId: string;
 }) {
-  // State variables from controlled form elements
+  // State variables for controlled form elements
   const [message, setMessage] = useState("");
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  /** Resize the textarea, if the message exceeds the first line */
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [message]);
 
   // Handle message submission
   async function handleSubmit(e?: FormEvent) {
@@ -17,7 +26,7 @@ export default function ConversationMessageInput({
     // Trim message before attempting to send. If message is empty after
     // trim, do nothing
     const text = message.trim();
-    if (!message) return;
+    if (!text) return;
 
     setMessage(""); // Set the input field to empty
 
@@ -35,8 +44,7 @@ export default function ConversationMessageInput({
 
   return (
     <form
-      className="flex justify-between items-center h-15 p-2 mt-auto 
-    rounded-[9px] bg-white"
+      className="flex items-center gap-2 p-2 mt-auto rounded-[9px] bg-white"
       onSubmit={handleSubmit}
     >
       {/* File attachment input (dummy) - TODO: implement file transfer */}
@@ -61,20 +69,25 @@ export default function ConversationMessageInput({
           />
         </svg>
       </label>
-      {/* Message text input */}
-      <input
-        type="text"
+
+      {/* Multiline message input */}
+      <textarea
+        ref={textareaRef}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
+            e.preventDefault(); // submit on Enter
             handleSubmit();
           }
+          // Shift+Enter falls through to insert a newline
         }}
+        rows={1}
         placeholder="Type a message"
-        className="grow"
+        className="grow resize-none overflow-y-auto max-h-40 leading-6 p-2 
+        bg-transparent outline-none"
       />
+
       {/* Submit button */}
       <button type="submit" className="mr-6 cursor-pointer">
         <svg

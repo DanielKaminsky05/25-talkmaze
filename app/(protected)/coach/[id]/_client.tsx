@@ -21,7 +21,7 @@ export function ConversationClient({
   messages: Message[];
 }) {
   /**
-   * Initialize a realtime channel representing the conversation, and
+   *  Initialize a realtime channel representing the conversation, and
    *  subscribe the current user to it.
    *
    *  Retrieves the users currently subscribed to the conversation channel.
@@ -38,17 +38,21 @@ export function ConversationClient({
 
   return (
     <div
-      className="flex flex-col gap-4 w-full h-auto bg-[#c0f7e5] px-3 py-5
-        rounded-xl shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]"
+      className="flex flex-col gap-4 w-full h-full min-h-0 overflow-hidden
+       bg-[#c0f7e5] px-3 py-5 rounded-xl 
+       shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]"
     >
-      <div>
-        connected:{connectedUsers} user:{user.id} room:{conversation.id}
-      </div>
-      {/* Messages Display */}
-      <div>
-        {visibleMessages.map((message) => (
-          <ConversationMessage key={message.id} {...message} />
-        ))}
+      {/* Messages Display Container */}
+      <div
+        className="flex flex-col-reverse flex-1 min-h-0 overflow-y-auto
+        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] 
+        [scrollbar-width:none]"
+      >
+        <div className="flex flex-col gap-2">
+          {visibleMessages.map((message) => (
+            <ConversationMessage key={message.id} {...message} />
+          ))}
+        </div>
       </div>
       {/* Send Message Input */}
       <ConversationMessageInput conversationId={conversation.id} />

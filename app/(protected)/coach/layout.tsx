@@ -12,8 +12,8 @@ export default async function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex flex-col md:flex-row md:gap-6 h-full rounded-xl mx-2 mb-2 p-3
-      lg:mb-6 min-h-[80vh]"
+      className="flex flex-col md:flex-row md:gap-6 h-full max-h-[85vh] 
+      rounded-xl mx-2 mb-2 p-3 lg:mb-6 "
     >
       <div className="flex flex-col max-w-[384px] md:basis-1/3">
         {/* Contacts filter bar*/}
@@ -22,12 +22,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
         <Bookmarks />
       </div>
 
-      {/* 
-        Display conversation with selected contact 
-        OR 
-        "select a contact from contact list" 
-      */}
-      <div className="flex flex-1">{children}</div>
+      <div className="flex flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -54,7 +49,7 @@ async function getContacts(): Promise<Contact[]> {
   // Map account data to Contact type, using email as name for now
   return data.map((account) => ({
     id: account.id,
-    name: account.email, // Using email as name since account table doesn't have a name field
+    name: account.email, // Using email as name for now
     email: account.email,
     tw_customer_id: account.tw_customer_id || "",
   }));

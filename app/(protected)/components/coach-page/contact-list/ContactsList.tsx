@@ -49,12 +49,13 @@ export default function ContactsList({
             </svg>
           </div>
           <p className="ml-3 text-[#1f2e3b]">{c.name}</p>
-          <div
+          {/* Unread messages */}
+          {/* <div
             className="w-6 h-6 rounded-full border-2 border-[#1F2E3B]
            text-[#1F2E3B] text-center ml-auto"
           >
             1
-          </div>
+          </div> */}
         </div>
       ))}
     </div>
