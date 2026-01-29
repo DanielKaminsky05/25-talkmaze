@@ -4,6 +4,7 @@ import Bookmarks from "../components/coach-page/Bookmarks";
 import Contacts from "../components/coach-page/Contacts";
 import { createClient } from "@/utils/supabase/server";
 import { Contact } from "@/lib/types/contact";
+import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
 
 // Layout of Coach Page both for /coach and /coach/[conversation]
 export default async function Layout({ children }: { children: ReactNode }) {
@@ -28,28 +29,39 @@ export default async function Layout({ children }: { children: ReactNode }) {
 }
 
 /**
- * Fetch (id, email, teachworks_id) from all accounts supabase db
+ * Fetch (id, email, teachworks_id) from all accounts records in the Supabase 
+ * database, except the account of the logged in user.
+ *
  * @returns Array holding information retrieved from all account records.
  *          Each element is an object in the shape of type 'Contact'
  *          defined in contact.ts
  */
 async function getContacts(): Promise<Contact[]> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const { data, error } = await supabase
+  // Build the base query to fetch account fields needed by the UI
+  let query = supabase
     .from("account")
     .select("id, email, tw_customer_id")
     .order("email");
 
+  // If a user is logged in, exclude them from the results
+  if (user?.id) {
+    query = query.neq("id", user.id);
+  }
+
+  // Execute the query and handle any errors
+  const { data, error } = await query;
   if (error) {
     console.error("Error fetching contacts:", error);
     return [];
   }
 
-  // Map account data to Contact type, using email as name for now
+  // Map the raw rows fetched from Supabase to the Contact.ts shape
   return data.map((account) => ({
     id: account.id,
-    name: account.email, // Using email as name for now
+    name: account.email, // Using email as display name for now
     email: account.email,
     tw_customer_id: account.tw_customer_id || "",
   }));
