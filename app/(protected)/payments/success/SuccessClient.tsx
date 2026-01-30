@@ -45,7 +45,7 @@ const useConfetti = () => {
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-50" />;
 };
 
-export default function PaymentReceivedPage() {
+export default function SuccessClient() {
     const ConfettiCanvas = useConfetti;
     const router = useRouter(); 
     const [isNavigating, setIsNavigating] = useState(false);
