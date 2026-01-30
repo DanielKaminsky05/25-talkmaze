@@ -19,7 +19,7 @@ export const signUpNewUser = async (email: string, password: string) => {
     return { success: true, data }
     }
 
-export const userSchema = z.object({
+const userSchema = z.object({
   userName: z.string().trim().min(3, "Name must be at least 3 characters long").max(50, "Name cannot exceed 50 characters"),
   email: z.string().trim().email("Invalid email format"),
   password: z.string()

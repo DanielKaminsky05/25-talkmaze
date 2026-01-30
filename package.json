@@ -10,6 +10,7 @@
     "gen-types": "supabase gen types typescript --project-id zfnmverkmybrasrwhjyg > ./utils/supabase/types/database.ts"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.5.3",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.81.1",
     "lucide-react": "^0.563.0",
