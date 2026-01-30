@@ -17,7 +17,7 @@ export default function LessonProgressBar({ current = 8, total = 24 }: LessonPro
        - Fixed width/height based on Figma (729px x 93px)
        - max-w-full ensures it shrinks on mobile if needed 
     */
-    <div 
+    <div
       className="relative bg-white rounded-[12px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden box-border w-[100%] h-[100px]"
       style={{
         maxWidth: "100%", // Responsive safety
@@ -26,10 +26,10 @@ export default function LessonProgressBar({ current = 8, total = 24 }: LessonPro
     >
       {/* Internal Padding Container to mimic specific positions */}
       <div className="relative w-full h-full px-[15px] py-[16px] w-full">
-        
+
         {/* Header Row */}
         <div className="flex justify-between items-center w-full mb-[18px]">
-          <h2 
+          <h2
             style={{
               color: "var(--talkmaze_turquoise, #2B4257)",
               fontSize: "16px",
@@ -39,8 +39,8 @@ export default function LessonProgressBar({ current = 8, total = 24 }: LessonPro
           >
             Lesson Progress
           </h2>
-          <span 
-             style={{
+          <span
+            style={{
               color: "var(--talkmaze_turquoise, #2B4257)",
               fontSize: "16px",
               fontFamily: "Roboto, sans-serif",
@@ -52,7 +52,7 @@ export default function LessonProgressBar({ current = 8, total = 24 }: LessonPro
         </div>
 
         {/* Progress Bar Track */}
-        <div 
+        <div
           className="relative w-full h-[17px] rounded-[10px]"
           style={{ backgroundColor: "var(--talkmaze_green_light, #B1E7D6)" }}
         >
