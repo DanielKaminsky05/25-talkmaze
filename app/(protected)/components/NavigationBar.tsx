@@ -3,9 +3,12 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
+import { useCurrentUser } from "@/utils/supabase/hooks/useCurrentUser";
 
 //Navigation Bar Component
 export default function NavigationBar() {
+  const { user, isLoading } = useCurrentUser(); // Retrieve logged in user session
+
   const router = useRouter();
   const pathname = usePathname();
 
@@ -23,7 +26,6 @@ export default function NavigationBar() {
   const title = `${prefix} ${page}`;
 
   return (
-
     <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 max-w-full">
       {/* Back Button */}
       <div
@@ -41,7 +43,9 @@ export default function NavigationBar() {
       {/* Profile & Video Lesson Buttons */}
       <div className="flex flex-row gap-4 md:gap-10 items-center relative left-[3%]">
         <StartVideoLessonBox />
-        <AvatorIcon />
+        {/* For easier debugging reasons, for now I made it so that the
+        navbar displays the id of currently logged in user */}
+        {isLoading || user == null ? <AvatorIcon /> : <div>{user.email}</div>}
       </div>
     </div>
   );
