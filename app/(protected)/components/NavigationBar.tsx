@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
+import { createClient } from "@/utils/supabase/client";
 
 //Navigation Bar Component
 export default function NavigationBar() {
@@ -40,6 +41,16 @@ export default function NavigationBar() {
       </div>
       {/* Profile & Video Lesson Buttons */}
       <div className="flex flex-row gap-4 md:gap-10 items-center relative left-[3%]">
+        <button
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            router.push("/login");
+          }}
+          className="text-white hover:text-gray-300 font-medium"
+        >
+          Sign Out
+        </button>
         <StartVideoLessonBox />
         <AvatorIcon />
       </div>

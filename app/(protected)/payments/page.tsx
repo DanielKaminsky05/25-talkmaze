@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/utils/supabase/client';
 import { RenewalCardsContainer } from './RenewalCards';
 import CurrentSubscription from './CurrentSubscription';
 import styles from './payments.module.css';
@@ -24,7 +24,7 @@ export default async function PaymentPage() {
   // 2. FIX: Add 'await' here because createClient is asynchronous on the server
 
   // 3. FIX: Cast the result so the 'plans' variable isn't 'any'
-  const { data: plans } = await supabase
+  const { data: plans } = await createClient()
     .from('plans')
     .select('*') as { data: plans[] | null };
     return (

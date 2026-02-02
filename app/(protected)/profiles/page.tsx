@@ -37,6 +37,7 @@ export default function ProfilesPage() {
               name={profile.name}
               imageUrl={profile.imageUrl}
               hasPin={profile.hasPin}
+              onClickRedirect={"/home"}
             />
           ))}
 
