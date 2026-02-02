@@ -15,7 +15,7 @@ export default function ProfileCard({ id, name, imageUrl, hasPin }: ProfileCardP
   return (
     <div className="flex flex-col items-center">
       <a
-        href={`/profiles/${id}`}
+        href={`/home`} //Temp normal is /profiles/${id}
         className="flex flex-col items-center gap-[clamp(12px,1.3vw,20px)] cursor-pointer group"
       >
         <div className="w-[clamp(140px,14vw,200px)] aspect-square rounded-xl overflow-hidden bg-[#b1e7d6] border-[0.5px] border-black shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] relative">
