@@ -12,13 +12,7 @@ type Lesson = {
 };
 
 
-interface Appointment {
-    id: string;
-    title: string;
-    start_date: string;
-    end_date: string;
-    description?: string;
-}
+
 
 const CalendarPage = () => {
     const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
@@ -29,8 +23,7 @@ const CalendarPage = () => {
             try {
                 setLoading(true);
 
-
-                const res = await fetch(`/api/teachworks?studentId=current`);
+                const res = await fetch(`/api/teachworks/lessons`);
 
                 if (!res.ok) {
                     console.error("Failed to load schedule");
@@ -41,11 +34,11 @@ const CalendarPage = () => {
                 const data = await res.json();
 
                 if (Array.isArray(data)) {
-
-                    const mappedLessons: Lesson[] = data.map((item: Appointment) => ({
-                        id: item.id,
-                        title: item.title,
-                        starts_at: new Date(item.start_date),
+                    // Map TeachworksLesson format to component Lesson state
+                    const mappedLessons: Lesson[] = data.map((item: any) => ({
+                        id: String(item.id),
+                        title: item.name,
+                        starts_at: new Date(item.from_datetime), // Use ISO datetime
                     }));
                     setUpcomingLessons(mappedLessons);
                 } else {

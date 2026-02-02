@@ -11,58 +11,7 @@ interface Appointment {
     description?: string;
 }
 
-export default function ScheduleList({ studentId }: { studentId?: string }) {
-    const [schedule, setSchedule] = useState<Appointment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        async function fetchSchedule() {
-            try {
-                setLoading(true);
-
-                const query = studentId ? `?studentId=${studentId}` : "?studentId=mock-123";
-                const res = await fetch(`/api/teachworks${query}`);
-
-                if (!res.ok) {
-                    throw new Error("Failed to load schedule");
-                }
-
-                const data = await res.json();
-
-                if (Array.isArray(data)) {
-                    setSchedule(data);
-                } else {
-
-                    setSchedule([]);
-                }
-            } catch (err) {
-                console.error("Error loading schedule:", err);
-                setError("Could not load schedule.");
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchSchedule();
-    }, [studentId]);
-
-    if (loading) {
-        return (
-            <div className="w-[100%] h-[300px] rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-                Loading Schedule...
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="w-[100%] h-[300px] rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-red-400">
-                {error}
-            </div>
-        );
-    }
-
+export default function ScheduleList({ schedule }: { schedule: Appointment[] }) {
     if (schedule.length === 0) {
         return (
             <div className="w-[100%] h-[300px] rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400">
@@ -83,7 +32,7 @@ export default function ScheduleList({ studentId }: { studentId?: string }) {
                     return (
                         <Link
                             key={item.id}
-                            href={`/lesson?id=${item.id}`}
+                            href={`/calendar`}
                             className="block group"
                         >
                             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex justify-between items-center cursor-pointer">

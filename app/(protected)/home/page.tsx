@@ -12,17 +12,27 @@ interface ProgressData {
   total: number;
 }
 
+
+interface Appointment {
+    id: string;
+    title: string; // Mapped from name
+    start_date: string; // Mapped from from_datetime
+    end_date: string;
+    description?: string;
+}
+
 export default function Home() {
   const [progress, setProgress] = useState<ProgressData>({ current: 0, total: 24 });
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<Appointment[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/lesson-progress");
-        if (res.ok) {
-          const data = await res.json();
-
+        // Fetch Progress
+        const progressRes = await fetch("/api/lesson-progress");
+        if (progressRes.ok) {
+          const data = await progressRes.json();
           setProgress({
             current: typeof data.completed === 'number' ? data.completed : 8,
             total: typeof data.total === 'number' ? data.total : 24
@@ -31,12 +41,30 @@ export default function Home() {
             setStudentId(data.studentId);
           }
         }
+
+        // Fetch Schedule (Lessons)
+        const lessonsRes = await fetch("/api/teachworks/lessons");
+        if (lessonsRes.ok) {
+            const lessonsData = await lessonsRes.json();
+            if (Array.isArray(lessonsData)) {
+                const mapped: Appointment[] = lessonsData.map((item: any) => ({
+                    id: String(item.id),
+                    title: item.name,
+                    start_date: item.from_datetime,
+                    end_date: item.to_datetime,
+                }));
+                setSchedule(mapped);
+            }
+        }
+
       } catch (e) {
-        console.error("Failed to fetch progress", e);
+        console.error("Failed to fetch data", e);
       }
     }
     fetchData();
   }, []);
+
+  const nextLesson = schedule.length > 0 ? schedule[0] : null;
 
   return (
     <div
@@ -67,7 +95,7 @@ export default function Home() {
 
             <NextLessonCard
               lessonNumber={9}
-              title="Speech Blocking"
+              title={nextLesson ? nextLesson.title : "No Upcoming Lesson"}
             />
           </div>
         </div>
@@ -77,7 +105,7 @@ export default function Home() {
           <TokenBar />
 
 
-          <ScheduleList studentId={studentId || undefined} />
+          <ScheduleList schedule={schedule} />
         </div>
 
       </div>
