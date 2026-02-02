@@ -21,6 +21,25 @@ interface Appointment {
     description?: string;
 }
 
+//import {signOut} from "@/public/login/actions";
+
+
+
+// async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+//     const router = useRouter();
+//       e.preventDefault();
+//       const result = await signOut();
+//       //Redirects the user to the sign in page if successful:
+//       if(result.success){
+//           router.push('app/protected/home')
+//       }else{
+//         console.log("Error: login failed", result.error)
+//       }
+      
+//     }
+
+
+
 export default function Home() {
   const [progress, setProgress] = useState<ProgressData>({ current: 0, total: 24 });
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -84,20 +103,20 @@ export default function Home() {
             Video Component Area
           </div>
 
-
-          <div className="grid gap-12 grid-cols-2 relative right-[5%] flex-1">
-
-            <ReviewLessonCard
-              lessonNumber={7}
-              title="Overcoming Nerves"
-            />
-
-
-            <NextLessonCard
-              lessonNumber={9}
-              title={nextLesson ? nextLesson.title : "No Upcoming Lesson"}
-            />
-          </div>
+            {/* 3. Bottom Row: Review & Up Next Cards */}
+          <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
+              {/* Review Lesson Card */}
+              <ReviewLessonCard 
+                lessonNumber={7} 
+                title="Overcoming Nerves" 
+              />
+              
+              {/* Up Next Lesson Card */}
+              <NextLessonCard 
+                lessonNumber={9}
+                title="Speech Blocking"
+              />
+            </div>
         </div>
 
 

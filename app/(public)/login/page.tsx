@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-import {logInUser} from "../login/actions";
+import {logInUser} from "./actions";
 import { useRouter } from "next/navigation";
 
 const inter = Inter({
@@ -12,18 +12,29 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-function setEmail(email: string){
-  return email;
-}
-function setPassword(password: string){
-  return password;
-}
-
 export default function LoginPage() {
-   const router = useRouter();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+
+   const  [formData, setFormData] = useState({
+      email: "",
+      password: ""
+    })
+
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+      e.preventDefault();
+      const result = await logInUser(email, password);
+      //Redirects the user to the home page if successful:
+      if(result?.success){
+          router.push('/home')
+      }else{
+        console.log("Error: login failed", result?.error)
+      }
+      
+    }
 
   return (
     <div className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}>
@@ -44,7 +55,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <form className="flex flex-col gap-[18px]" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
               <div className="relative h-[58px]">
                 <input
                   type="email"
@@ -83,7 +94,6 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                onClick={()=>router.push('/home')}
                 className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Login
