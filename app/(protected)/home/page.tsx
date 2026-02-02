@@ -1,16 +1,26 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import LessonProgressBar from "../components/LessonProgressBar";
 import TokenBar from "../components/TokensBar";
 import ReviewLessonCard from "../components/ReviewLesson";
 import NextLessonCard from "../components/UpNextLesson";
+import ScheduleList from "../components/ScheduleList";
 
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react";
-import SideBarBox from "../components/SideBarBox"
-import Image from "next/image"
-import { relative } from "path";
+interface ProgressData {
+  current: number;
+  total: number;
+}
+
+
+interface Appointment {
+    id: string;
+    title: string; // Mapped from name
+    start_date: string; // Mapped from from_datetime
+    end_date: string;
+    description?: string;
+}
+
 //import {signOut} from "@/public/login/actions";
 
 
@@ -31,33 +41,67 @@ import { relative } from "path";
 
 
 export default function Home() {
-  const pathname = usePathname();
-    const [activeId, setActiveId] = useState(0);
+  const [progress, setProgress] = useState<ProgressData>({ current: 0, total: 24 });
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<Appointment[]>([]);
+
   useEffect(() => {
-      if (pathname.startsWith("../login")) setActiveId(4);
-      else setActiveId(0);
-    }, [pathname]);
+    async function fetchData() {
+      try {
+        // Fetch Progress
+        const progressRes = await fetch("/api/lesson-progress");
+        if (progressRes.ok) {
+          const data = await progressRes.json();
+          setProgress({
+            current: typeof data.completed === 'number' ? data.completed : 8,
+            total: typeof data.total === 'number' ? data.total : 24
+          });
+          if (data.studentId) {
+            setStudentId(data.studentId);
+          }
+        }
+
+        // Fetch Schedule (Lessons)
+        const lessonsRes = await fetch("/api/teachworks/lessons");
+        if (lessonsRes.ok) {
+            const lessonsData = await lessonsRes.json();
+            if (Array.isArray(lessonsData)) {
+                const mapped: Appointment[] = lessonsData.map((item: any) => ({
+                    id: String(item.id),
+                    title: item.name,
+                    start_date: item.from_datetime,
+                    end_date: item.to_datetime,
+                }));
+                setSchedule(mapped);
+            }
+        }
+
+      } catch (e) {
+        console.error("Failed to fetch data", e);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const nextLesson = schedule.length > 0 ? schedule[0] : null;
 
   return (
-    <div 
-
-     
-
+    <div
       className=" w-full p-8 mx-auto"
     >
-      {/* INTERNAL GRID: Left Column (Lessons) + Right Column (Tokens) */}
+
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full">
-        
-        {/* LEFT COLUMN: Main Dashboard Content */}
+
+
         <div className="flex flex-col gap-8 w-full">
-            
-            {/* 1. Progress Bar */}
-            <LessonProgressBar current={8} total={24} />
-            
-            {/* 2. Video Component (Purple Banner) */}
-            <div className="w-full h-[300px] rounded-2xl bg-[#2B4257]/20 border-2 border-dashed border-[#2B4257]/40 flex items-center justify-center text-[#B1E7D6]">
-              Video Component Area
-            </div>
+
+
+          <LessonProgressBar current={progress.current} total={progress.total} />
+
+
+          <div className="w-full h-[300px] rounded-2xl bg-[#2B4257]/20 border-2 border-dashed border-[#2B4257]/40 flex items-center justify-center text-[#B1E7D6]">
+            Video Component Area
+          </div>
 
             {/* 3. Bottom Row: Review & Up Next Cards */}
           <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
@@ -75,14 +119,12 @@ export default function Home() {
             </div>
         </div>
 
-        {/* RIGHT COLUMN: Sidebar (Tokens & Schedule) */}
+
         <div className="flex flex-col gap-8">
           <TokenBar />
-          
-          {/* Schedule Component Placeholder */}
-            <div className="w-[100%] h-[80%] rounded-2xl bg-[#B1E7D6]/10 border-2 border-dashed border-[#B1E7D6]/40 flex items-center justify-center text-[#B1E7D6]">
-              Schedule Component Area
-            </div>
+
+
+          <ScheduleList schedule={schedule} />
         </div>
 
       </div>
