@@ -1,0 +1,205 @@
+/* app/(protected)/payment_info/payments/checkout/checkout.module.css */
+
+.container {
+  min-height: 100vh;
+  background-color: #1F2937; /* Dark slate background */
+  color: white;
+  font-family: Arial, sans-serif;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.wrapper {
+  max-width: 1200px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+}
+
+/* Tablet and up */
+@media (min-width: 1024px) {
+  .wrapper {
+    grid-template-columns: 5fr 7fr; /* Left col smaller than right */
+  }
+}
+
+/* --- LEFT COLUMN --- */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.backButton {
+  background-color: #374151;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 14px;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+.backButton:hover {
+  background-color: #4B5563;
+}
+
+.overviewCard {
+  background-color: #A7F3D0; /* Mint green */
+  border-radius: 12px;
+  padding: 24px;
+  color: #064E3B;
+  position: relative;
+}
+
+.overviewTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+}
+
+.innerWhiteCard {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.planText {
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}
+
+.detailsLink {
+  margin-top: 15px;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.billingHistory {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: auto; /* Push to bottom if space allows */
+}
+
+/* --- RIGHT COLUMN --- */
+.rightColumn {
+  background-color: #A7F3D0; /* Mint green */
+  border-radius: 24px;
+  padding: 40px;
+  color: #111827;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.inputRow {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.inputGroup {
+  margin-bottom: 15px;
+}
+
+.inputField {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box; /* Important for padding */
+}
+
+.inputField:focus {
+  outline: 2px solid #059669;
+  border-color: transparent;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #9CA3AF;
+  margin: 30px 0;
+}
+
+.paymentOptions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.paymentOption {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  color: #6B7280;
+  cursor: pointer;
+}
+
+.activeOption {
+  border: 2px solid #111827;
+  color: #111827;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.purchaseButton {
+  width: 100%;
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  font-size: 20px;
+  padding: 15px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.1s;
+}
+
+.purchaseButton:active {
+  transform: scale(0.98);
+}
+
+.purchaseButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

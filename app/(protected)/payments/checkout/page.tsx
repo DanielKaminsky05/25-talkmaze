@@ -1,78 +1,210 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-// Note: We use ../../ to go up two levels to find the css file
-import styles from '../payments.module.css';
+import { useSearchParams, useRouter } from 'next/navigation';
+import styles from './checkout.module.css';
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  // --- FORM STATE ---
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  
+  // New state for Card Fields (So you can type)
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+
   // Get data from URL
-  const planName = searchParams.get('name');
+  const planName = searchParams.get('name') || 'Unknown Plan';
   const priceId = searchParams.get('price_id');
   const amountCents = searchParams.get('amount');
   
   const amountDisplay = amountCents 
-    ? `$${(parseInt(amountCents) / 100).toFixed(2)}` 
-    : '$0.00';
+    ? `$${(parseInt(amountCents) / 100).toFixed(0)}` 
+    : '0';
 
   const handleProceedToPayment = async () => {
     setLoading(true);
     try {
+      // Note: Since we are using Stripe Hosted Checkout (redirect),
+      // the card details typed here won't be sent automatically. 
+      // To send these details, we would need to switch to "Stripe Elements".
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, email }),
       });
-
       const data = await response.json();
-      
-      if (data.url) {
-        window.location.assign(data.url);
-      } else {
-        alert('Something went wrong. Please try again.');
-      }
+      if (data.url) window.location.assign(data.url);
+      else alert('Something went wrong.');
     } catch (error) {
-      console.error("Payment error:", error);
-      alert('Failed to connect to payment server.');
+      console.error(error);
+      alert('Failed to connect.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.paymentPageContainer}>
-       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto mt-10 text-black">
-         <h1 className="text-2xl font-bold mb-6">Checkout Summary</h1>
-         
-         <div className="border-b pb-4 mb-4">
-           <p className="text-gray-600">Selected Plan</p>
-           <p className="text-xl font-bold">{planName}</p>
-         </div>
+    <div className={styles.container}>
+      <div className={styles.wrapper}>
+        
+        {/* LEFT COLUMN */}
+        <div className={styles.leftColumn}>
+            <button onClick={() => router.back()} className={styles.backButton}>
+                <span style={{ marginRight: '8px', fontSize: '18px' }}>‹</span> Return to package options
+            </button>
 
-         <div className="flex justify-between items-center text-xl font-bold mb-8">
-           <span>Total Due:</span>
-           <span>{amountDisplay}</span>
-         </div>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Overview</h1>
 
-         <button 
-           onClick={handleProceedToPayment}
-           disabled={loading}
-           className={styles.continuePaymentButton}
-           style={{ width: '100%', opacity: loading ? 0.7 : 1 }}
-         >
-           {loading ? 'Processing...' : 'Pay Now with Stripe'}
-         </button>
-       </div>
+            <div className={styles.overviewCard}>
+                <h2 className={styles.overviewTitle}>TalkMaze Package Renewal:</h2>
+                
+                <div className={styles.innerWhiteCard}>
+                    <div className={styles.planText}>
+                        {planName} &nbsp;|&nbsp; {amountDisplay} (CA)
+                    </div>
+                    <span style={{ cursor: 'pointer', fontSize: '18px' }}>🗑️</span>
+                </div>
+                
+                <div className={styles.detailsLink}>
+                    See more details
+                </div>
+            </div>
+
+            {/* Billing History Stub */}
+            <div className={styles.billingHistory}>
+                <span>Billing History <span style={{ fontWeight: 'normal', color: '#666', fontSize: '12px' }}>expand</span></span>
+                <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: '#666' }}>
+                    <span>Date</span>
+                    <span>Invoice #</span>
+                    <span>Amount</span>
+                </div>
+            </div>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className={styles.rightColumn}>
+            
+            <h3 className={styles.sectionTitle}>Contact Information</h3>
+            
+            <div className={styles.inputRow}>
+                <select className={styles.inputField} style={{ width: '40%' }}>
+                    <option>1+ United States</option>
+                    <option>1+ Canada</option>
+                </select>
+                <input type="text" placeholder="Phone Number *" className={styles.inputField} />
+            </div>
+
+            <div className={styles.inputGroup}>
+                <input 
+                    type="email" 
+                    placeholder="Email Address for Receipt *" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={styles.inputField} 
+                />
+            </div>
+
+            <div className={styles.inputRow}>
+                <input 
+                    type="text" 
+                    placeholder="First Name *" 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className={styles.inputField} 
+                />
+                <input 
+                    type="text" 
+                    placeholder="Last Name *" 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className={styles.inputField} 
+                />
+            </div>
+
+            <hr className={styles.divider} />
+
+            <h3 className={styles.sectionTitle}>Payment</h3>
+            
+            <div className={styles.paymentOptions}>
+                <div className={`${styles.paymentOption} ${styles.activeOption}`}>Card</div>
+                <div className={styles.paymentOption}>PayPal</div>
+                <div className={styles.paymentOption}>Google Pay</div>
+                <div className={styles.paymentOption} style={{ flex: 'none', width: '40px' }}>...</div>
+            </div>
+
+            {/* --- UPDATED CARD INPUTS (Enabled) --- */}
+            <div className={styles.inputGroup}>
+                <input 
+                    type="text" 
+                    placeholder="Card Holder *" 
+                    className={styles.inputField}
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value)}
+                />
+            </div>
+            <div className={styles.inputGroup}>
+                <input 
+                    type="text" 
+                    placeholder="Card Number *" 
+                    className={styles.inputField}
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                />
+            </div>
+            <div className={styles.inputRow}>
+                <input 
+                    type="text" 
+                    placeholder="MM/YY *" 
+                    className={styles.inputField}
+                    value={expiry}
+                    onChange={(e) => setExpiry(e.target.value)}
+                />
+                <input 
+                    type="text" 
+                    placeholder="CVC *" 
+                    className={styles.inputField}
+                    value={cvc}
+                    onChange={(e) => setCvc(e.target.value)}
+                />
+            </div>
+
+            <hr className={styles.divider} />
+
+            <div className={styles.inputGroup}>
+                <input type="text" placeholder="Coupon Code" className={styles.inputField} />
+            </div>
+
+            <div className={styles.checkboxRow}>
+                <input type="checkbox" id="saveInfo" style={{ width: '18px', height: '18px' }} />
+                <label htmlFor="saveInfo">Save this payment for future purchases</label>
+            </div>
+
+            <button 
+                onClick={handleProceedToPayment}
+                disabled={loading}
+                className={styles.purchaseButton}
+            >
+                {loading ? 'Processing...' : `Purchase (${amountDisplay})`}
+            </button>
+
+        </div>
+
+      </div>
     </div>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div>Loading checkout...</div>}>
+    <Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading checkout...</div>}>
       <CheckoutContent />
     </Suspense>
   );
