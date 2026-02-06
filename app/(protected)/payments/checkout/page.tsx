@@ -1,61 +1,59 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import styles from './checkout.module.css';
 
-function CheckoutContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+// 1. Initialize Stripe
+// Make sure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is in your .env.local file
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-  // --- FORM STATE ---
+// --- THE FORM COMPONENT (Handles the actual inputs) ---
+function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, planName: string }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const router = useRouter();
+  
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  
-  // New state for Card Fields (So you can type)
-  const [cardHolder, setCardHolder] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Get data from URL
-  const planName = searchParams.get('name') || 'Unknown Plan';
-  const priceId = searchParams.get('price_id');
-  const amountCents = searchParams.get('amount');
-  
-  const amountDisplay = amountCents 
-    ? `$${(parseInt(amountCents) / 100).toFixed(0)}` 
-    : '0';
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleProceedToPayment = async () => {
+    if (!stripe || !elements) return;
+
     setLoading(true);
-    try {
-      // Note: Since we are using Stripe Hosted Checkout (redirect),
-      // the card details typed here won't be sent automatically. 
-      // To send these details, we would need to switch to "Stripe Elements".
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, email }),
-      });
-      const data = await response.json();
-      if (data.url) window.location.assign(data.url);
-      else alert('Something went wrong.');
-    } catch (error) {
-      console.error(error);
-      alert('Failed to connect.');
-    } finally {
+
+    // This triggers the payment with Stripe
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // CHANGE THIS URL to where you want them to go after success
+        return_url: `${window.location.origin}/payment_info/payments/success`,
+        receipt_email: email,
+        payment_method_data: {
+            billing_details: {
+                name: `${firstName} ${lastName}`,
+                email: email
+            }
+        }
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message || "An unexpected error occurred.");
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.wrapper}>
-        
-        {/* LEFT COLUMN */}
+    <div className={styles.wrapper}>
+        {/* LEFT COLUMN (Read Only Summary) */}
         <div className={styles.leftColumn}>
             <button onClick={() => router.back()} className={styles.backButton}>
                 <span style={{ marginRight: '8px', fontSize: '18px' }}>‹</span> Return to package options
@@ -65,33 +63,20 @@ function CheckoutContent() {
 
             <div className={styles.overviewCard}>
                 <h2 className={styles.overviewTitle}>TalkMaze Package Renewal:</h2>
-                
                 <div className={styles.innerWhiteCard}>
-                    <div className={styles.planText}>
-                        {planName} &nbsp;|&nbsp; {amountDisplay} (CA)
-                    </div>
+                    <div className={styles.planText}>{planName} | {amountDisplay} (CA)</div>
                     <span style={{ cursor: 'pointer', fontSize: '18px' }}>🗑️</span>
                 </div>
-                
-                <div className={styles.detailsLink}>
-                    See more details
-                </div>
+                <div className={styles.detailsLink}>See more details</div>
             </div>
 
-            {/* Billing History Stub */}
             <div className={styles.billingHistory}>
                 <span>Billing History <span style={{ fontWeight: 'normal', color: '#666', fontSize: '12px' }}>expand</span></span>
-                <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: '#666' }}>
-                    <span>Date</span>
-                    <span>Invoice #</span>
-                    <span>Amount</span>
-                </div>
             </div>
         </div>
 
-        {/* RIGHT COLUMN */}
+        {/* RIGHT COLUMN (The Payment Form) */}
         <div className={styles.rightColumn}>
-            
             <h3 className={styles.sectionTitle}>Contact Information</h3>
             
             <div className={styles.inputRow}>
@@ -104,108 +89,106 @@ function CheckoutContent() {
 
             <div className={styles.inputGroup}>
                 <input 
-                    type="email" 
-                    placeholder="Email Address for Receipt *" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={styles.inputField} 
+                  type="email" 
+                  placeholder="Email Address *" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
                 />
             </div>
 
             <div className={styles.inputRow}>
                 <input 
-                    type="text" 
-                    placeholder="First Name *" 
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={styles.inputField} 
+                  type="text" 
+                  placeholder="First Name *" 
+                  value={firstName} 
+                  onChange={(e) => setFirstName(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
                 />
                 <input 
-                    type="text" 
-                    placeholder="Last Name *" 
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className={styles.inputField} 
+                  type="text" 
+                  placeholder="Last Name *" 
+                  value={lastName} 
+                  onChange={(e) => setLastName(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
                 />
             </div>
 
             <hr className={styles.divider} />
 
             <h3 className={styles.sectionTitle}>Payment</h3>
-            
-            <div className={styles.paymentOptions}>
-                <div className={`${styles.paymentOption} ${styles.activeOption}`}>Card</div>
-                <div className={styles.paymentOption}>PayPal</div>
-                <div className={styles.paymentOption}>Google Pay</div>
-                <div className={styles.paymentOption} style={{ flex: 'none', width: '40px' }}>...</div>
+
+            {/* --- THIS IS THE NEW STRIPE COMPONENT --- */}
+            {/* It replaces the manual Card Number, Expiry, CVC inputs */}
+            <div className={styles.inputGroup} style={{marginBottom: '20px'}}>
+                <PaymentElement />
             </div>
 
-            {/* --- UPDATED CARD INPUTS (Enabled) --- */}
-            <div className={styles.inputGroup}>
-                <input 
-                    type="text" 
-                    placeholder="Card Holder *" 
-                    className={styles.inputField}
-                    value={cardHolder}
-                    onChange={(e) => setCardHolder(e.target.value)}
-                />
-            </div>
-            <div className={styles.inputGroup}>
-                <input 
-                    type="text" 
-                    placeholder="Card Number *" 
-                    className={styles.inputField}
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                />
-            </div>
-            <div className={styles.inputRow}>
-                <input 
-                    type="text" 
-                    placeholder="MM/YY *" 
-                    className={styles.inputField}
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
-                />
-                <input 
-                    type="text" 
-                    placeholder="CVC *" 
-                    className={styles.inputField}
-                    value={cvc}
-                    onChange={(e) => setCvc(e.target.value)}
-                />
-            </div>
+            {/* Error Message Display */}
+            {errorMessage && <div style={{color: '#ff6b6b', marginBottom: '15px', fontWeight: 'bold'}}>{errorMessage}</div>}
 
-            <hr className={styles.divider} />
-
-            <div className={styles.inputGroup}>
-                <input type="text" placeholder="Coupon Code" className={styles.inputField} />
-            </div>
-
-            <div className={styles.checkboxRow}>
-                <input type="checkbox" id="saveInfo" style={{ width: '18px', height: '18px' }} />
-                <label htmlFor="saveInfo">Save this payment for future purchases</label>
-            </div>
-
-            <button 
-                onClick={handleProceedToPayment}
-                disabled={loading}
-                className={styles.purchaseButton}
-            >
+            <button onClick={handleSubmit} disabled={!stripe || loading} className={styles.purchaseButton}>
                 {loading ? 'Processing...' : `Purchase (${amountDisplay})`}
             </button>
-
         </div>
+    </div>
+  );
+}
 
-      </div>
+// --- THE WRAPPER (Sets up the security connection) ---
+function CheckoutPageContent() {
+  const searchParams = useSearchParams();
+  const [clientSecret, setClientSecret] = useState('');
+
+  const planName = searchParams.get('name') || 'Unknown Plan';
+  const amountCents = searchParams.get('amount');
+  const amountDisplay = amountCents ? `$${(parseInt(amountCents) / 100).toFixed(0)}` : '0';
+
+  useEffect(() => {
+    if (amountCents) {
+      // Talk to your new API to get the "Secret Key" for this specific transaction
+      fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amountCents }),
+      })
+        .then((res) => res.json())
+        .then((data) => setClientSecret(data.clientSecret));
+    }
+  }, [amountCents]);
+
+  // While waiting for the API, show a loading state
+  if (!clientSecret || !amountCents) {
+    return (
+        <div className={styles.container}>
+            <div style={{color:'white', fontSize: '20px'}}>Loading secure payment...</div>
+        </div>
+    );
+  }
+
+  // Once we have the secret, load the form inside Stripe's "Elements" provider
+  return (
+    <div className={styles.container}>
+      <Elements 
+        stripe={stripePromise} 
+        options={{ 
+            clientSecret, 
+            appearance: { theme: 'stripe', labels: 'floating' } 
+        }}
+      >
+        <CheckoutForm amountDisplay={amountDisplay} planName={planName} />
+      </Elements>
     </div>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div style={{ color: 'white', padding: '50px' }}>Loading checkout...</div>}>
-      <CheckoutContent />
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutPageContent />
     </Suspense>
   );
 }
