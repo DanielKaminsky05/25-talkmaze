@@ -1,4 +1,4 @@
-import { GetLessonsParams, TeachworksLesson } from "./types";
+import { GetLessonsParams, TeachworksLesson, TeachworksStudent, TeachworksEmployee } from "./types";
 
 const TEACHWORKS_API_URL = "https://api.teachworks.com/v1";
 
@@ -42,5 +42,19 @@ export class TeachworksClient {
    */
   async getLessons(params: GetLessonsParams): Promise<TeachworksLesson[]> {
     return this.request<TeachworksLesson[]>("/lessons", params);
+  }
+
+  /**
+   * Fetch all students
+   */
+  async getStudents(): Promise<TeachworksStudent[]> {
+    return this.request<TeachworksStudent[]>("/students");
+  }
+
+  /**
+   * Fetch all employees (coaches/teachers)
+   */
+  async getEmployees(): Promise<TeachworksEmployee[]> {
+    return this.request<TeachworksEmployee[]>("/employees");
   }
 }

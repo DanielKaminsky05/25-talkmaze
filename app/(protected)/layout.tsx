@@ -8,8 +8,8 @@ import { usePathname } from "next/navigation"
 export default function Layout({children} : {children: ReactNode}){
     const pathname = usePathname();
 
-    // Check if pathname starts with /profiles to exclude sidebar/navbar from profiles page: This is a temporary fix solution
-    if (pathname?.startsWith('/profiles')) {
+    // Check if pathname starts with /profiles or /admin to exclude sidebar/navbar
+    if (pathname?.startsWith('/profiles') || pathname?.startsWith('/admin')) {
         return <>{children}</>;
     }
 
