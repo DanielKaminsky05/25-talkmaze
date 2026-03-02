@@ -47,6 +47,33 @@ export class TeachworksClient {
     return response.json();
   }
 
+ private async postRequest(endpoint: string, body: unknown) {
+  const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+
+  console.log("Inside Post Request", url.toString());
+  console.log("Request body:", JSON.stringify(body));
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      Authorization: `Token token=${this.apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text(); // 👈 read the body once
+  console.log("Teachworks status:", res.status);
+  console.log("Teachworks response body:", text);
+
+  if (!res.ok) {
+    throw new Error(`Teachworks error ${res.status}: ${text}`);
+  }
+
+  return text ? JSON.parse(text) : null;
+}
+
   /**
    * Fetch lessons based on filters
    */
@@ -61,6 +88,9 @@ export class TeachworksClient {
     return this.request<TeachworksStudent[]>("/students", "GET");
   }
 
+  async postFamily(body: object){
+    return this.postRequest("/customers/family",body);
+  }
   /**
    * Fetch all employees (coaches/teachers)
    */
