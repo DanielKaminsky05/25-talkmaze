@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 type LessonRow = {
@@ -34,6 +34,7 @@ export default function Page() {
   const [selectedLesson, setSelectedLesson] = useState<LessonRow | null>(null);
   const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const [badges, setBadges] = useState<BadgeRow[]>([]);
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function fetchLessons() {
@@ -84,13 +85,19 @@ export default function Page() {
         .select("lesson_id, status")
         .eq("student_id", studentId);
 
-      const completed = (progressRows ?? []).filter(
+      const completedRows = (progressRows ?? []).filter(
         (row) => row.status === "Done" || row.status === 1
-      ).length;
+      );
+      const completed = completedRows.length;
+      
+      // Store completed lesson IDs for individual lesson status
+      const completedIds = new Set(completedRows.map(row => row.lesson_id));
+      setCompletedLessonIds(completedIds);
+      
       setProgress({ completed, total });
     }
     fetchProgress();
-  }, [lessons.length]);
+  }, [lessons]);
 
   useEffect(() => {
     async function fetchBadges() {
@@ -104,6 +111,24 @@ export default function Page() {
     }
     fetchBadges();
   }, []);
+
+  const handleBackClick = useCallback(() => {
+    setSelectedLesson(null);
+  }, []);
+
+  const handleLessonClick = useCallback((lesson: LessonRow) => {
+    setSelectedLesson(lesson);
+  }, []);
+
+  const lessonCardsData = useMemo(() => {
+    return lessons.map((lesson, index) => ({
+      lesson,
+      lessonNumber: index + 1,
+      icon: LESSON_ICONS[index % LESSON_ICONS.length],
+      isCompleted: completedLessonIds.has(lesson.id),
+      onClick: () => handleLessonClick(lesson),
+    }));
+  }, [lessons, completedLessonIds, handleLessonClick]);
 
   if (loading) {
     return (
@@ -131,7 +156,7 @@ export default function Page() {
           
           {/* BACK BUTTON */}
           <button 
-            onClick={() => setSelectedLesson(null)}
+            onClick={handleBackClick}
             className="group flex items-center gap-2 text-xl font-bold text-white hover:text-[#B1E7D6] transition-colors self-start mb-2"
           >
             <svg 
@@ -197,13 +222,14 @@ export default function Page() {
       ) : (
         // === DASHBOARD VIEW (Lesson Grid) ===
         <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] pb-12 animate-in fade-in duration-300">
-          {lessons.map((lesson, index) => (
+          {lessonCardsData.map(({ lesson, lessonNumber, icon, isCompleted, onClick }) => (
             <LessonCard
               key={lesson.id}
-              lessonNumber={index + 1}
+              lessonNumber={lessonNumber}
               title={lesson.title}
-              icon={LESSON_ICONS[index % LESSON_ICONS.length]}
-              onClick={() => setSelectedLesson(lesson)}
+              icon={icon}
+              onClick={onClick}
+              isCompleted={isCompleted}
             />
           ))}
         </div>
@@ -214,10 +240,10 @@ export default function Page() {
 
 /* --- SUBCOMPONENTS --- */
 
-function ProgressCard({ width, completed, total }: { width?: string; completed: number; total: number }) {
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+const ProgressCard = memo(function ProgressCard({ width, completed, total }: { width?: string; completed: number; total: number }) {
+    const percent = useMemo(() => total > 0 ? Math.round((completed / total) * 100) : 0, [completed, total]);
     return (
-        <div className={`bg-white text-[#1f2e3b] rounded-2xl p-6 md:px-8 md:py-6 h-[100px] flex flex-col justify-center shadow-lg ${width}`}>
+        <div className={`bg-white text-[#1f2e3b] rounded-lg p-6 md:px-8 md:py-6 h-[100px] flex flex-col justify-center shadow-lg ${width}`}>
             <div className="flex justify-between items-center font-bold text-sm mb-3">
               <span>Lesson Progress</span>
               <span className="text-gray-500">{completed}/{total}</span>
@@ -229,13 +255,13 @@ function ProgressCard({ width, completed, total }: { width?: string; completed: 
             </div>
         </div>
     )
-}
+});
 
-function BadgesCard({ badges }: { badges: BadgeRow[] }) {
+const BadgesCard = memo(function BadgesCard({ badges }: { badges: BadgeRow[] }) {
     const rowRef = useRef<HTMLDivElement>(null);
     const [badgeSizePx, setBadgeSizePx] = useState(BADGES_MIN_SIZE_PX);
     const [isCapped, setIsCapped] = useState(false);
-    const displayBadges = badges.slice(0, BADGES_DISPLAY_LIMIT);
+    const displayBadges = useMemo(() => badges.slice(0, BADGES_DISPLAY_LIMIT), [badges]);
     const count = displayBadges.length;
 
     useEffect(() => {
@@ -258,7 +284,7 @@ function BadgesCard({ badges }: { badges: BadgeRow[] }) {
     }, [count]);
 
     return (
-        <div className="bg-white text-[#1f2e3b] rounded-2xl p-4 h-[100px] flex flex-col shadow-lg relative overflow-hidden">
+        <div className="bg-white text-[#1f2e3b] rounded-lg p-4 h-[100px] flex flex-col shadow-lg relative overflow-hidden">
              <div className="font-bold text-xs mb-1 z-10">Badges</div>
              <div
                 ref={rowRef}
@@ -293,11 +319,11 @@ function BadgesCard({ badges }: { badges: BadgeRow[] }) {
              </div>
         </div>
     )
-}
+});
 
-function TokensCard({ isFullWidth }: { isFullWidth?: boolean }) {
+const TokensCard = memo(function TokensCard({ isFullWidth }: { isFullWidth?: boolean }) {
     return (
-        <div className={`bg-[#B1E7D6] text-[#1f2e3b] rounded-2xl p-6 flex flex-col justify-center shadow-lg h-[180px] w-full relative`}>
+        <div className={`bg-[#B1E7D6] text-[#1f2e3b] rounded-lg p-6 flex flex-col justify-center shadow-lg h-[180px] w-full relative`}>
              <div className="font-bold text-sm mb-4">Tokens</div>
              <div className="flex flex-wrap gap-4 md:gap-8 text-3xl md:text-4xl">
                 <span>🧭</span>
@@ -314,9 +340,9 @@ function TokensCard({ isFullWidth }: { isFullWidth?: boolean }) {
              </div>
         </div>
     )
-}
+});
 
-function TaskCard({ title, instruction }: { title: string, instruction: string }) {
+const TaskCard = memo(function TaskCard({ title, instruction }: { title: string, instruction: string }) {
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-lg flex flex-col h-full min-h-[300px]">
             {/* Header */}
@@ -340,41 +366,65 @@ function TaskCard({ title, instruction }: { title: string, instruction: string }
             </div>
         </div>
     )
-}
+});
 
-function LessonCard({
+const LessonCard = memo(function LessonCard({
   lessonNumber,
   title,
   icon,
   onClick,
+  isCompleted,
 }: {
   lessonNumber: number;
   title: string;
   icon: string;
   onClick: () => void;
+  isCompleted?: boolean;
 }) {
   return (
     <div
       onClick={onClick}
-      className="relative w-full h-[240px] rounded-3xl bg-[#C5F0E1] p-4 
+      className="relative w-full h-[240px] rounded-xl bg-[#C5F0E1] p-4 
                  shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
     >
-      <div className="absolute top-4 left-5 bg-white text-black text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-        Lesson {lessonNumber}
+      <div className="absolute top-4 left-5 flex items-center gap-2">
+        <div className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+          Lesson {lessonNumber}
+        </div>
+        
+        {/* Completion Checkbox */}
+        <div className="w-6 h-6 bg-white rounded-lg shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+          {isCompleted ? (
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="#2B4257" 
+              strokeWidth="3" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="w-4 h-4"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          ) : (
+            <div className="w-3.5 h-3.5 border-2 border-[#2B4257] rounded-sm"></div>
+          )}
+        </div>
       </div>
 
       <div className="absolute top-4 right-5 w-14 h-14 rounded-xl bg-white text-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
         {icon}
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full h-[85px] bg-[#66d0ae] rounded-b-3xl flex items-center justify-center px-4">
+      <div className="absolute bottom-0 left-0 w-full h-[85px] bg-[#66d0ae] rounded-b-xl flex items-center justify-center px-4">
         <span className="text-white font-bold text-center leading-tight">
           {title}
         </span>
       </div>
     </div>
   );
-}
+});
 
 
 
