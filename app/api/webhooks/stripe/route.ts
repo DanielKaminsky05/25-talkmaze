@@ -92,9 +92,10 @@ export async function POST(request: Request) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
+        // Fetch the plan including `classes` so we can set `classes_left`
         const { data: plan, error: planError } = await supabase
           .from("plans")
-          .select("id")
+          .select("id, classes")
           .eq("stripe_price_id", priceId)
           .single();
 
@@ -103,12 +104,32 @@ export async function POST(request: Request) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Create the student_subscription record
-        // For now the period end is just hard-coded to 1 month later
-        // TODO: use the actual renewal date for currentPeriodEnd
-        const now = new Date().toISOString();
-        const currentPeriodEnd = new Date();
-        currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1); // Assuming 1-month subscription for now,
+        // Retrieve the Stripe subscription to get the real current_period_end
+        const stripeSubscriptionId = session.subscription as string;
+        let currentPeriodStart: string;
+        let currentPeriodEnd: string;
+
+        if (stripeSubscriptionId) {
+          const stripeSubscription =
+            await stripe.subscriptions.retrieve(stripeSubscriptionId);
+          // In Stripe SDK v20+, current_period fields live on the subscription item
+          const subscriptionItem = stripeSubscription.items.data[0];
+          currentPeriodStart = new Date(
+            subscriptionItem.current_period_start * 1000,
+          ).toISOString();
+          currentPeriodEnd = new Date(
+            subscriptionItem.current_period_end * 1000,
+          ).toISOString();
+        } else {
+          // Fallback if no subscription ID (e.g. one-time payment edge case)
+          console.warn(
+            "No subscription ID found on session, using fallback dates",
+          );
+          currentPeriodStart = new Date().toISOString();
+          const fallbackEnd = new Date();
+          fallbackEnd.setMonth(fallbackEnd.getMonth() + 1);
+          currentPeriodEnd = fallbackEnd.toISOString();
+        }
 
         const { error: subscriptionError } = await supabase
           .from("student_subscriptions")
@@ -117,12 +138,16 @@ export async function POST(request: Request) {
             plan_id: plan.id,
             payer_parent_id: parentData.id,
             status: "active",
-            current_period_start: now,
-            current_period_end: currentPeriodEnd.toISOString(),
+            current_period_start: currentPeriodStart,
+            current_period_end: currentPeriodEnd,
+            classes_left: plan.classes,
           });
 
         if (subscriptionError) {
-          console.error("Error creating student_subscription:", subscriptionError);
+          console.error(
+            "Error creating student_subscription:",
+            subscriptionError,
+          );
         } else {
           console.log(`Created student_subscription for student ${student.id}`);
         }
