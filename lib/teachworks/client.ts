@@ -1,4 +1,4 @@
-import { GetLessonsParams, TeachworksLesson, TeachworksStudent, TeachworksEmployee } from "./types";
+import { GetLessonsParams, TeachworksLesson, TeachworksStudent, TeachworksEmployee, TeachworksFamily } from "./types";
 
 const TEACHWORKS_API_URL = "https://api.teachworks.com/v1";
 
@@ -37,32 +37,40 @@ export class TeachworksClient {
     return response.json();
   }
 
- private async postRequest(endpoint: string, body: unknown) {
-  const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+  private async postRequest<T>(endpoint: string, body: object){
+       const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+        
+        
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Authorization": `Token token=${this.apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(
+                body
+            )
+        })
 
-  console.log("Inside Post Request", url.toString());
-  console.log("Request body:", JSON.stringify(body));
+        const data = (await response.json()) as T;
 
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      Authorization: `Token token=${this.apiKey}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+        return data;
 
-  const text = await res.text(); // 👈 read the body once
-  console.log("Teachworks status:", res.status);
-  console.log("Teachworks response body:", text);
-
-  if (!res.ok) {
-    throw new Error(`Teachworks error ${res.status}: ${text}`);
+        
+    
   }
 
-  return text ? JSON.parse(text) : null;
-}
+  private async putRequest(endpoint: string, body: object){
+    const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        
+      },
+      body: JSON.stringify(body)
+    })
+  }
 
   /**
    * Fetch lessons based on filters
@@ -78,8 +86,12 @@ export class TeachworksClient {
     return this.request<TeachworksStudent[]>("/students");
   }
 
-  async postFamily(body: object){
-    return this.postRequest("/customers/family",body);
+  async postFamily(body: object): Promise<TeachworksFamily>{
+    return this.postRequest<TeachworksFamily>("/customers/family",body);
+  }
+
+  async postStudent(body: object){
+    return this.postRequest("students", body);
   }
   /**
    * Fetch all employees (coaches/teachers)

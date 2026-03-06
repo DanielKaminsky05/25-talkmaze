@@ -186,3 +186,15 @@ export interface TeachworksEmployee {
   updated_at: string;
   custom_fields: TeachworksCustomField[];
 }
+
+export interface TeachworksFamily{
+  id: number,
+  first_name: string,
+  last_name: string,
+  customer_type: string,
+  email: string | null,
+  email_lesson_reminders: boolean | null,
+  sms_lesson_reminders: boolean | null,
+  mobile_phone: string | null,
+  unviewed: boolean | null
+}

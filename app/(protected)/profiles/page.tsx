@@ -8,8 +8,12 @@ const profiles = [
   { id: "2", name: "Priya", imageUrl: "/priya-profile.png", hasPin: false },
 ];
 
+import { useRouter } from "next/navigation";
+
 
 export default function ProfilesPage() {
+
+  const router = useRouter();
   return (
     <div className="min-h-screen w-full bg-[#2b4257] font-[Roboto,sans-serif]">
       <header className="absolute left-[clamp(16px,1.5vw,24px)] top-[clamp(15px,2vw,30px)] flex items-center gap-1">
@@ -66,7 +70,7 @@ export default function ProfilesPage() {
         </div>
 
         <button className="mt-[clamp(16px,1.5vw,24px)] w-[clamp(180px,16vw,240px)] h-[clamp(40px,3.5vw,52px)] bg-[#1f2e3b] border-[0.5px] border-[#4e4c4c] rounded-lg shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex items-center justify-center cursor-pointer">
-          <span className="text-[clamp(11px,0.9vw,14px)] font-semibold text-white">
+          <span className="text-[clamp(11px,0.9vw,14px)] font-semibold text-white" onClick = {() => router.push('/manageProfile')}>
             Manage your profiles
           </span>
         </button>
