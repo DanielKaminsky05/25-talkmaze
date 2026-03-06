@@ -5,7 +5,7 @@ import type { StaticImageData } from "next/image";
 interface ProfileCardProps {
   id: string;
   name: string;
-  imageUrl: StaticImageData;
+  imageUrl: string;
   hasPin: boolean;
 }
 
