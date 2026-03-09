@@ -26,6 +26,7 @@ export default function SideBar() {
       <SideBarBox id={1} name="Lessons" state={activeId === 1} link='/lesson' onSelect={() => setActiveId(1)} />
       <SideBarBox id={2} name="Coach"   state={activeId === 2} link='/coach'  onSelect={() => setActiveId(2)} />
       <SideBarBox id={3} name="Rewards" state={activeId === 3} link='/reward' onSelect={() => setActiveId(3)} />
+      <SideBarBox id = {4} name = "Manage Profile" state={activeId === 4} link = 'manageProfile' onSelect={() => setActiveId(4)}/>
     </div>
   )
 

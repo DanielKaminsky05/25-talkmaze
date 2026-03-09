@@ -62,6 +62,7 @@ export default function Home() {
         }
 
         // Fetch Schedule (Lessons)
+        /*
         const lessonsRes = await fetch("/api/teachworks/lessons");
         if (lessonsRes.ok) {
             const lessonsData = await lessonsRes.json();
@@ -75,6 +76,7 @@ export default function Home() {
                 setSchedule(mapped);
             }
         }
+            */
 
       } catch (e) {
         console.error("Failed to fetch data", e);

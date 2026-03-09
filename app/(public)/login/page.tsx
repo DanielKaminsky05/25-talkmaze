@@ -31,7 +31,7 @@ export default function LoginPage() {
       if(result?.success){
           router.push('/profiles')
       }else{
-        console.log("Error: login failed", result?.error)
+        console.log("Error: login failed", result);
       }
       
     }
