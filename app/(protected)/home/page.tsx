@@ -21,23 +21,6 @@ interface Appointment {
     description?: string;
 }
 
-//import {signOut} from "@/public/login/actions";
-
-
-
-// async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-//     const router = useRouter();
-//       e.preventDefault();
-//       const result = await signOut();
-//       //Redirects the user to the sign in page if successful:
-//       if(result.success){
-//           router.push('app/protected/home')
-//       }else{
-//         console.log("Error: login failed", result.error)
-//       }
-      
-//     }
-
 
 
 export default function Home() {
