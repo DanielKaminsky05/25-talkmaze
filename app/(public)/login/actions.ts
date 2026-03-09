@@ -1,11 +1,17 @@
-"use server"
+"use server";
 
-
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from "@/utils/supabase/server";
 
 //Log in function
-export const logInUser = async(email: string, password: string) => {
+export const logInUser = async (email: string, password: string) => {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
 
+<<<<<<< HEAD
     try {
         const supabase = await createClient()
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -22,14 +28,14 @@ export const logInUser = async(email: string, password: string) => {
     }catch(e){
         console.error("There was a problem logging in: ", e)
         return {success: true, e}
+=======
+    if (error) {
+      return { success: false, error };
+>>>>>>> user-profile-management
     }
-
-   
-}
-
-
-async function signOut() {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.signOut()
-}
-
+    return { success: true, data };
+  } catch (e) {
+    console.error("There was a problem logging in: ", e);
+    return { success: true, e };
+  }
+};
