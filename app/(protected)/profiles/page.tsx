@@ -1,15 +1,76 @@
-"use client"
-
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 import ProfileCard from "../components/ProfileCard";
+import { selectProfile } from "../../../lib/profile-management/selectProfile";
+import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
 
+// Profile to select as the "active profile"
+type Profile = {
+  id: string;
+  name: string;
+  type: "student" | "parent";
+  hasPin: boolean;
+};
 
-const profiles = [
-  { id: "1", name: "Meera", imageUrl: "/meera-profile.png", hasPin: true },
-  { id: "2", name: "Priya", imageUrl: "/priya-profile.png", hasPin: false },
-];
+/**
+ * Fetches all profiles associated with the current user's account.
+ * Redirects to login if user is not authenticated.
+ * @returns Array of Profile objects for selection
+ */
+async function getProfiles(): Promise<Profile[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user) redirect("/login"); // Redirect to login if not authenticated
 
-export default function ProfilesPage() {
+  // Fetch parent and student profiles in parrallel
+  const [{ data: parents }, { data: students }] = await Promise.all([
+    supabase
+      .from("parents")
+      .select("id, name, profile_access_pin")
+      .eq("account_id", user.id),
+    supabase
+      .from("students")
+      .select("id, name, profile_access_pin")
+      .eq("account_id", user.id),
+  ]);
+
+  // Combine and return parent and student profiles
+  return [
+    ...(parents ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      type: "parent" as const,
+      hasPin: p.profile_access_pin != null,
+    })),
+    ...(students ?? []).map((s) => ({
+      id: s.id,
+      name: s.name ?? "Unnamed",
+      type: "student" as const,
+      hasPin: s.profile_access_pin != null,
+    })),
+  ];
+}
+
+/**
+ * Profile selection top-level page component.
+ * Allows the user to select a parent or student profile, displays errors, and
+ * provides link to add a new profile
+ */
+export default async function ProfilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const profiles = await getProfiles();
+  const { error } = await searchParams;
+
+  const user = await getCurrentUser();
+
+  if (!user) redirect("/login");
+
   return (
     <div className="min-h-screen w-full bg-[#2b4257] font-[Roboto,sans-serif]">
       <header className="absolute left-[clamp(16px,1.5vw,24px)] top-[clamp(15px,2vw,30px)] flex items-center gap-1">
@@ -29,18 +90,38 @@ export default function ProfilesPage() {
           Select Your Profile: Parent or Student
         </h1>
 
+        {/* Display error messages here */}
+        {error === "wrong_pin" && (
+          <p className="text-red-400 text-sm mb-6 font-medium">
+            Incorrect PIN. Please try again.
+          </p>
+        )}
+        {error === "not_found" && (
+          <p className="text-red-400 text-sm mb-6 font-medium">
+            Profile not found. Please try again.
+          </p>
+        )}
+
+        {/* Profile selection */}
         <div className="flex items-start justify-center gap-[clamp(24px,4vw,60px)] flex-wrap">
           {profiles.map((profile) => (
-            <ProfileCard
-              key={profile.id}
-              id={profile.id}
-              name={profile.name}
-              imageUrl={profile.imageUrl}
-              hasPin={profile.hasPin}
-              onClickRedirect={"/home"}
-            />
+            <form key={profile.id} action={selectProfile}>
+              <input type="hidden" name="profileId" value={profile.id} />
+              <input type="hidden" name="profileType" value={profile.type} />
+              <ProfileCard
+                id={profile.id}
+                name={profile.name}
+                imageUrl={
+                  profile.type === "student"
+                    ? "/priya-profile.png"
+                    : "/meera-profile.png"
+                }
+                hasPin={profile.hasPin}
+              />
+            </form>
           ))}
 
+          {/* Add Profile */}
           <div className="flex flex-col items-center">
             <a
               href="/profiles/new"
@@ -56,7 +137,6 @@ export default function ProfilesPage() {
                 </div>
                 <div className="absolute inset-0 shadow-[inset_0px_4px_4px_0px_rgba(0,0,0,0.25)] rounded-xl pointer-events-none" />
               </div>
-
               <span className="text-[clamp(16px,1.5vw,22px)] font-bold text-white">
                 + add profile
               </span>
@@ -65,6 +145,7 @@ export default function ProfilesPage() {
           </div>
         </div>
 
+        {/* Manage Profiles Button */}
         <button className="mt-[clamp(16px,1.5vw,24px)] w-[clamp(180px,16vw,240px)] h-[clamp(40px,3.5vw,52px)] bg-[#1f2e3b] border-[0.5px] border-[#4e4c4c] rounded-lg shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex items-center justify-center cursor-pointer">
           <span className="text-[clamp(11px,0.9vw,14px)] font-semibold text-white">
             Manage your profiles
