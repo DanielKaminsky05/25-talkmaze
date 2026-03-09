@@ -1,9 +1,8 @@
-"use client";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
-import { createClient } from "@/utils/supabase/client";
+import { signOut } from "@/lib/auth/signout";
 
 //Navigation Bar Component
 export default function NavigationBar() {
@@ -24,7 +23,6 @@ export default function NavigationBar() {
   const title = `${prefix} ${page}`;
 
   return (
-
     <div className="flex flex-row px-3.5 py-3 items-center justify-between md:px-8 md:py-6 lg:pl-0 max-w-full">
       {/* Back Button */}
       <div
@@ -42,11 +40,7 @@ export default function NavigationBar() {
       {/* Profile & Video Lesson Buttons */}
       <div className="flex flex-row gap-4 md:gap-10 items-center relative left-[3%]">
         <button
-          onClick={async () => {
-            const supabase = createClient();
-            await supabase.auth.signOut();
-            router.push("/login");
-          }}
+          onClick={signOut}
           className="text-white hover:text-gray-300 font-medium"
         >
           Sign Out
