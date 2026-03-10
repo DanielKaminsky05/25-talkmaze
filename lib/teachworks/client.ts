@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { GetLessonsParams, TeachworksLesson, TeachworksStudent, TeachworksEmployee, TeachworksFamily } from "./types";
-=======
-import { GetLessonsParams, TeachworksLesson, TeachworksStudent, TeachworksEmployee, StudentUpdateInput} from "./types";
->>>>>>> 49574b3885bb5073fa4edad60186198eb9459dc8
 
 const TEACHWORKS_API_URL = "https://api.teachworks.com/v1";
 
@@ -100,6 +96,10 @@ export class TeachworksClient {
     return this.request<TeachworksStudent[]>("/students", "GET");
   }
 
+  async createStudent(body: object): Promise<TeachworksStudent>{
+    return this.postRequest<TeachworksStudent>("/students", body)
+  }
+
   async postFamily(body: object): Promise<TeachworksFamily>{
     return this.postRequest<TeachworksFamily>("/customers/family",body);
   }
@@ -114,10 +114,12 @@ export class TeachworksClient {
     return this.request<TeachworksEmployee[]>("/employees", "GET");
   }
 
+  
   // Add this to @/lib/teachworks/client.ts
-  async updateStudent(id: string | number, data: StudentUpdateInput) : Promise<TeachworksStudent> {
-    // Teachworks requires the 'student' wrapper
-    return this.request<TeachworksStudent>(`/students/${id}`, "PUT", { student: data });
+  
+  // async updateStudent(id: string | number, data: StudentUpdateInput) : Promise<TeachworksStudent> {
+  //   // Teachworks requires the 'student' wrapper
+  //   return this.request<TeachworksStudent>(`/students/${id}`, "PUT", { student: data });
     /*const response = await fetch(`${this.baseUrl}/students/${id}`, {
       method: "PUT",
       headers: {
@@ -132,5 +134,5 @@ export class TeachworksClient {
       throw new Error(errorBody.error || "Failed to update student");
     }
     return response.json();*/
-  }
+ // }
 }
