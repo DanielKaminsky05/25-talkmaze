@@ -76,5 +76,6 @@ export async function selectProfile(formData: FormData) {
     sameSite: "lax",
   });
 
+  
   redirect("/home");
 }

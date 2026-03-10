@@ -1,5 +1,4 @@
 "use client";
-
 import {z} from 'zod';
 import Image from "next/image";
 import Link from "next/link";
@@ -7,6 +6,7 @@ import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import OnboardingCalendar from '../../(protected)/components/onboardingCalendar/OnboardingCalendar';
+import { handleStudentCreation } from './actions';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,6 +23,8 @@ const onBoardSchema = z.object({
 })
 
 export default function Onboarding(){
+
+ 
   const router = useRouter();
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
@@ -32,17 +34,9 @@ export default function Onboarding(){
   const [availability, setAvailability] = useState<Date[]>([]);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-  
-    const formDataToValidate = {
-      firstName,
-      lastName,
-      address,
-      grade,
-      notes,
-      availability,
-    }
+    handleStudentCreation(firstName, lastName,new Date());
   }
 
   // Receives selected dates from Calendar and toggles them in availability[]

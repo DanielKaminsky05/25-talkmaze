@@ -199,42 +199,7 @@ export interface TeachworksFamily{
   unviewed: boolean | null
 }
 
-export interface TeachworksStudent {
-  id: number;
-  customer_id: number;
-  student_type: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  additional_email: string | null;
-  home_phone: string | null;
-  mobile_phone: string | null;
-  birth_date: string | null;
-  start_date: string | null;
-  school: string | null;
-  grade: string | null;
-  additional_notes: string | null;
-  calendar_color: string;
-  default_location_id: number | null;
-  subjects: string[] | null;
-  status: string;
-  time_zone: string | null;
-  billing_method: string;
-  student_cost: number | null;
-  cost_premium_id: number;
-  discount_rate: number | null;
-  email_lesson_reminders: number;
-  email_lesson_notes: number;
-  sms_lesson_reminders: number;
-  user_account: unknown | null;
-  unviewed: boolean;
-  welcome_sent_at: string | null;
-  created_at: string;
-  updated_at: string;
-  custom_fields: TeachworksCustomField[];
-  default_teachers: TeachworksTeacher[];
-  default_services: TeachworksService[];
-}
+
 export interface TeachworksTeacher {
   id: number;
   first_name: string;

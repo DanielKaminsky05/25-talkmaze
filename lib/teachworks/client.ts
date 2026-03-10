@@ -49,8 +49,8 @@ export class TeachworksClient {
 
   private async postRequest<T>(endpoint: string, body: object){
        const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
-        
-        
+       console.log("URL: " + url);
+        console.log("Inside post: " + JSON.stringify(body));
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -61,9 +61,11 @@ export class TeachworksClient {
                 body
             )
         })
+        
+        console.log("Response: " + JSON.stringify(response));
+        const data = await response.json() as T;
 
-        const data = (await response.json()) as T;
-
+        console.log("Data: " + data);
         return data;
 
         
@@ -96,16 +98,12 @@ export class TeachworksClient {
     return this.request<TeachworksStudent[]>("/students", "GET");
   }
 
-  async createStudent(body: object): Promise<TeachworksStudent>{
-    return this.postRequest<TeachworksStudent>("/students", body)
-  }
-
   async postFamily(body: object): Promise<TeachworksFamily>{
     return this.postRequest<TeachworksFamily>("/customers/family",body);
   }
 
   async postStudent(body: object){
-    return this.postRequest("students", body);
+    return this.postRequest<TeachworksStudent>("/students", body);
   }
   /**
    * Fetch all employees (coaches/teachers)
@@ -114,25 +112,23 @@ export class TeachworksClient {
     return this.request<TeachworksEmployee[]>("/employees", "GET");
   }
 
-  
-  // Add this to @/lib/teachworks/client.ts
-  
+  // // Add this to @/lib/teachworks/client.ts
   // async updateStudent(id: string | number, data: StudentUpdateInput) : Promise<TeachworksStudent> {
   //   // Teachworks requires the 'student' wrapper
   //   return this.request<TeachworksStudent>(`/students/${id}`, "PUT", { student: data });
-    /*const response = await fetch(`${this.baseUrl}/students/${id}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Token token=${this.apiKey}`, // Correct Teachworks format
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ student: data }),
-    });
+  //   /*const response = await fetch(`${this.baseUrl}/students/${id}`, {
+  //     method: "PUT",
+  //     headers: {
+  //       "Authorization": `Token token=${this.apiKey}`, // Correct Teachworks format
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({ student: data }),
+  //   });
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      throw new Error(errorBody.error || "Failed to update student");
-    }
-    return response.json();*/
- // }
+  //   if (!response.ok) {
+  //     const errorBody = await response.json();
+  //     throw new Error(errorBody.error || "Failed to update student");
+  //   }
+  //   return response.json();*/
+  // }
 }
