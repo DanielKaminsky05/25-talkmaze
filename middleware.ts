@@ -1,0 +1,84 @@
+import { updateSession } from "@/utils/supabase/middleware";
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+
+/**
+ * Middleware function to handle incoming requests
+ */
+export async function middleware(request: NextRequest) {
+  const response = await updateSession(request);
+
+  const { pathname } = request.nextUrl;
+
+  // Determine if the current route is a "profile locked" route
+  // Profile locked routes require the user to have an active profile
+  const isProfileLockedRoute =
+    !pathname.startsWith("/profiles") &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/signup") &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next");
+
+  // Check if the user is trying to access a route locked behind profile
+  if (isProfileLockedRoute) {
+    // Create Supabase client in middleware context
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {
+            // No-op: cookies are handled by updateSession
+          },
+        },
+      },
+    );
+
+    // Get current logged-in user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      // Fetch the account role
+      const { data: account } = await supabase
+        .from("account")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      // Check if current user is a "regular user", and not for example an admin
+      const isRegularUser = account?.role === 1;
+
+      // If they are a regular user, check if they have an active profile
+      if (isRegularUser) {
+        const activeProfileId = request.cookies.get("active_profile_id")?.value;
+        // If no active profile, redirect them to select a profile
+        if (!activeProfileId) {
+          const url = request.nextUrl.clone();
+          url.pathname = "/profiles";
+          return NextResponse.redirect(url);
+        }
+      }
+    }
+  }
+
+  return response;
+}
+
+
+export const config = {
+  /*
+   * Match all request paths except for the ones starting with:
+   * - _next/static (static files)
+   * - _next/image (image optimization files)
+   * - favicon.ico (favicon file)
+   * Feel free to modify this pattern to include more paths.
+   */
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
