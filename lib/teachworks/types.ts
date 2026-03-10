@@ -187,6 +187,13 @@ export interface TeachworksEmployee {
   custom_fields: TeachworksCustomField[];
 }
 
+export interface TeachworksCourse {
+  id: number;
+  name: string;
+  description?: string;
+  status?: string;
+}
+
 export interface TeachworksFamily{
   id: number,
   first_name: string,
@@ -199,7 +206,10 @@ export interface TeachworksFamily{
   unviewed: boolean | null
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4419d1d898870e611450cbc7e534a7b530fb6bde
 export interface TeachworksTeacher {
   id: number;
   first_name: string;
