@@ -6,6 +6,8 @@ interface CourseTableProps {
 }
 
 export default function CourseTable({ courses, onCourseClick }: CourseTableProps) {
+  console.log("Courses: " + JSON.stringify(courses));
+  
   return (
     <div className="overflow-x-auto shadow rounded">
       <table className="min-w-full border-collapse bg-white">

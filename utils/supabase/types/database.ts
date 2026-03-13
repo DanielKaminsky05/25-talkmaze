@@ -308,7 +308,10 @@ export type Database = {
           id: string
           name: string
           phone_number: string | null
+<<<<<<< HEAD
           profile_access_pin: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           stripe_customer_id: string | null
           tw_id: string | null
           updated_at: string
@@ -320,7 +323,10 @@ export type Database = {
           id?: string
           name: string
           phone_number?: string | null
+<<<<<<< HEAD
           profile_access_pin?: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           stripe_customer_id?: string | null
           tw_id?: string | null
           updated_at?: string
@@ -332,7 +338,10 @@ export type Database = {
           id?: string
           name?: string
           phone_number?: string | null
+<<<<<<< HEAD
           profile_access_pin?: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           stripe_customer_id?: string | null
           tw_id?: string | null
           updated_at?: string
@@ -483,6 +492,64 @@ export type Database = {
           },
         ]
       }
+      student_subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          payer_parent_id: string
+          plan_id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          payer_parent_id?: string
+          plan_id?: string
+          status: string
+          student_id?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          payer_parent_id?: string
+          plan_id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_plans_payer_parent_id_fkey"
+            columns: ["payer_parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_plans_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           account_id: string
@@ -490,7 +557,10 @@ export type Database = {
           id: string
           lesson_space_id: string | null
           name: string | null
+<<<<<<< HEAD
           profile_access_pin: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           tw_id: string | null
           updated_at: string
         }
@@ -500,7 +570,10 @@ export type Database = {
           id?: string
           lesson_space_id?: string | null
           name?: string | null
+<<<<<<< HEAD
           profile_access_pin?: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           tw_id?: string | null
           updated_at?: string
         }
@@ -510,7 +583,10 @@ export type Database = {
           id?: string
           lesson_space_id?: string | null
           name?: string | null
+<<<<<<< HEAD
           profile_access_pin?: number | null
+=======
+>>>>>>> origin/stripe-webhook-integration
           tw_id?: string | null
           updated_at?: string
         }

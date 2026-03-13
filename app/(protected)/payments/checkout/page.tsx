@@ -169,6 +169,7 @@ function CheckoutPageContent() {
     );
   }
 
+  console.log("Inside the checkout loading page")
   // Once we have the secret, load the form inside Stripe's "Elements" provider
   return (
     <div className={styles.container}>
