@@ -3,54 +3,40 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { TeachworksClient } from "../teachworks/client";
 import { NextResponse } from "next/server";
-type student = {
-    "customer_id": string,
-    "first_name": string,
-    "last_name": string,
-    "birth_date": Date,
-    "billing_method": "Talk Maze Platform",
-    "status": "Active" | "Inactive",
-    "default_teacher_ids": []
+import { TeachworksStudent } from "../teachworks/types";
 
-}
 
-const supabase = createClient();
-const cookieStore = await cookies();
 
 const teach_works_api_key = process.env.TEACHWORKS_API_KEY;
 
+export async function createStudent(student_obj: object){
+    const supabase = await createClient();
+    const cookieStore = await cookies();
 
-async function createStudent(firstname: string, lastname: string, birth_date: Date){
     //first create in teachworks then create in supabase
-    console.log("Inside create Student")
     const account_cookie = await cookieStore.get("account_id");
-    const account_id = JSON.stringify(account_cookie?.value);
-    const account_tw_id = (await supabase).from('account').select('tw_customer_id').eq('id',account_id);
-
-    const student: student = {
-        customer_id: JSON.stringify(account_tw_id),
-        first_name: firstname,
-        last_name: lastname,
-        birth_date: birth_date,
-        billing_method: "Talk Maze Platform",
-        status: 'Active',
-        default_teacher_ids: []
-    }
     
-    console.log("Created Student" +  JSON.stringify(student));
+    if(!account_cookie){
+        throw new Error("cookie doesn't exist")
+    }
+    const account_id = account_cookie?.value;
+    
+    const account_tw_id_obj= await supabase.from('account').select('tw_customer_id').eq('id',account_id).single();
+
+    const account_tw_obj = account_tw_id_obj.data?.tw_customer_id;
+
+    //console.log("Created Student" +  JSON.stringify(student));
     if(!teach_works_api_key){
         console.error("TEACHWORKS_API_KEY is missing");
-        return NextResponse.json({
-            error: "Server misconfiguration: Missing API Key" },
-            { status: 500 }
-        );
+        throw new Error("Missing API KEY!")
     }
-const teachworksclient = new TeachworksClient(teach_works_api_key)
+    const teachworksclient = new TeachworksClient(teach_works_api_key)
 
-//write to teachworks
+    //write to teachworks
 
-const tw_response = await teachworksclient.postStudent(student);
-
+    const tw_response = await teachworksclient.postStudent(student_obj);
+    
+    return tw_response as TeachworksStudent;
 
 
 

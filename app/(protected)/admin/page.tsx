@@ -18,7 +18,7 @@ import CoachAssignmentCard from "./components/CoachAssignmentCard";
 
 const ITEMS_PER_PAGE = 5;
 
-type TabType = "students" | "coaches" | "courses" | "assignments";
+type TabType = "students" | "coaches" | "courses" | "assignments" | "learning_space";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -275,6 +275,8 @@ export default function AdminPage() {
     fetchEmployees();
   }, []);
 
+
+  // Filter students based on search query
   const filteredStudents = useMemo(() => {
     if (!studentSearchQuery.trim()) return students;
     const query = studentSearchQuery.toLowerCase();
@@ -450,6 +452,15 @@ export default function AdminPage() {
     );
   }
 
+  const handleGetLessonSpaces = async() => {
+    try{
+      console.log("Inside handleGetLessonSpaces")
+      const response = await fetch('/api/learningSpace')
+    }catch(err){
+      console.log("Error fetching lesson spaces");
+    }
+  }
+
   return (
     <div className="p-4 max-w-md">
       <div className="flex justify-between items-center mb-3">
@@ -464,21 +475,57 @@ export default function AdminPage() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-3 border-b border-gray-200">
-        {(["students", "coaches", "courses", "assignments"] as TabType[]).map(
-          (tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                activeTab === tab
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </button>
-          )
-        )}
+        <button
+          onClick={() => setActiveTab("students")}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "students"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Students
+        </button>
+        <button
+          onClick={() => setActiveTab("coaches")}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "coaches"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Coaches
+        </button>
+        <button
+          onClick={() => setActiveTab("courses")}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "courses"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Courses
+        </button>
+        <button
+          onClick={() => setActiveTab("assignments")}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "assignments"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Assignments
+        </button>
+
+        <button
+          onClick={() => setActiveTab("learning_space")}
+           className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "learning_space"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Learning Spaces
+        </button>
       </div>
 
       {/* ── Students Tab ── */}
@@ -1200,7 +1247,14 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ── Course Detail Modal ── */}
+      {activeTab == 'learning_space' && (
+        <div>
+          <button onClick = {handleGetLessonSpaces}>
+            Get Learning Spaces
+          </button>
+        </div>
+      )}
+      {/* Course Detail Modal */}
       {selectedCourse && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"

@@ -16,6 +16,7 @@ export async function selectProfile(formData: FormData) {
   const profileType = formData.get("profileType") as "student" | "parent";
   const pin = formData.get("pin") as string | null;
 
+ 
   // Ensure required fields are present
   if (!profileId || !profileType) throw new Error("Missing profile data");
 
@@ -41,7 +42,7 @@ export async function selectProfile(formData: FormData) {
 
     // If PIN is set for parent, validate it
     if (parent!.profile_access_pin != null) {
-      if (!pin || parseInt(pin) !== parent!.profile_access_pin) {
+      if (!pin || pin !== parent!.profile_access_pin) {
         redirect("/profiles?error=wrong_pin");
       }
     }
@@ -57,7 +58,7 @@ export async function selectProfile(formData: FormData) {
     if (error || !student) redirect("/profiles?error=not_found");
 
     if (student!.profile_access_pin != null) {
-      if (!pin || parseInt(pin) !== student!.profile_access_pin) {
+      if (!pin ||pin !== student!.profile_access_pin) {
         redirect("/profiles?error=wrong_pin");
       }
     }
@@ -76,5 +77,6 @@ export async function selectProfile(formData: FormData) {
     sameSite: "lax",
   });
 
+  
   redirect("/home");
 }

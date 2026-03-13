@@ -32,7 +32,7 @@ export const signUpNewUser = async (email: string, password: string, masterPin: 
     })
 
    
-
+    //note customer is 1, coach is 2, and admin is 3
     const insertIntoAccount = await supabase.from('account').insert({
     id: data.user?.id,
     email: email,
@@ -46,10 +46,11 @@ export const signUpNewUser = async (email: string, password: string, masterPin: 
     })
     
     
+    
     //write id to the database
     if (error) {
         console.error("There was a problem signing up:", error)
-        return { success: false, error }
+        return { success: false, error}
     }
 
     return { success: true, data }

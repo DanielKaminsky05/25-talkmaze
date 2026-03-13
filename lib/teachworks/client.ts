@@ -60,8 +60,32 @@ export class TeachworksClient {
     return response.json();
   }
 
-  private async postRequest<T>(endpoint: string, body: object) {
-    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+  private async postRequest<T>(endpoint: string, body: object){
+       const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+       
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Authorization": `Token token=${this.apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(
+                body
+            )
+        })
+        
+        console.log("Response: " + JSON.stringify(response));
+        const data = await response.json() as T;
+
+        
+        return data;
+
+        
+    
+  }
+
+  private async putRequest<T>(endpoint: string, body: object){
+    const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
     const response = await fetch(url, {
       method: "POST",
@@ -77,15 +101,7 @@ export class TeachworksClient {
     return data;
   }
 
-  private async putRequest(endpoint: string, body: object) {
-    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
-
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {},
-      body: JSON.stringify(body),
-    });
-  }
+ 
 
   /**
    * Fetch lessons based on filters
