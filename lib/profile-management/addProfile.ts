@@ -28,10 +28,7 @@ export async function createStudent(student_obj: object){
     //console.log("Created Student" +  JSON.stringify(student));
     if(!teach_works_api_key){
         console.error("TEACHWORKS_API_KEY is missing");
-        return NextResponse.json({
-            error: "Server misconfiguration: Missing API Key" },
-            { status: 500 }
-        );
+        throw new Error("Missing API KEY!")
     }
     const teachworksclient = new TeachworksClient(teach_works_api_key)
 

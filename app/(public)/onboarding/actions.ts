@@ -5,7 +5,7 @@ import { time_zone } from './page';
 import { createClient } from '@/utils/supabase/server';
 import { TeachworksStudent } from '@/lib/teachworks/types';
 import { NextResponse } from 'next/server';
-export async function handleStudentCreation(firstName: string, lastName: string, email: string, birth_date: string, home_phone: string, mobile_phone: string, school: string, grade: number,additional_notes: string, time_zone: time_zone){
+export async function handleStudentCreation(firstName: string, lastName: string, email: string, birth_date: string, home_phone: string, mobile_phone: string, school: string, grade: number,additional_notes: string, time_zone: time_zone, pin: string){
     const cookieStore = await cookies();
     console.log("Inside handleStudentCreation")
 
@@ -39,22 +39,18 @@ export async function handleStudentCreation(firstName: string, lastName: string,
     }
 
     const result = await createStudent(student_obj);
-    
+   
     //now write the student to supabase
     console.log("Result: " + JSON.stringify(result));
     const {data, error} = await (await supabase).from('students').insert({
         account_id: account_id,
-        tw_id: result.id,
-        name: firstName + " " + lastName
+        tw_id: JSON.stringify(result.id),
+        name: firstName + " " + lastName,
+        profile_access_pin: pin
     });
 
     if(error){
         return NextResponse.json({status: 500, message: "Error inserting into supabase"})
     }
 
-
-
-    
-    
-    
 }
