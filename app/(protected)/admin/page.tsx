@@ -12,6 +12,7 @@ import EmployeeTable from "./components/EmployeeTable";
 import CreateAdminModal from "./components/CreateAdminModal";
 import CourseTable from "./components/CourseTable";
 import CreateCourseModal from "./components/CreateCourseModal";
+import CourseLessonsPanel from "./components/CourseLessonPanel";
 import { Assignment } from "@/lib/types/assignments";
 import CoachAssignmentCard from "./components/CoachAssignmentCard";
 
@@ -33,7 +34,7 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] =
     useState<TeachworksStudent | null>(null);
 
-  //editing student
+  // editing student
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<TeachworksStudent>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -53,18 +54,18 @@ export default function AdminPage() {
     Partial<TeachworksEmployee>
   >({});
   const [isSavingEmployee, setIsSavingEmployee] = useState(false);
+
   // Modal state
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
 
-  //course state
-
+  // Course state
   const [courses, setCourses] = useState<TeachworksCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [courseSearchQuery, setCourseSearchQuery] = useState("");
   const [courseCurrentPage, setCourseCurrentPage] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState<TeachworksCourse | null>(
-    null,
+    null
   );
   const [isEditingCourse, setIsEditingCourse] = useState(false);
   const [courseEditForm, setCourseEditForm] = useState<
@@ -74,7 +75,7 @@ export default function AdminPage() {
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
 
-  //assignment state
+  // Assignment state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
 
@@ -93,7 +94,6 @@ export default function AdminPage() {
   };
 
   const handleRemoveAssignment = async (assignmentId: string) => {
-    // Optimistic remove
     setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
     const res = await fetch(`/api/admin/assignments/${assignmentId}`, {
       method: "DELETE",
@@ -105,6 +105,7 @@ export default function AdminPage() {
         .then(setAssignments);
     }
   };
+
   useEffect(() => {
     fetch("/api/admin/assignments")
       .then((r) => r.json())
@@ -112,16 +113,23 @@ export default function AdminPage() {
       .catch(() => setAssignments([]))
       .finally(() => setAssignmentsLoading(false));
   }, []);
+
   useEffect(() => {
     async function fetchCourses() {
       try {
         setCoursesLoading(true);
         const response = await fetch("/api/admin/courses");
         if (!response.ok) throw new Error("Failed to fetch courses");
-        setCourses(await response.json());
+        const data = await response.json();
+        const mapped = data.map((c: any) => ({
+          id: c.id,
+          name: c.title,
+          description: c.description,
+        }));
+        setCourses(mapped);
       } catch (err) {
         setCoursesError(
-          err instanceof Error ? err.message : "An error occurred",
+          err instanceof Error ? err.message : "An error occurred"
         );
       } finally {
         setCoursesLoading(false);
@@ -134,13 +142,13 @@ export default function AdminPage() {
     setCourseCurrentPage(1);
   }, [courseSearchQuery]);
 
-  // Add filtered/paginated courses:
   const filteredCourses = useMemo(() => {
     if (!courseSearchQuery.trim()) return courses;
     const query = courseSearchQuery.toLowerCase();
     return courses.filter(
       (c) =>
-        c.name.toLowerCase().includes(query) || c.id.toString().includes(query),
+        c.name.toLowerCase().includes(query) ||
+        c.id.toString().includes(query)
     );
   }, [courses, courseSearchQuery]);
 
@@ -175,7 +183,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error("Failed to update course");
       const updated = await response.json();
       setCourses((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c)),
+        prev.map((c) => (c.id === updated.id ? updated : c))
       );
       setSelectedCourse(updated);
       setIsEditingCourse(false);
@@ -207,18 +215,14 @@ export default function AdminPage() {
     }
   };
 
-  // Check if user has admin role (role 3)
+  // Check admin role
   useEffect(() => {
     async function checkAdminRole() {
       try {
         const response = await fetch("/api/user/role");
-        if (!response.ok) {
-          throw new Error("Failed to fetch user role");
-        }
+        if (!response.ok) throw new Error("Failed to fetch user role");
         const data = await response.json();
-
         if (data.role !== 3) {
-          // Not an admin, redirect to home
           router.push("/home");
         } else {
           setIsAuthorized(true);
@@ -228,7 +232,6 @@ export default function AdminPage() {
         router.push("/home");
       }
     }
-
     checkAdminRole();
   }, [router]);
 
@@ -238,22 +241,17 @@ export default function AdminPage() {
       try {
         setStudentsLoading(true);
         const response = await fetch("/api/admin/students");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch students");
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch students");
         const data = await response.json();
         setStudents(data);
       } catch (err) {
         setStudentsError(
-          err instanceof Error ? err.message : "An error occurred",
+          err instanceof Error ? err.message : "An error occurred"
         );
       } finally {
         setStudentsLoading(false);
       }
     }
-
     fetchStudents();
   }, []);
 
@@ -263,29 +261,22 @@ export default function AdminPage() {
       try {
         setEmployeesLoading(true);
         const response = await fetch("/api/admin/employees");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch employees");
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch employees");
         const data = await response.json();
         setEmployees(data);
       } catch (err) {
         setEmployeesError(
-          err instanceof Error ? err.message : "An error occurred",
+          err instanceof Error ? err.message : "An error occurred"
         );
       } finally {
         setEmployeesLoading(false);
       }
     }
-
     fetchEmployees();
   }, []);
 
-  // Filter students based on search query
   const filteredStudents = useMemo(() => {
     if (!studentSearchQuery.trim()) return students;
-
     const query = studentSearchQuery.toLowerCase();
     return students.filter((student) => {
       return (
@@ -296,18 +287,15 @@ export default function AdminPage() {
       );
     });
   }, [students, studentSearchQuery]);
-  // handle save and delete
 
   const handleEditStart = () => {
     setEditForm({ ...selectedStudent });
     setIsEditing(true);
   };
-
   const handleEditCancel = () => {
     setEditForm({});
     setIsEditing(false);
   };
-
   const handleEditSave = async () => {
     if (!selectedStudent) return;
     setIsSaving(true);
@@ -318,12 +306,12 @@ export default function AdminPage() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ student: editForm }),
-        },
+        }
       );
       if (!response.ok) throw new Error("Failed to update student");
       const updated = await response.json();
       setStudents((prev) =>
-        prev.map((s) => (s.id === updated.id ? updated : s)),
+        prev.map((s) => (s.id === updated.id ? updated : s))
       );
       setSelectedStudent(updated);
       setIsEditing(false);
@@ -334,15 +322,12 @@ export default function AdminPage() {
       setIsSaving(false);
     }
   };
-  // Filter employees based on search query
+
   const filteredEmployees = useMemo(() => {
-    // First filter to only show teachers
     const teachers = employees.filter(
-      (employee) => employee.position === "Teacher",
+      (employee) => employee.position === "Teacher"
     );
-
     if (!employeeSearchQuery.trim()) return teachers;
-
     const query = employeeSearchQuery.toLowerCase();
     return teachers.filter((employee) => {
       return (
@@ -354,21 +339,14 @@ export default function AdminPage() {
     });
   }, [employees, employeeSearchQuery]);
 
-  // Reset to page 1 when search query changes
-  useEffect(() => {
-    setStudentCurrentPage(1);
-  }, [studentSearchQuery]);
-
-  useEffect(() => {
-    setEmployeeCurrentPage(1);
-  }, [employeeSearchQuery]);
+  useEffect(() => { setStudentCurrentPage(1); }, [studentSearchQuery]);
+  useEffect(() => { setEmployeeCurrentPage(1); }, [employeeSearchQuery]);
 
   const handleCloseStudentModal = () => {
     setSelectedStudent(null);
     setIsEditing(false);
     setEditForm({});
   };
-  // Employee handlers
   const handleCloseEmployeeModal = () => {
     setSelectedEmployee(null);
     setIsEditingEmployee(false);
@@ -392,12 +370,12 @@ export default function AdminPage() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ employee: employeeEditForm }),
-        },
+        }
       );
       if (!response.ok) throw new Error("Failed to update employee");
       const updated = await response.json();
       setEmployees((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e)),
+        prev.map((e) => (e.id === updated.id ? updated : e))
       );
       setSelectedEmployee(updated);
       setIsEditingEmployee(false);
@@ -409,7 +387,6 @@ export default function AdminPage() {
     }
   };
 
-  // Close modal on Escape key press
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -418,43 +395,35 @@ export default function AdminPage() {
         if (selectedCourse) handleCloseCourseModal();
       }
     };
-
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [selectedStudent, selectedEmployee]);
+  }, [selectedStudent, selectedEmployee, selectedCourse]);
 
-  // Paginate filtered students
   const studentTotalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
   const paginatedStudents = useMemo(() => {
     const startIndex = (studentCurrentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredStudents.slice(startIndex, endIndex);
+    return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredStudents, studentCurrentPage]);
 
-  // Paginate filtered employees
-  const employeeTotalPages = Math.ceil(
-    filteredEmployees.length / ITEMS_PER_PAGE,
-  );
+  const employeeTotalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);
   const paginatedEmployees = useMemo(() => {
     const startIndex = (employeeCurrentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredEmployees.slice(startIndex, endIndex);
+    return filteredEmployees.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredEmployees, employeeCurrentPage]);
 
   const loading =
     activeTab === "students"
       ? studentsLoading
       : activeTab === "coaches"
-        ? employeesLoading
-        : coursesLoading;
+      ? employeesLoading
+      : coursesLoading;
   const error =
     activeTab === "students"
       ? studentsError
       : activeTab === "coaches"
-        ? employeesError
-        : coursesError;
+      ? employeesError
+      : coursesError;
 
-  // Show loading while checking authorization
   if (isAuthorized === null) {
     return (
       <div className="p-4 max-w-md">
@@ -463,12 +432,7 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  // If not authorized, show nothing (redirect is happening)
-  if (!isAuthorized) {
-    return null;
-  }
-
+  if (!isAuthorized) return null;
   if (loading) {
     return (
       <div className="p-4 max-w-md">
@@ -477,7 +441,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="p-4 max-w-md">
@@ -501,52 +464,26 @@ export default function AdminPage() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-3 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab("students")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "students"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Students
-        </button>
-        <button
-          onClick={() => setActiveTab("coaches")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "coaches"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Coaches
-        </button>
-        <button
-          onClick={() => setActiveTab("courses")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "courses"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Courses
-        </button>
-        <button
-          onClick={() => setActiveTab("assignments")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "assignments"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Assignments
-        </button>
+        {(["students", "coaches", "courses", "assignments"] as TabType[]).map(
+          (tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                activeTab === tab
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {tab}
+            </button>
+          )
+        )}
       </div>
 
-      {/* Students Tab */}
+      {/* ── Students Tab ── */}
       {activeTab === "students" && (
         <>
-          {/* Search Bar */}
           <div className="mb-3">
             <input
               type="text"
@@ -556,28 +493,23 @@ export default function AdminPage() {
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
             />
           </div>
-
           <StudentTable
             students={paginatedStudents}
             onStudentClick={setSelectedStudent}
           />
-
-          {/* Pagination Controls */}
           {studentTotalPages > 1 && (
             <div className="mt-3 flex items-center justify-between">
               <p className="text-xs text-gray-600">
                 Showing {(studentCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                 {Math.min(
                   studentCurrentPage * ITEMS_PER_PAGE,
-                  filteredStudents.length,
+                  filteredStudents.length
                 )}{" "}
                 of {filteredStudents.length}
               </p>
               <div className="flex gap-1.5">
                 <button
-                  onClick={() =>
-                    setStudentCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setStudentCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={studentCurrentPage === 1}
                   className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -588,9 +520,7 @@ export default function AdminPage() {
                 </span>
                 <button
                   onClick={() =>
-                    setStudentCurrentPage((prev) =>
-                      Math.min(prev + 1, studentTotalPages),
-                    )
+                    setStudentCurrentPage((p) => Math.min(p + 1, studentTotalPages))
                   }
                   disabled={studentCurrentPage === studentTotalPages}
                   className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -600,7 +530,6 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-
           {studentTotalPages <= 1 && filteredStudents.length > 0 && (
             <p className="mt-3 text-xs text-gray-600">
               Total: {filteredStudents.length}
@@ -609,10 +538,9 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* Coaches Tab */}
+      {/* ── Coaches Tab ── */}
       {activeTab === "coaches" && (
         <>
-          {/* Search Bar */}
           <div className="mb-3">
             <input
               type="text"
@@ -622,27 +550,24 @@ export default function AdminPage() {
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
             />
           </div>
-
           <EmployeeTable
             employees={paginatedEmployees}
             onEmployeeClick={setSelectedEmployee}
           />
-
-          {/* Pagination Controls */}
           {employeeTotalPages > 1 && (
             <div className="mt-3 flex items-center justify-between">
               <p className="text-xs text-gray-600">
                 Showing {(employeeCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                 {Math.min(
                   employeeCurrentPage * ITEMS_PER_PAGE,
-                  filteredEmployees.length,
+                  filteredEmployees.length
                 )}{" "}
                 of {filteredEmployees.length}
               </p>
               <div className="flex gap-1.5">
                 <button
                   onClick={() =>
-                    setEmployeeCurrentPage((prev) => Math.max(prev - 1, 1))
+                    setEmployeeCurrentPage((p) => Math.max(p - 1, 1))
                   }
                   disabled={employeeCurrentPage === 1}
                   className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -654,8 +579,8 @@ export default function AdminPage() {
                 </span>
                 <button
                   onClick={() =>
-                    setEmployeeCurrentPage((prev) =>
-                      Math.min(prev + 1, employeeTotalPages),
+                    setEmployeeCurrentPage((p) =>
+                      Math.min(p + 1, employeeTotalPages)
                     )
                   }
                   disabled={employeeCurrentPage === employeeTotalPages}
@@ -666,7 +591,6 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-
           {employeeTotalPages <= 1 && filteredEmployees.length > 0 && (
             <p className="mt-3 text-xs text-gray-600">
               Total: {filteredEmployees.length}
@@ -675,7 +599,7 @@ export default function AdminPage() {
         </>
       )}
 
-      {/* Student Detail Modal */}
+      {/* ── Student Detail Modal ── */}
       {selectedStudent && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -685,7 +609,6 @@ export default function AdminPage() {
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditing
@@ -791,7 +714,12 @@ export default function AdminPage() {
                       </select>
                     ) : (
                       <p
-                        className={`font-medium ${fieldKey === "status" && selectedStudent.status === "Active" ? "text-green-600" : "text-gray-900 capitalize"}`}
+                        className={`font-medium ${
+                          fieldKey === "status" &&
+                          selectedStudent.status === "Active"
+                            ? "text-green-600"
+                            : "text-gray-900 capitalize"
+                        }`}
                       >
                         {(selectedStudent[fieldKey] as string) || "N/A"}
                       </p>
@@ -801,7 +729,6 @@ export default function AdminPage() {
 
                 return (
                   <>
-                    {/* Basic Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Basic Information
@@ -833,8 +760,6 @@ export default function AdminPage() {
                         />
                       </div>
                     </div>
-
-                    {/* Contact Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Contact Information
@@ -850,8 +775,6 @@ export default function AdminPage() {
                         <Field label="Mobile Phone" fieldKey="mobile_phone" />
                       </div>
                     </div>
-
-                    {/* Academic Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Academic Information
@@ -860,20 +783,10 @@ export default function AdminPage() {
                         <Field label="School" fieldKey="school" />
                         <Field label="Grade" fieldKey="grade" />
                         <Field label="Subjects" fieldKey="subjects" />
-                        <Field
-                          label="Birth Date"
-                          fieldKey="birth_date"
-                          type="date"
-                        />
-                        <Field
-                          label="Start Date"
-                          fieldKey="start_date"
-                          type="date"
-                        />
+                        <Field label="Birth Date" fieldKey="birth_date" type="date" />
+                        <Field label="Start Date" fieldKey="start_date" type="date" />
                       </div>
                     </div>
-
-                    {/* Billing Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Billing Information
@@ -887,8 +800,6 @@ export default function AdminPage() {
                         <Field label="Discount Rate" fieldKey="discount_rate" />
                       </div>
                     </div>
-
-                    {/* Default Teachers (read-only) */}
                     {selectedStudent.default_teachers.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -903,8 +814,6 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Default Services (read-only) */}
                     {selectedStudent.default_services.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -919,8 +828,6 @@ export default function AdminPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Custom Fields (read-only — Teachworks manages these separately) */}
                     {selectedStudent.custom_fields.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -929,17 +836,13 @@ export default function AdminPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           {selectedStudent.custom_fields.map((field) => (
                             <div key={field.field_id}>
-                              <span className="text-gray-500">
-                                {field.name}:
-                              </span>
+                              <span className="text-gray-500">{field.name}:</span>
                               <p className="text-gray-900">{field.value}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    {/* Additional Notes */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Additional Notes
@@ -970,7 +873,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Employee Detail Modal */}
+      {/* ── Employee Detail Modal ── */}
       {selectedEmployee && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1086,7 +989,11 @@ export default function AdminPage() {
                       </select>
                     ) : (
                       <p
-                        className={`font-medium capitalize ${colorFn ? colorFn(selectedEmployee[fieldKey] as string) : "text-gray-900"}`}
+                        className={`font-medium capitalize ${
+                          colorFn
+                            ? colorFn(selectedEmployee[fieldKey] as string)
+                            : "text-gray-900"
+                        }`}
                       >
                         {(selectedEmployee[fieldKey] as string) || "N/A"}
                       </p>
@@ -1125,7 +1032,6 @@ export default function AdminPage() {
                 );
                 return (
                   <>
-                    {/* Basic Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Basic Information
@@ -1146,15 +1052,11 @@ export default function AdminPage() {
                           fieldKey="status"
                           options={["Active", "Inactive"]}
                           colorFn={(val) =>
-                            val === "Active"
-                              ? "text-green-600"
-                              : "text-gray-600"
+                            val === "Active" ? "text-green-600" : "text-gray-600"
                           }
                         />
                       </div>
                     </div>
-
-                    {/* Contact Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Contact Information
@@ -1169,37 +1071,18 @@ export default function AdminPage() {
                         <Field label="Zip" fieldKey="zip" />
                       </div>
                     </div>
-
-                    {/* Employment Info */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2">
                         Employment Information
                       </h3>
                       <div className="grid grid-cols-2 gap-3 text-xs">
-                        <Field
-                          label="Hire Date"
-                          fieldKey="hire_date"
-                          type="date"
-                        />
-                        <Field
-                          label="Birth Date"
-                          fieldKey="birth_date"
-                          type="date"
-                        />
+                        <Field label="Hire Date" fieldKey="hire_date" type="date" />
+                        <Field label="Birth Date" fieldKey="birth_date" type="date" />
                         <Field label="Subjects" fieldKey="subjects" />
                       </div>
                     </div>
-
-                    {/* Bio */}
                     <TextArea label="Bio" fieldKey="bio" />
-
-                    {/* Additional Notes */}
-                    <TextArea
-                      label="Additional Notes"
-                      fieldKey="additional_notes"
-                    />
-
-                    {/* Custom Fields (read-only) */}
+                    <TextArea label="Additional Notes" fieldKey="additional_notes" />
                     {selectedEmployee.custom_fields.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -1208,9 +1091,7 @@ export default function AdminPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           {selectedEmployee.custom_fields.map((field) => (
                             <div key={field.field_id}>
-                              <span className="text-gray-500">
-                                {field.name}:
-                              </span>
+                              <span className="text-gray-500">{field.name}:</span>
                               <p className="text-gray-900">{field.value}</p>
                             </div>
                           ))}
@@ -1225,7 +1106,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Courses Tab */}
+      {/* ── Courses Tab ── */}
       {activeTab === "courses" && (
         <>
           <div className="mb-3 flex gap-2">
@@ -1255,15 +1136,13 @@ export default function AdminPage() {
                 Showing {(courseCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                 {Math.min(
                   courseCurrentPage * ITEMS_PER_PAGE,
-                  filteredCourses.length,
+                  filteredCourses.length
                 )}{" "}
                 of {filteredCourses.length}
               </p>
               <div className="flex gap-1.5">
                 <button
-                  onClick={() =>
-                    setCourseCurrentPage((p) => Math.max(p - 1, 1))
-                  }
+                  onClick={() => setCourseCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={courseCurrentPage === 1}
                   className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -1274,9 +1153,7 @@ export default function AdminPage() {
                 </span>
                 <button
                   onClick={() =>
-                    setCourseCurrentPage((p) =>
-                      Math.min(p + 1, courseTotalPages),
-                    )
+                    setCourseCurrentPage((p) => Math.min(p + 1, courseTotalPages))
                   }
                   disabled={courseCurrentPage === courseTotalPages}
                   className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1294,19 +1171,19 @@ export default function AdminPage() {
         </>
       )}
 
+      {/* ── Assignments Tab ── */}
       {activeTab === "assignments" && (
         <div className="space-y-3">
           {filteredEmployees.map((coach) => {
             const coachAssignments = assignments.filter(
-              (a) => a.coach_id === coach.id.toString(),
+              (a) => a.coach_id === coach.id.toString()
             );
             const assignedStudentIds = new Set(
-              coachAssignments.map((a) => a.student_id),
+              coachAssignments.map((a) => a.student_id)
             );
             const availableStudents = students.filter(
-              (s) => !assignedStudentIds.has(s.id.toString()),
+              (s) => !assignedStudentIds.has(s.id.toString())
             );
-
             return (
               <CoachAssignmentCard
                 key={coach.id}
@@ -1316,16 +1193,14 @@ export default function AdminPage() {
                 onAdd={(studentId) =>
                   handleAddAssignment(coach.id.toString(), studentId)
                 }
-                onRemove={(assignmentId) =>
-                  handleRemoveAssignment(assignmentId)
-                }
+                onRemove={(assignmentId) => handleRemoveAssignment(assignmentId)}
               />
             );
           })}
         </div>
       )}
 
-      {/* Course Detail Modal */}
+      {/* ── Course Detail Modal ── */}
       {selectedCourse && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1335,6 +1210,7 @@ export default function AdminPage() {
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditingCourse
@@ -1384,7 +1260,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="px-6 py-4 space-y-4 text-xs">
+            <div className="px-6 py-4 space-y-6 text-xs">
+              {/* Course Info */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   Course Information
@@ -1438,6 +1315,12 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Divider */}
+              <hr className="border-gray-100" />
+
+              {/* ── Lessons Panel ── */}
+              <CourseLessonsPanel courseId={String(selectedCourse.id)} />
             </div>
           </div>
         </div>
@@ -1451,12 +1334,12 @@ export default function AdminPage() {
           setCourses((prev) => [...prev, created as TeachworksCourse])
         }
       />
+
       {/* Create Admin Modal */}
       <CreateAdminModal
         isOpen={isCreateAdminModalOpen}
         onClose={() => setIsCreateAdminModalOpen(false)}
         onSuccess={() => {
-          // Could refresh admin list here if we add an admins tab
           alert("Admin account created successfully!");
         }}
       />
