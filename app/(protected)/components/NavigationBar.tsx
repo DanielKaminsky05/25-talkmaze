@@ -3,18 +3,14 @@ import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
 import { signOut } from "@/lib/auth/signout";
-import { cookies } from "next/headers";
+
 
 //Navigation Bar Component
-export default async function NavigationBar() {
+export default function NavigationBar() {
 
-  const cookieStore = await cookies()
   
-  const role = cookieStore.get('active_profile_type')?.value
 
-  if(role == undefined){
-    throw new Error("Unable to validate user profile type")
-  }
+  
   const router = useRouter();
   const pathname = usePathname();
 
@@ -55,13 +51,11 @@ export default async function NavigationBar() {
           Sign Out
         </button>
 
-         {
-          role == 'parent' && (
-            <button className = 'w-30 h-10'>
-              Manage Subscriptions
-            </button>
-          )
-         }
+         
+          <button className = 'w-30 h-10' onClick = {() => router.push('/payments')}>
+            Manage Subscriptions
+          </button>
+          
         <StartVideoLessonBox />
         <AvatorIcon />
       </div>
