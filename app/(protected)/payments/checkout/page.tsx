@@ -9,7 +9,7 @@ import styles from './checkout.module.css';
 // 1. Initialize Stripe
 // Make sure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is in your .env.local file
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
+console.log("Stripe Promise: " + stripePromise);
 // --- THE FORM COMPONENT (Handles the actual inputs) ---
 function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, planName: string }) {
   const stripe = useStripe();
@@ -47,6 +47,7 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
 
     if (error) {
       setErrorMessage(error.message || "An unexpected error occurred.");
+      console.log("Error with stripe confirmation")
       setLoading(false);
     }
   };
@@ -124,7 +125,10 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
             {/* --- THIS IS THE NEW STRIPE COMPONENT --- */}
             {/* It replaces the manual Card Number, Expiry, CVC inputs */}
             <div className={styles.inputGroup} style={{marginBottom: '20px'}}>
-                <PaymentElement />
+                <PaymentElement 
+                  onReady = {() =>  console.log("Payment ready")}
+                  onLoadError={(e) => console.log("Error loading payment",e)}
+                />
             </div>
 
             {/* Error Message Display */}
@@ -145,18 +149,43 @@ function CheckoutPageContent() {
 
   const planName = searchParams.get('name') || 'Unknown Plan';
   const amountCents = searchParams.get('amount');
+  const price_id = searchParams.get('price_id')
   const amountDisplay = amountCents ? `$${(parseInt(amountCents) / 100).toFixed(0)}` : '0';
 
   useEffect(() => {
     if (amountCents) {
       // Talk to your new API to get the "Secret Key" for this specific transaction
-      fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amountCents }),
-      })
-        .then((res) => res.json())
-        .then((data) => setClientSecret(data.clientSecret));
+
+      
+      async function getClient(){
+
+        try{
+          const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ price_id: price_id, amount: amountCents, name: planName}),
+          })
+
+          if(!res.ok){
+            throw new Error("Error getting stripe client");
+          }
+
+          const data = await res.json();
+          
+         
+          setClientSecret(data.secret);
+          
+
+        }catch(err){
+          console.log("Error in checkout page: " + err)
+        }
+         
+      }
+
+
+      getClient();
+     
+        
     }
   }, [amountCents]);
 
@@ -169,7 +198,7 @@ function CheckoutPageContent() {
     );
   }
 
-  console.log("Inside the checkout loading page")
+  
   // Once we have the secret, load the form inside Stripe's "Elements" provider
   return (
     <div className={styles.container}>

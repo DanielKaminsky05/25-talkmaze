@@ -11,6 +11,8 @@ const EMPTY_FORM: LessonInput = {
   title: "",
   description: "",
   content_url: "",
+  pre_lesson_tasks: [],
+  post_lesson_tasks: [],
 };
 
 export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps) {
@@ -23,12 +25,16 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
   const [addForm, setAddForm] = useState<LessonInput>({ ...EMPTY_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [newPreTask, setNewPreTask] = useState("");
+  const [newPostTask, setNewPostTask] = useState("");
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<LessonInput>({ ...EMPTY_FORM });
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [editNewPreTask, setEditNewPreTask] = useState("");
+  const [editNewPostTask, setEditNewPostTask] = useState("");
 
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -46,10 +52,42 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
       .finally(() => setLoading(false));
   }, [courseId]);
 
+  const addTaskToForm = (
+    type: "pre_lesson_tasks" | "post_lesson_tasks",
+    value: string,
+    setter: (value: string) => void,
+    formSetter: React.Dispatch<React.SetStateAction<LessonInput>>
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    formSetter((prev) => ({
+      ...prev,
+      [type]: [...(prev[type] ?? []), trimmed],
+    }));
+    setter("");
+  };
+
+  const removeTaskFromForm = (
+    type: "pre_lesson_tasks" | "post_lesson_tasks",
+    index: number,
+    formSetter: React.Dispatch<React.SetStateAction<LessonInput>>
+  ) => {
+    formSetter((prev) => ({
+      ...prev,
+      [type]: (prev[type] ?? []).filter((_, i) => i !== index),
+    }));
+  };
+
   const handleAdd = async () => {
-    if (!addForm.title.trim()) { setAddError("Title is required."); return; }
+    if (!addForm.title.trim()) {
+      setAddError("Title is required.");
+      return;
+    }
+
     setIsSubmitting(true);
     setAddError(null);
+
+
     try {
       const res = await fetch(`/api/admin/courses/${courseId}/lessons`, {
         method: "POST",
@@ -58,12 +96,18 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
           title: addForm.title.trim(),
           description: addForm.description?.trim() || null,
           content_url: addForm.content_url?.trim() || null,
+          pre_lesson_tasks: addForm.pre_lesson_tasks ?? [],
+          post_lesson_tasks: addForm.post_lesson_tasks ?? [],
         }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create lesson");
+
       setLessons((prev) => [...prev, data]);
       setAddForm({ ...EMPTY_FORM });
+      setNewPreTask("");
+      setNewPostTask("");
       setIsAdding(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "Error");
@@ -78,14 +122,26 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
       title: lesson.title,
       description: lesson.description ?? "",
       content_url: lesson.content_url ?? "",
+      pre_lesson_tasks: lesson.pre_lesson_tasks ?? [],
+      post_lesson_tasks: lesson.post_lesson_tasks ?? [],
     });
+    setEditNewPreTask("");
+    setEditNewPostTask("");
     setEditError(null);
   };
 
   const handleSave = async (lessonId: string) => {
-    if (!editForm.title.trim()) { setEditError("Title is required."); return; }
+    console.log("Inside handle save");
+    if (!editForm.title.trim()) {
+      setEditError("Title is required.");
+      return;
+    }
+
     setIsSaving(true);
     setEditError(null);
+
+    console.log("Pre lesson task before: " + editForm.pre_lesson_tasks)
+    console.log("Post lesson task before: " + editForm.post_lesson_tasks)
     try {
       const res = await fetch(
         `/api/admin/courses/${courseId}/lessons/${lessonId}`,
@@ -96,11 +152,15 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
             title: editForm.title.trim(),
             description: editForm.description?.trim() || null,
             content_url: editForm.content_url?.trim() || null,
+            pre_lesson_tasks: editForm.pre_lesson_tasks ?? [],
+            post_lesson_tasks: editForm.post_lesson_tasks ?? [],
           }),
         }
       );
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to update lesson");
+
       setLessons((prev) => prev.map((l) => (l.id === lessonId ? data : l)));
       setEditingId(null);
     } catch (err) {
@@ -112,16 +172,19 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
 
   const handleDelete = async (lessonId: string, title: string) => {
     if (!confirm(`Delete lesson "${title}"? This cannot be undone.`)) return;
+
     setDeletingId(lessonId);
     try {
       const res = await fetch(
         `/api/admin/courses/${courseId}/lessons/${lessonId}`,
         { method: "DELETE" }
       );
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error ?? "Failed to delete lesson");
       }
+
       setLessons((prev) => prev.filter((l) => l.id !== lessonId));
       if (editingId === lessonId) setEditingId(null);
     } catch (err) {
@@ -137,7 +200,13 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
         <h3 className="text-sm font-semibold text-gray-700">Lessons</h3>
         {!isAdding && (
           <button
-            onClick={() => { setIsAdding(true); setAddError(null); setAddForm({ ...EMPTY_FORM }); }}
+            onClick={() => {
+              setIsAdding(true);
+              setAddError(null);
+              setAddForm({ ...EMPTY_FORM });
+              setNewPreTask("");
+              setNewPostTask("");
+            }}
             className="px-2 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
           >
             + Add Lesson
@@ -145,13 +214,14 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
         )}
       </div>
 
-      {/* Add lesson form */}
       {isAdding && (
         <div className="mb-3 border border-blue-200 rounded-lg p-3 bg-blue-50 space-y-2">
           <p className="text-xs font-medium text-blue-800">New Lesson</p>
+
           {addError && (
             <p className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">{addError}</p>
           )}
+
           <div>
             <label className="block text-xs text-gray-600 mb-0.5">
               Title <span className="text-red-500">*</span>
@@ -164,6 +234,7 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
             />
           </div>
+
           <div>
             <label className="block text-xs text-gray-600 mb-0.5">Description</label>
             <textarea
@@ -174,6 +245,7 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
             />
           </div>
+
           <div>
             <label className="block text-xs text-gray-600 mb-0.5">Content URL</label>
             <input
@@ -184,6 +256,91 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
             />
           </div>
+
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Pre-lesson tasks</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPreTask}
+                onChange={(e) => setNewPreTask(e.target.value)}
+                placeholder="Add a pre-lesson task"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  addTaskToForm("pre_lesson_tasks", newPreTask, setNewPreTask, setAddForm)
+                }
+                className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+              >
+                Add
+              </button>
+            </div>
+
+            {(addForm.pre_lesson_tasks ?? []).length > 0 && (
+              <div className="mt-2 space-y-1">
+                {addForm.pre_lesson_tasks.map((task, idx) => (
+                  <div
+                    key={`${task}-${idx}`}
+                    className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
+                  >
+                    <span className="text-xs text-gray-800">{task}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeTaskFromForm("pre_lesson_tasks", idx, setAddForm)}
+                      className="text-[11px] text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Post-lesson tasks</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPostTask}
+                onChange={(e) => setNewPostTask(e.target.value)}
+                placeholder="Add a post-lesson task"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  addTaskToForm("post_lesson_tasks", newPostTask, setNewPostTask, setAddForm)
+                }
+                className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+              >
+                Add
+              </button>
+            </div>
+
+            {(addForm.post_lesson_tasks ?? []).length > 0 && (
+              <div className="mt-2 space-y-1">
+                {addForm.post_lesson_tasks.map((task, idx) => (
+                  <div
+                    key={`${task}-${idx}`}
+                    className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
+                  >
+                    <span className="text-xs text-gray-800">{task}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeTaskFromForm("post_lesson_tasks", idx, setAddForm)}
+                      className="text-[11px] text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleAdd}
@@ -193,7 +350,10 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
               {isSubmitting ? "Adding..." : "Add"}
             </button>
             <button
-              onClick={() => { setIsAdding(false); setAddError(null); }}
+              onClick={() => {
+                setIsAdding(false);
+                setAddError(null);
+              }}
               className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
             >
               Cancel
@@ -202,7 +362,6 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
         </div>
       )}
 
-      {/* Lesson list */}
       {loading ? (
         <p className="text-xs text-gray-500 py-2">Loading lessons…</p>
       ) : error ? (
@@ -221,6 +380,7 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                   {editError && (
                     <p className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">{editError}</p>
                   )}
+
                   <div>
                     <label className="block text-xs text-gray-600 mb-0.5">
                       Title <span className="text-red-500">*</span>
@@ -232,6 +392,7 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs text-gray-600 mb-0.5">Description</label>
                     <textarea
@@ -241,6 +402,7 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs text-gray-600 mb-0.5">Content URL</label>
                     <input
@@ -251,6 +413,105 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Pre-lesson tasks</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editNewPreTask}
+                        onChange={(e) => setEditNewPreTask(e.target.value)}
+                        placeholder="Add a pre-lesson task"
+                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addTaskToForm(
+                            "pre_lesson_tasks",
+                            editNewPreTask,
+                            setEditNewPreTask,
+                            setEditForm
+                          )
+                        }
+                        className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {(editForm.pre_lesson_tasks ?? []).length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {editForm.pre_lesson_tasks.map((task, idx) => (
+                          <div
+                            key={`${task}-${idx}`}
+                            className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
+                          >
+                            <span className="text-xs text-gray-800">{task}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeTaskFromForm("pre_lesson_tasks", idx, setEditForm)
+                              }
+                              className="text-[11px] text-red-500 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Post-lesson tasks</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editNewPostTask}
+                        onChange={(e) => setEditNewPostTask(e.target.value)}
+                        placeholder="Add a post-lesson task"
+                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addTaskToForm(
+                            "post_lesson_tasks",
+                            editNewPostTask,
+                            setEditNewPostTask,
+                            setEditForm
+                          )
+                        }
+                        className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {(editForm.post_lesson_tasks ?? []).length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {editForm.post_lesson_tasks.map((task, idx) => (
+                          <div
+                            key={`${task}-${idx}`}
+                            className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
+                          >
+                            <span className="text-xs text-gray-800">{task}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeTaskFromForm("post_lesson_tasks", idx, setEditForm)
+                              }
+                              className="text-[11px] text-red-500 hover:text-red-700"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleSave(lesson.id)}
@@ -260,7 +521,10 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       {isSaving ? "Saving…" : "Save"}
                     </button>
                     <button
-                      onClick={() => { setEditingId(null); setEditError(null); }}
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditError(null);
+                      }}
                       className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                     >
                       Cancel
@@ -269,15 +533,19 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                 </div>
               ) : (
                 <div className="flex items-start gap-3 px-3 py-2.5">
-                  {/* Order badge */}
                   <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold flex items-center justify-center">
                     {idx + 1}
                   </span>
+
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-900 truncate">{lesson.title}</p>
+
                     {lesson.description && (
-                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{lesson.description}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
+                        {lesson.description}
+                      </p>
                     )}
+
                     {lesson.content_url && (
                       <a
                         href={lesson.content_url}
@@ -289,7 +557,34 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                         {lesson.content_url}
                       </a>
                     )}
+
+                    {(lesson.pre_lesson_tasks?.length ?? 0) > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] font-medium text-gray-700">Pre-lesson tasks</p>
+                        <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
+                          {lesson.pre_lesson_tasks.map((task, i) => (
+                            <li key={i} className="text-[11px] text-gray-500">
+                              {task}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(lesson.post_lesson_tasks?.length ?? 0) > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] font-medium text-gray-700">Post-lesson tasks</p>
+                        <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
+                          {lesson.post_lesson_tasks.map((task, i) => (
+                            <li key={i} className="text-[11px] text-gray-500">
+                              {task}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
+
                   <div className="flex-shrink-0 flex items-center gap-1">
                     <button
                       onClick={() => startEdit(lesson)}

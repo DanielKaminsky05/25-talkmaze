@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id, lessonId } = await params;
     const body = await req.json();
-    const { title, description, content_url } = body;
+    const { title, description, content_url,pre_lesson_tasks,post_lesson_tasks} = body;
 
     if (title !== undefined && !title?.trim()) {
       return NextResponse.json(
@@ -23,7 +23,12 @@ export async function PUT(
     if (title !== undefined)       payload.title       = title.trim();
     if (description !== undefined) payload.description = description?.trim() || null;
     if (content_url !== undefined) payload.content_url = content_url?.trim() || null;
-
+    if(pre_lesson_tasks !== undefined) payload.pre_lesson_task = pre_lesson_tasks
+    if(post_lesson_tasks !== undefined) payload.post_lesson_task = post_lesson_tasks
+    
+    console.log("")
+    console.log("Post lesson task: " + post_lesson_tasks);
+    console.log("Pre lesson task: " + pre_lesson_tasks);
     if (Object.keys(payload).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
@@ -35,6 +40,8 @@ export async function PUT(
       .eq("course_id", id)
       .select()
       .single();
+
+      console.log("Put data: " + JSON.stringify(data));
 
     if (error) throw new Error(error.message);
     if (!data) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });

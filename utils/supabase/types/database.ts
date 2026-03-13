@@ -20,6 +20,7 @@ export type Database = {
           email: string
           id: string
           role: number
+          stripe_customer_id: string | null
           tw_customer_id: string | null
           updated_at: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           email: string
           id?: string
           role: number
+          stripe_customer_id?: string | null
           tw_customer_id?: string | null
           updated_at?: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           email?: string
           id?: string
           role?: number
+          stripe_customer_id?: string | null
           tw_customer_id?: string | null
           updated_at?: string
         }
@@ -73,6 +76,39 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      coach_students: {
+        Row: {
+          coach_id: string
+          created_at: string
+          student_id: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          student_id: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_students_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coaches: {
         Row: {
@@ -176,9 +212,9 @@ export type Database = {
         Row: {
           coach_notes: string | null
           completed_at: string | null
+          course_id: string
           created_at: string | null
           id: string
-          lesson_id: string
           status: number
           student_id: string
           updated_at: string | null
@@ -186,9 +222,9 @@ export type Database = {
         Insert: {
           coach_notes?: string | null
           completed_at?: string | null
+          course_id: string
           created_at?: string | null
           id?: string
-          lesson_id: string
           status?: number
           student_id: string
           updated_at?: string | null
@@ -196,19 +232,19 @@ export type Database = {
         Update: {
           coach_notes?: string | null
           completed_at?: string | null
+          course_id?: string
           created_at?: string | null
           id?: string
-          lesson_id?: string
           status?: number
           student_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "lesson_progress_lesson_id_fkey"
-            columns: ["lesson_id"]
+            foreignKeyName: "lesson_progress_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "lessons"
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
           {
@@ -308,11 +344,7 @@ export type Database = {
           id: string
           name: string
           phone_number: string | null
-<<<<<<< HEAD
-          profile_access_pin: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
-          stripe_customer_id: string | null
+          profile_access_pin: string | null
           tw_id: string | null
           updated_at: string
         }
@@ -323,11 +355,7 @@ export type Database = {
           id?: string
           name: string
           phone_number?: string | null
-<<<<<<< HEAD
-          profile_access_pin?: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
-          stripe_customer_id?: string | null
+          profile_access_pin?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -338,11 +366,7 @@ export type Database = {
           id?: string
           name?: string
           phone_number?: string | null
-<<<<<<< HEAD
-          profile_access_pin?: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
-          stripe_customer_id?: string | null
+          profile_access_pin?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -433,49 +457,42 @@ export type Database = {
       }
       student_subscriptions: {
         Row: {
+          account_id: string
           cancelled_at: string | null
           classes_left: number | null
           created_at: string
           current_period_end: string
           current_period_start: string
           id: string
-          payer_parent_id: string
           plan_id: string
           status: string
           student_id: string
         }
         Insert: {
+          account_id?: string
           cancelled_at?: string | null
           classes_left?: number | null
           created_at?: string
           current_period_end: string
           current_period_start: string
           id?: string
-          payer_parent_id?: string
           plan_id?: string
           status: string
           student_id?: string
         }
         Update: {
+          account_id?: string
           cancelled_at?: string | null
           classes_left?: number | null
           created_at?: string
           current_period_end?: string
           current_period_start?: string
           id?: string
-          payer_parent_id?: string
           plan_id?: string
           status?: string
           student_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "student_plans_payer_parent_id_fkey"
-            columns: ["payer_parent_id"]
-            isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "student_plans_plan_id_fkey"
             columns: ["plan_id"]
@@ -490,62 +507,11 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      student_subscriptions: {
-        Row: {
-          cancelled_at: string | null
-          created_at: string
-          current_period_end: string
-          current_period_start: string
-          id: string
-          payer_parent_id: string
-          plan_id: string
-          status: string
-          student_id: string
-        }
-        Insert: {
-          cancelled_at?: string | null
-          created_at?: string
-          current_period_end: string
-          current_period_start: string
-          id?: string
-          payer_parent_id?: string
-          plan_id?: string
-          status: string
-          student_id?: string
-        }
-        Update: {
-          cancelled_at?: string | null
-          created_at?: string
-          current_period_end?: string
-          current_period_start?: string
-          id?: string
-          payer_parent_id?: string
-          plan_id?: string
-          status?: string
-          student_id?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "student_plans_payer_parent_id_fkey"
-            columns: ["payer_parent_id"]
+            foreignKeyName: "student_subscriptions_account_id_fkey"
+            columns: ["account_id"]
             isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_plans_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_plans_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
+            referencedRelation: "account"
             referencedColumns: ["id"]
           },
         ]
@@ -557,10 +523,7 @@ export type Database = {
           id: string
           lesson_space_id: string | null
           name: string | null
-<<<<<<< HEAD
-          profile_access_pin: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
+          profile_access_pin: string | null
           tw_id: string | null
           updated_at: string
         }
@@ -570,10 +533,7 @@ export type Database = {
           id?: string
           lesson_space_id?: string | null
           name?: string | null
-<<<<<<< HEAD
-          profile_access_pin?: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
+          profile_access_pin?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -583,10 +543,7 @@ export type Database = {
           id?: string
           lesson_space_id?: string | null
           name?: string | null
-<<<<<<< HEAD
-          profile_access_pin?: number | null
-=======
->>>>>>> origin/stripe-webhook-integration
+          profile_access_pin?: string | null
           tw_id?: string | null
           updated_at?: string
         }
