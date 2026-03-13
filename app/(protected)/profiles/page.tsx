@@ -130,7 +130,7 @@ export default async function ProfilesPage({
             </form>
           ))}
 
-          {/* Add Profile
+          
           <div className="flex flex-col items-center">
             <a
               href="/onboarding"
@@ -151,11 +151,11 @@ export default async function ProfilesPage({
               </span>
             </a>
             <div className="h-[clamp(40px,4vw,60px)]" />
-          </div> */}
+          </div> 
         </div>
 
         {/* Manage Profiles Button */}
-        <ManageProfilesButton />
+        {/*<ManageProfilesButton />*/}
       </main>
     </div>
   );

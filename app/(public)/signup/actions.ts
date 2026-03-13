@@ -37,11 +37,7 @@ export const signUpNewUser = async (email: string, password: string) => {
             id: data.user?.id,
             email: email,
             tw_customer_id: response.id.toString(),
-<<<<<<< HEAD
             role: 3
-=======
-            role: 1
->>>>>>> upstream/dev
         }
     )
     

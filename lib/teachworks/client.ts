@@ -62,8 +62,7 @@ export class TeachworksClient {
 
   private async postRequest<T>(endpoint: string, body: object){
        const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
-       console.log("URL: " + url);
-        console.log("Inside post: " + JSON.stringify(body));
+       
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -78,14 +77,14 @@ export class TeachworksClient {
         console.log("Response: " + JSON.stringify(response));
         const data = await response.json() as T;
 
-        console.log("Data: " + data);
+        
         return data;
 
         
     
   }
 
-  private async putRequest(endpoint: string, body: object){
+  private async putRequest<T>(endpoint: string, body: object){
     const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
     const response = await fetch(url, {

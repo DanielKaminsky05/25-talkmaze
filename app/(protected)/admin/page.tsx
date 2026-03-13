@@ -17,7 +17,7 @@ import CoachAssignmentCard from "./components/CoachAssignmentCard";
 
 const ITEMS_PER_PAGE = 5;
 
-type TabType = "students" | "coaches" | "courses" | "assignments";
+type TabType = "students" | "coaches" | "courses" | "assignments" | "learning_space";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -282,6 +282,7 @@ export default function AdminPage() {
     fetchEmployees();
   }, []);
 
+
   // Filter students based on search query
   const filteredStudents = useMemo(() => {
     if (!studentSearchQuery.trim()) return students;
@@ -487,6 +488,15 @@ export default function AdminPage() {
     );
   }
 
+  const handleGetLessonSpaces = async() => {
+    try{
+      console.log("Inside handleGetLessonSpaces")
+      const response = await fetch('/api/learningSpace')
+    }catch(err){
+      console.log("Error fetching lesson spaces");
+    }
+  }
+
   return (
     <div className="p-4 max-w-md">
       <div className="flex justify-between items-center mb-3">
@@ -540,6 +550,17 @@ export default function AdminPage() {
           }`}
         >
           Assignments
+        </button>
+
+        <button
+          onClick={() => setActiveTab("learning_space")}
+           className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "learning_space"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Learning Spaces
         </button>
       </div>
 
@@ -1325,6 +1346,13 @@ export default function AdminPage() {
         </div>
       )}
 
+      {activeTab == 'learning_space' && (
+        <div>
+          <button onClick = {handleGetLessonSpaces}>
+            Get Learning Spaces
+          </button>
+        </div>
+      )}
       {/* Course Detail Modal */}
       {selectedCourse && (
         <div
