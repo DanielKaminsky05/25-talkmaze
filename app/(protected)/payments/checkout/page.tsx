@@ -1,79 +1,194 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-// Note: We use ../../ to go up two levels to find the css file
-import styles from '../payments.module.css';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import styles from './checkout.module.css';
 
-function CheckoutContent() {
-  const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(false);
+// 1. Initialize Stripe
+// Make sure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is in your .env.local file
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-  // Get data from URL
-  const planName = searchParams.get('name');
-  const priceId = searchParams.get('price_id');
-  const amountCents = searchParams.get('amount');
+// --- THE FORM COMPONENT (Handles the actual inputs) ---
+function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, planName: string }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const router = useRouter();
   
-  const amountDisplay = amountCents 
-    ? `$${(parseInt(amountCents) / 100).toFixed(2)}` 
-    : '$0.00';
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleProceedToPayment = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) return;
+
     setLoading(true);
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
-      });
 
-      const data = await response.json();
-      
-      if (data.url) {
-        window.location.assign(data.url);
-      } else {
-        alert('Something went wrong. Please try again.');
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert('Failed to connect to payment server.');
-    } finally {
+    // This triggers the payment with Stripe
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // CHANGE THIS URL to where you want them to go after success
+        return_url: `${window.location.origin}/payment_info/payments/success`,
+        receipt_email: email,
+        payment_method_data: {
+            billing_details: {
+                name: `${firstName} ${lastName}`,
+                email: email
+            }
+        }
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message || "An unexpected error occurred.");
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.paymentPageContainer}>
-       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto mt-10 text-black">
-         <h1 className="text-2xl font-bold mb-6">Checkout Summary</h1>
-         
-         <div className="border-b pb-4 mb-4">
-           <p className="text-gray-600">Selected Plan</p>
-           <p className="text-xl font-bold">{planName}</p>
-         </div>
+    <div className={styles.wrapper}>
+        {/* LEFT COLUMN (Read Only Summary) */}
+        <div className={styles.leftColumn}>
+            <button onClick={() => router.back()} className={styles.backButton}>
+                <span style={{ marginRight: '8px', fontSize: '18px' }}>‹</span> Return to package options
+            </button>
 
-         <div className="flex justify-between items-center text-xl font-bold mb-8">
-           <span>Total Due:</span>
-           <span>{amountDisplay}</span>
-         </div>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Overview</h1>
 
-         <button 
-           onClick={handleProceedToPayment}
-           disabled={loading}
-           className={styles.continuePaymentButton}
-           style={{ width: '100%', opacity: loading ? 0.7 : 1 }}
-         >
-           {loading ? 'Processing...' : 'Pay Now with Stripe'}
-         </button>
-       </div>
+            <div className={styles.overviewCard}>
+                <h2 className={styles.overviewTitle}>TalkMaze Package Renewal:</h2>
+                <div className={styles.innerWhiteCard}>
+                    <div className={styles.planText}>{planName} | {amountDisplay} (CA)</div>
+                    <span style={{ cursor: 'pointer', fontSize: '18px' }}>🗑️</span>
+                </div>
+                <div className={styles.detailsLink}>See more details</div>
+            </div>
+
+            <div className={styles.billingHistory}>
+                <span>Billing History <span style={{ fontWeight: 'normal', color: '#666', fontSize: '12px' }}>expand</span></span>
+            </div>
+        </div>
+
+        {/* RIGHT COLUMN (The Payment Form) */}
+        <div className={styles.rightColumn}>
+            <h3 className={styles.sectionTitle}>Contact Information</h3>
+            
+            <div className={styles.inputRow}>
+                <select className={styles.inputField} style={{ width: '40%' }}>
+                    <option>1+ United States</option>
+                    <option>1+ Canada</option>
+                </select>
+                <input type="text" placeholder="Phone Number *" className={styles.inputField} />
+            </div>
+
+            <div className={styles.inputGroup}>
+                <input 
+                  type="email" 
+                  placeholder="Email Address *" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
+                />
+            </div>
+
+            <div className={styles.inputRow}>
+                <input 
+                  type="text" 
+                  placeholder="First Name *" 
+                  value={firstName} 
+                  onChange={(e) => setFirstName(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Last Name *" 
+                  value={lastName} 
+                  onChange={(e) => setLastName(e.target.value)} 
+                  className={styles.inputField} 
+                  required 
+                />
+            </div>
+
+            <hr className={styles.divider} />
+
+            <h3 className={styles.sectionTitle}>Payment</h3>
+
+            {/* --- THIS IS THE NEW STRIPE COMPONENT --- */}
+            {/* It replaces the manual Card Number, Expiry, CVC inputs */}
+            <div className={styles.inputGroup} style={{marginBottom: '20px'}}>
+                <PaymentElement />
+            </div>
+
+            {/* Error Message Display */}
+            {errorMessage && <div style={{color: '#ff6b6b', marginBottom: '15px', fontWeight: 'bold'}}>{errorMessage}</div>}
+
+            <button onClick={handleSubmit} disabled={!stripe || loading} className={styles.purchaseButton}>
+                {loading ? 'Processing...' : `Purchase (${amountDisplay})`}
+            </button>
+        </div>
+    </div>
+  );
+}
+
+// --- THE WRAPPER (Sets up the security connection) ---
+function CheckoutPageContent() {
+  const searchParams = useSearchParams();
+  const [clientSecret, setClientSecret] = useState('');
+
+  const planName = searchParams.get('name') || 'Unknown Plan';
+  const amountCents = searchParams.get('amount');
+  const amountDisplay = amountCents ? `$${(parseInt(amountCents) / 100).toFixed(0)}` : '0';
+
+  useEffect(() => {
+    if (amountCents) {
+      // Talk to your new API to get the "Secret Key" for this specific transaction
+      fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amountCents }),
+      })
+        .then((res) => res.json())
+        .then((data) => setClientSecret(data.clientSecret));
+    }
+  }, [amountCents]);
+
+  // While waiting for the API, show a loading state
+  if (!clientSecret || !amountCents) {
+    return (
+        <div className={styles.container}>
+            <div style={{color:'white', fontSize: '20px'}}>Loading secure payment...</div>
+        </div>
+    );
+  }
+
+  // Once we have the secret, load the form inside Stripe's "Elements" provider
+  return (
+    <div className={styles.container}>
+      <Elements 
+        stripe={stripePromise} 
+        options={{ 
+            clientSecret, 
+            appearance: { theme: 'stripe', labels: 'floating' } 
+        }}
+      >
+        <CheckoutForm amountDisplay={amountDisplay} planName={planName} />
+      </Elements>
     </div>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div>Loading checkout...</div>}>
-      <CheckoutContent />
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutPageContent />
     </Suspense>
   );
 }

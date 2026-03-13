@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { createClient } from '@/utils/supabase/server';
+=======
+import { supabase } from '../../../lib/supabaseClient'; // Ensure this path matches where you put the client
+>>>>>>> origin/PaymentPage
 
 export async function GET(request: Request) {
   try {
