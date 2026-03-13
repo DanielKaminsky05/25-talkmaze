@@ -70,16 +70,16 @@ export async function POST(req: NextRequest) {
     console.error("POST Assignment Select Error:", allAssignmentsError);
   }
 
-  // 3. Sync to Teachworks — build default_teachers array
+  // 3. Sync to Teachworks — build default_teacher_ids array
   const twTeacherIds = allAssignments 
-    ? allAssignments.filter((a: any) => a.coaches?.tw_id).map((a: any) => ({ id: Number(a.coaches.tw_id) }))
-    : [{ id: Number(tw_coach_id) }];
+    ? allAssignments.filter((a: any) => a.coaches?.tw_id).map((a: any) => Number(a.coaches.tw_id))
+    : [Number(tw_coach_id)];
 
   const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
   
   try {
     await twClient.updateStudent(tw_student_id, {
-      default_teachers: twTeacherIds
+      default_teacher_ids: twTeacherIds
     });
   } catch (e) {
     console.error("Teachworks sync failed: ", e);

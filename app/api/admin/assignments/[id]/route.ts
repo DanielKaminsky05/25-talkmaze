@@ -39,14 +39,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       .in("id", remainingCoachIds)
       .not("tw_id", "is", null);
 
-    const twTeacherIds = (twCoaches ?? []).map((c) => ({ id: Number(c.tw_id) }));
+    const twTeacherIds = (twCoaches ?? []).map((c) => Number(c.tw_id));
     
     try {
       const { data: studentData } = await supabase.from('students').select('tw_id').eq('id', student_id).single();
       const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
       if (studentData && studentData.tw_id) {
         await twClient.updateStudent(studentData.tw_id, {
-          default_teachers: twTeacherIds
+          default_teacher_ids: twTeacherIds
         });
       }
     } catch (e) {
@@ -59,7 +59,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
       if (studentData && studentData.tw_id) {
         await twClient.updateStudent(studentData.tw_id, {
-          default_teachers: []
+          default_teacher_ids: []
         });
       }
     } catch (e) {
