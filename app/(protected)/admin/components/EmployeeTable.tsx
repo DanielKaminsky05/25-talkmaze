@@ -28,7 +28,7 @@ export default function EmployeeTable({ employees, onEmployeeClick }: EmployeeTa
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.first_name}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.last_name}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.id}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.position}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.position || employee.employee_type}</td>
               </tr>
             ))
           ) : (
