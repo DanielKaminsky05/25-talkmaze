@@ -12,6 +12,7 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -29,9 +30,10 @@ export default function LoginPage() {
       const result = await logInUser(email, password);
       //Redirects the user to the home page if successful:
       if(result?.success){
+        
           router.push('/profiles')
       }else{
-        console.log("Error: login failed", result?.error)
+        console.log("Error: login failed", result);
       }
       
     }

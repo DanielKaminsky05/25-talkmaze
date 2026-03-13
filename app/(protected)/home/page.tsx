@@ -21,23 +21,6 @@ interface Appointment {
     description?: string;
 }
 
-//import {signOut} from "@/public/login/actions";
-
-
-
-// async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-//     const router = useRouter();
-//       e.preventDefault();
-//       const result = await signOut();
-//       //Redirects the user to the sign in page if successful:
-//       if(result.success){
-//           router.push('app/protected/home')
-//       }else{
-//         console.log("Error: login failed", result.error)
-//       }
-      
-//     }
-
 
 
 export default function Home() {
@@ -62,6 +45,7 @@ export default function Home() {
         }
 
         // Fetch Schedule (Lessons)
+        /*
         const lessonsRes = await fetch("/api/teachworks/lessons");
         if (lessonsRes.ok) {
             const lessonsData = await lessonsRes.json();
@@ -75,6 +59,7 @@ export default function Home() {
                 setSchedule(mapped);
             }
         }
+            */
 
       } catch (e) {
         console.error("Failed to fetch data", e);

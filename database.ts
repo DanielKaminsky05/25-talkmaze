@@ -41,6 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      admin: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           awarding_rule: Json
@@ -307,9 +339,8 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          password: number | null
           phone_number: string | null
-          profile_access_pin: number | null
-          stripe_customer_id: string | null
           tw_id: string | null
           updated_at: string
         }
@@ -317,11 +348,10 @@ export type Database = {
           account_id: string
           billing_email?: string | null
           created_at?: string
-          id?: string
+          id: string
           name: string
+          password?: number | null
           phone_number?: string | null
-          profile_access_pin?: number | null
-          stripe_customer_id?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -331,9 +361,8 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          password?: number | null
           phone_number?: string | null
-          profile_access_pin?: number | null
-          stripe_customer_id?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -393,16 +422,19 @@ export type Database = {
         Row: {
           awarded_at: string
           badge_id: string
+          lesson_id: string | null
           student_id: string
         }
         Insert: {
           awarded_at?: string
           badge_id: string
+          lesson_id?: string | null
           student_id: string
         }
         Update: {
           awarded_at?: string
           badge_id?: string
+          lesson_id?: string | null
           student_id?: string
         }
         Relationships: [
@@ -414,68 +446,14 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "student_badges_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "student_badges_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_subscriptions: {
-        Row: {
-          cancelled_at: string | null
-          classes_left: number | null
-          created_at: string
-          current_period_end: string
-          current_period_start: string
-          id: string
-          payer_parent_id: string
-          plan_id: string
-          status: string
-          student_id: string
-        }
-        Insert: {
-          cancelled_at?: string | null
-          classes_left?: number | null
-          created_at?: string
-          current_period_end: string
-          current_period_start: string
-          id?: string
-          payer_parent_id?: string
-          plan_id?: string
-          status: string
-          student_id?: string
-        }
-        Update: {
-          cancelled_at?: string | null
-          classes_left?: number | null
-          created_at?: string
-          current_period_end?: string
-          current_period_start?: string
-          id?: string
-          payer_parent_id?: string
-          plan_id?: string
-          status?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_plans_payer_parent_id_fkey"
-            columns: ["payer_parent_id"]
-            isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_plans_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_plans_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -488,9 +466,8 @@ export type Database = {
           account_id: string
           created_at: string
           id: string
-          lesson_space_id: string | null
           name: string | null
-          profile_access_pin: number | null
+          Student_Plan: string | null
           tw_id: string | null
           updated_at: string
         }
@@ -498,9 +475,8 @@ export type Database = {
           account_id: string
           created_at?: string
           id?: string
-          lesson_space_id?: string | null
           name?: string | null
-          profile_access_pin?: number | null
+          Student_Plan?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -508,9 +484,8 @@ export type Database = {
           account_id?: string
           created_at?: string
           id?: string
-          lesson_space_id?: string | null
           name?: string | null
-          profile_access_pin?: number | null
+          Student_Plan?: string | null
           tw_id?: string | null
           updated_at?: string
         }
