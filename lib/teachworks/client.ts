@@ -60,6 +60,7 @@ export class TeachworksClient {
     return response.json();
   }
 
+<<<<<<< HEAD
   private async postRequest<T>(endpoint: string, body: object){
        const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
        
@@ -87,6 +88,12 @@ export class TeachworksClient {
   private async putRequest<T>(endpoint: string, body: object){
     const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
+=======
+  private async postRequest<T>(endpoint: string, body: object) {
+    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+    console.log("URL: " + url);
+    console.log("Inside post: " + JSON.stringify(body));
+>>>>>>> origin/stripe-webhook-integration
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -96,12 +103,12 @@ export class TeachworksClient {
       body: JSON.stringify(body),
     });
 
+    console.log("Response: " + JSON.stringify(response));
     const data = (await response.json()) as T;
 
+    console.log("Data: " + data);
     return data;
   }
-
- 
 
   /**
    * Fetch lessons based on filters
@@ -175,5 +182,28 @@ export class TeachworksClient {
 
   async deleteCourse(id: string | number): Promise<void> {
     return this.request<void>(`/subjects/${id}`, "DELETE");
+  }
+
+  /**
+   * Create a payment record for a customer
+   */
+  async createPayment(data: {
+    customer_id: string | number;
+    date: string;
+    amount: string | number;
+    description?: string;
+    payment_method:
+      | "Cash"
+      | "Check"
+      | "Credit Card"
+      | "Debit Card"
+      | "Bank Transfer"
+      | "PayPal"
+      | "Other";
+    stripe_transaction_id?: string;
+  }): Promise<unknown> {
+    return this.postRequest("/payments", {
+      payment: data,
+    });
   }
 }

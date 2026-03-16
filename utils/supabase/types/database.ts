@@ -184,6 +184,48 @@ export type Database = {
           },
         ]
       }
+      course_assignment: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          id: string
+          isActive: boolean | null
+          progress: number | null
+          student_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          isActive?: boolean | null
+          progress?: number | null
+          student_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          isActive?: boolean | null
+          progress?: number | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_assignment_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_assignment_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
@@ -263,6 +305,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          post_lesson_task: Json | null
+          pre_lesson_task: Json | null
           title: string
           updated_at: string
         }
@@ -272,6 +316,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          post_lesson_task?: Json | null
+          pre_lesson_task?: Json | null
           title: string
           updated_at?: string
         }
@@ -281,6 +327,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          post_lesson_task?: Json | null
+          pre_lesson_task?: Json | null
           title?: string
           updated_at?: string
         }

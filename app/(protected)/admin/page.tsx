@@ -456,6 +456,13 @@ export default function AdminPage() {
     try{
       console.log("Inside handleGetLessonSpaces")
       const response = await fetch('/api/learningSpace')
+
+      if(!response.ok){
+        console.log("Error with response")
+      }
+
+      await response.json();
+      console.log("Response: " + JSON.stringify(response))
     }catch(err){
       console.log("Error fetching lesson spaces");
     }

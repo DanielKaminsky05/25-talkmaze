@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/utils/supabase/server";
+import { TeachworksClient } from "@/lib/teachworks/client";
 
 export async function POST(request: Request) {
   try {
@@ -38,61 +39,49 @@ export async function POST(request: Request) {
     ) {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Get the customer ID and account ID from the session
       const customerId = session.customer as string;
       const accountId = session.metadata?.account_id;
+      const studentIdFromMetadata = session.metadata?.student_id;
 
       if (customerId && accountId) {
         const supabase = await createClient();
 
-        // Update the parent's stripe_customer_id in the database
-        const { error } = await supabase
-          .from("parents")
+        // Store Stripe customer id on account
+        const { error: accountUpdateError } = await supabase
+          .from("account")
           .update({ stripe_customer_id: customerId })
-          .eq("account_id", accountId);
+          .eq("id", accountId);
 
-        if (error) {
-          console.error("Error updating parent stripe_customer_id:", error);
-        } else {
-          console.log(`Updated stripe_customer_id for account ${accountId}`);
+        if (accountUpdateError) {
+          console.error(
+            "Error updating account stripe_customer_id:",
+            accountUpdateError,
+          );
         }
 
-        // Get the student associated with this parent account
-        const { data: parentData, error: parentError } = await supabase
-          .from("parents")
-          .select("id")
-          .eq("account_id", accountId)
-          .single();
-
-        if (parentError || !parentData) {
-          console.error("Error fetching parent:", parentError);
+        if (!studentIdFromMetadata) {
+          console.error("Error: student_id not found in session metadata");
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Get the student linked to this parent. For now i'm just getting the
-        // first student record linked to the parent.
-        // TODO: fetch the student that the parent is paying for in the checkout
         const { data: student, error: studentError } = await supabase
           .from("students")
           .select("id")
+          .eq("id", studentIdFromMetadata)
           .eq("account_id", accountId)
-          .limit(1)
-          .maybeSingle();
+          .single();
 
         if (studentError || !student) {
-          console.error("Error fetching student:", studentError);
+          console.error("Error fetching student from metadata:", studentError);
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Get the plan ID from the stripe price ID
         const priceId = session.metadata?.price_id;
-
         if (!priceId) {
           console.error("Error: price_id not found in session metadata");
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Fetch the plan including `classes` so we can set `classes_left`
         const { data: plan, error: planError } = await supabase
           .from("plans")
           .select("id, classes")
@@ -104,7 +93,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Retrieve the Stripe subscription to get the real current_period_end
         const stripeSubscriptionId = session.subscription as string;
         let currentPeriodStart: string;
         let currentPeriodEnd: string;
@@ -112,7 +100,7 @@ export async function POST(request: Request) {
         if (stripeSubscriptionId) {
           const stripeSubscription =
             await stripe.subscriptions.retrieve(stripeSubscriptionId);
-          // In Stripe SDK v20+, current_period fields live on the subscription item
+          // Subscription renewal date is stored in first element of items
           const subscriptionItem = stripeSubscription.items.data[0];
           currentPeriodStart = new Date(
             subscriptionItem.current_period_start * 1000,
@@ -121,10 +109,6 @@ export async function POST(request: Request) {
             subscriptionItem.current_period_end * 1000,
           ).toISOString();
         } else {
-          // Fallback if no subscription ID (e.g. one-time payment edge case)
-          console.warn(
-            "No subscription ID found on session, using fallback dates",
-          );
           currentPeriodStart = new Date().toISOString();
           const fallbackEnd = new Date();
           fallbackEnd.setMonth(fallbackEnd.getMonth() + 1);
@@ -134,9 +118,9 @@ export async function POST(request: Request) {
         const { error: subscriptionError } = await supabase
           .from("student_subscriptions")
           .insert({
+            account_id: accountId,
             student_id: student.id,
             plan_id: plan.id,
-            payer_parent_id: parentData.id,
             status: "active",
             current_period_start: currentPeriodStart,
             current_period_end: currentPeriodEnd,
@@ -148,14 +132,75 @@ export async function POST(request: Request) {
             "Error creating student_subscription:",
             subscriptionError,
           );
-        } else {
-          console.log(`Created student_subscription for student ${student.id}`);
         }
-      } else {
-        console.warn("Missing customer ID or account ID in webhook session");
+      }
+    }
+
+    /** Create Teachworks payment record whenever Stripe confirms invoice payment */
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice;
+
+      const stripeCustomerId =
+        typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (!stripeCustomerId) {
+        return NextResponse.json({ received: true }, { status: 200 });
       }
 
-      console.log("Payment successful:", event);
+      const supabase = await createClient();
+
+      const { data: account, error: accountError } = await supabase
+        .from("account")
+        .select("id")
+        .eq("stripe_customer_id", stripeCustomerId)
+        .single();
+
+      if (accountError || !account) {
+        console.error(
+          "Error fetching account from stripe customer_id:",
+          accountError,
+        );
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const { data: parent, error: parentError } = await supabase
+        .from("parents")
+        .select("tw_id")
+        .eq("account_id", account.id)
+        .single();
+
+      if (parentError || !parent?.tw_id) {
+        console.error("Error fetching parent tw_id:", parentError);
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      if (!process.env.TEACHWORKS_API_KEY) {
+        console.error("TEACHWORKS_API_KEY is not defined");
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const teachworksClient = new TeachworksClient(
+        process.env.TEACHWORKS_API_KEY,
+      );
+
+      const paidAt = invoice.status_transitions?.paid_at;
+      const paymentDate = paidAt
+        ? new Date(paidAt * 1000).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+      try {
+        await teachworksClient.createPayment({
+          customer_id: parent.tw_id,
+          date: paymentDate,
+          amount: (invoice.amount_paid / 100).toFixed(2),
+          description: "",
+          payment_method: "Credit Card",
+        });
+      } catch (teachworksError) {
+        console.error("Error creating Teachworks payment:", teachworksError);
+      }
     }
 
     return NextResponse.json({ received: true }, { status: 200 });
