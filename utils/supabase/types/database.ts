@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_students: {
+        Row: {
+          coach_id: string
+          created_at: string
+          student_id: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          student_id: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_students_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaches: {
         Row: {
           account_id: string

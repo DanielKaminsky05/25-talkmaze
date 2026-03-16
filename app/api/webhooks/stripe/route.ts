@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/utils/supabase/server";
+import { TeachworksClient } from "@/lib/teachworks/client";
 
 export async function POST(request: Request) {
   try {
@@ -132,6 +133,73 @@ export async function POST(request: Request) {
             subscriptionError,
           );
         }
+      }
+    }
+
+    /** Create Teachworks payment record whenever Stripe confirms invoice payment */
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice;
+
+      const stripeCustomerId =
+        typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (!stripeCustomerId) {
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const supabase = await createClient();
+
+      const { data: account, error: accountError } = await supabase
+        .from("account")
+        .select("id")
+        .eq("stripe_customer_id", stripeCustomerId)
+        .single();
+
+      if (accountError || !account) {
+        console.error(
+          "Error fetching account from stripe customer_id:",
+          accountError,
+        );
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const { data: parent, error: parentError } = await supabase
+        .from("parents")
+        .select("tw_id")
+        .eq("account_id", account.id)
+        .single();
+
+      if (parentError || !parent?.tw_id) {
+        console.error("Error fetching parent tw_id:", parentError);
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      if (!process.env.TEACHWORKS_API_KEY) {
+        console.error("TEACHWORKS_API_KEY is not defined");
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const teachworksClient = new TeachworksClient(
+        process.env.TEACHWORKS_API_KEY,
+      );
+
+      const paidAt = invoice.status_transitions?.paid_at;
+      const paymentDate = paidAt
+        ? new Date(paidAt * 1000).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+      try {
+        await teachworksClient.createPayment({
+          customer_id: parent.tw_id,
+          date: paymentDate,
+          amount: (invoice.amount_paid / 100).toFixed(2),
+          description: "",
+          payment_method: "Credit Card",
+        });
+      } catch (teachworksError) {
+        console.error("Error creating Teachworks payment:", teachworksError);
       }
     }
 
