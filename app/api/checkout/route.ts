@@ -1,27 +1,29 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// Initialize Stripe with your Secret Key from .env.local
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { amount, email } = await request.json();
+    const { amount, email, name } = await req.json();
 
-    // Create a PaymentIntent with the specific amount
-    // This tells Stripe: "Someone is about to pay this much"
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Number(amount), // Stripe expects cents (e.g., 2000 = $20.00)
-      currency: 'cad',
-      automatic_payment_methods: { enabled: true },
-      receipt_email: email,
+    // 1. Create a Stripe Customer (this stores their info in Stripe)
+    const customer = await stripe.customers.create({
+      email: email || undefined,
+      name: name || undefined,
     });
 
-    // Send the "Client Secret" back to the frontend
-    // This is the key your frontend needs to show the payment form
+    // 2. Create a PaymentIntent tied to that customer
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: parseInt(amount),   // must be in cents
+      currency: 'cad',            // you're showing CA prices
+      customer: customer.id,      // links payment to stored customer
+      setup_future_usage: 'off_session', // optional: saves card for future charges
+    });
+
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
+
   } catch (error: any) {
-    console.error('Error creating payment intent:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
