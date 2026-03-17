@@ -18,12 +18,12 @@ export async function getProgress(){
         }
 
         //get the total
-
+        /*
         const res2 = await supabase.from('lessons').select('id').eq('course_id',res1.data.course_id).single()
 
         
         return {res1.data.progress,res2.data.size()}
-
+        */
 
        
     }catch(err){

@@ -21,7 +21,6 @@ export const RenewalCardsContainer: React.FC<{ renewalOptions: plans[] }> = ({
   renewalOptions,
 }) => {
 
-  console.log("Plans: " + JSON.stringify(renewalOptions));
   const router = useRouter();
   // 1. New State: Track which plan is currently selected
   const [selectedPlan, setSelectedPlan] = useState<plans | null>(null);

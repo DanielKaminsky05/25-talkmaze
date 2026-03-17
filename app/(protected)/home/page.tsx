@@ -6,6 +6,7 @@ import TokenBar from "../components/TokensBar";
 import ReviewLessonCard from "../components/ReviewLesson";
 import NextLessonCard from "../components/UpNextLesson";
 import ScheduleList from "../components/ScheduleList";
+import { getProgress } from "./actions";
 
 interface ProgressData {
   current: number;
@@ -28,11 +29,15 @@ export default function Home() {
   const [studentId, setStudentId] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<Appointment[]>([]);
 
+  /*
   useEffect(() => {
+    
     async function fetchData() {
       try {
         // Fetch Progress
-        const progressRes = await fetch("/api/lesson-progress");
+        const progressRes = await getProgress()
+
+
         if (progressRes.ok) {
           const data = await progressRes.json();
           setProgress({
@@ -59,7 +64,7 @@ export default function Home() {
                 setSchedule(mapped);
             }
         }
-            */
+            
 
       } catch (e) {
         console.error("Failed to fetch data", e);
@@ -67,6 +72,7 @@ export default function Home() {
     }
     fetchData();
   }, []);
+  */
 
   const nextLesson = schedule.length > 0 ? schedule[0] : null;
 

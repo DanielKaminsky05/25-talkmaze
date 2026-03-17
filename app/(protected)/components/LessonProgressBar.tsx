@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+//we need to get the course the user is in
+//then we need to get the latest course completed
+
 
 interface LessonProgressBarProps {
   current?: number;

@@ -13,6 +13,7 @@ export async function PUT(
     const body = await req.json();
     const courseData = body.course;
 
+    const updated = await client.updateCourse(id, courseData);
     const supabase = await createClient();
 
     const payload: Record<string, unknown> = {};
@@ -26,8 +27,8 @@ export async function PUT(
         .eq("tw_course_id", id);
       if (error) console.error("Supabase sync failed:", error.message);
     }
-
-    return NextResponse.json(body.course);
+    
+    return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to update course" },

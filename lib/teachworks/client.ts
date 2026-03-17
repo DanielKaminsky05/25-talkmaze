@@ -60,7 +60,6 @@ export class TeachworksClient {
     return response.json();
   }
 
-<<<<<<< HEAD
   private async postRequest<T>(endpoint: string, body: object){
        const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
        
@@ -88,12 +87,6 @@ export class TeachworksClient {
   private async putRequest<T>(endpoint: string, body: object){
     const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
-=======
-  private async postRequest<T>(endpoint: string, body: object) {
-    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
-    console.log("URL: " + url);
-    console.log("Inside post: " + JSON.stringify(body));
->>>>>>> origin/stripe-webhook-integration
     const response = await fetch(url, {
       method: "POST",
       headers: {

@@ -3,17 +3,22 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CheckoutProvider,PaymentElement, useCheckout } from '@stripe/react-stripe-js/checkout';
 import styles from './checkout.module.css';
 
 // 1. Initialize Stripe
 // Make sure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is in your .env.local file
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+stripePromise.then((stripe) => console.log("Stripe object: " + JSON.stringify(stripe)));
+
 console.log("Stripe Promise: " + stripePromise);
 // --- THE FORM COMPONENT (Handles the actual inputs) ---
 function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, planName: string }) {
+  /*
   const stripe = useStripe();
   const elements = useElements();
+  */
+  const checkout = useCheckout();
   const router = useRouter();
   
   const [email, setEmail] = useState('');
@@ -25,28 +30,23 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) return;
+    if (!checkout) return;
 
+    if(checkout.type != 'success'){
+      setErrorMessage("checkout still loading")
+      setLoading(true);
+      return;
+    }
     setLoading(true);
-
+    
     // This triggers the payment with Stripe
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        // CHANGE THIS URL to where you want them to go after success
-        return_url: `${window.location.origin}/payment_info/payments/success`,
-        receipt_email: email,
-        payment_method_data: {
-            billing_details: {
-                name: `${firstName} ${lastName}`,
-                email: email
-            }
-        }
-      },
-    });
-
-    if (error) {
-      setErrorMessage(error.message || "An unexpected error occurred.");
+    const result = await checkout.checkout.confirm({
+      email: email,
+      returnUrl:  `${window.location.origin}/payment_info/payments/success`
+    })
+    
+    if (result.type == 'error') {
+      setErrorMessage(result.error.message || "An unexpected error occurred.");
       console.log("Error with stripe confirmation")
       setLoading(false);
     }
@@ -134,7 +134,7 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
             {/* Error Message Display */}
             {errorMessage && <div style={{color: '#ff6b6b', marginBottom: '15px', fontWeight: 'bold'}}>{errorMessage}</div>}
 
-            <button onClick={handleSubmit} disabled={!stripe || loading} className={styles.purchaseButton}>
+            <button onClick={handleSubmit} disabled={checkout.type != 'success' || loading} className={styles.purchaseButton}>
                 {loading ? 'Processing...' : `Purchase (${amountDisplay})`}
             </button>
         </div>
@@ -202,15 +202,14 @@ function CheckoutPageContent() {
   // Once we have the secret, load the form inside Stripe's "Elements" provider
   return (
     <div className={styles.container}>
-      <Elements 
+      <CheckoutProvider 
         stripe={stripePromise} 
         options={{ 
             clientSecret, 
-            appearance: { theme: 'stripe', labels: 'floating' } 
         }}
       >
         <CheckoutForm amountDisplay={amountDisplay} planName={planName} />
-      </Elements>
+      </CheckoutProvider>
     </div>
   );
 }

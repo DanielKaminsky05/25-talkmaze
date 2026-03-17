@@ -15,6 +15,10 @@ export async function POST(request: Request) {
     let amount = req.amount;
     let name = req.name;
 
+    console.log("Inside checkout route");
+    console.log("Price_id: " + price_id);
+    console.log("Amount: " + amount);
+    console.log('Name: ' + name);
     if (!price_id) {
       return NextResponse.json(
         { error: "Price ID is required" },
@@ -23,6 +27,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient();
+    
     const {
       data: { user },
       error: authError,
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
 
     // Get the active profile
     const activeProfile = await getActiveProfile();
+    console.log("Active Profile: " + JSON.stringify(activeProfile))
 
     // Active profile must be a student for subscription checkout
     if (!activeProfile || activeProfile.type !== "student") {
@@ -43,6 +49,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
 
     // Safety check - active student must belong to current the account
     const { data: student, error: studentError } = await supabase
@@ -68,29 +75,34 @@ export async function POST(request: Request) {
 
     // Set the configuration of the Stripe checkout session
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
-      line_items: [{ price: priceId, quantity: 1 }],
+      ui_mode: 'custom',
+      line_items: [{ price: price_id, quantity: 1 }],
       mode: "subscription",
-      success_url: `${request.headers.get("origin")}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get("origin")}/payments/checkout`,
+     
       // Send additional metadata to stripe, so that the payment record on
       // Stripe can link back to the Talkmaze account & student.
+      return_url: `${request.headers.get("origin")}/payment_info/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+
       metadata: {
         account_id: user.id,
-        price_id: price_id
+        price_id: price_id,
         student_id: student.id,
       },
+      
     };
 
     // Reuse existing Stripe customer_id to prevent duplicate customer records
     // If no customer_id exists, Stripe will create a new Customer automatically
     if (account?.stripe_customer_id) {
       sessionConfig.customer = account.stripe_customer_id;
-
     }
-    return NextResponse.json({status:200,secret: paymentIntent.client_secret})
 
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-    return NextResponse.json({ url: session.url });
+   const session = await stripe.checkout.sessions.create(sessionConfig);
+
+   
+    console.log("Session secret: " + session.client_secret)
+    return NextResponse.json({status:200,secret: session.client_secret})
+
   } catch (err: any) {
     console.error("Stripe Error:", err);
     return NextResponse.json(
@@ -99,3 +111,13 @@ export async function POST(request: Request) {
     );
   }
 }
+
+
+
+/*
+import 'server-only'
+
+import Stripe from 'stripe'
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+*/

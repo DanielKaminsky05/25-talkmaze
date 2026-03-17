@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient'; // Import your specific client
-
+import { createClient } from '@/utils/supabase/server'; // Import your specific client
+import { cookies } from 'next/headers';
 export async function GET(request: Request) {
+  const supabase = await createClient();
   try {
     // 1. Get the user_id from the URL search params
     // Example usage: /api/me/payments?user_id=user_123
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
+    const cookieStore = cookies()
+    const userId = (await cookieStore).get('account_id')
 
     // 2. Validate that we actually got an ID
     if (!userId) {
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
 
     // 3. Query the 'payments' table in Supabase
     const { data: payments, error } = await supabase
-      .from('payments')           // Double-check your table name in Supabase!
+      .from('student_subscriptions')          // Double-check your table name in Supabase!
       .select('*')
       .eq('user_id', userId)      // Filter by the ID we got from the URL
       .order('created_at', { ascending: false }); // Optional: Show newest first
