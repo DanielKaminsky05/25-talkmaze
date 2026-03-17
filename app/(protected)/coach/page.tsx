@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MyStudents from "./components/MyStudents";
 import StudentDetails from "./components/StudentDetails";
+import LessonsTable from "./components/LessonsTable";
 
 interface Student {
   id: string;
@@ -18,13 +19,13 @@ export default function CoachPage() {
   };
 
   return (
-    <div className="h-full w-full bg-white rounded-2xl p-8 shadow-sm">
+    <div className="h-full w-full bg-white rounded-2xl p-8 shadow-sm overflow-y-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-900 border-b pb-4">
         Coach Dashboard
       </h1>
 
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 h-[calc(100vh-180px)] min-h-[500px]">
+      {/* Top Grid: Students sidebar + Details panel */}
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 mb-8 min-h-[500px]">
         {/* Left Column: My Students (Sidebar) */}
         <div className="h-full md:col-span-1 lg:col-span-1">
           <MyStudents
@@ -38,6 +39,9 @@ export default function CoachPage() {
           <StudentDetails student={activeStudent} />
         </div>
       </div>
+
+      {/* Full-width: Lessons Table */}
+      <LessonsTable studentId={activeStudent?.id} studentName={activeStudent?.name} />
     </div>
   );
 }
