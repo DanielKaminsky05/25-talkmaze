@@ -9,7 +9,7 @@ export default function Layout({children} : {children: ReactNode}){
     const pathname = usePathname();
 
     // Check if pathname starts with /profiles or /admin to exclude sidebar/navbar
-    if (pathname?.startsWith('/profiles') || pathname?.startsWith('/admin')) {
+    if (pathname?.startsWith('/profiles') || pathname?.startsWith('/admin') || pathname?.startsWith('/coach')) {
         return <>{children}</>;
     }
 
