@@ -1,15 +1,16 @@
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { TeachworksClient } from "@/lib/teachworks/client";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, firstName, lastName } = await request.json();
 
     // Validate input
-    if (!email || !password || !name) {
+    if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
-        { error: "Email, password, and name are required" },
+        { error: "Email, password, first name, and last name are required" },
         { status: 400 }
       );
     }
@@ -38,12 +39,12 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    /*if (!currentAccount || currentAccount.role !== 3) {
+    if (!currentAccount || currentAccount.role !== 3) {
       return NextResponse.json(
-        { error: "Only admins can create admin accounts" },
+        { error: "Only admins can create coach accounts" },
         { status: 403 }
       );
-    }*/
+    }
 
     // We must use a separate client for sign up so we don't overwrite the admin's session in the Next.js cookies
     const authClient = createSupabaseClient(
@@ -83,30 +84,80 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update the account table to set role to 3 (admin)
+    // Update the account table to set role to 2 (coach)
     const { error: accountError } = await supabase
       .from("account")
-      .update({ role: 3 })
-      .eq("id", authData.user.id);
+      .insert({ 
+        id: authData.user.id,
+        email: email,
+        role: 2 
+      });
 
     if (accountError) {
       console.error("Account update error:", accountError);
       return NextResponse.json(
-        { error: "Failed to set admin role" },
+        { error: "Failed to set coach role" },
+        { status: 500 }
+      );
+    }
+
+    // Push to Teachworks
+    let twId = null;
+    try {
+      if (process.env.TEACHWORKS_API_KEY) {
+        const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY);
+        const twResponse = await twClient.createEmployee({
+          first_name: firstName,
+          last_name: lastName,
+          employee_type: "Teacher",
+          email: email,
+          status: "Active",
+          email_lesson_reminders: true,
+          sms_lesson_reminders: false,
+          unviewed: true,
+          p_events: "manage",
+          p_student_contact: "view"
+        });
+        
+        if (twResponse && twResponse.id) {
+           twId = String(twResponse.id);
+        }
+      } else {
+        console.warn("TEACHWORKS_API_KEY not found in environment, skipping TW creation.");
+      }
+    } catch (twError) {
+      console.error("Failed to create Teachworks employee:", twError);
+      // We might choose to proceed even if TW fails, or throw an error based on strictness.
+      // Often better to log and proceed for resilience unless perfectly synced ID is mandatory.
+    }
+
+    // Insert into coaches table
+    const { error: coachError } = await supabase
+      .from("coaches")
+      .insert({
+        account_id: authData.user.id,
+        name: `${firstName} ${lastName}`.trim(),
+        tw_id: twId
+      });
+
+    if (coachError) {
+      console.error("Coach insert error:", coachError);
+      return NextResponse.json(
+        { error: "Failed to create coach profile" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      admin: {
+      coach: {
         id: authData.user.id,
         email: authData.user.email,
-        name: name,
+        name: `${firstName} ${lastName}`.trim(),
       },
     });
   } catch (error) {
-    console.error("Error creating admin:", error);
+    console.error("Error creating coach:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
