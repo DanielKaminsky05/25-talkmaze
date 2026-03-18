@@ -1,5 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
+import LoginPage from "./(public)/login/page";
 export default function Page(){
     const router = useRouter();
     function validated(){
@@ -7,11 +8,7 @@ export default function Page(){
     }
     return (
         <div>
-            Auth page
-            <p>Hello there</p>
-                <button className = 'w-10 h-8 border-2 border-black ' onClick = {validated}>
-                   Login
-                </button>
+            <LoginPage/>
         </div>
     )
 }

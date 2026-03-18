@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Skip auth check for webhook endpoints
+  if (request.nextUrl.pathname.startsWith('/api/webhooks')) {
+    return NextResponse.next({
+      request,
+    })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -30,23 +37,30 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   // IMPORTANT: Don't remove getClaims()
-  const { data } = await supabase.auth.getClaims()
 
-  const user = data?.claims
+  let claims = null
+  try{
+    const { data } = await supabase.auth.getClaims()
+    claims = data?.claims ?? null
+  }catch(e){
+    claims = null
+  }
+  
+
+  const user = claims
+
+  if (user && request.nextUrl.pathname.startsWith('/login')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/profiles'
+    return NextResponse.redirect(url)
+  }
 
   if (
-
-
-    0
-    /*
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') && 
     !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/')
-
-    */
-    
+    request.nextUrl.pathname !== '/'
 
   ) {
     // no user, potentially respond by redirecting the user to the login page

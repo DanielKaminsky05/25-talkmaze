@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { supabase } from '../../../lib/supabaseClient'; // Ensure this path matches where you put the client
+=======
+import { createClient } from '@/utils/supabase/server';
+>>>>>>> stripe-webhook-integration
 
 export async function GET(request: Request) {
   try {
+    const supabase = await createClient();
     // 1. SELECT data from your specific table
     // Replace 'plans' with the exact name of your table in Supabase
     const { data, error } = await supabase
