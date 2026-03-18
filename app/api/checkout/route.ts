@@ -7,11 +7,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: Request) {
   try {
-    const { priceId } = await request.json();
+    const { amount, priceId } = await request.json();
 
-    if (!priceId) {
+    if (!amount || !priceId) {
       return NextResponse.json(
-        { error: "Price ID is required" },
+        { error: "Amount and Price ID are required" },
         { status: 400 },
       );
     }
@@ -59,29 +59,25 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
-    // Set the configuration of the Stripe checkout session
-    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      success_url: `${request.headers.get("origin")}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get("origin")}/payments/checkout`,
-      // Send additional metadata to stripe, so that the payment record on
-      // Stripe can link back to the Talkmaze account & student.
+    const customerId =
+      account?.stripe_customer_id ||
+      (await stripe.customers.create({ email: user.email })).id;
+
+    // Create a PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: parseInt(amount),
+      currency: "cad",
+      customer: customerId,
+      setup_future_usage: "off_session",
+      // Pass metadata here so the webhook can use it
       metadata: {
         account_id: user.id,
-        price_id: priceId,
         student_id: student.id,
+        price_id: priceId,
       },
-    };
+    });
 
-    // Reuse existing Stripe customer_id to prevent duplicate customer records
-    // If no customer_id exists, Stripe will create a new Customer automatically
-    if (account?.stripe_customer_id) {
-      sessionConfig.customer = account.stripe_customer_id;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ clientSecret: paymentIntent.client_secret });
   } catch (err: any) {
     console.error("Stripe Error:", err);
     return NextResponse.json(

@@ -190,22 +190,23 @@ function CheckoutPageContent() {
 
   const planName = searchParams.get("name") || "Unknown Plan";
   const amountCents = searchParams.get("amount");
+  const priceId = searchParams.get("price_id"); // Get price_id from URL
   const amountDisplay = amountCents
     ? `$${(parseInt(amountCents) / 100).toFixed(0)}`
     : "0";
 
   useEffect(() => {
-    if (amountCents) {
+    if (amountCents && priceId) {
       // Talk to your new API to get the "Secret Key" for this specific transaction
       fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountCents }),
+        body: JSON.stringify({ amount: amountCents, priceId: priceId }), // Pass both amount and priceId
       })
         .then((res) => res.json())
         .then((data) => setClientSecret(data.clientSecret));
     }
-  }, [amountCents]);
+  }, [amountCents, priceId]);
 
   // While waiting for the API, show a loading state
   if (!clientSecret || !amountCents) {
