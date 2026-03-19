@@ -7,15 +7,18 @@ import { TeachworksClient } from "@/lib/teachworks/client";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.text();
-    const headersList = await headers();
-    const signature = headersList.get("stripe-signature");
 
+    
+    const body = await request.text();
+    const headersList = Object.fromEntries(request.headers.entries());
+    const signature = headersList['stripe-signature']
+    
     /**
      * For testing in local dev environment use the webhook key given by STRIPE
      * CLI during stripe listen --forward-to localhost:3000/api/webhooks/stripe
      */
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.log("No webhook secret")
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
     }
 
@@ -43,6 +46,21 @@ export async function POST(request: Request) {
       const accountId = session.metadata?.account_id;
       const studentIdFromMetadata = session.metadata?.student_id;
 
+      //try to make lessonspace
+      console.log("Trying right now to make lessonspace")
+      const lesson_space_res = await fetch('http://localhost:3000/api/learningSpace',{
+        method: 'POST',
+        headers:{
+          "Content-Type": 'application/json'
+        },
+        body: JSON.stringify({
+          student_id: studentIdFromMetadata,
+        })
+      })
+
+      if(!lesson_space_res.ok){
+        console.log("Error making lessonspace");
+      }
       if (customerId && accountId) {
         const supabase = await createClient();
 
@@ -198,9 +216,13 @@ export async function POST(request: Request) {
           description: "",
           payment_method: "Credit Card",
         });
+
       } catch (teachworksError) {
         console.error("Error creating Teachworks payment:", teachworksError);
       }
+
+      
+      
     }
 
     return NextResponse.json({ received: true }, { status: 200 });

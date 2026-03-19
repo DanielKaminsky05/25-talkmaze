@@ -1,4 +1,4 @@
-"use server"
+
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
@@ -7,10 +7,8 @@ import { cookies } from "next/headers";
 const base_url = "https://api.thelessonspace.com/v2/organizations/30106/"
 const LESSONSPACE_API_KEY = process.env.LESSONSPACE_API_KEY
 
-const supabase = await createClient();
-const cookieStore = await cookies();
-export async function GET(req: NextRequest){
 
+export async function GET(req: NextRequest){
     console.log("Inside learning_space fetch")
     
     //check if api key is missing
@@ -54,16 +52,23 @@ export async function GET(req: NextRequest){
     
 }
 
-export async function POST(){
+export async function POST(req: NextRequest){
     console.log("Inside post lessonspace")
     const URL = "https://api.thelessonspace.com/v2/spaces/launch/"
+    const supabase = await createClient();
     try{
-        const student_id = cookieStore.get('active_profile_id')?.value;
-        
+        const body = await req.json();
+        const student_id = body.student_id;
         
         if(!student_id){
             throw new Error("Error identifying student")
         }
+         const lesson_space_id = await supabase.from('students').select('lesson_space_id').eq('id',student_id)
+
+         if(lesson_space_id){
+            return NextResponse.json({status: 200, message: "Student already has an unified learning space"})
+         }
+
         const name = await supabase.from('students').select('name').eq('id',student_id)
         const response = await fetch(URL, {
             method: "POST",
@@ -78,11 +83,14 @@ export async function POST(){
                 record_av: true
             })
         })
-        const text = await response.text();
-        if(!response.ok){
-            console.log("Error: " + text)
-        }
+
+
+        
         const response_json =  await response.json();
+
+        if(!response.ok){
+            console.log("Error: " + JSON.stringify(response_json))
+        }
         const{data, error} = await supabase.from('students').update({lesson_space_id: response_json.client_url}).eq('id',student_id)
 
         if(error){
@@ -95,12 +103,4 @@ export async function POST(){
     }catch(err){
         console.log(err);
     }
-}
-
-export function PUT(){
-
-}
-
-export function DELETE(){
-
 }

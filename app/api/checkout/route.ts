@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import Stripe from "stripe";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import { PaymentIntent } from "@stripe/stripe-js";
 // Initialize Stripe with your Secret Key from .env.local
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -15,10 +14,7 @@ export async function POST(request: Request) {
     let amount = req.amount;
     let name = req.name;
 
-    console.log("Inside checkout route");
-    console.log("Price_id: " + price_id);
-    console.log("Amount: " + amount);
-    console.log('Name: ' + name);
+    
     if (!price_id) {
       return NextResponse.json(
         { error: "Price ID is required" },
@@ -81,7 +77,7 @@ export async function POST(request: Request) {
      
       // Send additional metadata to stripe, so that the payment record on
       // Stripe can link back to the Talkmaze account & student.
-      return_url: `${request.headers.get("origin")}/payment_info/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+      return_url: `${process.env.NEXT_PUBLIC_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
 
       metadata: {
         account_id: user.id,

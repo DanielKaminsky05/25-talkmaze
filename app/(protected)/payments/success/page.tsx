@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import Stripe from 'stripe';
 import SuccessClient from './SuccessClient';
-import { supabase } from '@/lib/supabaseClient';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -30,6 +29,10 @@ export default async function PaymentSuccessPage({
       // Optional: Redirect to a "payment failed" page or back to checkout with an error
       redirect('/payments/checkout?error=payment_failed');
     }
+
+    //if successful we will create the lessonspace, this is just for
+    //testing, in reality this should be done in stripe webhook
+
 
     // 3. (TODO) Update User in Supabase
     // This is where you will add the logic to update the user's subscription status.

@@ -29,7 +29,7 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log("Submitting")
     if (!checkout) return;
 
     if(checkout.type != 'success'){
@@ -41,8 +41,8 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
     
     // This triggers the payment with Stripe
     const result = await checkout.checkout.confirm({
-      email: email,
-      returnUrl:  `${window.location.origin}/payment_info/payments/success`
+      //email: email,
+      //returnUrl:  `/success`
     })
     
     if (result.type == 'error') {
