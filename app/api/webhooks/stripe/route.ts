@@ -46,21 +46,23 @@ export async function POST(request: Request) {
       const accountId = session.metadata?.account_id;
       const studentIdFromMetadata = session.metadata?.student_id;
 
-      //try to make lessonspace
-      console.log("Trying right now to make lessonspace")
-      const lesson_space_res = await fetch('http://localhost:3000/api/learningSpace',{
-        method: 'POST',
-        headers:{
-          "Content-Type": 'application/json'
-        },
-        body: JSON.stringify({
-          student_id: studentIdFromMetadata,
-        })
-      })
 
-      if(!lesson_space_res.ok){
-        console.log("Error making lessonspace");
-      }
+       try{
+            //attempting to make lessonspace
+          console.log("Attemping to make lessonspace")
+          const response = await fetch('http://localhost:3000/api/webhooks/stripe/learningSpace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application.json'
+                },
+                body: JSON.stringify({
+                    student_id: studentIdFromMetadata
+            })})
+        }catch(err){
+            console.log("Inside lesson error")
+            console.log("Error: " + err);
+        }
+      
       if (customerId && accountId) {
         const supabase = await createClient();
 

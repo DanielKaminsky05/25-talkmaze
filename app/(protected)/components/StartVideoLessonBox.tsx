@@ -1,5 +1,19 @@
 //start video lesson box component
+import { useEffect, useState } from "react";
+import Link from 'next/link';
+import { getLessonSpaceLink } from "./startVideoLessonBoxActions";
 export default function StartVideoLessonBox() {
+  const[link,setLink] = useState<string>("");
+  useEffect(() => {
+    async function getLink(){
+      const link_res = await getLessonSpaceLink();
+
+      if(typeof(link_res) == typeof(String)){
+        setLink(link);
+      }
+    }
+  },[])
+  
   return (
     <div className="text-[12px] md:text-[16px] md:font-semibold h-[30px] w-[172px] md:w-[272.29px] md:h-[51px] border-[0.5px]  rounded-[15px] bg-[#1F2E3B] border-[#1F2E3B] shadow-[0_4px_4px_rgba(0,0,0,0.25)] text-white flex justify-center items-center gap-2.5">
       <svg
@@ -14,7 +28,7 @@ export default function StartVideoLessonBox() {
           fill="white"
         />
       </svg>
-      <p className="text-center">Start Video Lesson</p>
+      <Link className="text-center" href={link}>Start Video Lesson</Link>
     </div>
   );
 }

@@ -53,4 +53,19 @@ export async function handleStudentCreation(firstName: string, lastName: string,
         return NextResponse.json({status: 500, message: "Error inserting into supabase"})
     }
 
+     try{
+            //attempting to make lessonspace
+            const response = await fetch('http://localhost:3000/api/learningSpace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application.json'
+                },
+                body: JSON.stringify({
+                    student_id: `${firstName} ${lastName}`
+                })
+            })
+        }catch(err){
+            console.log("Error: " + err);
+        }
+
 }

@@ -2,10 +2,14 @@ import { updateSession } from "@/utils/supabase/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+
 /**
  * Middleware function to handle incoming requests
  */
+
 export async function middleware(request: NextRequest) {
+  
+  //remember to uncomment updateSession
   const response = await updateSession(request);
 
   const { pathname } = request.nextUrl;
@@ -18,7 +22,6 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith("/signup") &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/_next");
-
   // Check if the user is trying to access a route locked behind profile
   if (isProfileLockedRoute) {
     // Create Supabase client in middleware context
@@ -67,6 +70,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
+  
 }
 
 
