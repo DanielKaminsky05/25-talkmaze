@@ -10,6 +10,7 @@ import {
 import StudentTable from "./components/StudentTable";
 import EmployeeTable from "./components/EmployeeTable";
 import CreateAdminModal from "./components/CreateAdminModal";
+import CreateCoachModal from "./components/CreateCoachModal";
 import CourseTable from "./components/CourseTable";
 import CreateCourseModal from "./components/CreateCourseModal";
 import CourseLessonsPanel from "./components/CourseLessonPanel";
@@ -57,6 +58,7 @@ export default function AdminPage() {
 
   // Modal state
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
+  const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
 
   // Course state
   const [courses, setCourses] = useState<TeachworksCourse[]>([]);
@@ -256,22 +258,23 @@ export default function AdminPage() {
   }, []);
 
   // Fetch employees
-  useEffect(() => {
-    async function fetchEmployees() {
-      try {
-        setEmployeesLoading(true);
-        const response = await fetch("/api/admin/employees");
-        if (!response.ok) throw new Error("Failed to fetch employees");
-        const data = await response.json();
-        setEmployees(data);
-      } catch (err) {
-        setEmployeesError(
-          err instanceof Error ? err.message : "An error occurred"
-        );
-      } finally {
-        setEmployeesLoading(false);
-      }
+  const fetchEmployees = async () => {
+    try {
+      setEmployeesLoading(true);
+      const response = await fetch("/api/admin/employees");
+      if (!response.ok) throw new Error("Failed to fetch employees");
+      const data = await response.json();
+      setEmployees(data);
+    } catch (err) {
+      setEmployeesError(
+        err instanceof Error ? err.message : "An error occurred"
+      );
+    } finally {
+      setEmployeesLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchEmployees();
   }, []);
 
@@ -327,16 +330,17 @@ export default function AdminPage() {
 
   const filteredEmployees = useMemo(() => {
     const teachers = employees.filter(
-      (employee) => employee.position === "Teacher"
+      (employee) => employee.position === "Teacher" || employee.employee_type === "Teacher"
     );
     if (!employeeSearchQuery.trim()) return teachers;
     const query = employeeSearchQuery.toLowerCase();
     return teachers.filter((employee) => {
       return (
-        employee.first_name.toLowerCase().includes(query) ||
-        employee.last_name.toLowerCase().includes(query) ||
-        employee.id.toString().includes(query) ||
-        employee.position.toLowerCase().includes(query)
+        employee.first_name?.toLowerCase().includes(query) ||
+        employee.last_name?.toLowerCase().includes(query) ||
+        employee.id?.toString().includes(query) ||
+        employee.position?.toLowerCase().includes(query) ||
+        employee.employee_type?.toLowerCase().includes(query)
       );
     });
   }, [employees, employeeSearchQuery]);
@@ -595,14 +599,20 @@ export default function AdminPage() {
       {/* ── Coaches Tab ── */}
       {activeTab === "coaches" && (
         <>
-          <div className="mb-3">
+          <div className="flex justify-between items-center mb-3">
             <input
               type="text"
               placeholder="Search by name, employee ID, or position..."
               value={employeeSearchQuery}
               onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900 mr-3"
             />
+            <button
+              onClick={() => setIsCreateCoachModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors whitespace-nowrap"
+            >
+              + Create Coach
+            </button>
           </div>
           <EmployeeTable
             employees={paginatedEmployees}
@@ -1402,6 +1412,16 @@ export default function AdminPage() {
         onClose={() => setIsCreateAdminModalOpen(false)}
         onSuccess={() => {
           alert("Admin account created successfully!");
+        }}
+      />
+
+      {/* Create Coach Modal */}
+      <CreateCoachModal
+        isOpen={isCreateCoachModalOpen}
+        onClose={() => setIsCreateCoachModalOpen(false)}
+        onSuccess={() => {
+          alert("Coach created successfully");
+          fetchEmployees();
         }}
       />
     </div>

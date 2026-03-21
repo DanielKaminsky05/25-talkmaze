@@ -122,8 +122,8 @@ export default function CoachAssignmentCard({
                 const isRemoving = removingAssignmentId === assignment.id;
                 // Derive student name: prefer joined data, fall back to student_id
                 const studentName =
-                  assignment.students
-                    ? `${assignment.students.first_name} ${assignment.students.last_name}`
+                  assignment.students && assignment.students.name
+                    ? assignment.students.name
                     : `Student #${assignment.student_id}`;
 
                 return (

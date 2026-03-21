@@ -145,6 +145,12 @@ export class TeachworksClient {
     return this.request<TeachworksEmployee[]>("/employees", "GET");
   }
 
+  async createEmployee(body: object): Promise<TeachworksEmployee> {
+    return this.postRequest<TeachworksEmployee>("/employees", {
+      employee: body
+    });
+  }
+
   async updateEmployee(
     id: string | number,
     data: object,

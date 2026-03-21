@@ -4,11 +4,9 @@ export interface Assignment {
   student_id: string;
   created_at?: string;
   coaches?: {
-    first_name: string;
-    last_name: string;
+    name: string | null;
   };
   students?: {
-    first_name: string;
-    last_name: string;
+    name: string | null;
   };
 }

@@ -55,6 +55,22 @@ export async function middleware(request: NextRequest) {
 
       // Check if current user is a "regular user", and not for example an admin
       const isRegularUser = account?.role === 1;
+      const isCoach = account?.role === 2;
+      const isAdmin = account?.role === 3;
+
+      // Coach Route Protection
+      if (pathname.startsWith("/coach") && !isCoach) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/home";
+        return NextResponse.redirect(url);
+      }
+
+      // Admin Route Protection
+      if (pathname.startsWith("/admin") && !isAdmin) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/home";
+        return NextResponse.redirect(url);
+      }
 
       // If they are a regular user, check if they have an active profile
       if (isRegularUser) {

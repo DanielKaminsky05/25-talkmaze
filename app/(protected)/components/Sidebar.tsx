@@ -13,7 +13,7 @@ export default function SideBar() {
   // keep local state in sync with URL
   useEffect(() => {
     if (pathname.startsWith("/lesson")) setActiveId(1);
-    else if (pathname.startsWith("/coach")) setActiveId(2);
+    else if (pathname.startsWith("/message")) setActiveId(2);
     else if (pathname.startsWith("/reward")) setActiveId(3);
     else setActiveId(0);
   }, [pathname]);
@@ -24,9 +24,9 @@ export default function SideBar() {
       <Image src="/logo.png" alt="Talk Maze Logo" width={204} height={68}/>
       <SideBarBox id={0} name="Home"    state={activeId === 0} link='/home'   onSelect={() => setActiveId(0)} />
       <SideBarBox id={1} name="Lessons" state={activeId === 1} link='/lesson' onSelect={() => setActiveId(1)} />
-      <SideBarBox id={2} name="Coach"   state={activeId === 2} link='/coach'  onSelect={() => setActiveId(2)} />
+      <SideBarBox id={2} name="Messages"   state={activeId === 2} link='/message'  onSelect={() => setActiveId(2)} />
       <SideBarBox id={3} name="Rewards" state={activeId === 3} link='/reward' onSelect={() => setActiveId(3)} />
-      <SideBarBox id = {4} name = "Manage Profile" state={activeId === 4} link = 'manageProfile' onSelect={() => setActiveId(4)}/>
+      <SideBarBox id = {4} name = "Manage Profile" state={activeId === 4} link = '/manageProfile' onSelect={() => setActiveId(4)}/>
     </div>
   )
 
