@@ -145,39 +145,6 @@ export type Database = {
           },
         ]
       }
-      coach_students: {
-        Row: {
-          coach_id: string
-          created_at: string
-          student_id: string
-        }
-        Insert: {
-          coach_id: string
-          created_at?: string
-          student_id: string
-        }
-        Update: {
-          coach_id?: string
-          created_at?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "coach_students_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "coach_students_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       conversations: {
         Row: {
           created_at: string
@@ -287,9 +254,9 @@ export type Database = {
         Row: {
           coach_notes: string | null
           completed_at: string | null
-          course_id: string
           created_at: string | null
           id: string
+          lesson_id: string
           status: number
           student_id: string
           updated_at: string | null
@@ -297,9 +264,9 @@ export type Database = {
         Insert: {
           coach_notes?: string | null
           completed_at?: string | null
-          course_id: string
           created_at?: string | null
           id?: string
+          lesson_id: string
           status?: number
           student_id: string
           updated_at?: string | null
@@ -307,19 +274,19 @@ export type Database = {
         Update: {
           coach_notes?: string | null
           completed_at?: string | null
-          course_id?: string
           created_at?: string | null
           id?: string
+          lesson_id?: string
           status?: number
           student_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "lesson_progress_course_id_fkey"
-            columns: ["course_id"]
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: "courses"
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
           {

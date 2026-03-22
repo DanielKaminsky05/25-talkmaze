@@ -61,16 +61,18 @@ export async function POST(request: Request) {
 
       // --- Create/update supabase student_subscriptions table record ---
 
-      // subscription is not in the default Stripe.Invoice type, so we cast it
-      const invoiceSubscription = (
-        invoice as unknown as {
-          subscription: string | Stripe.Subscription | null;
-        }
-      ).subscription;
-      const stripeSubscriptionId =
-        typeof invoiceSubscription === "string"
-          ? invoiceSubscription
-          : invoiceSubscription?.id;
+      const invoiceAny = invoice as any;
+      const stripeSubscriptionId: string | undefined =
+        invoiceAny.parent?.subscription_details?.subscription ??
+        (typeof invoiceAny.subscription === "string"
+          ? invoiceAny.subscription
+          : invoiceAny.subscription?.id) ??
+        undefined;
+
+      // log the subscription id
+      console.log("invoice.paid: stripeSubscriptionId =", stripeSubscriptionId);
+
+      let paymentDescription = "";
 
       if (stripeSubscriptionId) {
         // Fetch the full subscription to read the metadata set during checkout
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
           // Look up our internal plan record using the Stripe price ID
           const { data: plan, error: planError } = await supabase
             .from("plans")
-            .select("id, classes")
+            .select("id, classes, name")
             .eq("stripe_price_id", priceId)
             .single();
 
@@ -163,18 +165,28 @@ export async function POST(request: Request) {
                 );
             }
 
+            // Build description for the Teachworks payment record
+            const { data: student } = await supabase
+              .from("students")
+              .select("name")
+              .eq("id", studentId)
+              .single();
+            paymentDescription = `Payment for ${student?.name ?? "student"} - ${plan.name}`;
+
             // Trigger LessonSpace creation for this student.
             // The learningSpace route is idempotent — it skips if the student
             // already has a space, so this is safe to call on renewals too.
             try {
-              await fetch(
-                `${process.env.NEXT_PUBLIC_URL}/api/webhooks/stripe/learningSpace`,
+              const lsRes = await fetch(
+                `http://localhost:3000/api/webhooks/stripe/learningSpace`,
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ student_id: studentId }),
                 },
               );
+              const lsBody = await lsRes.json();
+              console.log("invoice.paid: LessonSpace response:", lsRes.status, lsBody);
             } catch (lessonSpaceError) {
               console.error(
                 "invoice.paid: error creating LessonSpace:",
@@ -239,7 +251,7 @@ export async function POST(request: Request) {
           customer_id: parent.tw_id,
           date: paymentDate,
           amount: (invoice.amount_paid / 100).toFixed(2), // cents → dollars
-          description: "",
+          description: paymentDescription,
           payment_method: "Credit Card",
         });
       } catch (teachworksError) {
