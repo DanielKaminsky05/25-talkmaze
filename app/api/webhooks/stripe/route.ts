@@ -2,23 +2,26 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service";
 import { TeachworksClient } from "@/lib/teachworks/client";
 
+/**
+ * POST /api/webhooks/stripe
+ * Receives and processes Stripe webhook events.
+ *
+ * For testing in local env set the STRIPE_WEBHOOK_SECRET key given by STRIPE CLI
+ * Then run the command:
+ * stripe listen --forward-to localhost:3000/api/webhooks/stripe
+ */
 export async function POST(request: Request) {
   try {
-
-    
+    // Read the raw body as text. Required by Stripe's signature verification,
+    // which breaks if the body is parsed (e.g. via request.json()) first
     const body = await request.text();
-    const headersList = Object.fromEntries(request.headers.entries());
-    const signature = headersList['stripe-signature']
-    
-    /**
-     * For testing in local dev environment use the webhook key given by STRIPE
-     * CLI during stripe listen --forward-to localhost:3000/api/webhooks/stripe
-     */
+    const headersList = await headers();
+    const signature = headersList.get("stripe-signature");
+
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.log("No webhook secret")
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
     }
 
@@ -26,151 +29,165 @@ export async function POST(request: Request) {
       throw new Error("Stripe signature is not defined");
     }
 
+    // Verify the event came from Stripe and wasn't tampered with.
+    // Throws if the signature is invalid, which returns a 400 to Stripe.
     const event: Stripe.Event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET,
     );
 
-    // All types of stripe events: https://docs.stripe.com/api/events
-    // Check the event type, and run the logic you want for the given event
-
-    /** Event - Successful payment */
-    if (
-      event.type === "checkout.session.completed" ||
-      event.type === "checkout.session.async_payment_succeeded"
-    ) {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      const customerId = session.customer as string;
-      const accountId = session.metadata?.account_id;
-      const studentIdFromMetadata = session.metadata?.student_id;
-
-
-       try{
-            //attempting to make lessonspace
-          console.log("Attemping to make lessonspace")
-          const response = await fetch('http://localhost:3000/api/webhooks/stripe/learningSpace', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application.json'
-                },
-                body: JSON.stringify({
-                    student_id: studentIdFromMetadata
-            })})
-        }catch(err){
-            console.log("Inside lesson error")
-            console.log("Error: " + err);
-        }
-      
-      if (customerId && accountId) {
-        const supabase = await createClient();
-
-        // Store Stripe customer id on account
-        const { error: accountUpdateError } = await supabase
-          .from("account")
-          .update({ stripe_customer_id: customerId })
-          .eq("id", accountId);
-
-        if (accountUpdateError) {
-          console.error(
-            "Error updating account stripe_customer_id:",
-            accountUpdateError,
-          );
-        }
-
-        if (!studentIdFromMetadata) {
-          console.error("Error: student_id not found in session metadata");
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
-
-        const { data: student, error: studentError } = await supabase
-          .from("students")
-          .select("id")
-          .eq("id", studentIdFromMetadata)
-          .eq("account_id", accountId)
-          .single();
-
-        if (studentError || !student) {
-          console.error("Error fetching student from metadata:", studentError);
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
-
-        const priceId = session.metadata?.price_id;
-        if (!priceId) {
-          console.error("Error: price_id not found in session metadata");
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
-
-        const { data: plan, error: planError } = await supabase
-          .from("plans")
-          .select("id, classes")
-          .eq("stripe_price_id", priceId)
-          .single();
-
-        if (planError || !plan) {
-          console.error("Error fetching plan:", planError);
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
-
-        const stripeSubscriptionId = session.subscription as string;
-        let currentPeriodStart: string;
-        let currentPeriodEnd: string;
-
-        if (stripeSubscriptionId) {
-          const stripeSubscription =
-            await stripe.subscriptions.retrieve(stripeSubscriptionId);
-          // Subscription renewal date is stored in first element of items
-          const subscriptionItem = stripeSubscription.items.data[0];
-          currentPeriodStart = new Date(
-            subscriptionItem.current_period_start * 1000,
-          ).toISOString();
-          currentPeriodEnd = new Date(
-            subscriptionItem.current_period_end * 1000,
-          ).toISOString();
-        } else {
-          currentPeriodStart = new Date().toISOString();
-          const fallbackEnd = new Date();
-          fallbackEnd.setMonth(fallbackEnd.getMonth() + 1);
-          currentPeriodEnd = fallbackEnd.toISOString();
-        }
-
-        const { error: subscriptionError } = await supabase
-          .from("student_subscriptions")
-          .insert({
-            account_id: accountId,
-            student_id: student.id,
-            plan_id: plan.id,
-            status: "active",
-            current_period_start: currentPeriodStart,
-            current_period_end: currentPeriodEnd,
-            classes_left: plan.classes,
-          });
-
-        if (subscriptionError) {
-          console.error(
-            "Error creating student_subscription:",
-            subscriptionError,
-          );
-        }
-      }
-    }
-
-    /** Create Teachworks payment record whenever Stripe confirms invoice payment */
+    /* 
+     STRIPE EVENT: invoice.paid
+     The 'invoice.paid' event fires for both the initial subscription payment 
+     and monthly renewals 
+    */
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as Stripe.Invoice;
 
+      // customer can be an expanded object or just an ID string
       const stripeCustomerId =
         typeof invoice.customer === "string"
           ? invoice.customer
           : invoice.customer?.id;
 
       if (!stripeCustomerId) {
+        console.error("invoice.paid: no customer ID on invoice");
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
-      const supabase = await createClient();
+      // Use the Supabase service-role client. Necessary for webhooks.
+      const supabase = createServiceRoleClient();
 
+      // --- Create/update supabase student_subscriptions table record ---
+
+      // subscription is not in the default Stripe.Invoice type, so we cast it
+      const invoiceSubscription = (
+        invoice as unknown as {
+          subscription: string | Stripe.Subscription | null;
+        }
+      ).subscription;
+      const stripeSubscriptionId =
+        typeof invoiceSubscription === "string"
+          ? invoiceSubscription
+          : invoiceSubscription?.id;
+
+      if (stripeSubscriptionId) {
+        // Fetch the full subscription to read the metadata set during checkout
+        // (account_id, student_id, price_id — see /api/checkout)
+        const subscription =
+          await stripe.subscriptions.retrieve(stripeSubscriptionId);
+        const {
+          account_id: accountId,
+          student_id: studentId,
+          price_id: priceId,
+        } = subscription.metadata ?? {};
+
+        if (!accountId || !studentId || !priceId) {
+          console.error(
+            "invoice.paid: missing metadata on subscription",
+            stripeSubscriptionId,
+            subscription.metadata,
+          );
+        } else {
+          // Look up our internal plan record using the Stripe price ID
+          const { data: plan, error: planError } = await supabase
+            .from("plans")
+            .select("id, classes")
+            .eq("stripe_price_id", priceId)
+            .single();
+
+          if (planError || !plan) {
+            console.error(
+              "invoice.paid: error fetching plan for price_id:",
+              priceId,
+              planError,
+            );
+          } else {
+            // Convert Stripe's Unix timestamps to ISO strings for Supabase
+            const subscriptionItem = subscription.items.data[0];
+            const currentPeriodStart = new Date(
+              subscriptionItem.current_period_start * 1000,
+            ).toISOString();
+            const currentPeriodEnd = new Date(
+              subscriptionItem.current_period_end * 1000,
+            ).toISOString();
+
+            // Check if a subscription record already exists for this account/student/plan
+            // (most-recent-first so renewals update the right row)
+            const { data: existing } = await supabase
+              .from("student_subscriptions")
+              .select("id")
+              .eq("account_id", accountId)
+              .eq("student_id", studentId)
+              .eq("plan_id", plan.id)
+              .order("current_period_end", { ascending: false })
+              .limit(1);
+
+            const existingId = existing?.[0]?.id;
+
+            if (existingId) {
+              // Renewal: update the existing record with the new billing period
+              // and reset classes_left to the plan's full class count
+              const { error } = await supabase
+                .from("student_subscriptions")
+                .update({
+                  status: "active",
+                  current_period_start: currentPeriodStart,
+                  current_period_end: currentPeriodEnd,
+                  classes_left: plan.classes,
+                })
+                .eq("id", existingId);
+              if (error)
+                console.error(
+                  "invoice.paid: error updating student_subscription:",
+                  error,
+                );
+            } else {
+              // Initial payment: create a new subscription record
+              const { error } = await supabase
+                .from("student_subscriptions")
+                .insert({
+                  account_id: accountId,
+                  student_id: studentId,
+                  plan_id: plan.id,
+                  status: "active",
+                  current_period_start: currentPeriodStart,
+                  current_period_end: currentPeriodEnd,
+                  classes_left: plan.classes,
+                });
+              if (error)
+                console.error(
+                  "invoice.paid: error creating student_subscription:",
+                  error,
+                );
+            }
+
+            // Trigger LessonSpace creation for this student.
+            // The learningSpace route is idempotent — it skips if the student
+            // already has a space, so this is safe to call on renewals too.
+            try {
+              await fetch(
+                `${process.env.NEXT_PUBLIC_URL}/api/webhooks/stripe/learningSpace`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ student_id: studentId }),
+                },
+              );
+            } catch (lessonSpaceError) {
+              console.error(
+                "invoice.paid: error creating LessonSpace:",
+                lessonSpaceError,
+              );
+            }
+          }
+        }
+      }
+
+      // --- Create Teachworks payment record ---
+
+      // Look up our internal account via the Stripe customer ID
       const { data: account, error: accountError } = await supabase
         .from("account")
         .select("id")
@@ -179,12 +196,13 @@ export async function POST(request: Request) {
 
       if (accountError || !account) {
         console.error(
-          "Error fetching account from stripe customer_id:",
+          "invoice.paid: error fetching account from stripe_customer_id:",
           accountError,
         );
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
+      // Teachworks uses its own customer ID (tw_id) stored on the parent record
       const { data: parent, error: parentError } = await supabase
         .from("parents")
         .select("tw_id")
@@ -192,7 +210,10 @@ export async function POST(request: Request) {
         .single();
 
       if (parentError || !parent?.tw_id) {
-        console.error("Error fetching parent tw_id:", parentError);
+        console.error(
+          "invoice.paid: error fetching parent tw_id:",
+          parentError,
+        );
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
@@ -205,31 +226,39 @@ export async function POST(request: Request) {
         process.env.TEACHWORKS_API_KEY,
       );
 
+      // Use Stripe's recorded paid_at timestamp if available; fall back to now
       const paidAt = invoice.status_transitions?.paid_at;
       const paymentDate = paidAt
         ? new Date(paidAt * 1000).toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10);
 
+      // Teachworks errors are caught separately so they don't prevent a 200
+      // response to Stripe (which would cause Stripe to retry the webhook)
       try {
         await teachworksClient.createPayment({
           customer_id: parent.tw_id,
           date: paymentDate,
-          amount: (invoice.amount_paid / 100).toFixed(2),
+          amount: (invoice.amount_paid / 100).toFixed(2), // cents → dollars
           description: "",
           payment_method: "Credit Card",
         });
-
       } catch (teachworksError) {
-        console.error("Error creating Teachworks payment:", teachworksError);
+        console.error(
+          "invoice.paid: error creating Teachworks payment:",
+          teachworksError,
+        );
       }
-
-      
-      
     }
 
+    // Always return 200 so Stripe knows the webhook was received.
+    // Errors inside event handling are logged but don't change this response.
     return NextResponse.json({ received: true }, { status: 200 });
-  } catch (err: any) {
-    console.log(`Stripe Webhook Error: ${err.message}`);
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (err: unknown) {
+    // Return 400 for signature verification failures or missing env vars
+    // this tells Stripe the event was rejected and may trigger a retry
+    const errorMessage =
+      err instanceof Error ? err.message : "Unknown webhook error";
+    console.log(`Stripe Webhook Error: ${errorMessage}`);
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 }
