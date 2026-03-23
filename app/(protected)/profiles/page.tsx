@@ -54,7 +54,7 @@ async function getProfiles(): Promise<Profile[]> {
       id: s.id,
       name: s.name ?? "Unnamed",
       type: "student" as const,
-      hasPin: s.profile_access_pin != null,
+      hasPin: false, // Students no longer have PINs
     })),
   ];
 }

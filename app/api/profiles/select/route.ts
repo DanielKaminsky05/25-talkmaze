@@ -43,19 +43,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/profiles", request.url));
     }
   } else {
+    // Validate profile for student (No PIN check)
     const { data: student, error } = await supabase
       .from("students")
-      .select("id, profile_access_pin")
+      .select("id")
       .eq("id", profileId)
       .eq("account_id", user.id)
       .single();
 
     if (error || !student) {
       return NextResponse.redirect(new URL("/profiles?error=not_found", request.url));
-    }
-
-    if (student.profile_access_pin != null) {
-      return NextResponse.redirect(new URL("/profiles", request.url));
     }
   }
 

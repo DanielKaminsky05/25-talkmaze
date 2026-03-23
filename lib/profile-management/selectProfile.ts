@@ -47,21 +47,15 @@ export async function selectProfile(formData: FormData) {
       }
     }
   } else {
-    // Validate profile and PIN for student
+    // Validate profile for student (No PIN check)
     const { data: student, error } = await supabase
       .from("students")
-      .select("id, profile_access_pin")
+      .select("id")
       .eq("id", profileId)
       .eq("account_id", user.id)
       .single();
 
     if (error || !student) redirect("/profiles?error=not_found");
-
-    if (student!.profile_access_pin != null) {
-      if (!pin ||pin !== student!.profile_access_pin) {
-        redirect("/profiles?error=wrong_pin");
-      }
-    }
   }
 
   // Set cookies for active profile id and type

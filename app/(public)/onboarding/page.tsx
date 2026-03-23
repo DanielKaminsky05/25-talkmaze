@@ -73,13 +73,12 @@ export default function Onboarding() {
   const [availability, setAvailability] = useState<Date[]>([]);
   const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const[email,setEmail] = useState<string>("");
-  const[pin, setPin] = useState<string>("");
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     try{
       //get response
       
-      const response = handleStudentCreation(firstName, lastName,email,birthDate,homePhone,mobilePhone,school,grade,notes,timeZone,pin);
+      const response = handleStudentCreation(firstName, lastName,email,birthDate,homePhone,mobilePhone,school,grade,notes,timeZone);
     }catch(err){
       console.log(err);
     }
@@ -369,25 +368,6 @@ export default function Onboarding() {
                 )}
               </div>
               
-              <div className="flex flex-col gap-2 w-full max-w-[260px]">
-                    <label className="text-black text-sm font-semibold">
-                      Account PIN Number (Do Not Share!)
-                    </label>
-
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={4}
-                      value={pin}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const value = e.currentTarget.value.replace(/\D/g, "").slice(0, 4);
-                        setPin(value);
-                      }}
-                      placeholder="••••"
-                      className="w-full h-[44px] px-3 rounded-lg bg-[#1f2e3b] border border-[#4e4c4c] text-white text-center tracking-[0.3em] outline-none focus:border-[#65cfad] focus:ring-1 focus:ring-[#65cfad] transition"
-                    />
-              </div>
               <div className="mt-3">
                 <p className="text-[#A8A8A8]">Any additional notes?</p>
                 <div className="flex flex-col gap-1">
