@@ -111,22 +111,44 @@ export default async function ProfilesPage({
 
         {/* Profile selection */}
         <div className="flex items-start justify-center gap-[clamp(24px,4vw,60px)] flex-wrap">
-          {profiles.map((profile) => (
-            <form key={profile.id} action={selectProfile}>
-              <input type="hidden" name="profileId" value={profile.id} />
-              <input type="hidden" name="profileType" value={profile.type} />
-              <ProfileCard
-                id={profile.id}
-                name={profile.name}
-                imageUrl={
-                  profile.type === "student"
-                    ? "/priya-profile.png"
-                    : "/meera-profile.png"
-                }
-                hasPin={profile.hasPin}
-              />
-            </form>
-          ))}
+          {profiles.map((profile) => {
+            const isParentWithoutPin = profile.type === "parent" && !profile.hasPin;
+
+            if (isParentWithoutPin) {
+              return (
+                <a
+                  key={profile.id}
+                  href={`/api/profiles/select?profileId=${profile.id}&profileType=parent`}
+                  className="no-underline"
+                >
+                  <ProfileCard
+                    id={profile.id}
+                    name={profile.name}
+                    imageUrl="/meera-profile.png"
+                    hasPin={false}
+                    asLink={true}
+                  />
+                </a>
+              );
+            }
+
+            return (
+              <form key={profile.id} action={selectProfile}>
+                <input type="hidden" name="profileId" value={profile.id} />
+                <input type="hidden" name="profileType" value={profile.type} />
+                <ProfileCard
+                  id={profile.id}
+                  name={profile.name}
+                  imageUrl={
+                    profile.type === "student"
+                      ? "/priya-profile.png"
+                      : "/meera-profile.png"
+                  }
+                  hasPin={profile.hasPin}
+                />
+              </form>
+            );
+          })}
 
           
           <div className="flex flex-col items-center">

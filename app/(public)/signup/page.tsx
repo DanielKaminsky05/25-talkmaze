@@ -83,7 +83,7 @@ export default function SignupPage() {
 
     //Redirects the user to the home page if successful:
     if (result.success) {
-      await signUpNewUser(email, password, masterPin);
+      await signUpNewUser(email, password, masterPin, userName);
       router.push("/home");
     } else {
       console.log(result.error.flatten().fieldErrors);

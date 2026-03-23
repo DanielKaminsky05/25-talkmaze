@@ -78,5 +78,9 @@ export async function selectProfile(formData: FormData) {
   });
 
   
-  redirect("/home");
+  if (profileType === "parent") {
+    redirect("/parent");
+  } else {
+    redirect("/home");
+  }
 }

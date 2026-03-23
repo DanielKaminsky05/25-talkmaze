@@ -2,10 +2,12 @@
 
 import { createClient } from "@/utils/supabase/server"
 import { TeachworksClient } from "@/lib/teachworks/client"
+import { cookies } from "next/headers"
 import {z} from "zod";
+import crypto from "crypto";
 
 //Sign up function
-export const signUpNewUser = async (email: string, password: string) => {
+export const signUpNewUser = async (email: string, password: string, masterPin: string, userName: string) => {
 
 
     const teachWorksClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!)
@@ -31,16 +33,44 @@ export const signUpNewUser = async (email: string, password: string) => {
         password: password,
 
     })
+    
+    if (!data.user) {
+        return { success: false, error: new Error("User creation failed") };
+    }
 
-   
+    const cookieStore = await cookies();
+    cookieStore.set({
+        name: "account_id",
+        value: data.user.id,
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax'
+    });
+
     //note customer is 1, coach is 2, and admin is 3
     const insertIntoAccount = await supabase.from('account').insert({
-            id: data.user?.id,
+            id: data.user.id,
             email: email,
             tw_customer_id: response.id.toString(),
-            role: 3
+            role: 1 // Changed to 1 (Customer/Parent) as per standard roles
         }
     )
+
+    // Insert into parents table
+    const insertIntoParents = await supabase.from('parents').insert({
+        id: crypto.randomUUID(),
+        account_id: data.user.id,
+        name: userName,
+        profile_access_pin: masterPin,
+        billing_email: email,
+        tw_id: response.id.toString(),
+        phone_number: null
+    })
+
+    if (insertIntoParents.error) {
+        console.error("Error creating parent profile:", insertIntoParents.error);
+        return { success: false, error: insertIntoParents.error };
+    }
 
     
     

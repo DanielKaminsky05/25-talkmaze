@@ -18,12 +18,19 @@ export default function NavigationBar() {
     router.back();
   }
 
-  const prefix = "Student";
+  let prefix = "Student";
   let page = "Dashboard";
 
-  if (pathname.startsWith("/lesson")) page = "Lessons";
-  else if (pathname.startsWith("/coach")) page = "Coach";
-  else if (pathname.startsWith("/reward")) page = "Rewards";
+  if (pathname.startsWith("/parent")) {
+    prefix = "Parent";
+    page = "Dashboard";
+  } else if (pathname.startsWith("/lesson")) {
+    page = "Lessons";
+  } else if (pathname.startsWith("/coach")) {
+    page = "Coach";
+  } else if (pathname.startsWith("/reward")) {
+    page = "Rewards";
+  }
 
   const title = `${prefix} ${page}`;
 

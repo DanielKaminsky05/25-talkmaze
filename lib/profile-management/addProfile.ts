@@ -14,21 +14,20 @@ export async function createStudent(student_obj: object){
     const cookieStore = await cookies();
 
     //first create in teachworks then create in supabase
-    const account_cookie = await cookieStore.get("account_id");
+    const account_id = (await cookieStore).get("account_id")?.value;
     
-    if(!account_cookie){
-        throw new Error("cookie doesn't exist")
+    if(!account_id){
+        console.error("Account ID cookie is missing in createStudent");
+        throw new Error("Session expired or missing. Please log in again.");
     }
-    const account_id = account_cookie?.value;
     
     const account_tw_id_obj= await supabase.from('account').select('tw_customer_id').eq('id',account_id).single();
 
     const account_tw_obj = account_tw_id_obj.data?.tw_customer_id;
 
-    //console.log("Created Student" +  JSON.stringify(student));
     if(!teach_works_api_key){
         console.error("TEACHWORKS_API_KEY is missing");
-        throw new Error("Missing API KEY!")
+        throw new Error("Service configuration error. Please contact support.");
     }
     const teachworksclient = new TeachworksClient(teach_works_api_key)
 
