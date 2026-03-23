@@ -16,8 +16,11 @@ export async function middleware(request: NextRequest) {
 
   // Determine if the current route is a "profile locked" route
   // Profile locked routes require the user to have an active profile
+
+  if(pathname.startsWith("/onboarding")){
+    return;
+  }
   const isProfileLockedRoute =
-    !pathname.startsWith("/profiles") &&
     !pathname.startsWith("/login") &&
     !pathname.startsWith("/signup") &&
     !pathname.startsWith("/api") &&
@@ -58,12 +61,26 @@ export async function middleware(request: NextRequest) {
       const isCoach = account?.role === 2;
       const isAdmin = account?.role === 3;
 
+      if(pathname.startsWith('/profiles') && (isCoach || isAdmin)){
+        const url = request.nextUrl.clone();
+        if(isCoach){
+          url.pathname = "/coach"
+          return NextResponse.redirect(url);
+        }
+        if(isAdmin){
+          url.pathname = "/admin"
+          return NextResponse.redirect(url);
+        }
+      }
+      
       // Coach Route Protection
       if (pathname.startsWith("/coach") && !isCoach) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/home";
-        return NextResponse.redirect(url);
+           const url = request.nextUrl.clone();
+           url.pathname = "/home";
+           return NextResponse.redirect(url);
       }
+
+    
 
       // Admin Route Protection
       if (pathname.startsWith("/admin") && !isAdmin) {
@@ -76,7 +93,7 @@ export async function middleware(request: NextRequest) {
       if (isRegularUser) {
         const activeProfileId = request.cookies.get("active_profile_id")?.value;
         // If no active profile, redirect them to select a profile
-        if (!activeProfileId) {
+        if (!activeProfileId && !pathname.startsWith('/profiles')) {
           const url = request.nextUrl.clone();
           url.pathname = "/profiles";
           return NextResponse.redirect(url);

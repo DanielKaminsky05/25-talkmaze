@@ -11,7 +11,12 @@ import { useRouter } from "next/navigation";
 
 const userSchema = z
   .object({
-    userName: z
+    familyFirstName: z
+      .string()
+      .trim()
+      .min(3, "Name must be at least 3 characters long")
+      .max(50, "Name cannot exceed 50 characters"),
+      familyLastName: z
       .string()
       .trim()
       .min(3, "Name must be at least 3 characters long")
@@ -54,7 +59,9 @@ const ErrorMessage = ({ message }: { message?: string[] }) => {
 
 export default function SignupPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState<string>("");
+  
+  const[familyFirstName, setFamilyFirstName] = useState<string>("");
+  const[familyLastName, setFamilyLastName] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
@@ -71,7 +78,8 @@ export default function SignupPage() {
     setErrors({});
 
     const formDataToValidate = {
-      userName: userName,
+      familyFirstName: familyFirstName,
+      familyLastName: familyLastName,
       email: email,
       password: password,
       confirmPassword: confirmPassword,
@@ -83,14 +91,15 @@ export default function SignupPage() {
 
     //Redirects the user to the home page if successful:
     if (result.success) {
-      await signUpNewUser(email, password, masterPin);
+      await signUpNewUser(familyFirstName, familyLastName, email, password, masterPin);
       router.push("/home");
     } else {
       console.log(result.error.flatten().fieldErrors);
 
       const formattedErrors = result.error.flatten().fieldErrors;
       setErrors({
-        userName: formattedErrors.userName,
+        familyFirstName: formattedErrors.familyFirstName,
+        familyLastName: formattedErrors.familyLastName,
         email: formattedErrors.email,
         password: formattedErrors.password,
         confirmPassword: formattedErrors.confirmPassword,
@@ -101,7 +110,8 @@ export default function SignupPage() {
   }
 
   type formErrors = {
-    userName?: string[];
+    familyFirstName?: string[];
+    familyLastName?: string[];
     email?: string[];
     password?: string[];
     confirmPassword?: string[];
@@ -131,20 +141,36 @@ export default function SignupPage() {
             </div>
 
             <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
-              {/**Name field div: */}
+              {/**Family First Name field div: */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
                     type="text"
-                    placeholder="Name"
-                    value={userName}
+                    placeholder="Family First Name"
+                    value={familyFirstName}
                     //add red border if error
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.userName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
-                    onChange={(e) => setUserName(e.target.value)}
+                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyFirstName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    onChange={(e) => setFamilyFirstName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <ErrorMessage message={errors.userName} />
+                  <ErrorMessage message={errors.familyFirstName} />
+                </div>
+              </div>
+              {/**Family Last Name div */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
+                  <input
+                    type="text"
+                    placeholder="Family First Name"
+                    value={familyLastName}
+                    //add red border if error
+                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyLastName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    onChange={(e) => setFamilyLastName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <ErrorMessage message={errors.familyLastName} />
                 </div>
               </div>
 
