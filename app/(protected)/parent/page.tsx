@@ -6,36 +6,74 @@ import PostLessonTasks from "./components/PostLessonTasks";
 import AttendanceStreak from "./components/AttendanceStreak";
 import PaymentStatus from "./components/PaymentStatus";
 import ScheduleList from "../components/ScheduleList";
-
-interface Appointment {
-    id: string;
-    title: string;
-    start_date: string;
-    end_date: string;
-    description?: string;
-}
+import { Appointment } from "../types/lesson";
 
 export default function ParentDashboard() {
-  const [schedule, setSchedule] = useState<Appointment[]>([
-      {
-          id: "1",
-          title: "Explorer - Lesson 2",
-          start_date: "2024-05-11T11:45:00",
-          end_date: "2024-05-11T12:45:00"
-      },
-      {
-          id: "2",
-          title: "Explorer - Lesson 3",
-          start_date: "2024-05-18T11:45:00",
-          end_date: "2024-05-18T12:45:00"
-      },
-      {
-          id: "3",
-          title: "Explorer - Lesson 4",
-          start_date: "2024-05-25T11:45:00",
-          end_date: "2024-05-25T12:45:00"
+  const [schedule, setSchedule] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSchedule() {
+      try {
+        const response = await fetch("/api/teachworks/family-lessons");
+        if (!response.ok) {
+          throw new Error("Failed to fetch schedule");
+        }
+        const data = await response.json();
+        
+        // Map TeachworksLesson to Appointment interface
+        const mappedSchedule: Appointment[] = data.map((lesson: any) => {
+            // Priority: Supabase Name (Reliable) > Teachworks Name (Fallback)
+            const fullStudentName = lesson.supabase_student_name || (lesson.participants?.[0]?.student_name) || "Student";
+            
+            // If the name is from Teachworks and in "Last, First" format, handle it
+            let studentFirstName = "";
+            if (fullStudentName.includes(",")) {
+                studentFirstName = fullStudentName.split(",")[1].trim().split(" ")[0];
+            } else {
+                studentFirstName = fullStudentName.split(" ")[0];
+            }
+
+            return {
+                id: lesson.id.toString(),
+                title: lesson.service_name || lesson.name,
+                start_date: lesson.from_datetime,
+                end_date: lesson.to_datetime,
+                description: lesson.description,
+                studentName: studentFirstName,
+                coachName: lesson.employee_name,
+                status: lesson.status
+            };
+        });
+
+        setSchedule(mappedSchedule);
+      } catch (err: any) {
+        console.error("Error fetching parent dashboard data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-  ]);
+    }
+
+    fetchSchedule();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full h-full p-4 lg:p-6 flex items-center justify-center bg-[#1f2e3b]">
+        <div className="text-white text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full p-4 lg:p-6 flex items-center justify-center bg-[#1f2e3b]">
+        <div className="text-red-400 text-xl">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full p-4 lg:p-6 overflow-y-auto bg-[#1f2e3b]">
