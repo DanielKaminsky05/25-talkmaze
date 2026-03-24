@@ -85,6 +85,7 @@ export async function POST(req: NextRequest){
         }
         const name_string = name.data?.name;
 
+        const lesson_space_id = crypto.randomUUID();
         //make call to lessonspace api to create new unified lessonspace
         const response = await fetch(URL, {
             method: "POST",
@@ -92,11 +93,24 @@ export async function POST(req: NextRequest){
                 'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
                 'Content-Type': 'application/json'
             },
+            //all params are intuitive except leader which is simply an extra
+            //feature the coach can access when teaching
+            //it lets the coach be able to set permissions for their students
             body:JSON.stringify({
-                id: name_string,
+                id: lesson_space_id,
                 transcribe: true,
                 summarize: true,
-                record_av: true
+                record_av: true,
+                user: {
+                    id: name_string,
+                    role: 'participant',
+                    custom_jwt_parameters: {
+                        meta: {
+                            displayName: name_string,
+                            lessonTitle: `${name_string} Public Speaking Room!`
+                        }
+                    }
+                }
             })
         })
 
@@ -108,7 +122,7 @@ export async function POST(req: NextRequest){
             return NextResponse.json({status: 500, message: "Error posting to lessonspace: " + JSON.stringify(response_json)})
         }
         //upon successful creation of lessonspace, update url in lessonspace id in student table
-        const lesson_space_update = await supabase.from('students').update({lesson_space_id: response_json.client_url}).eq('id',student_id)
+        const lesson_space_update = await supabase.from('students').update({lesson_space_id: lesson_space_id}).eq('id',student_id)
 
         //if we can not update, indicate these is an error updating it 
         if(lesson_space_update.error){

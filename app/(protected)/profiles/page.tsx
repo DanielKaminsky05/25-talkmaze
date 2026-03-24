@@ -42,6 +42,9 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
   ]);
 
+  console.log("Retrieved parents: " + JSON.stringify(parents));
+  console.log("Retrieved Students: " + JSON.stringify(students))
+
   // Combine and return parent and student profiles
   return [
     ...(parents ?? []).map((p) => ({

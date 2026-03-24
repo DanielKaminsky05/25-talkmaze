@@ -166,12 +166,12 @@ function CheckoutPageContent() {
           body: JSON.stringify({ price_id: price_id, amount: amountCents, name: planName}),
           })
 
-          if(!res.ok){
-            throw new Error("Error getting stripe client");
-          }
+          
 
           const data = await res.json();
-          
+          if(!res.ok){
+            throw new Error("Error getting stripe client: " + JSON.stringify(data));
+          }
          
           setClientSecret(data.secret);
           

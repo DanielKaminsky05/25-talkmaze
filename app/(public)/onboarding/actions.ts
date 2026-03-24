@@ -20,10 +20,11 @@ export async function handleStudentCreation(
     const cookieStore = await cookies();
     console.log("Inside handleStudentCreation")
 
-    const supabase = createClient();
-    const account_id = cookieStore.get('account_id')?.value;
+    const supabase = await createClient();
     
-    
+    const auth = await supabase.auth.getUser();
+        
+    const account_id = auth?.data?.user?.id;
     if(!account_id){
         return new Error("Account ID is missing");
     }
@@ -63,19 +64,6 @@ export async function handleStudentCreation(
         return NextResponse.json({status: 500, message: "Error inserting into supabase"})
     }
 
-     try{
-            //attempting to make lessonspace
-            const response = await fetch('http://localhost:3000/api/learningSpace', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application.json'
-                },
-                body: JSON.stringify({
-                    student_id: `${firstName} ${lastName}`
-                })
-            })
-        }catch(err){
-            console.log("Error: " + err);
-        }
+    
 
 }
