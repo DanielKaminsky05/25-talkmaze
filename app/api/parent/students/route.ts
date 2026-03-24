@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         // 1. Get all students linked to this account_id
         const { data: students, error: studentError } = await supabase
             .from("students")
-            .select("tw_id, name, id")
+            .select("tw_id, name, id, remaining_lessons")
             .eq("account_id", user.id);
 
         if (studentError || !students || students.length === 0) {
@@ -47,7 +47,8 @@ export async function GET(request: Request) {
                     grade: twStudent.grade,
                     location: twStudent.school || "Remote",
                     notes: twStudent.additional_notes,
-                    status: twStudent.status
+                    status: twStudent.status,
+                    remaining_lessons: s.remaining_lessons
                 };
             } catch (e) {
                 console.error(`Error fetching TW student ${cleanedId}:`, e);

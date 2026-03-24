@@ -43,21 +43,26 @@ export default function StudentProfileCard({
         <div className="flex flex-col">
           <h2 className="text-[#1F2E3B] text-xl font-bold">TalkMaze Student Profile</h2>
           {totalStudents > 1 && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-3 mt-2 bg-[#1F2E3B]/10 px-3 py-1.5 rounded-full w-fit">
               <button 
                 onClick={onPrev}
-                className="w-6 h-6 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+                className="w-7 h-7 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all shadow-sm active:scale-95"
+                title="Previous Student"
               >
-                ←
+                <span className="text-lg">‹</span>
               </button>
-              <span className="text-[10px] font-bold text-[#1F2E3B]/60 uppercase tracking-tighter">
-                Student {currentIndex + 1} of {totalStudents}
-              </span>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-bold text-[#1F2E3B]/40 uppercase tracking-widest leading-none">Switching</span>
+                <span className="text-[11px] font-extrabold text-[#1F2E3B] leading-tight">
+                  {currentIndex + 1} of {totalStudents}
+                </span>
+              </div>
               <button 
                 onClick={onNext}
-                className="w-6 h-6 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+                className="w-7 h-7 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all shadow-sm active:scale-95"
+                title="Next Student"
               >
-                →
+                <span className="text-lg">›</span>
               </button>
             </div>
           )}

@@ -469,6 +469,7 @@ export type Database = {
           name: string | null
           Student_Plan: string | null
           tw_id: string | null
+          remaining_lessons: number | null
           updated_at: string
         }
         Insert: {
@@ -478,6 +479,7 @@ export type Database = {
           name?: string | null
           Student_Plan?: string | null
           tw_id?: string | null
+          remaining_lessons?: number | null
           updated_at?: string
         }
         Update: {
@@ -487,6 +489,7 @@ export type Database = {
           name?: string | null
           Student_Plan?: string | null
           tw_id?: string | null
+          remaining_lessons?: number | null
           updated_at?: string
         }
         Relationships: [

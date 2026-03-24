@@ -14,7 +14,7 @@ export default function PaymentStatus({ sessionsLeft = 24, studentId }: { sessio
 
       <div className="flex flex-col items-start gap-3 flex-1">
         <h3 className="text-[#2B4257] font-bold text-base leading-tight">
-          {sessionsLeft} Sessions Left in Payment Package
+          {sessionsLeft ?? 0} Sessions Left in Payment Package
         </h3>
         <Link href="/payments">
           <button className="bg-[#1F2E3B] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#2B4257] transition-colors self-end sm:self-start">

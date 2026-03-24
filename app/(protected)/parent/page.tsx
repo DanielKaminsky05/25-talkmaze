@@ -117,8 +117,8 @@ export default function ParentDashboard() {
 
         {/* Right Column */}
         <div className="flex flex-col gap-6">
-            <div className="h-[140px]">
-                <PaymentStatus sessionsLeft={24} studentId={currentStudent.id} />
+            <div className="flex-1">
+                <PaymentStatus sessionsLeft={currentStudent.remaining_lessons} studentId={currentStudent.id} />
             </div>
 
             <div className="flex-1 min-h-[516px] bg-[#B1E7D6] rounded-2xl p-6 shadow-[0_4px_4px_rgba(0,0,0,0.25)]">
