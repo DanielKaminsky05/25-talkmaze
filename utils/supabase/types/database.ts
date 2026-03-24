@@ -570,8 +570,11 @@ export type Database = {
           created_at: string
           id: string
           lesson_space_id: string | null
+          lesson_space_student_link: string | null
+          lesson_space_teacher_link: string | null
           name: string | null
           profile_access_pin: string | null
+          teach_works_url: string | null
           tw_id: string | null
           updated_at: string
         }
@@ -580,8 +583,11 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_space_id?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          teach_works_url?: string | null
           tw_id?: string | null
           updated_at?: string
         }
@@ -590,8 +596,11 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_space_id?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          teach_works_url?: string | null
           tw_id?: string | null
           updated_at?: string
         }
