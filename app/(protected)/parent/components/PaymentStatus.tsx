@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 
-export default function PaymentStatus({ sessionsLeft = 24 }) {
+export default function PaymentStatus({ sessionsLeft = 24, studentId }: { sessionsLeft?: number, studentId?: string }) {
   return (
     <div className="bg-[#B1E7D6] rounded-2xl p-4 shadow-[0_4px_4px_rgba(0,0,0,0.25)] flex items-center gap-6 h-full">
       <div className="relative w-24 h-24 flex-shrink-0 flex items-center justify-center bg-white rounded-full">

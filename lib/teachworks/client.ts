@@ -110,11 +110,15 @@ export class TeachworksClient {
     return this.request<TeachworksLesson[]>("/lessons", "GET", params);
   }
 
-  /**
-   * Fetch all students
-   */
   async getStudents(): Promise<TeachworksStudent[]> {
     return this.request<TeachworksStudent[]>("/students", "GET");
+  }
+
+  /**
+   * Fetch a single student by ID
+   */
+  async getStudent(id: string | number): Promise<TeachworksStudent> {
+    return this.request<TeachworksStudent>(`/students/${id}`, "GET");
   }
 
   async createStudent(body: object): Promise<TeachworksStudent> {

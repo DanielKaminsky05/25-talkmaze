@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export default function AttendanceStreak({ streak = 8 }) {
+export default function AttendanceStreak({ streak = 8, studentId }: { streak?: number, studentId?: string }) {
   // Mock grid of attendance status
   const attendance = [
     { type: 'star', filled: true },

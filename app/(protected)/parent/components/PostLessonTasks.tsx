@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-export default function PostLessonTasks() {
+export default function PostLessonTasks({ studentId }: { studentId?: string }) {
   const [enabled, setEnabled] = useState(true);
   const [days, setDays] = useState(0);
 

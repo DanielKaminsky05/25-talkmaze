@@ -12,6 +12,10 @@ interface StudentProfileCardProps {
   glows: string;
   grows: string;
   imageUrl?: string;
+  onNext?: () => void;
+  onPrev?: () => void;
+  currentIndex?: number;
+  totalStudents?: number;
 }
 
 export default function StudentProfileCard({
@@ -22,7 +26,11 @@ export default function StudentProfileCard({
   description = "Sweet and outgoing personality",
   glows = "Excited to learn and share",
   grows = "Clarity with content",
-  imageUrl = "https://placehold.co/120x120"
+  imageUrl = "https://placehold.co/120x120",
+  onNext,
+  onPrev,
+  currentIndex = 0,
+  totalStudents = 1
 }: StudentProfileCardProps) {
   return (
     <div className="bg-[#B1E7D6] rounded-2xl p-6 shadow-[0_4px_4px_rgba(0,0,0,0.25)] relative overflow-hidden h-full flex flex-col">
@@ -32,7 +40,28 @@ export default function StudentProfileCard({
       </div>
 
       <div className="flex justify-between items-start mb-4 relative z-10">
-        <h2 className="text-[#1F2E3B] text-xl font-bold">TalkMaze Student Profile</h2>
+        <div className="flex flex-col">
+          <h2 className="text-[#1F2E3B] text-xl font-bold">TalkMaze Student Profile</h2>
+          {totalStudents > 1 && (
+            <div className="flex items-center gap-2 mt-1">
+              <button 
+                onClick={onPrev}
+                className="w-6 h-6 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+              >
+                ←
+              </button>
+              <span className="text-[10px] font-bold text-[#1F2E3B]/60 uppercase tracking-tighter">
+                Student {currentIndex + 1} of {totalStudents}
+              </span>
+              <button 
+                onClick={onNext}
+                className="w-6 h-6 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:opacity-80 transition-opacity"
+              >
+                →
+              </button>
+            </div>
+          )}
+        </div>
         <button className="bg-[#1F2E3B] text-white text-xs px-3 py-1 rounded flex items-center gap-1">
           <span className="text-[10px]">✏️</span> EDIT
         </button>
