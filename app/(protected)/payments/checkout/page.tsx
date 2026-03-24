@@ -223,8 +223,10 @@ function CheckoutPageContent() {
     : "0";
 
   // On mount, hit /api/checkout to create a Stripe subscription and get a clientSecret.
+  // The clientSecret contains the configuration of the Stripe subscription, it
+  // gets passed to the <Elements>, which renders the payment form for that subscription.
   // The cancelled flag and AbortController prevent state updates after unmount
-  // (e.g. if the user navigates away before the request completes).
+  // (e.g. if the user navigates away before the /api/checkout request completes)
   useEffect(() => {
     let cancelled = false;
     const abortController = new AbortController();
@@ -236,7 +238,8 @@ function CheckoutPageContent() {
       }
 
       try {
-        // Abort if the API takes more than 15 seconds
+        // Display the error message if the checkout form fails to render due
+        // to /api/checkout failing to return back a clientSecret.
         const timeoutId = setTimeout(() => abortController.abort(), 15000);
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -250,11 +253,6 @@ function CheckoutPageContent() {
 
         if (!res.ok)
           throw new Error(data?.error || "Failed to initialize checkout");
-        // Edge case: if the plan costs nothing, skip the payment form entirely
-        if (data?.noPaymentRequired) {
-          window.location.href = "/payments/success";
-          return;
-        }
         if (!data?.clientSecret) throw new Error("No client secret returned");
 
         if (!cancelled) setClientSecret(data.clientSecret);
@@ -273,7 +271,6 @@ function CheckoutPageContent() {
     }
 
     init();
-    // Cleanup: mark as cancelled and abort any in-flight request on unmount
     return () => {
       cancelled = true;
       abortController.abort();
