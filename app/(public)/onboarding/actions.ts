@@ -1,59 +1,228 @@
-"use server"
-import { cookies } from 'next/headers';
-import {createStudent} from '@/lib/profile-management/addProfile'
-import { time_zone } from './page';
-import { createClient } from '@/utils/supabase/server';
-import { TeachworksStudent } from '@/lib/teachworks/types';
-import { NextResponse } from 'next/server';
-export async function handleStudentCreation(firstName: string, lastName: string, email: string, birth_date: string, home_phone: string, mobile_phone: string, school: string, grade: number,additional_notes: string, time_zone: time_zone, pin: string){
-    const cookieStore = await cookies();
-    console.log("Inside handleStudentCreation")
+"use server";
 
-    const supabase = await createClient();
-    
-    const auth = await supabase.auth.getUser();
-        
-    const account_id = auth?.data?.user?.id;
-    if(!account_id){
-        return new Error("Account ID is missing");
+import { createStudent } from "@/lib/profile-management/addProfile";
+import { time_zone } from "./page";
+import { createClient } from "@/utils/supabase/server";
+
+export async function handleStudentCreation(
+  firstName: string,
+  lastName: string,
+  email: string,
+  birth_date: string,
+  home_phone: string,
+  mobile_phone: string,
+  school: string,
+  grade: number,
+  additional_notes: string,
+  time_zone: time_zone,
+  pin: string,
+  weeklyAvailability: Record<string, { start: string; end: string }[]>,
+) {
+  const supabase = await createClient();
+
+  const auth = await supabase.auth.getUser();
+  const account_id = auth?.data?.user?.id;
+
+  if (!account_id) {
+    return new Error("Account ID is missing");
+  }
+
+  const { data: accountData } = await supabase
+    .from("account")
+    .select("tw_customer_id")
+    .eq("id", account_id)
+    .single();
+
+  const tw_id = accountData?.tw_customer_id;
+
+  const student_obj = {
+    student: {
+      customer_id: tw_id,
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      home_phone: home_phone,
+      mobile_phone: mobile_phone,
+      birth_date: birth_date,
+      school: school,
+      grade: grade,
+      additional_notes: additional_notes,
+      time_zone: null,
+    },
+  };
+
+  const result = await createStudent(student_obj);
+
+  const { data: studentInsert, error: studentError } = await supabase
+    .from("students")
+    .insert({
+      account_id: account_id,
+      tw_id: JSON.stringify(result.id),
+      name: firstName + " " + lastName,
+      profile_access_pin: pin,
+    })
+    .select()
+    .single();
+
+  if (studentError || !studentInsert) {
+    console.error("Student insert error:", studentError);
+    return { status: 500, message: "Error inserting student" };
+  }
+
+  const student_id = studentInsert.id;
+
+  const availabilityRows = Object.entries(weeklyAvailability).flatMap(
+    ([day, slots]) =>
+      slots
+        .filter((slot) => slot.start && slot.end)
+        .map((slot) => ({
+          student_id,
+          weekday: dayMap[day],
+          start_time: toTimestamp(slot.start),
+          end_time: toTimestamp(slot.end),
+        })),
+  );
+
+  console.log("weeklyAvailability:", weeklyAvailability);
+  console.log("availabilityRows:", availabilityRows);
+
+  if (availabilityRows.length > 0) {
+    const { error: availabilityError } = await supabase
+      .from("student_availabilities")
+      .insert(availabilityRows);
+
+    if (availabilityError) {
+      console.error("Availability insert error:", availabilityError);
+      return {
+        status: 500,
+        message: "Error inserting availability",
+      };
     }
+  }
 
-    const tw_id_res = (await supabase).from('account').select('tw_customer_id').eq('id', account_id).single();
-    const tw_id = (await tw_id_res).data?.tw_customer_id;
-    console.log("id: " + tw_id);
-    const student_obj = {
-        student: {
-            customer_id: tw_id,
-            first_name: firstName,
-            last_name: lastName,
-            email: email,
-            home_phone: home_phone,
-            mobile_phone: mobile_phone,
-            birth_date: birth_date,
-            school: school,
-            grade: grade,
-            additional_notes: additional_notes,
-            time_zone: null
-        }
-       
+  const match = await findCoachMatch(supabase, student_id);
+  console.log("MATCH RESULT:", match);
 
-    }
+  if (!match) {
+    return {
+      status: 200,
+      message: "Student created, but no coach available",
+    };
+  }
 
-    const result = await createStudent(student_obj);
-   
-    //now write the student to supabase
-    console.log("Result: " + JSON.stringify(result));
-    const {data, error} = await (await supabase).from('students').insert({
-        account_id: account_id,
-        tw_id: JSON.stringify(result.id),
-        name: firstName + " " + lastName,
-        profile_access_pin: pin
+  const { error: sessionError } = await supabase
+    .from("sessions")
+    .insert({
+      coach_id: match.coach_id,
+      student_id,
+      weekday: match.weekday,
+      start_time: match.start_time,
+      end_time: match.end_time,
     });
 
-    if(error){
-        return NextResponse.json({status: 500, message: "Error inserting into supabase"})
+  if (sessionError) {
+    console.error("SESSION INSERT ERROR:", sessionError);
+    return {
+      status: 500,
+      message: "Failed to create session",
+    };
+  }
+
+  return {
+    status: 200,
+    message: "Student created and coach assigned",
+    match,
+  };
+}
+
+// ------------------ HELPERS ------------------
+
+const toTimestamp = (time: string) => {
+  return new Date(`1970-01-01T${time}:00Z`).toISOString();
+};
+
+const addOneHour = (iso: string) => {
+  const d = new Date(iso);
+  d.setHours(d.getHours() + 1);
+  return d.toISOString();
+};
+
+const dayMap: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+// ------------------ MATCHING ------------------
+
+async function findCoachMatch(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  student_id: string,
+) {
+  const { data: studentSlots } = await supabase
+    .from("student_availabilities")
+    .select("*")
+    .eq("student_id", student_id);
+
+  if (!studentSlots || studentSlots.length === 0) {
+    return null;
+  }
+
+  console.log("Student Slots:", studentSlots);
+
+  for (const slot of studentSlots) {
+    let currentStart = slot.start_time;
+
+    while (true) {
+      const currentEnd = addOneHour(currentStart);
+
+      if (currentEnd > slot.end_time) break;
+
+      console.log("Checking slot:", currentStart, "→", currentEnd);
+
+      const { data: coaches } = await supabase
+        .from("coach_availabilities")
+        .select("coach_id, weekday, start_time, end_time")
+        .eq("weekday", slot.weekday)
+        .lte("start_time", currentStart)
+        .gte("end_time", currentEnd);
+
+      console.log("Coaches found:", coaches);
+
+      if (!coaches || coaches.length === 0) {
+        currentStart = currentEnd;
+        continue;
+      }
+
+      for (const coach of coaches) {
+        const { data: existingSession } = await supabase
+          .from("sessions")
+          .select("id")
+          .eq("coach_id", coach.coach_id)
+          .eq("weekday", slot.weekday)
+          .lt("start_time", currentEnd)
+          .gt("end_time", currentStart)
+          .maybeSingle();
+
+        if (!existingSession) {
+          console.log("MATCH FOUND:", coach.coach_id);
+
+          return {
+            coach_id: coach.coach_id,
+            weekday: slot.weekday,
+            start_time: currentStart,
+            end_time: currentEnd,
+          };
+        }
+      }
+
+      currentStart = currentEnd;
     }
+  }
 
-    
-
+  return null;
 }

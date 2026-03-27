@@ -15,34 +15,30 @@ export default function Contacts({ contacts }: { contacts: Contact[] }) {
   const router = useRouter();
 
   const handleContactClick = (contactId: string) => {
-    router.push(`/coach/${contactId}`);
+    router.push(`/message/${contactId}`);
   };
 
   return (
     <div className="relative">
-      {/* Dim overlay when filter is focused */}
+      {/* Overlay */}
       {isFocused && (
-        <div
-          className="fixed inset-0 bg-black/30 pointer-events-none"
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 bg-black/30 z-10" />
       )}
-      {/* Raise z-index for the input and dropdown so they sit above the overlay */}
+
       <div className="relative z-20">
         <ContactsFilterInput
           value={filter}
           onChange={setFilter}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 100)}
         />
 
-        {/* Contacts list, only display when filter bar is focused*/}
         {isFocused && (
-          <div className="absolute top-full left-0 right-0 z-20 mt-1">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
             <ContactsList
               contacts={contacts}
               filter={filter}
-              onContactClick={handleContactClick}
+              //onContactClick={handleContactClick}
             />
           </div>
         )}

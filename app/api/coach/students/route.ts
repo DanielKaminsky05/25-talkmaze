@@ -30,7 +30,8 @@ export async function GET() {
         students(
           id,
           name,
-          tw_id
+          tw_id,
+          lesson_space_id
         )
       `)
       .eq('coach_id', coachData.id);
