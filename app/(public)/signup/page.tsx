@@ -89,12 +89,13 @@ export default function SignupPage() {
 
         const result = userSchema.safeParse(formDataToValidate);
 
-        //Redirects the user to the home page if successful:
-        if (result.success) {
-            await signUpNewUser(familyFirstName, familyLastName, email, password, masterPin);
-            router.push("/home");
-        } else {
-            console.log(result.error.flatten().fieldErrors);
+    //Redirects the user to the home page if successful:
+    if (result.success) {
+      console.log("Signing up new user")
+      await signUpNewUser(familyFirstName, familyLastName, email, password, masterPin);
+      router.push("/home");
+    } else {
+      console.log(result.error.flatten().fieldErrors);
 
             const formattedErrors = result.error.flatten().fieldErrors;
             setErrors({
@@ -140,39 +141,39 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
-                            {/**Family First Name field div: */}
-                            <div className="flex flex-col gap-1">
-                                <div className="relative h-[58px]">
-                                    <input
-                                        type="text"
-                                        placeholder="Family First Name"
-                                        value={familyFirstName}
-                                        //add red border if error
-                                        className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyFirstName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
-                                        onChange={(e) => setFamilyFirstName(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <ErrorMessage message={errors.familyFirstName} />
-                                </div>
-                            </div>
-                            {/**Family Last Name div */}
-                            <div className="flex flex-col gap-1">
-                                <div className="relative h-[58px]">
-                                    <input
-                                        type="text"
-                                        placeholder="Family Last Name"
-                                        value={familyLastName}
-                                        //add red border if error
-                                        className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyLastName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
-                                        onChange={(e) => setFamilyLastName(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <ErrorMessage message={errors.familyLastName} />
-                                </div>
-                            </div>
+            <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
+              {/**Family First Name field div: */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
+                  <input
+                    type="text"
+                    placeholder="Family First Name"
+                    value={familyFirstName}
+                    //add red border if error
+                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyFirstName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    onChange={(e) => setFamilyFirstName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <ErrorMessage message={errors.familyFirstName} />
+                </div>
+              </div>
+              {/**Family Last Name div */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
+                  <input
+                    type="text"
+                    placeholder="Family Last Name"
+                    value={familyLastName}
+                    //add red border if error
+                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyLastName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    onChange={(e) => setFamilyLastName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <ErrorMessage message={errors.familyLastName} />
+                </div>
+              </div>
 
                             {/**email field div: */}
                             <div className="flex flex-col gap-1">

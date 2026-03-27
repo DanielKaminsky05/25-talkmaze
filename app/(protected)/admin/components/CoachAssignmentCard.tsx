@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { TeachworksEmployee, TeachworksStudent } from "@/lib/teachworks/types";
 import { Assignment } from "@/lib/types/assignments";
+import { Student,Coach } from "./AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {
-  coach: TeachworksEmployee;
+  coach: Coach;
   assignedStudents: Assignment[];
-  availableStudents: TeachworksStudent[];
+  availableStudents: Student[];
   onAdd: (studentId: string) => Promise<void>;
   onRemove: (assignmentId: string) => Promise<void>;
 }
@@ -44,15 +45,17 @@ export default function CoachAssignmentCard({
     }
   }, [isDropdownOpen]);
 
-  const filteredAvailable = availableStudents.filter((s) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      s.first_name.toLowerCase().includes(q) ||
-      s.last_name.toLowerCase().includes(q) ||
-      s.id.toString().includes(q)
-    );
-  });
+const filteredAvailable = availableStudents.filter((s) => {
+  if (!searchQuery.trim()) return true;
+  const q = searchQuery.toLowerCase();
+
+  return (
+    s.name.toLowerCase().includes(q) ||
+    s.id.toLowerCase().includes(q) ||
+    s.account_id.toLowerCase().includes(q) ||
+    (s.profile_access_pin ?? "").toLowerCase().includes(q)
+  );
+});
 
   const handleAdd = async (studentId: string) => {
     setLoadingStudentId(studentId);
@@ -94,7 +97,7 @@ export default function CoachAssignmentCard({
           </svg>
 
           <span className="text-xs font-semibold text-gray-900 truncate">
-            {coach.first_name} {coach.last_name}
+            {coach.name}
           </span>
         </div>
 
@@ -206,7 +209,7 @@ export default function CoachAssignmentCard({
                             className="w-full text-left px-3 py-1.5 text-xs text-gray-800 hover:bg-blue-50 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between gap-2"
                           >
                             <span className="truncate">
-                              {student.first_name} {student.last_name}
+                              {student.name}
                             </span>
                             {isAdding && (
                               <svg className="animate-spin w-3 h-3 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24">

@@ -9,6 +9,9 @@ type LessonRow = {
   title: string;
   description: string | null;
   content_url: string | null;
+  pre_lesson_url: string | null;
+  post_lesson_url: string | null;
+  slide_show_input: string | null;
   created_at: string;
 };
 
@@ -35,24 +38,45 @@ export default function Page() {
   const [progress, setProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const [badges, setBadges] = useState<BadgeRow[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
-
+  const[preLessonTasks, setPreLessonTasks] = useState<string| null>(null);
+  const[postLessonTasks, setPostLessonTasks] = useState<string| null>(null);
+  const [slideShow, setSlideShow] = useState<string | undefined>("");
   useEffect(() => {
     async function fetchLessons() {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("lessons")
-        .select("id, course_id, title, description, content_url, created_at")
-        .order("created_at", { ascending: true });
+      const {data: {user}} = await supabase.auth.getUser();
 
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
+      if(!user){
+        throw new Error("Can not identify user");
       }
-      setLessons(data ?? []);
+
+      //get the student
+      const {data: student, error: studentError} = await supabase.from('students').select('id').eq("account_id", user.id).single();
+
+      if(!student){
+        throw new Error("Can not identify student: " + JSON.stringify(studentError));
+      } 
+      //first get the course
+      const{data: course, error: courseError} = await supabase.from('course_assignment').select('course_id').eq("student_id", student.id).limit(1).single();
+
+      //fetch the lessons of the course
+      if(!course){
+        throw new Error("Can not find the user's course: " + JSON.stringify(courseError));
+      }
+
+    
+      const{data: lessons, error: lessonsError} = await supabase.from('lessons').select('id, course_id , created_at, pre_lesson_url, post_lesson_url, slide_show_url, content_url, description, title').eq('course_id',course.course_id);
+     
+      if(lessonsError){
+        console.log("Lesson error: " + JSON.stringify(lessonsError));
+      }
+      setLessons(lessons ?? []);
+
       setLoading(false);
     }
+
     fetchLessons();
+    
   }, []);
 
   useEffect(() => {
@@ -116,11 +140,61 @@ export default function Page() {
     setSelectedLesson(null);
   }, []);
 
-  const handleLessonClick = useCallback((lesson: LessonRow) => {
+
+  async function handleLessonClick(lesson: LessonRow){
+    console.log("Inside handleLessonClick")
     setSelectedLesson(lesson);
-  }, []);
+    const supabase = await createClient();
+   
+    try{
+      //fetch tasks
+      if(lesson.pre_lesson_url){
+        const cleanPath = lesson.pre_lesson_url.replace(/^course_files\//, "");
+
+
+       
+console.log("Folder path: " + JSON.stringify(cleanPath));
+       
+        const { data:filesPre} = await supabase.storage
+        .from("course_files")
+        .getPublicUrl(`${cleanPath}.pdf`)
+        
+        console.log("Files" + filesPre);
+        console.log("Files JSON:", JSON.stringify(filesPre, null, 2));
+        console.log("Error"+error);
+       
+       setPreLessonTasks(filesPre.publicUrl)
+       
+        
+      }
+      if(lesson.post_lesson_url){
+        
+          const cleanPath2 = lesson.post_lesson_url.replace(/^course_files\//, "");
+        
+        const {data: filesPost} = await supabase.storage
+        .from("course_files")
+        .getPublicUrl(`${cleanPath2}.pdf`)
+        setPostLessonTasks(filesPost.publicUrl)
+      }
+
+      if(lesson.slide_show_input){
+            const cleanPath3 = lesson.slide_show_input.replace(/^course_files\//, "");
+             const {data: filesSlide} = await supabase.storage
+            .from("course_files")
+            .getPublicUrl(`${cleanPath3}.ppt`)
+
+            setSlideShow(filesSlide.publicUrl);
+             
+
+      }
+    }catch(err){
+
+    }
+  }
+ 
 
   const lessonCardsData = useMemo(() => {
+    console.log("Mapping lessons: " + JSON.stringify(lessons[0]));
     return lessons.map((lesson, index) => ({
       lesson,
       lessonNumber: index + 1,
@@ -200,23 +274,21 @@ export default function Page() {
               <TaskCard 
                 title="Pre-Lesson Work" 
                 instruction={selectedLesson.description ?? "Complete the pre-lesson work for this lesson."}
+                url={preLessonTasks}
               />
               
               {/* Post-Lesson Work */}
               <TaskCard 
                 title="Post-Lesson Work" 
                 instruction={selectedLesson.description ?? "Complete the post-lesson work for this lesson."}
+                url={postLessonTasks}
               />
             </div>
           </div>
 
           {/* Footer Banner Image Mockup */}
            <div className="mt-8 w-full h-[120px] bg-gradient-to-r from-[#9b72cb] to-[#8659c2] rounded-t-3xl border-b-0 flex items-center px-12 relative overflow-hidden">
-              <div className="text-yellow-300 font-black text-4xl md:text-5xl uppercase tracking-wider z-10">
-                  Strategies For
-              </div>
-              {/* Decorative dashed line mockup */}
-              <div className="absolute right-20 top-0 bottom-0 border-r-2 border-dashed border-white/50 transform rotate-12"></div>
+              <a href = {slideShow}>Download Slide Show</a>
           </div>
         </div>
       ) : (
@@ -342,7 +414,7 @@ const TokensCard = memo(function TokensCard({ isFullWidth }: { isFullWidth?: boo
     )
 });
 
-const TaskCard = memo(function TaskCard({ title, instruction }: { title: string, instruction: string }) {
+const TaskCard = memo(function TaskCard({ title, instruction , url}: { title: string, instruction: string, url: string | null }) {
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-lg flex flex-col h-full min-h-[300px]">
             {/* Header */}
@@ -354,14 +426,7 @@ const TaskCard = memo(function TaskCard({ title, instruction }: { title: string,
                 <p className="font-bold">{instruction}</p>
                 
                 <div className="space-y-1">
-                    <p className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-2">Food for thought:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                        <li>What is your favorite food?</li>
-                        <li>What experiences do you associate with this food?</li>
-                        <li>What does this food taste like?</li>
-                        <li>What ingredients does it have?</li>
-                        <li>Do you think food brings people together?</li>
-                    </ul>
+                   <a href = {url ?? ""}>Click To Get Task!</a>
                 </div>
             </div>
         </div>

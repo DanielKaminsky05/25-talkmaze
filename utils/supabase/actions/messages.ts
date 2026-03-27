@@ -58,15 +58,24 @@ export async function sendMessage(data: {
     return { error: true, message: "Failed to send message" };
   }
 
-  // Transform the database response to match the Message type
+  const { data: account } = await supabase
+    .from("account")
+    .select("email")
+    .eq("id", user.id)
+    .single();
+
+  const { data: student } = !account
+    ? await supabase.from("students").select("name").eq("id", user.id).single()
+    : { data: null };
+
+  const senderName = account?.email ?? student?.name ?? "Unknown";
+
   const message: Message = {
     id: insertedMessage.id,
     text: insertedMessage.body,
     created_at: insertedMessage.created_at,
     sender_id: insertedMessage.sender_id,
-    sender: {
-      name: insertedMessage.sender?.email || "Unknown",
-    },
+    sender: { name: senderName },
   };
 
   return { error: false, message };

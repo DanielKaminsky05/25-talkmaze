@@ -1,17 +1,22 @@
 //start video lesson box component
+"use client"
 import { useEffect, useState } from "react";
 import Link from 'next/link';
-import { getLessonSpaceLink } from "./startVideoLessonBoxActions";
+import { getLessonSpace } from "./startVideoLessonBoxActions";
+import { NextResponse } from "next/server";
 export default function StartVideoLessonBox() {
   const[link,setLink] = useState<string>("");
   useEffect(() => {
     async function getLink(){
-      const link_res = await getLessonSpaceLink();
-
-      if(typeof(link_res) == typeof(String)){
-        setLink(link);
+      const link_res = await getLessonSpace();
+      if(!link_res){
+        return new Error("Can get lesson link")
       }
+      console.log("Setting link: " + link_res);
+      setLink(link_res)
     }
+
+    getLink();
   },[])
   
   return (
@@ -28,7 +33,14 @@ export default function StartVideoLessonBox() {
           fill="white"
         />
       </svg>
-      <Link className="text-center" href={link}>Start Video Lesson</Link>
+      <a
+        className="text-center"
+        href={link}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Start Video Lesson
+      </a>
     </div>
   );
 }

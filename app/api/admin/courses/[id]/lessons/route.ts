@@ -30,27 +30,46 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  
   try {
     const { id } = await params;
     const body = await req.json();
-    const { title, description, content_url } = body;
+    
+    if(!body){
+      return NextResponse.json({status: 404, message: "Unable to get user inputted fields"});
+    }
 
+    
+   const {lesson_id, title, description, content_url, pre_file_name, post_file_name, slide_input_name} = body;
+
+    if(!lesson_id){
+      return NextResponse.json({status: 404, message: "Lesson id not found"})
+    }
+   
     if (!title?.trim()) {
       return NextResponse.json(
         { error: "Lesson title is required" },
         { status: 400 }
       );
     }
-
+    
     const supabase = await createClient();
-
+    
+  
+    const pre_lesson_url = `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`;
+    const post_lesson_url = `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`;
+    const slide_show_url = `course_files/${id}/${lesson_id}/lessons/${slide_input_name}`
     const { data, error } = await supabase
       .from("lessons")
       .insert({
+        id: lesson_id,
         course_id: id,
         title: title.trim(),
         description: description?.trim() || null,
         content_url: content_url?.trim() || null,
+        pre_lesson_url: pre_lesson_url,
+        post_lesson_url: post_lesson_url,
+        slide_show_url: slide_show_url,
       })
       .select()
       .single();

@@ -17,8 +17,14 @@ export async function middleware(request: NextRequest) {
   // Determine if the current route is a "profile locked" route
   // Profile locked routes require the user to have an active profile
 
+
+  //allow user to 
   if(pathname.startsWith("/onboarding")){
-    return;
+    return NextResponse.next();
+  }
+
+  if(pathname.startsWith("/api/webhooks/stripe")){
+    return NextResponse.next();
   }
   const isProfileLockedRoute =
     !pathname.startsWith("/login") &&

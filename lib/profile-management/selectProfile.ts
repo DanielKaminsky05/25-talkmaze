@@ -15,7 +15,7 @@ export async function selectProfile(formData: FormData) {
   const profileId = formData.get("profileId") as string;
   const profileType = formData.get("profileType") as "student" | "parent";
   const pin = formData.get("pin") as string | null;
-
+  
  
   // Ensure required fields are present
   if (!profileId || !profileType) throw new Error("Missing profile data");

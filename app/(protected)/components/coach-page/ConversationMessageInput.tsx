@@ -1,18 +1,18 @@
 "use client";
 
-import { sendMessage } from "@/utils/supabase/actions/messages";
+import { Message, sendMessage } from "@/utils/supabase/actions/messages";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ConversationMessageInput({
   conversationId,
+  onMessageSent,
 }: {
   conversationId: string;
+  onMessageSent?: (message: Message) => void;
 }) {
-  // State variables for controlled form elements
   const [message, setMessage] = useState("");
-
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  /** Resize the textarea, if the message exceeds the first line */
+
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -20,25 +20,17 @@ export default function ConversationMessageInput({
     el.style.height = `${el.scrollHeight}px`;
   }, [message]);
 
-  // Handle message submission
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
-    // Trim message before attempting to send. If message is empty after
-    // trim, do nothing
     const text = message.trim();
     if (!text) return;
+    setMessage("");
 
-    setMessage(""); // Set the input field to empty
-
-    // Invoke server action to send message
     const result = await sendMessage({ text, conversationId });
-
-    // Check if message was successfully sent
-    // TODO: display error message on client if there is erro
     if (result.error) {
-      console.log("ConversationMessageInput ERROR:" + result.message);
+      console.error("Send error:", result.message);
     } else {
-      // TODO: handle success
+      onMessageSent?.(result.message); // ← bubble up to parent
     }
   }
 

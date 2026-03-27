@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Lesson, LessonInput } from "@/lib/types/lesson";
-
+import { createClient } from "@/utils/supabase/clientServer";
+import { useRef } from "react";
+import AssignStudentDropDown from "./AssignStudentDropDown";
+import { TeachworksStudent } from "@/lib/teachworks/types";
+import { Student } from "./AssignStudentDropDown";
 interface CourseLessonsPanelProps {
   courseId: string;
+  students: Student[]
 }
 
 const EMPTY_FORM: LessonInput = {
@@ -13,9 +18,18 @@ const EMPTY_FORM: LessonInput = {
   content_url: "",
   pre_lesson_tasks: [],
   post_lesson_tasks: [],
+  slide_show_input: []
 };
 
-export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps) {
+export default function CourseLessonsPanel({ courseId, students }: CourseLessonsPanelProps) {
+  
+
+  //references for file inputs
+  const preTaskRef = useRef<HTMLInputElement | null>(null)
+  const postTaskRef = useRef<HTMLInputElement | null>(null)
+  const slideShowRef = useRef<HTMLInputElement | null>(null)
+
+
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,17 +39,19 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
   const [addForm, setAddForm] = useState<LessonInput>({ ...EMPTY_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [newPreTask, setNewPreTask] = useState("");
-  const [newPostTask, setNewPostTask] = useState("");
+  const [newPreTask, setNewPreTask] = useState<File | null>(null);
+  const [newPostTask, setNewPostTask] = useState<File | null>(null);
 
+  const [newSlideDeck, setNewSlideDeck] = useState<File | null>(null);
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<LessonInput>({ ...EMPTY_FORM });
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editNewPreTask, setEditNewPreTask] = useState("");
-  const [editNewPostTask, setEditNewPostTask] = useState("");
-
+  const [editNewPreTask, setEditNewPreTask] = useState<File | null>(null);
+  const [editNewPostTask, setEditNewPostTask] = useState<File | null>(null);
+  const [editNewSlideDeck, setEditNewSlideDeck] = useState<File|null>(null);
+  
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -53,22 +69,24 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
   }, [courseId]);
 
   const addTaskToForm = (
-    type: "pre_lesson_tasks" | "post_lesson_tasks",
-    value: string,
-    setter: (value: string) => void,
+    type: "pre_lesson_tasks" | "post_lesson_tasks" | "slide_show_input",
+    value: File | null,
+    setter: (value: File | null) => void,
     formSetter: React.Dispatch<React.SetStateAction<LessonInput>>
   ) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
+    
+    if(!value) return;
     formSetter((prev) => ({
       ...prev,
-      [type]: [...(prev[type] ?? []), trimmed],
+      [type]: [...(prev[type] ?? []), value],
     }));
-    setter("");
+    setter(null);
   };
 
+
+
   const removeTaskFromForm = (
-    type: "pre_lesson_tasks" | "post_lesson_tasks",
+    type: "pre_lesson_tasks" | "post_lesson_tasks" | "slide_show_input",
     index: number,
     formSetter: React.Dispatch<React.SetStateAction<LessonInput>>
   ) => {
@@ -87,18 +105,98 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
     setIsSubmitting(true);
     setAddError(null);
 
-
+  
     try {
+
+      
+      const supabase = await createClient();
+      const lesson_id = crypto.randomUUID();
+
+      let preFileName = crypto.randomUUID();
+      let postFileName = crypto.randomUUID();
+      let slideFileName = crypto.randomUUID()
+      
+      try{
+        if(addForm.pre_lesson_tasks){
+          console.log("Adding pre lesson tasks")
+          for(let i = 0; i < addForm.pre_lesson_tasks?.length; i++){
+            const file: File = addForm.pre_lesson_tasks[i];
+            const fileExt = file.name.split(".").pop(); // get extension
+            const fileName = `${preFileName}.${fileExt}`;
+            const filePath = `${courseId}/${lesson_id}/pre_lesson_tasks/${fileName}`;
+
+            const{data: uploadData, error: uploadError} = await supabase.storage
+                  .from('course_files')
+                  .upload(filePath,file)
+              if(uploadError){
+                  console.log("Error uploading files to supabase storage: " + uploadError);
+                  throw new Error("Upload Error: " + uploadError);
+              }
+          }
+        }
+
+          
+        if(addForm.post_lesson_tasks){
+            console.log("adding post lesson tasks")
+            for(let i = 0; i < addForm.post_lesson_tasks?.length; i++){
+            const file: File = addForm.post_lesson_tasks[i];
+            const fileExt = file.name.split(".").pop(); // get extension
+            const fileName = `${postFileName}.${fileExt}`;
+            const filePath = `${courseId}/${lesson_id}/post_lesson_tasks/${fileName}`;
+
+            const{data: uploadData, error: uploadError} = await supabase.storage
+                  .from('course_files')
+                  .upload(filePath,file)
+              if(uploadError){
+                  console.log("Error uploading files to supabase storage: " + uploadError);
+                  throw new Error("Upload Error: " + uploadError);
+              }
+          }
+
+          console.log("Sucessfully uploaded post lesson tasks");
+          
+        }
+
+          
+        if(addForm.slide_show_input){
+          console.log("Uploading slide shows")
+          for(let i = 0; i < addForm.slide_show_input?.length; i++){
+            const file: File = addForm.slide_show_input[i];
+            const fileExt = file.name.split(".").pop(); // get extension
+            const fileName = `${slideFileName}.${fileExt}`;
+            const filePath = `${courseId}/${lesson_id}/lessons/${fileName}`;
+
+            const{data: uploadData, error: uploadError} = await supabase.storage
+                  .from('course_files')
+                  .upload(filePath,file)
+              if(uploadError){
+                  console.log("Error uploading files to supabase storage: " + uploadError);
+                  throw new Error("Upload Error: " + uploadError);
+              }
+          }
+
+          console.log("Successfully uploaded slide show inputs")
+        }
+      }catch(err){
+        console.log("Error writing to S3 bucket");
+        throw new Error("Error writing to S3 Bucket")
+      }
+
+
+      
+      
+      
       const res = await fetch(`/api/admin/courses/${courseId}/lessons`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: addForm.title.trim(),
-          description: addForm.description?.trim() || null,
-          content_url: addForm.content_url?.trim() || null,
-          pre_lesson_tasks: addForm.pre_lesson_tasks ?? [],
-          post_lesson_tasks: addForm.post_lesson_tasks ?? [],
-        }),
+          title: addForm.title,
+          lesson_id: lesson_id,
+          content_url: addForm.content_url,
+          description: addForm.description,
+          pre_file_name: preFileName,
+          post_file_name: postFileName,
+          slide_file_name: slideFileName
+        })
       });
 
       const data = await res.json();
@@ -106,8 +204,9 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
 
       setLessons((prev) => [...prev, data]);
       setAddForm({ ...EMPTY_FORM });
-      setNewPreTask("");
-      setNewPostTask("");
+      setNewPreTask(null);
+      setNewPostTask(null);
+      
       setIsAdding(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "Error");
@@ -122,11 +221,13 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
       title: lesson.title,
       description: lesson.description ?? "",
       content_url: lesson.content_url ?? "",
-      pre_lesson_tasks: lesson.pre_lesson_tasks ?? [],
-      post_lesson_tasks: lesson.post_lesson_tasks ?? [],
+      pre_lesson_tasks: lesson.pre_lesson_tasks ?? null,
+      post_lesson_tasks: lesson.post_lesson_tasks ?? null,
+      slide_show_input: lesson.slide_show_input ?? null
     });
-    setEditNewPreTask("");
-    setEditNewPostTask("");
+    setEditNewPreTask(null);
+    setEditNewPostTask(null);
+    setEditNewSlideDeck(null);
     setEditError(null);
   };
 
@@ -204,8 +305,9 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
               setIsAdding(true);
               setAddError(null);
               setAddForm({ ...EMPTY_FORM });
-              setNewPreTask("");
-              setNewPostTask("");
+              setNewPreTask(null);
+              setNewPostTask(null);
+              setEditNewSlideDeck(null);
             }}
             className="px-2 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
           >
@@ -261,31 +363,37 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
             <label className="block text-xs text-gray-600 mb-1">Pre-lesson tasks</label>
             <div className="flex gap-2">
               <input
-                type="text"
-                value={newPreTask}
-                onChange={(e) => setNewPreTask(e.target.value)}
+                type="File"
+                ref={preTaskRef}
+                accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                onChange={(e)  => {
+                    const file = e.target.files?.[0] ?? null;
+                    if(!file) return;
+                    addTaskToForm("pre_lesson_tasks",e.target.files?.[0] ?? null,setNewPreTask,setAddForm)}
+                  }
                 placeholder="Add a pre-lesson task"
-                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
+                className = 'hidden'
               />
               <button
-                type="button"
-                onClick={() =>
-                  addTaskToForm("pre_lesson_tasks", newPreTask, setNewPreTask, setAddForm)
-                }
+                type = 'button'
+                onClick = {(e) => preTaskRef.current?.click()}
                 className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
               >
-                Add
+                Upload Files
               </button>
+             
             </div>
+            
+                
 
             {(addForm.pre_lesson_tasks ?? []).length > 0 && (
               <div className="mt-2 space-y-1">
-                {addForm.pre_lesson_tasks.map((task, idx) => (
+                {addForm.pre_lesson_tasks && addForm.pre_lesson_tasks.map((task, idx) => (
                   <div
                     key={`${task}-${idx}`}
                     className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
                   >
-                    <span className="text-xs text-gray-800">{task}</span>
+                    <span className="text-xs text-gray-800">{task.name}</span>
                     <button
                       type="button"
                       onClick={() => removeTaskFromForm("pre_lesson_tasks", idx, setAddForm)}
@@ -296,38 +404,93 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                   </div>
                 ))}
               </div>
+
+
             )}
           </div>
+
+          {/**Let user add slideshows for lessons */}
+             <div>
+              <label className="block text-xs text-gray-600 mb-1">Add Slideshow</label>
+              <div className="flex gap-2">
+              <input
+                ref={slideShowRef}
+                type="file"
+                accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                onChange={(e)  => {
+                    const file = e.target.files?.[0] ?? null;
+                    if(!file) return;
+                    addTaskToForm("slide_show_input",e.target.files?.[0] ?? null,setNewSlideDeck,setAddForm)}
+                  }
+                placeholder="Add a pre-lesson task"
+                className="hidden"
+              />
+              <button
+                className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+                type='button'
+                 onClick={() =>
+                  slideShowRef.current?.click()
+                }
+              >
+                Upload Files
+              </button>
+              </div>
+
+               {(addForm.slide_show_input ?? []).length > 0 && (
+              <div className="mt-2 space-y-1">
+                {addForm.slide_show_input && addForm.slide_show_input.map((task, idx) => (
+                  <div
+                    key={`${task}-${idx}`}
+                    className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
+                  > 
+                    <span className="text-xs text-gray-800">{task.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeTaskFromForm("slide_show_input", idx, setAddForm)}
+                      className="text-[11px] text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            </div>
 
           <div>
             <label className="block text-xs text-gray-600 mb-1">Post-lesson tasks</label>
             <div className="flex gap-2">
               <input
-                type="text"
-                value={newPostTask}
-                onChange={(e) => setNewPostTask(e.target.value)}
+                type="file"
+                accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                ref={postTaskRef}
+                onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    if(!file) return;
+                    addTaskToForm("post_lesson_tasks",e.target.files?.[0] ?? null,setNewPostTask,setAddForm)}
+                  }
                 placeholder="Add a post-lesson task"
-                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
+                className="hidden"
               />
               <button
                 type="button"
                 onClick={() =>
-                  addTaskToForm("post_lesson_tasks", newPostTask, setNewPostTask, setAddForm)
+                  postTaskRef.current?.click()
                 }
                 className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
               >
-                Add
+                Upload Files
               </button>
             </div>
 
             {(addForm.post_lesson_tasks ?? []).length > 0 && (
               <div className="mt-2 space-y-1">
-                {addForm.post_lesson_tasks.map((task, idx) => (
+                {addForm.post_lesson_tasks && addForm.post_lesson_tasks.map((task, idx) => (
                   <div
                     key={`${task}-${idx}`}
                     className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
                   >
-                    <span className="text-xs text-gray-800">{task}</span>
+                    <span className="text-xs text-gray-800">{task.name}</span>
                     <button
                       type="button"
                       onClick={() => removeTaskFromForm("post_lesson_tasks", idx, setAddForm)}
@@ -418,9 +581,9 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                     <label className="block text-xs text-gray-600 mb-1">Pre-lesson tasks</label>
                     <div className="flex gap-2">
                       <input
-                        type="text"
-                        value={editNewPreTask}
-                        onChange={(e) => setEditNewPreTask(e.target.value)}
+                        type="file"
+                        accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        onChange={(e) => setEditNewPreTask(e.target.files?.[0] ?? null)}
                         placeholder="Add a pre-lesson task"
                         className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                       />
@@ -442,12 +605,12 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
 
                     {(editForm.pre_lesson_tasks ?? []).length > 0 && (
                       <div className="mt-2 space-y-1">
-                        {editForm.pre_lesson_tasks.map((task, idx) => (
+                        {editForm.pre_lesson_tasks && editForm.pre_lesson_tasks.map((task, idx) => (
                           <div
                             key={`${task}-${idx}`}
                             className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
                           >
-                            <span className="text-xs text-gray-800">{task}</span>
+                            <span className="text-xs text-gray-800">{task.name}</span>
                             <button
                               type="button"
                               onClick={() =>
@@ -467,11 +630,11 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                     <label className="block text-xs text-gray-600 mb-1">Post-lesson tasks</label>
                     <div className="flex gap-2">
                       <input
-                        type="text"
-                        value={editNewPostTask}
-                        onChange={(e) => setEditNewPostTask(e.target.value)}
+                        type="file"
+                        accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        onChange={(e) => setEditNewPostTask(e.target.files?.[0] ?? null)}
                         placeholder="Add a post-lesson task"
-                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                        className="hidden"
                       />
                       <button
                         type="button"
@@ -491,12 +654,12 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
 
                     {(editForm.post_lesson_tasks ?? []).length > 0 && (
                       <div className="mt-2 space-y-1">
-                        {editForm.post_lesson_tasks.map((task, idx) => (
+                        {editForm.post_lesson_tasks && editForm.post_lesson_tasks.map((task, idx) => (
                           <div
                             key={`${task}-${idx}`}
                             className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
                           >
-                            <span className="text-xs text-gray-800">{task}</span>
+                            <span className="text-xs text-gray-800">{task.name}</span>
                             <button
                               type="button"
                               onClick={() =>
@@ -562,9 +725,9 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       <div className="mt-2">
                         <p className="text-[11px] font-medium text-gray-700">Pre-lesson tasks</p>
                         <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
-                          {lesson.pre_lesson_tasks.map((task, i) => (
+                          {lesson.pre_lesson_tasks && lesson.pre_lesson_tasks.map((task, i) => (
                             <li key={i} className="text-[11px] text-gray-500">
-                              {task}
+                              {task.name}
                             </li>
                           ))}
                         </ul>
@@ -575,9 +738,9 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                       <div className="mt-2">
                         <p className="text-[11px] font-medium text-gray-700">Post-lesson tasks</p>
                         <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
-                          {lesson.post_lesson_tasks.map((task, i) => (
+                          {lesson.post_lesson_tasks && lesson.post_lesson_tasks.map((task, i) => (
                             <li key={i} className="text-[11px] text-gray-500">
-                              {task}
+                              {task.name}
                             </li>
                           ))}
                         </ul>
@@ -602,8 +765,14 @@ export default function CourseLessonsPanel({ courseId }: CourseLessonsPanelProps
                   </div>
                 </div>
               )}
+
+              
             </div>
           ))}
+
+          <div>
+            <AssignStudentDropDown courseId={courseId} />
+          </div>
         </div>
       )}
     </div>
