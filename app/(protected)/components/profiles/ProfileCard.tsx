@@ -6,6 +6,7 @@ interface ProfileCardProps {
   name: string;
   imageUrl: string;
   hasPin: boolean;
+  asLink?: boolean;
 }
 
 /**
@@ -18,12 +19,15 @@ export default function ProfileCard({
   name,
   imageUrl,
   hasPin,
+  asLink,
 }: ProfileCardProps) {
+  const Container = asLink ? "div" : "button";
+
   return (
     <div className="flex flex-col items-center">
       {/* Clicking the card image/name submits the <form> wrapping it*/}
-      <button
-        type="submit"
+      <Container
+        type={asLink ? undefined : "submit"}
         className="flex flex-col items-center gap-[clamp(12px,1.3vw,20px)] cursor-pointer group bg-transparent border-none p-0"
       >
         {/* Profile image/avatar */}
@@ -39,7 +43,7 @@ export default function ProfileCard({
         <span className="text-[clamp(16px,1.5vw,22px)] font-bold text-white">
           {name}
         </span>
-      </button>
+      </Container>
 
       {/* PIN input (if required) */}
       <div className="h-[clamp(40px,4vw,60px)] flex items-center justify-center">

@@ -145,39 +145,6 @@ export type Database = {
           },
         ]
       }
-      coach_students: {
-        Row: {
-          coach_id: string
-          created_at: string
-          student_id: string
-        }
-        Insert: {
-          coach_id: string
-          created_at?: string
-          student_id: string
-        }
-        Update: {
-          coach_id?: string
-          created_at?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "coach_students_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "coach_students_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       conversations: {
         Row: {
           created_at: string
@@ -606,6 +573,7 @@ export type Database = {
           name: string | null
           profile_access_pin: string | null
           tw_id: string | null
+          remaining_lessons: number | null
           updated_at: string
         }
         Insert: {
@@ -616,6 +584,7 @@ export type Database = {
           name?: string | null
           profile_access_pin?: string | null
           tw_id?: string | null
+          remaining_lessons?: number | null
           updated_at?: string
         }
         Update: {
@@ -626,6 +595,7 @@ export type Database = {
           name?: string | null
           profile_access_pin?: string | null
           tw_id?: string | null
+          remaining_lessons?: number | null
           updated_at?: string
         }
         Relationships: [

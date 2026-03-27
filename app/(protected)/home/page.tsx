@@ -7,19 +7,11 @@ import ReviewLessonCard from "../components/ReviewLesson";
 import NextLessonCard from "../components/UpNextLesson";
 import ScheduleList from "../components/ScheduleList";
 import { getProgress } from "./actions";
+import { Appointment } from "../types/lesson";
 
 interface ProgressData {
   current: number;
   total: number;
-}
-
-
-interface Appointment {
-    id: string;
-    title: string; // Mapped from name
-    start_date: string; // Mapped from from_datetime
-    end_date: string;
-    description?: string;
 }
 
 

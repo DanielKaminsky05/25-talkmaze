@@ -12,7 +12,8 @@ export default function SideBar() {
 
   // keep local state in sync with URL
   useEffect(() => {
-    if (pathname.startsWith("/lesson")) setActiveId(1);
+    if (pathname.startsWith("/parent")) setActiveId(10); // Parent Home
+    else if (pathname.startsWith("/lesson")) setActiveId(1);
     else if (pathname.startsWith("/message")) setActiveId(2);
     else if (pathname.startsWith("/reward")) setActiveId(3);
     else setActiveId(0);
