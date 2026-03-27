@@ -1,7 +1,7 @@
 "use server";
 
 import { createStudent } from "@/lib/profile-management/addProfile";
-import { time_zone } from "./page";
+import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 
 export async function handleStudentCreation(
@@ -14,26 +14,31 @@ export async function handleStudentCreation(
   school: string,
   grade: number,
   additional_notes: string,
-  time_zone: time_zone,
+  time_zone: OnboardingTimeZone,
   pin: string,
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
 ) {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
 
   const auth = await supabase.auth.getUser();
   const account_id = auth?.data?.user?.id;
 
   if (!account_id) {
-    return new Error("Account ID is missing");
+    return { success: false, error: "Account ID is missing" };
   }
 
-  const { data: accountData } = await supabase
+  const { data: accountData, error: accountError } = await supabase
     .from("account")
     .select("tw_customer_id")
     .eq("id", account_id)
     .single();
 
-  const tw_id = accountData?.tw_customer_id;
+  if (accountError || !accountData) {
+    console.error("Account fetch error:", accountError);
+    return { success: false, error: "Failed to fetch account info" };
+  }
+
+  const tw_id = accountData.tw_customer_id;
 
   const student_obj = {
     student: {
@@ -129,6 +134,7 @@ export async function handleStudentCreation(
   }
 
   return {
+    success: true,
     status: 200,
     message: "Student created and coach assigned",
     match,
@@ -160,7 +166,7 @@ const dayMap: Record<string, number> = {
 // ------------------ MATCHING ------------------
 
 async function findCoachMatch(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: any,
   student_id: string,
 ) {
   const { data: studentSlots } = await supabase

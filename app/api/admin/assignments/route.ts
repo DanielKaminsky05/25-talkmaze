@@ -19,11 +19,13 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   
-  // Inject synthetic ID for the frontend and map coach/student IDs to Teachworks IDs
+  // Return original Supabase UUIDs for the frontend to match with its local cache
   const mappedData = data.map((row: any) => ({
     id: `${row.coach_id}_${row.student_id}`, // Used strictly for the DELETE route decomposition
-    coach_id: String(row.coaches?.tw_id || row.coach_id),
-    student_id: String(row.students?.tw_id || row.student_id),
+    coach_id: String(row.coach_id),
+    student_id: String(row.student_id),
+    coach_tw_id: row.coaches?.tw_id || null,
+    student_tw_id: row.students?.tw_id || null,
     coaches: { name: row.coaches?.name || null },
     students: { name: row.students?.name || null }
   }));
@@ -108,7 +110,7 @@ export async function POST(req: NextRequest) {
     console.log("Made room New: " + JSON.stringify(make_coach_url_res_json));
     //save this into supabase for the teacher
 
-    const insert_teacher_url = await supabase.from('students').update({lesson_space_teacher_link: make_coach_url_res_json.client_url}).eq("id",student_id)
+    const insert_teacher_url = await (supabase.from('students') as any).update({lesson_space_teacher_link: make_coach_url_res_json.client_url}).eq("id",student_id)
 
     if(insert_teacher_url.error){
       console.log("Error inserting teacher url: " + insert_teacher_url.error);

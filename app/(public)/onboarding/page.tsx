@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import OnboardingCalendar from "../../(protected)/components/onboardingCalendar/OnboardingCalendar";
 import { handleStudentCreation } from "./actions";
+import { OnboardingTimeZone, TIME_ZONES } from "./types";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,38 +34,6 @@ const onBoardSchema = z.object({
   ),
 });
 
-const TIME_ZONES = [
-  "America/St_Johns", // Newfoundland
-  "America/Halifax", // Atlantic
-  "America/Toronto", // Eastern (Canada)
-  "America/New_York", // Eastern (US)
-  "America/Chicago", // Central
-  "America/Winnipeg", // Central (Canada)
-  "America/Denver", // Mountain
-  "America/Edmonton", // Mountain (Canada)
-  "America/Phoenix", // Mountain (no DST)
-  "America/Los_Angeles", // Pacific
-  "America/Vancouver", // Pacific (Canada)
-  "America/Anchorage", // Alaska
-  "Pacific/Honolulu", // Hawaii
-];
-
-export type time_zone =
-  | "America/Toronto"
-  | "America/St_Johns" // Newfoundland
-  | "America/Halifax" // Atlantic
-  | "America/Toronto" // Eastern (Canada)
-  | "America/New_York" // Eastern (US)
-  | "America/Chicago" // Central
-  | "America/Winnipeg" // Central (Canada)
-  | "America/Denver" // Mountain
-  | "America/Edmonton" // Mountain (Canada)
-  | "America/Phoenix" // Mountain (no DST)
-  | "America/Los_Angeles" // Pacific
-  | "America/Vancouver" // Pacific (Canada)
-  | "America/Anchorage" // Alaska
-  | "Pacific/Honolulu"; // Hawaii
-
 export default function Onboarding() {
   const router = useRouter();
 
@@ -75,12 +43,10 @@ export default function Onboarding() {
   const [birthDate, setBirthDate] = useState<string>("");
   const [grade, setGrade] = useState<number>(-1);
   const [school, setSchool] = useState<string>("");
-  const [timeZone, setTimeZone] = useState<time_zone>("America/Toronto");
+  const [timeZone, setTimeZone] = useState<OnboardingTimeZone>("America/Toronto");
   const [homePhone, setHomePhone] = useState<string>("");
   const [mobilePhone, setMobilePhone] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [availability, setAvailability] = useState<Date[]>([]);
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [pin, setPin] = useState<string>("");
   const [pageNum, setPage] = useState<number>(1);
@@ -146,55 +112,7 @@ export default function Onboarding() {
       return newState;
     });
   };
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    try {
-      //get response
 
-      const response = handleStudentCreation(
-        firstName,
-        lastName,
-        email,
-        birthDate,
-        homePhone,
-        mobilePhone,
-        school,
-        grade,
-        notes,
-        timeZone,
-        pin,
-        weeklyAvailability,
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  const handleDateSelect = (date: Date | null) => {
-    if (!date) return;
-
-    setAvailability((prev) => {
-      const alreadySelected = prev.some(
-        (d) =>
-          d.getFullYear() === date.getFullYear() &&
-          d.getMonth() === date.getMonth() &&
-          d.getDate() === date.getDate(),
-      );
-
-      if (alreadySelected) {
-        return prev.filter(
-          (d) =>
-            !(
-              d.getFullYear() === date.getFullYear() &&
-              d.getMonth() === date.getMonth() &&
-              d.getDate() === date.getDate()
-            ),
-        );
-      }
-
-      return [...prev, date];
-    });
-  };
 
   return (
     <div
@@ -359,7 +277,7 @@ export default function Onboarding() {
                       <select
                         value={timeZone}
                         onChange={(e) =>
-                          setTimeZone(e.target.value as time_zone)
+                          setTimeZone(e.target.value as OnboardingTimeZone)
                         }
                         className="w-full h-full px-5 text-[20px] text-[#1F2E3B] border-[0.7px] bg-white appearance-none cursor-pointer"
                       >
@@ -488,7 +406,7 @@ export default function Onboarding() {
                   e.preventDefault();
 
                   try {
-                    await handleStudentCreation(
+                    const res = await handleStudentCreation(
                       firstName,
                       lastName,
                       email,
@@ -503,9 +421,14 @@ export default function Onboarding() {
                       weeklyAvailability
                     );
 
-                    router.push("/profiles");
+                    if (res.success) {
+                      router.push("/profiles");
+                    } else {
+                      alert(res.error || "Failed to create student profile");
+                    }
                   } catch (err) {
                     console.error(err);
+                    alert("An unexpected error occurred");
                   }
                 }}
               >
@@ -586,8 +509,7 @@ export default function Onboarding() {
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
+                ))}
               <button
                 type="submit"
                 className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
@@ -604,7 +526,7 @@ export default function Onboarding() {
                 </p>
               </div>
             </form>
-          </div>
+            )}</div>
         </div>
       </div>
     </div>
