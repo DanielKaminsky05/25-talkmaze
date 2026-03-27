@@ -16,10 +16,18 @@ import CreateCourseModal from "./components/CreateCourseModal";
 import CourseLessonsPanel from "./components/CourseLessonPanel";
 import { Assignment } from "@/lib/types/assignments";
 import CoachAssignmentCard from "./components/CoachAssignmentCard";
-import AssignStudentDropDown, { Coach } from "./components/AssignStudentDropDown";
+import AssignStudentDropDown, {
+  Coach,
+} from "./components/AssignStudentDropDown";
 const ITEMS_PER_PAGE = 5;
 
-type TabType = "students" | "coaches" | "courses" | "assignments" | "learning_space" | "course_assignment";
+type TabType =
+  | "students"
+  | "coaches"
+  | "courses"
+  | "assignments"
+  | "learning_space"
+  | "course_assignment";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -32,8 +40,7 @@ export default function AdminPage() {
   const [studentsError, setStudentsError] = useState<string | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [studentCurrentPage, setStudentCurrentPage] = useState(1);
-  const [selectedStudent, setSelectedStudent] =
-    useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // editing student
   const [isEditing, setIsEditing] = useState(false);
@@ -46,14 +53,11 @@ export default function AdminPage() {
   const [employeesError, setEmployeesError] = useState<string | null>(null);
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
   const [employeeCurrentPage, setEmployeeCurrentPage] = useState(1);
-  const [selectedEmployee, setSelectedEmployee] =
-    useState<Coach | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Coach | null>(null);
 
   // editing employee
   const [isEditingEmployee, setIsEditingEmployee] = useState(false);
-  const [employeeEditForm, setEmployeeEditForm] = useState<
-    Partial<Coach>
-  >({});
+  const [employeeEditForm, setEmployeeEditForm] = useState<Partial<Coach>>({});
   const [isSavingEmployee, setIsSavingEmployee] = useState(false);
   const [coachAvailability, setCoachAvailability] = useState<
     Record<string, { start: string; end: string }[]>
@@ -320,21 +324,20 @@ export default function AdminPage() {
     fetchEmployees();
   }, []);
 
+  const filteredStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return students;
 
-const filteredStudents = useMemo(() => {
-  if (!studentSearchQuery.trim()) return students;
+    const query = studentSearchQuery.toLowerCase();
 
-  const query = studentSearchQuery.toLowerCase();
-
-  return students.filter((student) => {
-    return (
-      student.name.toLowerCase().includes(query) ||
-      student.id.toLowerCase().includes(query) ||
-      student.account_id.toLowerCase().includes(query) ||
-      (student.profile_access_pin ?? "").toLowerCase().includes(query)
-    );
-  });
-}, [students, studentSearchQuery]);
+    return students.filter((student) => {
+      return (
+        student.name.toLowerCase().includes(query) ||
+        student.id.toLowerCase().includes(query) ||
+        student.account_id.toLowerCase().includes(query) ||
+        (student.profile_access_pin ?? "").toLowerCase().includes(query)
+      );
+    });
+  }, [students, studentSearchQuery]);
 
   const handleEditStart = () => {
     setEditForm({ ...selectedStudent });
@@ -372,19 +375,18 @@ const filteredStudents = useMemo(() => {
   };
 
   const filteredEmployees = useMemo(() => {
-  if (!employeeSearchQuery.trim()) return employees;
+    if (!employeeSearchQuery.trim()) return employees;
 
-  const query = employeeSearchQuery.toLowerCase();
+    const query = employeeSearchQuery.toLowerCase();
 
-  return employees.filter((coach) => {
-    return (
-      coach.name.toLowerCase().includes(query) ||
-      coach.id.toLowerCase().includes(query) ||
-      coach.account_id.toLowerCase().includes(query)
-    );
-  });
-}, [employees, employeeSearchQuery]);
-
+    return employees.filter((coach) => {
+      return (
+        coach.name.toLowerCase().includes(query) ||
+        coach.id.toLowerCase().includes(query) ||
+        coach.account_id.toLowerCase().includes(query)
+      );
+    });
+  }, [employees, employeeSearchQuery]);
 
   useEffect(() => {
     setStudentCurrentPage(1);
@@ -494,7 +496,7 @@ const filteredStudents = useMemo(() => {
   }, [selectedStudent, selectedEmployee, selectedCourse]);
 
   const studentTotalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
- const paginatedStudents = useMemo(() => {
+  const paginatedStudents = useMemo(() => {
     const startIndex = (studentCurrentPage - 1) * ITEMS_PER_PAGE;
     return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredStudents, studentCurrentPage]);
@@ -630,7 +632,7 @@ const filteredStudents = useMemo(() => {
 
         <button
           onClick={() => setActiveTab("course_assignment")}
-           className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
             activeTab === "course_assignment"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
@@ -882,9 +884,7 @@ const filteredStudents = useMemo(() => {
                         ))}
                       </select>
                     ) : (
-                      <p
-                        className="text-green-600"
-                      >
+                      <p className="text-green-600">
                         {(selectedStudent[fieldKey] as string) || "N/A"}
                       </p>
                     )}
@@ -892,169 +892,186 @@ const filteredStudents = useMemo(() => {
                 );
 
                 return (
-                <>
-  <div>
-    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-      Basic Information
-    </h3>
-    <div className="grid grid-cols-2 gap-3 text-xs">
-      <div>
-        <span className="text-gray-500">Student ID:</span>
-        <p className="text-gray-900 font-medium">{selectedStudent.id}</p>
-      </div>
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500">Student ID:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedStudent.id}
+                          </p>
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Account ID:</span>
-        <p className="text-gray-900 font-medium">{selectedStudent.account_id}</p>
-      </div>
+                        <div>
+                          <span className="text-gray-500">Account ID:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedStudent.account_id}
+                          </p>
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Name:</span>
-        {isEditing ? (
-          <input
-            type="text"
-            value={editForm.name ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({ ...prev, name: e.target.value }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium">
-            {selectedStudent.name || "N/A"}
-          </p>
-        )}
-      </div>
+                        <div>
+                          <span className="text-gray-500">Name:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.name ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  name: e.target.value,
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium">
+                              {selectedStudent.name || "N/A"}
+                            </p>
+                          )}
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Remaining Lessons:</span>
-        {isEditing ? (
-          <input
-            type="number"
-            value={editForm.remaining_lessons ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({
-                ...prev,
-                remaining_lessons:
-                  e.target.value === "" ? null : Number(e.target.value),
-              }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium">
-            {selectedStudent.remaining_lessons ?? "N/A"}
-          </p>
-        )}
-      </div>
-    </div>
-  </div>
+                        <div>
+                          <span className="text-gray-500">
+                            Remaining Lessons:
+                          </span>
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              value={editForm.remaining_lessons ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  remaining_lessons:
+                                    e.target.value === ""
+                                      ? null
+                                      : Number(e.target.value),
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium">
+                              {selectedStudent.remaining_lessons ?? "N/A"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-  <div>
-    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-      Lesson Space Information
-    </h3>
-    <div className="grid grid-cols-2 gap-3 text-xs">
-      <div>
-        <span className="text-gray-500">Lesson Space ID:</span>
-        <p className="text-gray-900 font-medium break-all">
-          {selectedStudent.lesson_space_id ?? "N/A"}
-        </p>
-      </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Lesson Space Information
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500">
+                            Lesson Space ID:
+                          </span>
+                          <p className="text-gray-900 font-medium break-all">
+                            {selectedStudent.lesson_space_id ?? "N/A"}
+                          </p>
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Profile Access PIN:</span>
-        {isEditing ? (
-          <input
-            type="text"
-            value={editForm.profile_access_pin ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({
-                ...prev,
-                profile_access_pin: e.target.value,
-              }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium">
-            {selectedStudent.profile_access_pin ?? "N/A"}
-          </p>
-        )}
-      </div>
+                        <div>
+                          <span className="text-gray-500">
+                            Profile Access PIN:
+                          </span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.profile_access_pin ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  profile_access_pin: e.target.value,
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium">
+                              {selectedStudent.profile_access_pin ?? "N/A"}
+                            </p>
+                          )}
+                        </div>
 
-      <div className="col-span-2">
-        <span className="text-gray-500">Student Link:</span>
-        {isEditing ? (
-          <input
-            type="text"
-            value={editForm.lesson_space_student_link ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({
-                ...prev,
-                lesson_space_student_link: e.target.value,
-              }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium break-all">
-            {selectedStudent.lesson_space_student_link ?? "N/A"}
-          </p>
-        )}
-      </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-500">Student Link:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.lesson_space_student_link ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  lesson_space_student_link: e.target.value,
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium break-all">
+                              {selectedStudent.lesson_space_student_link ??
+                                "N/A"}
+                            </p>
+                          )}
+                        </div>
 
-      <div className="col-span-2">
-        <span className="text-gray-500">Teacher Link:</span>
-        {isEditing ? (
-          <input
-            type="text"
-            value={editForm.lesson_space_teacher_link ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({
-                ...prev,
-                lesson_space_teacher_link: e.target.value,
-              }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium break-all">
-            {selectedStudent.lesson_space_teacher_link ?? "N/A"}
-          </p>
-        )}
-      </div>
-    </div>
-  </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-500">Teacher Link:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.lesson_space_teacher_link ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  lesson_space_teacher_link: e.target.value,
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium break-all">
+                              {selectedStudent.lesson_space_teacher_link ??
+                                "N/A"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-  <div>
-    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-      Other Information
-    </h3>
-    <div className="grid grid-cols-1 gap-3 text-xs">
-      <div>
-        <span className="text-gray-500">Teachworks URL:</span>
-        {isEditing ? (
-          <input
-            type="text"
-            value={editForm.teach_works_url ?? ""}
-            onChange={(e) =>
-              setEditForm((prev) => ({
-                ...prev,
-                teach_works_url: e.target.value,
-              }))
-            }
-            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        ) : (
-          <p className="text-gray-900 font-medium break-all">
-            {selectedStudent.teach_works_url ?? "N/A"}
-          </p>
-        )}
-      </div>
-    </div>
-  </div>
-</>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Other Information
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500">Teachworks URL:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.teach_works_url ?? ""}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  teach_works_url: e.target.value,
+                                }))
+                              }
+                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 font-medium break-all">
+                              {selectedStudent.teach_works_url ?? "N/A"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 );
               })()}
             </div>
@@ -1091,7 +1108,7 @@ const filteredStudents = useMemo(() => {
                       onClick={handleCloseEmployeeModal}
                       className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                     >
-                      ×
+                      x
                     </button>
                   </>
                 ) : (
@@ -1120,12 +1137,14 @@ const filteredStudents = useMemo(() => {
                   label,
                   fieldKey,
                   type = "text",
+                  colSpan = "",
                 }: {
                   label: string;
                   fieldKey: keyof Coach;
                   type?: string;
+                  colSpan?: string;
                 }) => (
-                  <div>
+                  <div className={colSpan}>
                     <span className="text-gray-500">{label}:</span>
                     {isEditingEmployee ? (
                       <input
@@ -1146,6 +1165,7 @@ const filteredStudents = useMemo(() => {
                     )}
                   </div>
                 );
+
                 const SelectField = ({
                   label,
                   fieldKey,
@@ -1189,6 +1209,7 @@ const filteredStudents = useMemo(() => {
                     )}
                   </div>
                 );
+
                 const TextArea = ({
                   label,
                   fieldKey,
@@ -1219,188 +1240,196 @@ const filteredStudents = useMemo(() => {
                     )}
                   </div>
                 );
+
                 return (
-                 <>
-  <div>
-    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-      Basic Information
-    </h3>
-    <div className="grid grid-cols-2 gap-3 text-xs">
-      <div>
-        <span className="text-gray-500">Coach ID:</span>
-        <p className="text-gray-900 font-medium">
-          {selectedEmployee.id}
-        </p>
-      </div>
+                  <>
+                    {/* BASIC INFO */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500">Coach ID:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedEmployee.id}
+                          </p>
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Account ID:</span>
-        <p className="text-gray-900 font-medium">
-          {selectedEmployee.account_id}
-        </p>
-      </div>
+                        <div>
+                          <span className="text-gray-500">Account ID:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedEmployee.account_id}
+                          </p>
+                        </div>
 
-      <div className="col-span-2">
-        <span className="text-gray-500">Name:</span>
-        <p className="text-gray-900 font-medium">
-          {selectedEmployee.name || "N/A"}
-        </p>
-      </div>
-    </div>
-  </div>
+                        <Field
+                          label="Name"
+                          fieldKey="name"
+                          colSpan="col-span-2"
+                        />
+                      </div>
+                    </div>
 
-  <div>
-    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-      Timestamps
-    </h3>
-    <div className="grid grid-cols-2 gap-3 text-xs">
-      <div>
-        <span className="text-gray-500">Created At:</span>
-        <p className="text-gray-900 font-medium">
-          {selectedEmployee.created_at || "N/A"}
-        </p>
-      </div>
+                    {/* TIMESTAMPS */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Timestamps
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500">Created At:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedEmployee.created_at || "N/A"}
+                          </p>
+                        </div>
 
-      <div>
-        <span className="text-gray-500">Updated At:</span>
-        <p className="text-gray-900 font-medium">
-          {selectedEmployee.updated_at || "N/A"}
-        </p>
-      </div>
-    </div>
-  </div>
-</>
+                        <div>
+                          <span className="text-gray-500">Updated At:</span>
+                          <p className="text-gray-900 font-medium">
+                            {selectedEmployee.updated_at || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* OPTIONAL EXTRA FIELDS EXAMPLE */}
+                    {/* <SelectField label="Status" fieldKey="status" options={["active", "inactive"]} /> */}
+                    {/* <TextArea label="Notes" fieldKey="notes" /> */}
+                  </>
                 );
               })()}
-               <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">
-                Weekly Availability
-              </h3>
-              <button
-                onClick={handleSaveCoachAvailability}
-                className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-              >
-                Save Availability
-              </button>
-            </div>
-            {[
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday",
-            ].map((day) => {
-              const enabled = !!coachAvailability[day];
-              const slots = coachAvailability[day] || [];
-              return (
-                <div key={day} className="border rounded p-3 mb-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-semibold text-gray-700">
-                      {day}
-                    </span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={() => {
-                          setCoachAvailability((prev) => {
-                            const copy = { ...prev };
-                            if (copy[day]) {
-                              delete copy[day];
-                            } else {
-                              copy[day] = [{ start: "", end: "" }];
-                            }
-                            return copy;
-                          });
-                        }}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#B1E7D6] transition-colors" />
-                      <div className="absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
-                    </label>
-                  </div>
-                  {enabled && (
-                    <div className="flex flex-col gap-1 mt-1">
-                      {slots.map((slot, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
+
+              {/* AVAILABILITY SECTION (unchanged) */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Weekly Availability
+                  </h3>
+                  <button
+                    onClick={handleSaveCoachAvailability}
+                    className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                  >
+                    Save Availability
+                  </button>
+                </div>
+
+                {[
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                  "Sunday",
+                ].map((day) => {
+                  const enabled = !!coachAvailability[day];
+                  const slots = coachAvailability[day] || [];
+
+                  return (
+                    <div key={day} className="border rounded p-3 mb-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-semibold text-gray-700">
+                          {day}
+                        </span>
+
+                        <label className="relative inline-flex items-center cursor-pointer">
                           <input
-                            type="time"
-                            value={slot.start}
-                            onChange={(e) =>
+                            type="checkbox"
+                            checked={enabled}
+                            onChange={() => {
                               setCoachAvailability((prev) => {
-                                const updated = [...prev[day]];
-                                updated[idx] = {
-                                  ...updated[idx],
-                                  start: e.target.value,
-                                };
-                                return { ...prev, [day]: updated };
-                              })
-                            }
-                            className="border rounded px-1 py-0.5 text-xs"
+                                const copy = { ...prev };
+                                if (copy[day]) delete copy[day];
+                                else copy[day] = [{ start: "", end: "" }];
+                                return copy;
+                              });
+                            }}
+                            className="sr-only peer"
                           />
-                          <span className="text-xs">–</span>
-                          <input
-                            type="time"
-                            value={slot.end}
-                            onChange={(e) =>
-                              setCoachAvailability((prev) => {
-                                const updated = [...prev[day]];
-                                updated[idx] = {
-                                  ...updated[idx],
-                                  end: e.target.value,
-                                };
-                                return { ...prev, [day]: updated };
-                              })
-                            }
-                            className="border rounded px-1 py-0.5 text-xs"
-                          />
+                          <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#B1E7D6]" />
+                          <div className="absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
+                        </label>
+                      </div>
+
+                      {enabled && (
+                        <div className="flex flex-col gap-1 mt-1">
+                          {slots.map((slot, idx) => (
+                            <div key={idx} className="flex gap-2 items-center">
+                              <input
+                                type="time"
+                                value={slot.start}
+                                onChange={(e) =>
+                                  setCoachAvailability((prev) => {
+                                    const updated = [...prev[day]];
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      start: e.target.value,
+                                    };
+                                    return { ...prev, [day]: updated };
+                                  })
+                                }
+                                className="border rounded px-1 py-0.5 text-xs"
+                              />
+
+                              <span className="text-xs">–</span>
+
+                              <input
+                                type="time"
+                                value={slot.end}
+                                onChange={(e) =>
+                                  setCoachAvailability((prev) => {
+                                    const updated = [...prev[day]];
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      end: e.target.value,
+                                    };
+                                    return { ...prev, [day]: updated };
+                                  })
+                                }
+                                className="border rounded px-1 py-0.5 text-xs"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setCoachAvailability((prev) => {
+                                    const filtered = prev[day].filter(
+                                      (_, i) => i !== idx,
+                                    );
+                                    const copy = { ...prev };
+                                    if (filtered.length === 0) delete copy[day];
+                                    else copy[day] = filtered;
+                                    return copy;
+                                  })
+                                }
+                                className="text-red-500 text-xs"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+
                           <button
                             type="button"
                             onClick={() =>
-                              setCoachAvailability((prev) => {
-                                const filtered = prev[day].filter(
-                                  (_, i) => i !== idx,
-                                );
-                                const copy = { ...prev };
-                                if (filtered.length === 0) {
-                                  delete copy[day];
-                                } else {
-                                  copy[day] = filtered;
-                                }
-                                return copy;
-                              })
+                              setCoachAvailability((prev) => ({
+                                ...prev,
+                                [day]: [...prev[day], { start: "", end: "" }],
+                              }))
                             }
-                            className="text-red-500 text-xs"
+                            className="text-xs text-green-600 mt-1"
                           >
-                            ✕
+                            + Add time
                           </button>
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCoachAvailability((prev) => ({
-                            ...prev,
-                            [day]: [...prev[day], { start: "", end: "" }],
-                          }))
-                        }
-                        className="text-xs text-green-600 mt-1"
-                      >
-                        + Add time
-                      </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
             </div>
-            
           </div>
-         
         </div>
       )}
 
@@ -1510,13 +1539,7 @@ const filteredStudents = useMemo(() => {
         </div>
       )}
 
-      {
-        activeTab =='course_assignment' && (
-          <div>
-
-          </div>
-        )
-      }
+      {activeTab == "course_assignment" && <div></div>}
       {/* Course Detail Modal */}
       {selectedCourse && (
         <div
@@ -1556,8 +1579,6 @@ const filteredStudents = useMemo(() => {
                     >
                       ×
                     </button>
-
-                    
                   </>
                 ) : (
                   <>
@@ -1639,7 +1660,10 @@ const filteredStudents = useMemo(() => {
               <hr className="border-gray-100" />
 
               {/* ── Lessons Panel ── */}
-              <CourseLessonsPanel students={students} courseId={String(selectedCourse.id)} />
+              <CourseLessonsPanel
+                students={students}
+                courseId={String(selectedCourse.id)}
+              />
             </div>
           </div>
         </div>

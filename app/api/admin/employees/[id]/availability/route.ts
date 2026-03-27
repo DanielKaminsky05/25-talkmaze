@@ -18,7 +18,7 @@ async function resolveCoachUUID(
   const { data, error } = await supabase
     .from("coaches")
     .select("id")
-    .eq("tw_id", Number(twId)) // ✅ correct column + type
+    .eq("id", twId)
     .maybeSingle();
 
   if (error) {
