@@ -586,16 +586,24 @@ export default function Onboarding() {
                       </div>
                     )}
                   </div>
-                ))}
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                onClick={() => router.push("/profiles")}
+              >
+                Submit
+              </button>
 
-                <button
-                  type="submit"
-                  className="w-1/2 mx-auto h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B]"
-                >
-                  Submit
-                </button>
-              </form>
-            )}
+              <div className="text-center mt-2">
+                <p className="text-[#1F2E3B]">
+                  <Link href="/signup" className="font-bold hover:underline">
+                    exit
+                  </Link>
+                </p>
+              </div>
+            </form>
           </div>
         </div>
       </div>

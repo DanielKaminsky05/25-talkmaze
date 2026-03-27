@@ -34,8 +34,14 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
     })
 
     
+    if(error){
+        console.log("Error signing up user: " + error);
+        return;
+    }
     if(!data.user){
-        return NextResponse.json({status:404, message: 'unable to identify user after supabase signup'})
+        //return NextResponse.json({status:404, message: 'unable to identify user after supabase signup'})
+        console.log("No data.user");
+        return;
     }
     //note customer is 1, coach is 2, and admin is 3
     const insertIntoAccount = await supabase.from('account').insert({

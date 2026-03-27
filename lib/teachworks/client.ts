@@ -23,69 +23,79 @@ export class TeachworksClient {
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
     payload?: unknown,
+    pageNum?: number,
   ): Promise<T> {
     const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
     const options: RequestInit = {
       method,
       headers: {
-        Authorization: `Token token=${this.apiKey}`, // Teachworks format
+        Authorization: `Token token=${this.apiKey}`,
         "Content-Type": "application/json",
         Accept: "application/json",
       },
     };
 
-    if (method === "GET" && payload && typeof payload === "object") {
-      // Append query parameters for GET requests
-      const params = payload as Record<string, string | number>;
-      Object.keys(params).forEach((key) => {
-        if (params[key] !== undefined && params[key] !== null) {
-          url.searchParams.append(key, String(params[key]));
-        }
-      });
+    if (method === "GET") {
+      if (payload && typeof payload === "object") {
+        const params = payload as Record<string, string | number>;
+        Object.keys(params).forEach((key) => {
+          if (params[key] !== undefined && params[key] !== null) {
+            url.searchParams.append(key, String(params[key]));
+          }
+        });
+      }
+
+      if (pageNum !== undefined) {
+        url.searchParams.append("page", String(pageNum));
+      }
     } else if (payload) {
-      //Send JSON body POST/PUT requests
       options.body = JSON.stringify(payload);
     }
 
     const response = await fetch(url.toString(), options);
 
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
-      throw new Error(
-        errorBody.error || `Teachworks Error: ${response.status}`,
-      );
+      const text = await response.text();
+      console.error("Teachworks request failed", {
+        endpoint,
+        method,
+        url: url.toString(),
+        status: response.status,
+        body: text,
+      });
+      throw new Error(`Teachworks Error: ${response.status} - ${text}`);
     }
 
     return response.json();
   }
 
-  private async postRequest<T>(endpoint: string, body: object){
-       const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
-       
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Authorization": `Token token=${this.apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(
-                body
-            )
-        })
-        
-        console.log("Response: " + JSON.stringify(response));
-        const data = await response.json() as T;
+  private async postRequest<T>(endpoint: string, body: object) {
+    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
-        
-        return data;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Token token=${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        body
+      )
+    })
 
-        
-    
+    console.log("Response: " + JSON.stringify(response));
+    const data = await response.json() as T;
+
+
+    return data;
+
+
+
   }
 
-  private async putRequest<T>(endpoint: string, body: object){
-    const url =  new URL(`${TEACHWORKS_API_URL}${endpoint}`);
+  private async putRequest<T>(endpoint: string, body: object) {
+    const url = new URL(`${TEACHWORKS_API_URL}${endpoint}`);
 
     const response = await fetch(url, {
       method: "POST",
@@ -114,7 +124,24 @@ export class TeachworksClient {
    * Fetch all students
    */
   async getStudents(): Promise<TeachworksStudent[]> {
-    return this.request<TeachworksStudent[]>("/students", "GET");
+    let students: TeachworksStudent[] = [];
+    let pageNum = 1;
+
+    while (true) {
+      const resp = await this.request<TeachworksStudent[]>(
+        "/students",
+        "GET",
+        undefined,
+        pageNum
+      );
+
+      if (!resp || resp.length === 0) break;
+
+      students = students.concat(resp);
+      pageNum++;
+    }
+
+    return students;
   }
 
   async createStudent(body: object): Promise<TeachworksStudent> {
@@ -192,13 +219,13 @@ export class TeachworksClient {
     amount: string | number;
     description?: string;
     payment_method:
-      | "Cash"
-      | "Check"
-      | "Credit Card"
-      | "Debit Card"
-      | "Bank Transfer"
-      | "PayPal"
-      | "Other";
+    | "Cash"
+    | "Check"
+    | "Credit Card"
+    | "Debit Card"
+    | "Bank Transfer"
+    | "PayPal"
+    | "Other";
     stripe_transaction_id?: string;
   }): Promise<unknown> {
     return this.postRequest("/payments", {

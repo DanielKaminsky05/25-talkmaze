@@ -13,6 +13,9 @@ export async function POST(request: Request) {
     let price_id = req.price_id;
     let amount = req.amount;
     let name = req.name;
+    let email = req.email;
+
+    
 
     
     if (!price_id) {
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
       // Send additional metadata to stripe, so that the payment record on
       // Stripe can link back to the Talkmaze account & student.
       return_url: `${process.env.NEXT_PUBLIC_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-
+      customer_email: email,
       metadata: {
         account_id: user.id,
         price_id: price_id,

@@ -31,18 +31,5 @@ export async function getProgress(){
     }
 }
 
-export async function getLessonSpace(){
-    const supabase = await createClient();
-    const cookieStore = await cookies();
-    const student_id = cookieStore.get('active_profile_id')?.value;
 
-    if(!student_id){
-        throw new Error("Unable to identify student")
-    }
-    try{
-        const lesson_space_id = await supabase.from('students').select('lesson_space_id').eq('id',student_id).single();
-    }catch(err){
-        console.log("Error fetching lesson_space_id for student" + err)
-    }
-}
 

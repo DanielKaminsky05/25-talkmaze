@@ -7,7 +7,7 @@ import {
   TeachworksEmployee,
   TeachworksCourse,
 } from "@/lib/teachworks/types";
-import StudentTable from "./components/StudentTable";
+import StudentTable, { Student } from "./components/StudentTable";
 import EmployeeTable from "./components/EmployeeTable";
 import CreateAdminModal from "./components/CreateAdminModal";
 import CreateCoachModal from "./components/CreateCoachModal";
@@ -16,15 +16,10 @@ import CreateCourseModal from "./components/CreateCourseModal";
 import CourseLessonsPanel from "./components/CourseLessonPanel";
 import { Assignment } from "@/lib/types/assignments";
 import CoachAssignmentCard from "./components/CoachAssignmentCard";
-
+import AssignStudentDropDown, { Coach } from "./components/AssignStudentDropDown";
 const ITEMS_PER_PAGE = 5;
 
-type TabType =
-  | "students"
-  | "coaches"
-  | "courses"
-  | "assignments"
-  | "learning_space";
+type TabType = "students" | "coaches" | "courses" | "assignments" | "learning_space" | "course_assignment";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -32,32 +27,32 @@ export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   // Student state
-  const [students, setStudents] = useState<TeachworksStudent[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState<string | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [studentCurrentPage, setStudentCurrentPage] = useState(1);
   const [selectedStudent, setSelectedStudent] =
-    useState<TeachworksStudent | null>(null);
+    useState<Student | null>(null);
 
   // editing student
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<TeachworksStudent>>({});
+  const [editForm, setEditForm] = useState<Partial<Student>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Employee state
-  const [employees, setEmployees] = useState<TeachworksEmployee[]>([]);
+  const [employees, setEmployees] = useState<Coach[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [employeesError, setEmployeesError] = useState<string | null>(null);
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
   const [employeeCurrentPage, setEmployeeCurrentPage] = useState(1);
   const [selectedEmployee, setSelectedEmployee] =
-    useState<TeachworksEmployee | null>(null);
+    useState<Coach | null>(null);
 
   // editing employee
   const [isEditingEmployee, setIsEditingEmployee] = useState(false);
   const [employeeEditForm, setEmployeeEditForm] = useState<
-    Partial<TeachworksEmployee>
+    Partial<Coach>
   >({});
   const [isSavingEmployee, setIsSavingEmployee] = useState(false);
   const [coachAvailability, setCoachAvailability] = useState<
@@ -272,8 +267,26 @@ export default function AdminPage() {
         setStudentsLoading(true);
         const response = await fetch("/api/admin/students");
         if (!response.ok) throw new Error("Failed to fetch students");
+
         const data = await response.json();
-        setStudents(data);
+
+        const mapped: Student[] = Array.isArray(data)
+          ? data.map((s: any) => ({
+              id: String(s.id),
+              account_id: String(s.account_id),
+              name: s.name ?? "",
+              created_at: s.created_at ?? "",
+              updated_at: s.updated_at ?? "",
+              lesson_space_id: s.lesson_space_id ?? null,
+              profile_access_pin: s.profile_access_pin ?? null,
+              teach_works_url: s.teach_works_url ?? null,
+              lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
+              lesson_space_student_link: s.lesson_space_student_link ?? null,
+              remaining_lessons: s.remaining_lessons ?? null,
+            }))
+          : [];
+
+        setStudents(mapped);
       } catch (err) {
         setStudentsError(
           err instanceof Error ? err.message : "An error occurred",
@@ -282,6 +295,7 @@ export default function AdminPage() {
         setStudentsLoading(false);
       }
     }
+
     fetchStudents();
   }, []);
 
@@ -306,19 +320,21 @@ export default function AdminPage() {
     fetchEmployees();
   }, []);
 
-  // Filter students based on search query
-  const filteredStudents = useMemo(() => {
-    if (!studentSearchQuery.trim()) return students;
-    const query = studentSearchQuery.toLowerCase();
-    return students.filter((student) => {
-      return (
-        student.first_name.toLowerCase().includes(query) ||
-        student.last_name.toLowerCase().includes(query) ||
-        student.id.toString().includes(query) ||
-        student.customer_id.toString().includes(query)
-      );
-    });
-  }, [students, studentSearchQuery]);
+
+const filteredStudents = useMemo(() => {
+  if (!studentSearchQuery.trim()) return students;
+
+  const query = studentSearchQuery.toLowerCase();
+
+  return students.filter((student) => {
+    return (
+      student.name.toLowerCase().includes(query) ||
+      student.id.toLowerCase().includes(query) ||
+      student.account_id.toLowerCase().includes(query) ||
+      (student.profile_access_pin ?? "").toLowerCase().includes(query)
+    );
+  });
+}, [students, studentSearchQuery]);
 
   const handleEditStart = () => {
     setEditForm({ ...selectedStudent });
@@ -356,22 +372,19 @@ export default function AdminPage() {
   };
 
   const filteredEmployees = useMemo(() => {
-    const teachers = employees.filter(
-      (employee) =>
-        employee.position === "Teacher" || employee.employee_type === "Teacher",
+  if (!employeeSearchQuery.trim()) return employees;
+
+  const query = employeeSearchQuery.toLowerCase();
+
+  return employees.filter((coach) => {
+    return (
+      coach.name.toLowerCase().includes(query) ||
+      coach.id.toLowerCase().includes(query) ||
+      coach.account_id.toLowerCase().includes(query)
     );
-    if (!employeeSearchQuery.trim()) return teachers;
-    const query = employeeSearchQuery.toLowerCase();
-    return teachers.filter((employee) => {
-      return (
-        employee.first_name?.toLowerCase().includes(query) ||
-        employee.last_name?.toLowerCase().includes(query) ||
-        employee.id?.toString().includes(query) ||
-        employee.position?.toLowerCase().includes(query) ||
-        employee.employee_type?.toLowerCase().includes(query)
-      );
-    });
-  }, [employees, employeeSearchQuery]);
+  });
+}, [employees, employeeSearchQuery]);
+
 
   useEffect(() => {
     setStudentCurrentPage(1);
@@ -481,7 +494,7 @@ export default function AdminPage() {
   }, [selectedStudent, selectedEmployee, selectedCourse]);
 
   const studentTotalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
-  const paginatedStudents = useMemo(() => {
+ const paginatedStudents = useMemo(() => {
     const startIndex = (studentCurrentPage - 1) * ITEMS_PER_PAGE;
     return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredStudents, studentCurrentPage]);
@@ -613,6 +626,17 @@ export default function AdminPage() {
           }`}
         >
           Learning Spaces
+        </button>
+
+        <button
+          onClick={() => setActiveTab("course_assignment")}
+           className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "course_assignment"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Course Assignment
         </button>
       </div>
 
@@ -757,8 +781,8 @@ export default function AdminPage() {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditing
-                  ? `${editForm.first_name ?? selectedStudent.first_name} ${editForm.last_name ?? selectedStudent.last_name}`
-                  : `${selectedStudent.first_name} ${selectedStudent.last_name}`}
+                  ? `${editForm.name ?? selectedStudent.name}`
+                  : `${selectedStudent.name} `}
               </h2>
               <div className="flex items-center gap-2">
                 {!isEditing ? (
@@ -804,7 +828,7 @@ export default function AdminPage() {
                   type = "text",
                 }: {
                   label: string;
-                  fieldKey: keyof TeachworksStudent;
+                  fieldKey: keyof Student;
                   type?: string;
                 }) => (
                   <div>
@@ -835,7 +859,7 @@ export default function AdminPage() {
                   options,
                 }: {
                   label: string;
-                  fieldKey: keyof TeachworksStudent;
+                  fieldKey: keyof Student;
                   options: string[];
                 }) => (
                   <div>
@@ -859,12 +883,7 @@ export default function AdminPage() {
                       </select>
                     ) : (
                       <p
-                        className={`font-medium ${
-                          fieldKey === "status" &&
-                          selectedStudent.status === "Active"
-                            ? "text-green-600"
-                            : "text-gray-900 capitalize"
-                        }`}
+                        className="text-green-600"
                       >
                         {(selectedStudent[fieldKey] as string) || "N/A"}
                       </p>
@@ -873,154 +892,169 @@ export default function AdminPage() {
                 );
 
                 return (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Basic Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Student ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedStudent.id}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Customer ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedStudent.customer_id}
-                          </p>
-                        </div>
-                        <Field label="First Name" fieldKey="first_name" />
-                        <Field label="Last Name" fieldKey="last_name" />
-                        <SelectField
-                          label="Type"
-                          fieldKey="student_type"
-                          options={["Individual", "Group"]}
-                        />
-                        <SelectField
-                          label="Status"
-                          fieldKey="status"
-                          options={["Active", "Inactive"]}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <Field label="Email" fieldKey="email" type="email" />
-                        <Field
-                          label="Additional Email"
-                          fieldKey="additional_email"
-                          type="email"
-                        />
-                        <Field label="Home Phone" fieldKey="home_phone" />
-                        <Field label="Mobile Phone" fieldKey="mobile_phone" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Academic Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <Field label="School" fieldKey="school" />
-                        <Field label="Grade" fieldKey="grade" />
-                        <Field label="Subjects" fieldKey="subjects" />
-                        <Field
-                          label="Birth Date"
-                          fieldKey="birth_date"
-                          type="date"
-                        />
-                        <Field
-                          label="Start Date"
-                          fieldKey="start_date"
-                          type="date"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Billing Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <SelectField
-                          label="Billing Method"
-                          fieldKey="billing_method"
-                          options={["Invoice", "Credit Card", "Check", "Cash"]}
-                        />
-                        <Field label="Discount Rate" fieldKey="discount_rate" />
-                      </div>
-                    </div>
-                    {selectedStudent.default_teachers.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                          Default Teachers
-                        </h3>
-                        <div className="text-xs space-y-1">
-                          {selectedStudent.default_teachers.map((teacher) => (
-                            <p key={teacher.id} className="text-gray-900">
-                              {teacher.first_name} {teacher.last_name}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedStudent.default_services.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                          Default Services
-                        </h3>
-                        <div className="text-xs space-y-1">
-                          {selectedStudent.default_services.map((service) => (
-                            <p key={service.id} className="text-gray-900">
-                              {service.name}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedStudent.custom_fields.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                          Custom Fields
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          {selectedStudent.custom_fields.map((field) => (
-                            <div key={field.field_id}>
-                              <span className="text-gray-500">
-                                {field.name}:
-                              </span>
-                              <p className="text-gray-900">{field.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Additional Notes
-                      </h3>
-                      {isEditing ? (
-                        <textarea
-                          value={(editForm.additional_notes as string) ?? ""}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              additional_notes: e.target.value,
-                            }))
-                          }
-                          rows={3}
-                          className="block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <p className="text-xs text-gray-900">
-                          {selectedStudent.additional_notes || "N/A"}
-                        </p>
-                      )}
-                    </div>
-                  </>
+                <>
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+      Basic Information
+    </h3>
+    <div className="grid grid-cols-2 gap-3 text-xs">
+      <div>
+        <span className="text-gray-500">Student ID:</span>
+        <p className="text-gray-900 font-medium">{selectedStudent.id}</p>
+      </div>
+
+      <div>
+        <span className="text-gray-500">Account ID:</span>
+        <p className="text-gray-900 font-medium">{selectedStudent.account_id}</p>
+      </div>
+
+      <div>
+        <span className="text-gray-500">Name:</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editForm.name ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({ ...prev, name: e.target.value }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium">
+            {selectedStudent.name || "N/A"}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <span className="text-gray-500">Remaining Lessons:</span>
+        {isEditing ? (
+          <input
+            type="number"
+            value={editForm.remaining_lessons ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                remaining_lessons:
+                  e.target.value === "" ? null : Number(e.target.value),
+              }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium">
+            {selectedStudent.remaining_lessons ?? "N/A"}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+      Lesson Space Information
+    </h3>
+    <div className="grid grid-cols-2 gap-3 text-xs">
+      <div>
+        <span className="text-gray-500">Lesson Space ID:</span>
+        <p className="text-gray-900 font-medium break-all">
+          {selectedStudent.lesson_space_id ?? "N/A"}
+        </p>
+      </div>
+
+      <div>
+        <span className="text-gray-500">Profile Access PIN:</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editForm.profile_access_pin ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                profile_access_pin: e.target.value,
+              }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium">
+            {selectedStudent.profile_access_pin ?? "N/A"}
+          </p>
+        )}
+      </div>
+
+      <div className="col-span-2">
+        <span className="text-gray-500">Student Link:</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editForm.lesson_space_student_link ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                lesson_space_student_link: e.target.value,
+              }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium break-all">
+            {selectedStudent.lesson_space_student_link ?? "N/A"}
+          </p>
+        )}
+      </div>
+
+      <div className="col-span-2">
+        <span className="text-gray-500">Teacher Link:</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editForm.lesson_space_teacher_link ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                lesson_space_teacher_link: e.target.value,
+              }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium break-all">
+            {selectedStudent.lesson_space_teacher_link ?? "N/A"}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+      Other Information
+    </h3>
+    <div className="grid grid-cols-1 gap-3 text-xs">
+      <div>
+        <span className="text-gray-500">Teachworks URL:</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editForm.teach_works_url ?? ""}
+            onChange={(e) =>
+              setEditForm((prev) => ({
+                ...prev,
+                teach_works_url: e.target.value,
+              }))
+            }
+            className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          <p className="text-gray-900 font-medium break-all">
+            {selectedStudent.teach_works_url ?? "N/A"}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+</>
                 );
               })()}
             </div>
@@ -1041,8 +1075,8 @@ export default function AdminPage() {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditingEmployee
-                  ? `${employeeEditForm.first_name ?? selectedEmployee.first_name} ${employeeEditForm.last_name ?? selectedEmployee.last_name}`
-                  : `${selectedEmployee.first_name} ${selectedEmployee.last_name}`}
+                  ? `${employeeEditForm.name ?? selectedEmployee.name}`
+                  : `${selectedEmployee.name}`}
               </h2>
               <div className="flex items-center gap-2">
                 {!isEditingEmployee ? (
@@ -1088,7 +1122,7 @@ export default function AdminPage() {
                   type = "text",
                 }: {
                   label: string;
-                  fieldKey: keyof TeachworksEmployee;
+                  fieldKey: keyof Coach;
                   type?: string;
                 }) => (
                   <div>
@@ -1119,7 +1153,7 @@ export default function AdminPage() {
                   colorFn,
                 }: {
                   label: string;
-                  fieldKey: keyof TeachworksEmployee;
+                  fieldKey: keyof Coach;
                   options: string[];
                   colorFn?: (val: string) => string;
                 }) => (
@@ -1160,7 +1194,7 @@ export default function AdminPage() {
                   fieldKey,
                 }: {
                   label: string;
-                  fieldKey: keyof TeachworksEmployee;
+                  fieldKey: keyof Coach;
                 }) => (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -1186,89 +1220,56 @@ export default function AdminPage() {
                   </div>
                 );
                 return (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Basic Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Employee ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedEmployee.id}
-                          </p>
-                        </div>
-                        <Field label="First Name" fieldKey="first_name" />
-                        <Field label="Last Name" fieldKey="last_name" />
-                        <Field label="Type" fieldKey="employee_type" />
-                        <Field label="Position" fieldKey="position" />
-                        <SelectField
-                          label="Status"
-                          fieldKey="status"
-                          options={["Active", "Inactive"]}
-                          colorFn={(val) =>
-                            val === "Active"
-                              ? "text-green-600"
-                              : "text-gray-600"
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <Field label="Email" fieldKey="email" type="email" />
-                        <Field label="Mobile Phone" fieldKey="mobile_phone" />
-                        <Field label="Home Phone" fieldKey="home_phone" />
-                        <Field label="Address" fieldKey="address" />
-                        <Field label="City" fieldKey="city" />
-                        <Field label="State" fieldKey="state" />
-                        <Field label="Zip" fieldKey="zip" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Employment Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <Field
-                          label="Hire Date"
-                          fieldKey="hire_date"
-                          type="date"
-                        />
-                        <Field
-                          label="Birth Date"
-                          fieldKey="birth_date"
-                          type="date"
-                        />
-                        <Field label="Subjects" fieldKey="subjects" />
-                      </div>
-                    </div>
-                    <TextArea label="Bio" fieldKey="bio" />
-                    <TextArea
-                      label="Additional Notes"
-                      fieldKey="additional_notes"
-                    />
-                    {selectedEmployee.custom_fields.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                          Custom Fields
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          {selectedEmployee.custom_fields.map((field) => (
-                            <div key={field.field_id}>
-                              <span className="text-gray-500">
-                                {field.name}:
-                              </span>
-                              <p className="text-gray-900">{field.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                 <>
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+      Basic Information
+    </h3>
+    <div className="grid grid-cols-2 gap-3 text-xs">
+      <div>
+        <span className="text-gray-500">Coach ID:</span>
+        <p className="text-gray-900 font-medium">
+          {selectedEmployee.id}
+        </p>
+      </div>
+
+      <div>
+        <span className="text-gray-500">Account ID:</span>
+        <p className="text-gray-900 font-medium">
+          {selectedEmployee.account_id}
+        </p>
+      </div>
+
+      <div className="col-span-2">
+        <span className="text-gray-500">Name:</span>
+        <p className="text-gray-900 font-medium">
+          {selectedEmployee.name || "N/A"}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+      Timestamps
+    </h3>
+    <div className="grid grid-cols-2 gap-3 text-xs">
+      <div>
+        <span className="text-gray-500">Created At:</span>
+        <p className="text-gray-900 font-medium">
+          {selectedEmployee.created_at || "N/A"}
+        </p>
+      </div>
+
+      <div>
+        <span className="text-gray-500">Updated At:</span>
+        <p className="text-gray-900 font-medium">
+          {selectedEmployee.updated_at || "N/A"}
+        </p>
+      </div>
+    </div>
+  </div>
+</>
                 );
               })()}
                <div>
@@ -1508,6 +1509,14 @@ export default function AdminPage() {
           <button onClick={handleGetLessonSpaces}>Get Learning Spaces</button>
         </div>
       )}
+
+      {
+        activeTab =='course_assignment' && (
+          <div>
+
+          </div>
+        )
+      }
       {/* Course Detail Modal */}
       {selectedCourse && (
         <div
@@ -1547,6 +1556,8 @@ export default function AdminPage() {
                     >
                       ×
                     </button>
+
+                    
                   </>
                 ) : (
                   <>
@@ -1628,7 +1639,7 @@ export default function AdminPage() {
               <hr className="border-gray-100" />
 
               {/* ── Lessons Panel ── */}
-              <CourseLessonsPanel courseId={String(selectedCourse.id)} />
+              <CourseLessonsPanel students={students} courseId={String(selectedCourse.id)} />
             </div>
           </div>
         </div>
