@@ -55,6 +55,8 @@ export async function POST(req: NextRequest){
     console.log("Inside post request");
     console.log("Inside post lessonspace")
     const URL = "https://api.thelessonspace.com/v2/spaces/launch/"
+
+    console.log("Inside lessonspace post");
     const supabase = await createClient();
     try{
         const body = await req.json();
@@ -86,7 +88,9 @@ export async function POST(req: NextRequest){
         const name_string = name.data?.name;
 
         const lesson_space_id = crypto.randomUUID();
+        console.log("Making lessonspace")
         //make call to lessonspace api to create new unified lessonspace
+        //this also creates the participant link
         const response = await fetch(URL, {
             method: "POST",
             headers: {
@@ -98,6 +102,7 @@ export async function POST(req: NextRequest){
             //it lets the coach be able to set permissions for their students
             body:JSON.stringify({
                 id: lesson_space_id,
+                name:name_string,
                 transcribe: true,
                 summarize: true,
                 record_av: true,
@@ -114,15 +119,20 @@ export async function POST(req: NextRequest){
             })
         })
 
+        
 
         //get response of fetch call
         const response_json =  await response.json();
         
         if(!response.ok){
+            console.log("Error positing to lessonspace")
             return NextResponse.json({status: 500, message: "Error posting to lessonspace: " + JSON.stringify(response_json)})
         }
+
+        console.log("lesson space res: " + JSON.stringify(response_json));
         //upon successful creation of lessonspace, update url in lessonspace id in student table
-        const lesson_space_update = await supabase.from('students').update({lesson_space_id: lesson_space_id}).eq('id',student_id)
+        const lesson_space_update = await supabase.from('students').update({lesson_space_id: lesson_space_id, lesson_space_student_link: response_json.client_url}).eq('id',student_id)
+
 
         //if we can not update, indicate these is an error updating it 
         if(lesson_space_update.error){

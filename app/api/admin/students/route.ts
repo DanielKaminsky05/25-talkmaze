@@ -14,7 +14,7 @@ export async function GET() {
 
     const client = new TeachworksClient(apiKey);
     const students = await client.getStudents();
-
+    console.log("Students: " + students.length);
     return NextResponse.json(students);
   } catch (error) {
     console.error("Error fetching students:", error);

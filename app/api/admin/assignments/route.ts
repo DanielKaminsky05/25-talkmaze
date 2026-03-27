@@ -54,7 +54,62 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase
     .from("coach_students")
     .insert({ coach_id, student_id });
-    
+  
+    //make lessonspace room on assignment
+
+    const lesson_space_base = process.env.LESSONSPACE_BASE_URL
+
+    if(!lesson_space_base){
+      return NextResponse.json({error: 404, message: "Unable to find Lessonspace api base url"})
+    }
+
+    //get the student lessonspace room
+
+    const {data: student_room, error: supabase_room_error} = await supabase.from('students').select('lesson_space_id').eq("id",student_id).single();
+
+    if(!student_room || supabase_room_error){
+      return NextResponse.json({status: 400, message: "Student does not currently have a lessonspace " + supabase_room_error});
+    }
+
+    console.log("Found student room id: " + student_room.lesson_space_id)
+    console.log("Trying to get coach link");
+    console.log("URL: " + `${lesson_space_base}/spaces/launch/`);
+    const make_coach_url_res = await fetch(`${lesson_space_base}/spaces/launch/`,{
+      method: 'POST',
+      headers: {
+        'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
+        'Content-Type': 'application/json'
+      },body: JSON.stringify({
+        id: student_room.lesson_space_id,
+        name: studentData.name,
+        transcribe: true,
+        summarize: true,
+        record_av: true,
+        user:{
+          id: coach_id,
+          role: 'teacher',
+          leader: true,
+          custom_jwt_parameters: {
+              meta: {
+                  displayName: `Coach ${coachData.name}`,
+                  lessonTitle: `${studentData.name} Public Speaking Room!`
+              }
+          }
+        }
+      })
+
+    })
+
+    const make_coach_url_res_json = await make_coach_url_res.json();
+    console.log("Made room New: " + JSON.stringify(make_coach_url_res_json));
+    //save this into supabase for the teacher
+
+    const insert_teacher_url = await supabase.from('students').update({lesson_space_teacher_link: make_coach_url_res_json.client_url}).eq("id",student_id)
+
+    if(insert_teacher_url.error){
+      console.log("Error inserting teacher url: " + insert_teacher_url.error);
+      return NextResponse.json({error: 500, message: "Error inserting teacher lessonspace url link into students table in supabase"});
+    }
   if (error) {
     console.error("POST Assignment Insert Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

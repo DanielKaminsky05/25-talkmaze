@@ -30,6 +30,7 @@ export const logInUser = async (email: string, password: string) => {
     if (error) {
       return { success: false, error };
     }
+
     return { success: true, data };
   } catch (e) {
     console.error("There was a problem logging in: ", e);
