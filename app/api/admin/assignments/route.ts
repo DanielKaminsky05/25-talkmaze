@@ -33,18 +33,22 @@ export async function GET() {
 
 //add assignment + sync TW
 export async function POST(req: NextRequest) {
-  const { coach_id: tw_coach_id, student_id: tw_student_id } = await req.json();
+  const { coach_id: coach_id_1, student_id: student_id_1 } = await req.json();
   const supabase = await createClient();
+  console.log("Coach_id: " + coach_id_1);
+  console.log("Student_id: " + student_id_1)
+ 
+  const { data: coachData } = await supabase.from('coaches').select('id, name').eq('id', String(coach_id_1)).single();
+  const { data: studentData } = await supabase.from('students').select('id, name').eq('id', String(student_id_1)).single();
 
-  const { data: coachData } = await supabase.from('coaches').select('id, name').eq('tw_id', String(tw_coach_id)).single();
-  const { data: studentData } = await supabase.from('students').select('id, name').eq('tw_id', String(tw_student_id)).single();
-
+  console.log("Coach Data: " + coachData);
+  console.log("Student Data :" + studentData);
   if (!coachData) {
-    console.error("404 Coach not found for TW ID:", tw_coach_id);
+    console.error("404 Coach not found for TW ID:", coach_id_1);
     return NextResponse.json({ error: "Coach not found in local TalkMaze database." }, { status: 404 });
   }
   if (!studentData) {
-    console.error("404 Student not found for TW ID:", tw_student_id);
+    console.error("404 Student not found for TW ID:", student_id_1);
     return NextResponse.json({ error: "Student not found in local TalkMaze database." }, { status: 404 });
   }
 
@@ -128,12 +132,12 @@ export async function POST(req: NextRequest) {
   // 3. Sync to Teachworks — build default_teacher_ids array
   const twTeacherIds = allAssignments 
     ? allAssignments.filter((a: any) => a.coaches?.tw_id).map((a: any) => Number(a.coaches.tw_id))
-    : [Number(tw_coach_id)];
+    : [Number(coach_id_1)];
 
   const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
   
   try {
-    await twClient.updateStudent(tw_student_id, {
+    await twClient.updateStudent(student_id_1, {
       default_teacher_ids: twTeacherIds
     });
   } catch (e) {
@@ -143,8 +147,8 @@ export async function POST(req: NextRequest) {
   // Construct fake mapped return format matching GET endpoint format
   const responseData = { 
     id: `${coach_id}_${student_id}`, 
-    coach_id: String(tw_coach_id),
-    student_id: String(tw_student_id),
+    coach_id: String(coach_id_1),
+    student_id: String(student_id_1),
     coaches: { name: coachData.name },
     students: { name: studentData.name }
   };

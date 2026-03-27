@@ -1,8 +1,9 @@
 import { TeachworksEmployee } from "@/lib/teachworks/types";
+import { Coach } from "./AssignStudentDropDown";
 
 interface EmployeeTableProps {
-  employees: TeachworksEmployee[];
-  onEmployeeClick: (employee: TeachworksEmployee) => void;
+  employees: Coach[];
+  onEmployeeClick: (employee: Coach) => void;
 }
 
 export default function EmployeeTable({ employees, onEmployeeClick }: EmployeeTableProps) {
@@ -25,10 +26,8 @@ export default function EmployeeTable({ employees, onEmployeeClick }: EmployeeTa
                 onClick={() => onEmployeeClick(employee)}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.first_name}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.last_name}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.name}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.id}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.position || employee.employee_type}</td>
               </tr>
             ))
           ) : (

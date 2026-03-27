@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
 import { TeachworksClient } from "@/lib/teachworks/client";
-
+import { createClient } from "@/utils/supabase/server";
 export async function GET() {
   try {
-    const apiKey = process.env.TEACHWORKS_API_KEY;
-    
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Teachworks API key not configured" },
-        { status: 500 }
-      );
-    }
+  
+    const supabase = await createClient();
 
-    const client = new TeachworksClient(apiKey);
-    const employees = await client.getEmployees();
+    const {data, error} = await supabase.from('coaches').select("*");
 
-    return NextResponse.json(employees);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching employees:", error);
     return NextResponse.json(
