@@ -40,7 +40,7 @@ export async function POST(
     }
 
     
-   const {lesson_id, title, description, content_url} = body;
+   const {lesson_id, title, description, content_url, pre_file_name, post_file_name, slide_input_name} = body;
 
     if(!lesson_id){
       return NextResponse.json({status: 404, message: "Lesson id not found"})
@@ -56,9 +56,9 @@ export async function POST(
     const supabase = await createClient();
     
   
-    const pre_lesson_url = `course_files/${id}/${lesson_id}/pre_lesson_tasks/`;
-    const post_lesson_url = `course_files/${id}/${lesson_id}/post_lesson_tasks/`;
-    const slide_show_url = `course_files/${id}/${lesson_id}/lessons/`
+    const pre_lesson_url = `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`;
+    const post_lesson_url = `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`;
+    const slide_show_url = `course_files/${id}/${lesson_id}/lessons/${slide_input_name}`
     const { data, error } = await supabase
       .from("lessons")
       .insert({
@@ -69,7 +69,7 @@ export async function POST(
         content_url: content_url?.trim() || null,
         pre_lesson_url: pre_lesson_url,
         post_lesson_url: post_lesson_url,
-        slide_show_url: slide_show_url
+        slide_show_url: slide_show_url,
       })
       .select()
       .single();
