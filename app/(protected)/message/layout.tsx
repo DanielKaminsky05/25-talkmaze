@@ -13,7 +13,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
 
     return (
         <div
-            className="flex flex-col md:flex-row md:gap-6 h-full max-h-[85vh] 
+            className="flex flex-col md:flex-row md:gap-6 h-full max-h-[85vh]
       rounded-xl mx-2 mb-2 p-3 lg:mb-6 "
         >
             <div className="flex flex-col max-w-[384px] md:basis-1/3">
@@ -29,40 +29,61 @@ export default async function Layout({ children }: { children: ReactNode }) {
 }
 
 /**
- * Fetch (id, email, teachworks_id) from all accounts records in the Supabase 
- * database, except the account of the logged in user.
- *
- * @returns Array holding information retrieved from all account records.
- *          Each element is an object in the shape of type 'Contact'
- *          defined in contact.ts
+ * Fetch contacts visible to the current user.
+ * - Regular users (role=1): only see coaches (role=2) and admins (role=3)
+ * - Coaches/admins: see all other accounts
+ * Display name is formatted as "Name (email)" where Name is the coach/profile name.
  */
 async function getContacts(): Promise<Contact[]> {
     const supabase = await createClient();
     const user = await getCurrentUser();
+    if (!user) return [];
 
-    // Build the base query to fetch account fields needed by the UI
+    // Get current user's role
+    const { data: currentAccount } = await supabase
+        .from("account")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
     let query = supabase
         .from("account")
-        .select("id, email, tw_customer_id")
+        .select("id, email, tw_customer_id, role")
+        .neq("id", user.id)
         .order("email");
 
-    // If a user is logged in, exclude them from the results
-    if (user?.id) {
-        query = query.neq("id", user.id);
+    // Regular users can only message coaches and admins
+    if (currentAccount?.role === 1) {
+        query = query.in("role", [2, 3]);
     }
 
-    // Execute the query and handle any errors
     const { data, error } = await query;
     if (error) {
         console.error("Error fetching contacts:", error);
         return [];
     }
 
-    // Map the raw rows fetched from Supabase to the Contact.ts shape
-    return data.map((account) => ({
-        id: account.id,
-        name: account.email, // Using email as display name for now
-        email: account.email,
-        tw_customer_id: account.tw_customer_id || "",
-    }));
+    // Fetch coach names for all coach accounts in one query
+    const coachAccountIds = data
+        .filter((a) => a.role === 2)
+        .map((a) => a.id);
+
+    const { data: coaches } = coachAccountIds.length > 0
+        ? await supabase
+              .from("coaches")
+              .select("account_id, name")
+              .in("account_id", coachAccountIds)
+        : { data: [] as { account_id: string; name: string }[] };
+
+    const coachNameMap = new Map((coaches ?? []).map((c) => [c.account_id, c.name]));
+
+    return data.map((acc) => {
+        const displayName = coachNameMap.get(acc.id) ?? acc.email;
+        return {
+            id: acc.id,
+            name: `${displayName} (${acc.email})`,
+            email: acc.email,
+            tw_customer_id: acc.tw_customer_id || "",
+        };
+    });
 }

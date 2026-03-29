@@ -34,7 +34,7 @@ export default function ConversationMessage({
       {/* Message contents (username, timestamp, text, etc.) */}
       <div className="px-1 pt-1 pb-2 bg-white rounded-[9px] grow">
         <div className="flex items-baseline gap-2 justify-between">
-          <span className="text-sm font-semibold">{sender.name}</span>
+          <span className="text-sm font-semibold">{sender.name} ({sender.email})</span>
           <span className="text-sm text-muted-foreground truncate">
             {DATE_FORMATTER.format(new Date(created_at))}
           </span>
