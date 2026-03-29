@@ -41,7 +41,7 @@ function CheckoutForm({ amountDisplay, planName }: { amountDisplay: string, plan
     
     // This triggers the payment with Stripe
     const result = await checkout.checkout.confirm({
-      //email: email,
+      email: email,
       //returnUrl:  `/success`
     })
     
