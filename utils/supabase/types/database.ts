@@ -254,9 +254,9 @@ export type Database = {
         Row: {
           coach_notes: string | null
           completed_at: string | null
-          course_id: string
           created_at: string | null
           id: string
+          lesson_id: string
           status: number
           student_id: string
           updated_at: string | null
@@ -264,9 +264,9 @@ export type Database = {
         Insert: {
           coach_notes?: string | null
           completed_at?: string | null
-          course_id: string
           created_at?: string | null
           id?: string
+          lesson_id: string
           status?: number
           student_id: string
           updated_at?: string | null
@@ -274,19 +274,19 @@ export type Database = {
         Update: {
           coach_notes?: string | null
           completed_at?: string | null
-          course_id?: string
           created_at?: string | null
           id?: string
+          lesson_id?: string
           status?: number
           student_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "lesson_progress_course_id_fkey"
-            columns: ["course_id"]
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: "courses"
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
           {
@@ -570,8 +570,11 @@ export type Database = {
           created_at: string
           id: string
           lesson_space_id: string | null
+          lesson_space_student_link: string | null
+          lesson_space_teacher_link: string | null
           name: string | null
           profile_access_pin: string | null
+          teach_works_url: string | null
           tw_id: string | null
           remaining_lessons: number | null
           updated_at: string
@@ -581,8 +584,11 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_space_id?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          teach_works_url?: string | null
           tw_id?: string | null
           remaining_lessons?: number | null
           updated_at?: string
@@ -592,8 +598,11 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_space_id?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          teach_works_url?: string | null
           tw_id?: string | null
           remaining_lessons?: number | null
           updated_at?: string

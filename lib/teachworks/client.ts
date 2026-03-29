@@ -232,7 +232,7 @@ export class TeachworksClient {
     | "Other";
     stripe_transaction_id?: string;
   }): Promise<unknown> {
-    return this.postRequest("/payments", {
+    return this.request<unknown>("/payments", "POST", {
       payment: data,
     });
   }

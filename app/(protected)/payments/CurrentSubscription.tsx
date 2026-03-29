@@ -1,69 +1,73 @@
 // File: app/payments/CurrentSubscription.tsx
-//NOTE WILL BE FIXED WHEN SUBSCRIPTION DATA BECOMES AVAILABLE
 import React from 'react';
 import { createClient } from '@/utils/supabase/client';
-import styles from './payments.module.css'; 
+import styles from './payments.module.css';
 
-// --- Data Interface (Hypothetical User Subscription Data) ---
-interface SubscriptionStatus {
-    packageName: string;
-    description: string;
-    sessionsLeft: number;
-    daysToCancel: number;
-}
-
-// --- Data Fetching Function (Assuming a Supabase table named 'Subscriptions') ---
-async function getCurrentSubscriptionStatus(): Promise<SubscriptionStatus | null> {
+async function getCurrentSubscription() {
     const supabase = createClient();
-    
-    // NOTE: You would typically filter this by the currently logged-in user's ID
-    const { data, error } = await supabase
-        .from('Subscriptions') 
-        .select('*')
-        .limit(1) 
-        .single(); // Assuming only one active sub per user
 
-    if (error) {
-        //console.error('Error fetching subscription status:', error);
-        return null;
-    }
-    return data as SubscriptionStatus;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from('student_subscriptions')
+        .select(`
+            *,
+            plans (
+                id,
+                name,
+                description,
+                renewal,
+                currency,
+                cents,
+                classes,
+                type
+            )
+        `)
+        .eq('student_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+    if (error || !data) return null;
+    return data;
 }
 
-
-// --- Component Definition (Async Server Component) ---
 export default async function CurrentSubscription() {
-    // 1. Fetch the user's live subscription status
-    const status = await getCurrentSubscriptionStatus();
+    const subscription = await getCurrentSubscription();
 
-    // Handle case where no active subscription is found
-    if (!status) {
+    if (!subscription) {
         return <div className={styles.currentSubCard}>No active subscription found.</div>;
     }
+
+    const daysLeft = subscription.current_period_end
+        ? Math.max(0, Math.ceil((new Date(subscription.current_period_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        : null;
 
     return (
         <div className={styles.currentSubCard}>
             <div className={styles.subPackageDetails}>
-                <h3>{status.packageName}</h3> 
-                <p>{status.description}</p>
+                <h3>{subscription.plans?.name}</h3>
+                <p>{subscription.plans?.description}</p>
             </div>
 
             <div className={styles.subStatusBox}>
-                <p className={styles.subStatusText}>
-                    You have **{status.daysToCancel}** days after purchase to cancel your package
-                </p>
-                
+                {daysLeft !== null && (
+                    <p className={styles.subStatusText}>
+                        You have <strong>{daysLeft}</strong> days remaining in your current billing period
+                    </p>
+                )}
+
                 <div className={styles.sessionStatusContainer}>
-                    {/* Progress Circle (Styling from payments.module.css is needed here) */}
                     <div className={styles.sessionProgressCircle}>
                         <div className={styles.sessionProgressInner}></div>
                     </div>
                     <p className={styles.sessionCount}>
-                        **{status.sessionsLeft}** Sessions Left in Payment Package
+                        <strong>{subscription.classes_left}</strong> Classes Left in Payment Package
                     </p>
                 </div>
 
-                {/* NOTE: If the 'Cancel plan' button is interactive, this part might need to be a client component */}
                 <button className={styles.cancelPlanButton}>
                     Cancel plan
                 </button>
