@@ -681,6 +681,8 @@ export type Database = {
           lesson_space_id: string | null
           lesson_space_student_link: string | null
           lesson_space_teacher_link: string | null
+          lesson_space_student_link: string | null
+          lesson_space_teacher_link: string | null
           name: string | null
           profile_access_pin: string | null
           remaining_lessons: number | null
@@ -695,6 +697,8 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
           remaining_lessons?: number | null
@@ -707,6 +711,8 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_space_id?: string | null
+          lesson_space_student_link?: string | null
+          lesson_space_teacher_link?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
           name?: string | null
