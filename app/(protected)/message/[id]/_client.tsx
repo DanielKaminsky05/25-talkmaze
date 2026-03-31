@@ -31,7 +31,7 @@ export function ConversationClient({
    */
   const { messages: realTimeMessages } = useRealtimeChat({
     roomId: conversation.id,
-    userId: user.id,
+    userId: user.id, // kept for hook signature compatibility
   });
 
   const visibleMessages = messages.concat(realTimeMessages);
@@ -67,12 +67,10 @@ export function ConversationClient({
  */
 function useRealtimeChat({
   roomId,
-  userId,
 }: {
   roomId: string;
   userId: string;
 }) {
-  const [connectedUsers, setConnectedUsers] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
@@ -80,43 +78,19 @@ function useRealtimeChat({
     let newChannel: RealtimeChannel;
     let cancel = false;
 
-    /**
-     * Must wrap all the code related to supabase realtime channels with
-     * supabase.realtime.setAuth().
-     * This is so that superbase's realtime channels can track which user(s)
-     * are subscribed to them.
-     * */
     supabase.realtime.setAuth().then(() => {
-      // If the use-effect hook is run on component unmount, don't do anything
       if (cancel) return;
 
-      /**
-       * Initialize an instance of a Supabase channel representing the
-       * conversation between two users.
-       *
-       * The channel is private so only the members of the conversation can
-       * listen to channel broadcasts, and send payloads to the channel
-       * The channel tracks the "presence" of users by userId
-       */
       newChannel = supabase.channel(`room:${roomId}:messages`, {
         config: {
           private: false, // TODO: implement the supabase RLS so that it works with private channels
-          presence: {
-            key: userId,
-          },
         },
       });
 
       newChannel
-        // Every time a user leaves or joins the channel, get the number of
-        // users connected to the channel
-        .on("presence", { event: "sync" }, () => {
-          setConnectedUsers(Object.keys(newChannel.presenceState()).length);
-        })
         // Listen to inserts to supabase messages table
         .on("broadcast", { event: "INSERT" }, (payload) => {
           const record = payload.payload;
-          console.log(payload);
           setMessages((prevMessages) => [
             ...prevMessages,
             {
@@ -134,28 +108,15 @@ function useRealtimeChat({
             },
           ]);
         })
-        // Add the current user to the channel, so that it can be tracked
-        // The current user's userId is added to the list of id's stored in
-        // .presenceState()
-        .subscribe((status) => {
-          if (status !== "SUBSCRIBED") return;
-
-          newChannel.track({ userId });
-        });
+        .subscribe();
     });
 
-    /** When the component unmounts (page closes, etc.), make sure to:
-     *  - remove the user from presenceState()
-     *  - unsubscribe the user from the channel
-     */
     return () => {
       cancel = true;
       if (!newChannel) return;
-
-      newChannel.untrack(); // Remove user from presenceState
-      newChannel.unsubscribe(); // Stop listening to channel broadcasts
+      newChannel.unsubscribe();
     };
-  }, [roomId, userId]); // Run useEffect hook whenever roomId or userId changes
+  }, [roomId]); // Run useEffect hook whenever roomId changes
 
-  return { connectedUsers, messages };
+  return { messages };
 }

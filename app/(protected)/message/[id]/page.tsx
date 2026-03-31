@@ -70,18 +70,30 @@ async function getConversation(
   const resolvedContactId = studentExists?.account_id ?? contactId;
 
   if (profile) {
-    // Regular user: look for their profile-scoped conversation first
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("sender_id", userId)
-      .eq("recipient_id", resolvedContactId)
-      .eq("sender_profile_id", profile.id)
-      .maybeSingle();
+    // There is exactly one conversation per (student profile, contact) pair.
+    // sender_profile_id identifies the student profile regardless of who initiated,
+    // so check both directions with the same filter.
+    const [{ data: initiated }, { data: contactInitiated }] = await Promise.all([
+      supabase
+        .from("conversations")
+        .select("id")
+        .eq("sender_id", userId)
+        .eq("recipient_id", resolvedContactId)
+        .eq("sender_profile_id", profile.id)
+        .maybeSingle(),
+      supabase
+        .from("conversations")
+        .select("id")
+        .eq("sender_id", resolvedContactId)
+        .eq("recipient_id", userId)
+        .eq("sender_profile_id", profile.id)
+        .maybeSingle(),
+    ]);
 
-    if (conv) {
+    const existing = initiated ?? contactInitiated;
+    if (existing) {
       return {
-        conversationId: conv.id,
+        conversationId: existing.id,
         senderProfileId: profile.id,
         senderProfileType: profile.type,
       };
@@ -89,23 +101,32 @@ async function getConversation(
   } else {
     // Coach/admin: look for any existing conversation in either direction,
     // preferring one started by the contact (so we join the student's thread).
-    // Use limit(1) to safely handle multiple profile-scoped conversations from
-    // the same account without maybeSingle() erroring on multiple rows.
+    // When the contact is a student profile, filter by sender_profile_id /
+    // recipient_profile_id so siblings on the same account don't share a thread.
+    let theirQuery = supabase
+      .from("conversations")
+      .select("id")
+      .eq("sender_id", resolvedContactId)
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    let myQuery = supabase
+      .from("conversations")
+      .select("id")
+      .eq("sender_id", userId)
+      .eq("recipient_id", resolvedContactId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (studentExists) {
+      theirQuery = theirQuery.eq("sender_profile_id", contactId);
+      myQuery = myQuery.eq("recipient_profile_id", contactId);
+    }
+
     const [{ data: theirConvs }, { data: myConvs }] = await Promise.all([
-      supabase
-        .from("conversations")
-        .select("id")
-        .eq("sender_id", resolvedContactId)
-        .eq("recipient_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(1),
-      supabase
-        .from("conversations")
-        .select("id")
-        .eq("sender_id", userId)
-        .eq("recipient_id", resolvedContactId)
-        .order("created_at", { ascending: false })
-        .limit(1),
+      theirQuery,
+      myQuery,
     ]);
 
     const existing = theirConvs?.[0] ?? myConvs?.[0];
@@ -126,6 +147,10 @@ async function getConversation(
       ...(profile && {
         sender_profile_id: profile.id,
         sender_profile_type: profile.type,
+      }),
+      ...(studentExists && {
+        recipient_profile_id: contactId,
+        recipient_profile_type: "student",
       }),
     })
     .select("id")
