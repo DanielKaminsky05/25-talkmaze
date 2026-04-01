@@ -22,7 +22,7 @@ type Profile = {
 
 async function getProfiles(): Promise<Profile[]> {
 
-  
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,7 +34,7 @@ async function getProfiles(): Promise<Profile[]> {
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase
       .from("parents")
-      .select("id, name, profile_access_pin")
+      .select("id, first_name, last_name, profile_access_pin")
       .eq("account_id", user.id),
     supabase
       .from("students")
@@ -42,6 +42,8 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
   ]);
 
+
+  console.log("Account ID: " + user.id);
   console.log("Retrieved parents: " + JSON.stringify(parents));
   console.log("Retrieved Students: " + JSON.stringify(students))
 
@@ -49,7 +51,7 @@ async function getProfiles(): Promise<Profile[]> {
   return [
     ...(parents ?? []).map((p) => ({
       id: p.id,
-      name: p.name,
+      name: `${p.first_name} ${p.last_name}`.trim(),
       type: "parent" as const,
       hasPin: p.profile_access_pin != null,
     })),
@@ -73,7 +75,7 @@ export default async function ProfilesPage({
   searchParams: Promise<{ error?: string }>;
 }) {
 
-  
+
   const profiles = await getProfiles();
   const { error } = await searchParams;
 
@@ -153,7 +155,7 @@ export default async function ProfilesPage({
             );
           })}
 
-          
+
           <div className="flex flex-col items-center">
             <a
               href="/onboarding"
@@ -174,7 +176,7 @@ export default async function ProfilesPage({
               </span>
             </a>
             <div className="h-[clamp(40px,4vw,60px)]" />
-          </div> 
+          </div>
         </div>
 
         {/* Manage Profiles Button */}
