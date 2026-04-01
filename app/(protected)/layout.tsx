@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import ProtectedLayoutShell from "./components/ProtectedLayoutShell";
-import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "../api/lib/profile-management/getActiveProfile";
 
 /**
  * Server-side rendered layout for all protected routes

@@ -3,10 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
-<<<<<<< HEAD
 import { signOut } from "@/app/api/lib/auth/signout";
-=======
->>>>>>> 85cf2186bce901ceda655f1304dae3c497c30dc0
 
 // Default title shown on dashboard/home pages, keyed by profile type
 const DASHBOARD_TITLE = {

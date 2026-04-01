@@ -1,15 +1,12 @@
 "use server"
 
 import { createClient } from "@/utils/supabase/server"
-import { TeachworksClient } from "@/lib/teachworks/client"
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 //Sign up function
 export const signUpNewUser = async (familyFirstName: string, familyLastName: string, email: string, password: string, masterPin: string) => {
 
-
-    const teachWorksClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!)
 
     const testBody = {
         customer: {
@@ -20,9 +17,7 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         }
     }
 
-    const response = await teachWorksClient.postFamily(testBody);
 
-    console.log("Id: " + response.id);
 
 
     const supabase = await createClient();
@@ -47,7 +42,6 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
     const insertIntoAccount = await supabase.from('account').insert({
         id: data.user.id,
         email: email,
-        tw_customer_id: response.id.toString(),
         role: 1,
     }
     )
