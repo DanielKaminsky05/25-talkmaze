@@ -13,8 +13,8 @@ export default async function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex flex-col md:flex-row md:gap-6 h-full max-h-[85vh]
-      rounded-xl mx-2 mb-2 p-3 lg:mb-6 "
+      className="flex flex-col md:flex-row md:gap-6 h-full 
+      rounded-xl p-8"
     >
       <div className="flex flex-col max-w-[384px] md:basis-1/3">
         {/* Contacts filter bar*/}

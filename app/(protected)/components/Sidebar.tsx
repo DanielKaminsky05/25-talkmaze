@@ -3,6 +3,13 @@ import SideBarBox from "./SideBarBox";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  Home,
+  BookOpen,
+  MessageCircle,
+  Award,
+  CalendarDays,
+} from "lucide-react";
 
 /**
  * Role-specific navigation items.
@@ -13,19 +20,36 @@ import { useEffect, useState } from "react";
  */
 const NAV_ITEMS = {
   student: [
-    { id: 0, name: "Home", link: "/home" },
-    { id: 1, name: "Lessons", link: "/lesson" },
-    { id: 2, name: "Messages", link: "/message" },
-    { id: 3, name: "Rewards", link: "/reward" },
-    { id: 4, name: "Manage Profile", link: "/manageProfile" },
-    { id: 5, name: "Schedule", link: "/session" },
+    { id: 0, name: "Home", link: "/home", icon: <Home size={20} /> },
+    { id: 1, name: "Lessons", link: "/lesson", icon: <BookOpen size={20} /> },
+    {
+      id: 2,
+      name: "Messages",
+      link: "/message",
+      icon: <MessageCircle size={20} />,
+    },
+    { id: 3, name: "Rewards", link: "/reward", icon: <Award size={20} /> },
   ],
   parent: [
-    { id: 0, name: "Home", link: "/parent" }, // parent home NOT student
-    { id: 1, name: "Lessons", link: "/parent/lessons" }, // select child you want to view lessons
-    { id: 2, name: "Messages", link: "/message" },
-    { id: 4, name: "Manage Profile", link: "/manageProfile" },
-    { id: 5, name: "Schedule", link: "/session" },
+    { id: 0, name: "Home", link: "/parent", icon: <Home size={20} /> }, // parent dashboard home is /parent
+    {
+      id: 1,
+      name: "Lessons",
+      link: "/parent/lessons", // different than /lessons page in student dash.
+      icon: <BookOpen size={20} />,
+    }, 
+    {
+      id: 2,
+      name: "Schedule",
+      link: "/session",
+      icon: <CalendarDays size={20} />,
+    },
+    {
+      id: 3,
+      name: "Messages",
+      link: "/message",
+      icon: <MessageCircle size={20} />,
+    },
   ],
 };
 
@@ -45,7 +69,11 @@ export default function SideBar({ profileType }: Props) {
 
   // Highlight the nav item whose link matches the current URL
   useEffect(() => {
-    const match = items.find((item) => pathname.startsWith(item.link));
+    const match = [...items]
+      // .sort() so that the longer URL gets matched first before shorter one
+      // This matters for nested routes /parent/lessons should match over /parents
+      .sort((a, b) => b.link.length - a.link.length)
+      .find((item) => pathname.startsWith(item.link));
     setActiveId(match ? match.id : 0);
   }, [pathname, items]);
 
@@ -61,6 +89,7 @@ export default function SideBar({ profileType }: Props) {
           name={item.name}
           state={activeId === item.id}
           link={item.link}
+          icon={item.icon}
           onSelect={() => setActiveId(item.id)}
         />
       ))}
