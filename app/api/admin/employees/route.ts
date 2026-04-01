@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
 import { createClient } from "@/utils/supabase/server";
 export async function GET() {
   try {
   
     const supabase = await createClient();
 
-    const {data, error} = await supabase.from('coaches').select("*");
+    const {data,error} = await supabase.from('coaches').select("*");
 
     return NextResponse.json(data);
   } catch (error) {

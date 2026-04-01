@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
 import { createClient } from "@/utils/supabase/server";
-
-const client = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
 
 export async function PUT(
   req: NextRequest,
@@ -13,22 +10,27 @@ export async function PUT(
     const body = await req.json();
     const courseData = body.course;
 
-    const updated = await client.updateCourse(id, courseData);
     const supabase = await createClient();
 
     const payload: Record<string, unknown> = {};
-    if (courseData.name !== undefined)        payload.name        = courseData.name;
+    if (courseData.name !== undefined)        payload.title       = courseData.name;
     if (courseData.description !== undefined) payload.description = courseData.description;
 
     if (Object.keys(payload).length > 0) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("courses")
         .update(payload)
-        .eq("tw_course_id", id);
-      if (error) console.error("Supabase sync failed:", error.message);
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) {
+        console.error("Supabase update failed:", error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(updated);
     }
     
-    return NextResponse.json(updated);
+    return NextResponse.json({ message: "No changes provided" });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to update course" },
@@ -44,14 +46,16 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await client.deleteCourse(id);
     const supabase = await createClient();
 
     const { error } = await supabase
       .from("courses")
       .delete()
-      .eq("tw_course_id", id);
-    if (error) console.error("Supabase sync failed:", error.message);
+      .eq("id", id);
+    if (error) {
+      console.error("Supabase delete failed:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

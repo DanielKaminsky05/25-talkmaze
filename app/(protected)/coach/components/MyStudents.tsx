@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 interface Student {
   id: string;
-  name: string;
-  tw_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
   lesson_space_id?: string | null;
 }
 
@@ -110,7 +110,7 @@ export default function MyStudents({
                     <h3
                       className={`text-sm font-semibold ${isActive ? "text-blue-900" : "text-gray-900"}`}
                     >
-                      {student.name}
+                      {`${student.first_name || ""} ${student.last_name || ""}`.trim()}
                     </h3>
                     <div className="flex items-center gap-2">
                       {/* Message Button */}

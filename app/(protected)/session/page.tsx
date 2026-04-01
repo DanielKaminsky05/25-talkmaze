@@ -62,7 +62,7 @@ async function getScheduleData(): Promise<{
 
     const { data: studentRow } = await supabase
       .from("students")
-      .select("name")
+      .select("first_name, last_name")
       .eq("id", profileId)
       .single();
 
@@ -73,12 +73,12 @@ async function getScheduleData(): Promise<{
         student: null,
       })),
       profileType,
-      profileName: studentRow?.name ?? "Student",
+      profileName: studentRow ? `${studentRow.first_name} ${studentRow.last_name}`.trim() : "Student",
     };
   } else {
     const { data: students } = await supabase
       .from("students")
-      .select("id, name")
+      .select("id, first_name, last_name")
       .eq("account_id", user.id);
 
     const studentIds = (students ?? []).map((s: any) => s.id);
@@ -90,11 +90,13 @@ async function getScheduleData(): Promise<{
       .order("weekday")
       .order("start_time");
 
-    const studentMap = Object.fromEntries((students ?? []).map((s: any) => [s.id, s.name]));
+    const studentMap = Object.fromEntries(
+      (students ?? []).map((s: any) => [s.id, `${s.first_name} ${s.last_name}`.trim()])
+    );
 
     const { data: parentRow } = await supabase
       .from("parents")
-      .select("name")
+      .select("first_name, last_name")
       .eq("id", profileId)
       .single();
 
@@ -105,7 +107,7 @@ async function getScheduleData(): Promise<{
         student: { name: studentMap[s.student_id] ?? "Student" },
       })),
       profileType,
-      profileName: parentRow?.name ?? "Parent",
+      profileName: parentRow ? `${parentRow.first_name} ${parentRow.last_name}`.trim() : "Parent",
     };
   }
 }

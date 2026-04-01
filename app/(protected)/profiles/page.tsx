@@ -38,7 +38,7 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
     supabase
       .from("students")
-      .select("id, name, profile_access_pin")
+      .select("id, first_name, last_name")
       .eq("account_id", user.id),
   ]);
 
@@ -57,7 +57,7 @@ async function getProfiles(): Promise<Profile[]> {
     })),
     ...(students ?? []).map((s) => ({
       id: s.id,
-      name: s.name ?? "Unnamed",
+      name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || "Unnamed",
       type: "student" as const,
       hasPin: false, // Students no longer have PINs
     })),

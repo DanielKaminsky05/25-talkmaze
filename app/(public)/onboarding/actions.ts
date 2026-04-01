@@ -1,6 +1,5 @@
 "use server";
-
-import { createStudent } from "@/lib/profile-management/addProfile";
+import { revalidatePath } from "next/cache";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 
@@ -27,51 +26,20 @@ export async function handleStudentCreation(
     return { success: false, error: "Account ID is missing" };
   }
 
-  const { data: accountData, error: accountError } = await supabase
-    .from("account")
-    .select("tw_customer_id")
-    .eq("id", account_id)
-    .single();
-
-  if (accountError || !accountData) {
-    console.error("Account fetch error:", accountError);
-    return { success: false, error: "Failed to fetch account info" };
-  }
-
-  const tw_id = accountData.tw_customer_id;
-
-  const student_obj = {
-    student: {
-      customer_id: tw_id,
-      first_name: firstName,
-      last_name: lastName,
-      email: email,
-      home_phone: home_phone,
-      mobile_phone: mobile_phone,
-      birth_date: birth_date,
-      school: school,
-      grade: grade,
-      additional_notes: additional_notes,
-      time_zone: null,
-    },
-  };
-
-  const result = await createStudent(student_obj);
-
   const { data: studentInsert, error: studentError } = await supabase
     .from("students")
     .insert({
       account_id: account_id,
-      tw_id: JSON.stringify(result.id),
-      name: firstName + " " + lastName,
-      profile_access_pin: pin,
+      first_name: firstName,
+      last_name: lastName,
+      grade: String(grade),
     })
     .select()
     .single();
 
   if (studentError || !studentInsert) {
     console.error("Student insert error:", studentError);
-    return { status: 500, message: "Error inserting student" };
+    return { success: false, status: 500, error: "Error inserting student" };
   }
 
   const student_id = studentInsert.id;
@@ -99,8 +67,9 @@ export async function handleStudentCreation(
     if (availabilityError) {
       console.error("Availability insert error:", availabilityError);
       return {
+        success: false,
         status: 500,
-        message: "Error inserting availability",
+        error: "Error inserting availability",
       };
     }
   }
@@ -109,7 +78,9 @@ export async function handleStudentCreation(
   console.log("MATCH RESULT:", match);
 
   if (!match) {
+    revalidatePath("/profiles");
     return {
+      success: true,
       status: 200,
       message: "Student created, but no coach available",
     };
@@ -128,11 +99,13 @@ export async function handleStudentCreation(
   if (sessionError) {
     console.error("SESSION INSERT ERROR:", sessionError);
     return {
+      success: false,
       status: 500,
-      message: "Failed to create session",
+      error: "Failed to create session",
     };
   }
 
+  revalidatePath("/profiles");
   return {
     success: true,
     status: 200,

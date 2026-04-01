@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
 
 //fetch all assignments joined with coach/student names 
 export async function GET() {
@@ -10,8 +9,8 @@ export async function GET() {
     .select(`
       coach_id,
       student_id,
-      coaches(name, tw_id),
-      students(name, tw_id)
+      coaches(name),
+      students(first_name, last_name)
     `);
     
   if (error) {
@@ -24,10 +23,8 @@ export async function GET() {
     id: `${row.coach_id}_${row.student_id}`, // Used strictly for the DELETE route decomposition
     coach_id: String(row.coach_id),
     student_id: String(row.student_id),
-    coach_tw_id: row.coaches?.tw_id || null,
-    student_tw_id: row.students?.tw_id || null,
     coaches: { name: row.coaches?.name || null },
-    students: { name: row.students?.name || null }
+    students: { name: row.students ? `${row.students.first_name || ""} ${row.students.last_name || ""}`.trim() : null }
   }));
 
   return NextResponse.json(mappedData);
@@ -41,7 +38,7 @@ export async function POST(req: NextRequest) {
   console.log("Student_id: " + student_id_1)
  
   const { data: coachData } = await supabase.from('coaches').select('id, name').eq('id', String(coach_id_1)).single();
-  const { data: studentData } = await supabase.from('students').select('id, name').eq('id', String(student_id_1)).single();
+  const { data: studentData } = await supabase.from('students').select('id, first_name, last_name').eq('id', String(student_id_1)).single();
 
   console.log("Coach Data: " + coachData);
   console.log("Student Data :" + studentData);
@@ -87,7 +84,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json'
       },body: JSON.stringify({
         id: student_room.lesson_space_id,
-        name: studentData.name,
+        name: `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim(),
         transcribe: true,
         summarize: true,
         record_av: true,
@@ -98,7 +95,7 @@ export async function POST(req: NextRequest) {
           custom_jwt_parameters: {
               meta: {
                   displayName: `Coach ${coachData.name}`,
-                  lessonTitle: `${studentData.name} Public Speaking Room!`
+                  lessonTitle: `${studentData.first_name} ${studentData.last_name} Public Speaking Room!`
               }
           }
         }
@@ -121,30 +118,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Find all coach ID's for this student to sync to Teachworks
-  const { data: allAssignments, error: allAssignmentsError } = await supabase
-    .from("coach_students")
-    .select("coaches(tw_id)")
-    .eq("student_id", student_id);
-
-  if (allAssignmentsError) {
-    console.error("POST Assignment Select Error:", allAssignmentsError);
-  }
-
-  // 3. Sync to Teachworks — build default_teacher_ids array
-  const twTeacherIds = allAssignments 
-    ? allAssignments.filter((a: any) => a.coaches?.tw_id).map((a: any) => Number(a.coaches.tw_id))
-    : [Number(coach_id_1)];
-
-  const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
-  
-  try {
-    await twClient.updateStudent(student_id_1, {
-      default_teacher_ids: twTeacherIds
-    });
-  } catch (e) {
-    console.error("Teachworks sync failed: ", e);
-  }
 
   // Construct fake mapped return format matching GET endpoint format
   const responseData = { 
@@ -152,7 +125,7 @@ export async function POST(req: NextRequest) {
     coach_id: String(coach_id_1),
     student_id: String(student_id_1),
     coaches: { name: coachData.name },
-    students: { name: studentData.name }
+    students: { name: `${studentData.first_name} ${studentData.last_name}`.trim() }
   };
   return NextResponse.json(responseData);
 }

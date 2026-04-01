@@ -19,27 +19,22 @@ export default function ParentDashboard() {
     async function fetchData() {
       try {
         setLoading(true);
-        // Fetch Lessons (Family-wide)
-        const lessonsResponse = await fetch("/api/teachworks/family-lessons");
-        if (lessonsResponse.ok) {
-          const lessonsData = await lessonsResponse.json();
-          const mappedSchedule: Appointment[] = lessonsData.map((lesson: any) => {
-              const fullStudentName = lesson.supabase_student_name || (lesson.participants?.[0]?.student_name) || "Student";
-              let studentFirstName = "";
-              if (fullStudentName.includes(",")) {
-                  studentFirstName = fullStudentName.split(",")[1].trim().split(" ")[0];
-              } else {
-                  studentFirstName = fullStudentName.split(" ")[0];
-              }
+        // Fetch Lessons (Family-wide from local Sessions)
+        const sessionsResponse = await fetch("/api/parent/sessions");
+        if (sessionsResponse.ok) {
+          const sessionsData = await sessionsResponse.json();
+          const mappedSchedule: Appointment[] = sessionsData.map((session: any) => {
+              const student = session.students;
+              const coach = session.coaches;
               return {
-                  id: lesson.id.toString(),
-                  title: lesson.service_name || lesson.name,
-                  start_date: lesson.from_datetime,
-                  end_date: lesson.to_datetime,
-                  description: lesson.description,
-                  studentName: studentFirstName,
-                  coachName: lesson.employee_name,
-                  status: lesson.status
+                  id: session.id.toString(),
+                  title: "Public Speaking Session",
+                  start_date: session.start_time,
+                  end_date: session.end_time,
+                  description: "",
+                  studentName: student?.first_name || "Student",
+                  coachName: coach?.name || "Coach",
+                  status: "scheduled"
               };
           });
           setSchedule(mappedSchedule);

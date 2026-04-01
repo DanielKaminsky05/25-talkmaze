@@ -7,8 +7,8 @@ import LessonsTable from "./components/LessonsTable";
 
 interface Student {
   id: string;
-  name: string;
-  tw_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface CoachPageClientProps {
@@ -47,7 +47,10 @@ export default function CoachPageClient({ currentUserId, currentUserEmail }: Coa
         </div>
       </div>
 
-      <LessonsTable studentId={activeStudent?.id} studentName={activeStudent?.name} />
+      <LessonsTable
+        studentId={activeStudent?.id}
+        studentName={`${activeStudent?.first_name || ""} ${activeStudent?.last_name || ""}`.trim()}
+      />
     </div>
   );
 }

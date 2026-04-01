@@ -5,8 +5,8 @@ import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
 
 interface Student {
   id: string;
-  name: string;
-  tw_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface StudentDetailsProps {
@@ -167,16 +167,13 @@ export default function StudentDetails({
             {/* Student header */}
             <div className="flex items-center space-x-5 mb-8">
               <div className="h-20 w-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {student.name.charAt(0).toUpperCase()}
+                {(student.first_name || student.last_name || "?").charAt(0).toUpperCase()}
               </div>
 
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {student.name}
+                  {`${student.first_name || ""} ${student.last_name || ""}`.trim()}
                 </h1>
-                <p className="text-sm text-gray-500">
-                  Student ID: {student.tw_id || "N/A"}
-                </p>
               </div>
             </div>
 

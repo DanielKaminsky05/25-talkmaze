@@ -201,17 +201,17 @@ async function getMessages(
         if (senderProfileType === "student") {
           const { data: student } = await supabase
             .from("students")
-            .select("name")
+            .select("first_name, last_name")
             .eq("id", senderProfileId)
             .maybeSingle();
-          name = student?.name ?? account?.email ?? "Unknown";
+          name = student ? `${student.first_name} ${student.last_name}`.trim() : account?.email ?? "Unknown";
         } else {
           const { data: parent } = await supabase
             .from("parents")
-            .select("name")
+            .select("first_name, last_name")
             .eq("id", senderProfileId)
             .maybeSingle();
-          name = parent?.name ?? account?.email ?? "Unknown";
+          name = parent ? `${parent.first_name} ${parent.last_name}`.trim() : account?.email ?? "Unknown";
         }
       } else {
         // Coach, admin, or user without active profile — resolve by account

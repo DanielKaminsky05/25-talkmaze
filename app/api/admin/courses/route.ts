@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
 import { createClient } from "@/utils/supabase/server";
-
-const client = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
 
 export async function GET() {
   try {

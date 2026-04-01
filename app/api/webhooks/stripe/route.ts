@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/app/api/lib/stripe";
 import { createServiceRoleClient } from "@/utils/supabase/service";
-import { TeachworksClient } from "@/lib/teachworks/client";
 
 /**
  * POST /api/webhooks/stripe
@@ -137,7 +136,7 @@ export async function POST(request: Request) {
                   status: "active",
                   current_period_start: currentPeriodStart,
                   current_period_end: currentPeriodEnd,
-                  classes_left: plan.classes,
+                  sessions_remaining: plan.classes,
                 })
                 .eq("id", existingId);
               if (error)
@@ -156,7 +155,7 @@ export async function POST(request: Request) {
                   status: "active",
                   current_period_start: currentPeriodStart,
                   current_period_end: currentPeriodEnd,
-                  classes_left: plan.classes,
+                  sessions_remaining: plan.classes,
                 });
               if (error)
                 console.error(
@@ -168,10 +167,10 @@ export async function POST(request: Request) {
             // Build description for the Teachworks payment record
             const { data: student } = await supabase
               .from("students")
-              .select("name")
+              .select("first_name, last_name")
               .eq("id", studentId)
               .single();
-            paymentDescription = `Payment for ${student?.name ?? "student"} - ${plan.name}`;
+            paymentDescription = `Payment for ${student ? `${student.first_name} ${student.last_name}`.trim() : "student"} - ${plan.name}`;
 
             // Trigger LessonSpace creation for this student.
             // The learningSpace route is idempotent — it skips if the student
@@ -197,69 +196,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // --- Create Teachworks payment record ---
-
-      // Look up our internal account via the Stripe customer ID
-      const { data: account, error: accountError } = await supabase
-        .from("account")
-        .select("id")
-        .eq("stripe_customer_id", stripeCustomerId)
-        .single();
-
-      if (accountError || !account) {
-        console.error(
-          "invoice.paid: error fetching account from stripe_customer_id:",
-          accountError,
-        );
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      // Teachworks uses its own customer ID (tw_id) stored on the parent record
-      const { data: parent, error: parentError } = await supabase
-        .from("parents")
-        .select("tw_id")
-        .eq("account_id", account.id)
-        .single();
-
-      if (parentError || !parent?.tw_id) {
-        console.error(
-          "invoice.paid: error fetching parent tw_id:",
-          parentError,
-        );
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      if (!process.env.TEACHWORKS_API_KEY) {
-        console.error("TEACHWORKS_API_KEY is not defined");
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      const teachworksClient = new TeachworksClient(
-        process.env.TEACHWORKS_API_KEY,
-      );
-
-      // Use Stripe's recorded paid_at timestamp if available; fall back to now
-      const paidAt = invoice.status_transitions?.paid_at;
-      const paymentDate = paidAt
-        ? new Date(paidAt * 1000).toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
-
-      // Teachworks errors are caught separately so they don't prevent a 200
-      // response to Stripe (which would cause Stripe to retry the webhook)
-      try {
-        await teachworksClient.createPayment({
-          customer_id: parent.tw_id,
-          date: paymentDate,
-          amount: (invoice.amount_paid / 100).toFixed(2), // cents → dollars
-          description: paymentDescription,
-          payment_method: "Credit Card",
-        });
-      } catch (teachworksError) {
-        console.error(
-          "invoice.paid: error creating Teachworks payment:",
-          teachworksError,
-        );
-      }
     }
 
     // Always return 200 so Stripe knows the webhook was received.

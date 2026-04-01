@@ -5,7 +5,6 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -21,7 +20,6 @@ export type Database = {
           id: string
           role: number
           stripe_customer_id: string | null
-          tw_customer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -30,7 +28,6 @@ export type Database = {
           id?: string
           role: number
           stripe_customer_id?: string | null
-          tw_customer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -39,7 +36,6 @@ export type Database = {
           id?: string
           role?: number
           stripe_customer_id?: string | null
-          tw_customer_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -148,26 +144,26 @@ export type Database = {
       coaches: {
         Row: {
           account_id: string
+          avatar_url: string | null
           created_at: string
           id: string
           name: string
-          tw_id: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
+          avatar_url?: string | null
           created_at?: string
           id?: string
           name: string
-          tw_id?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
+          avatar_url?: string | null
           created_at?: string
           id?: string
           name?: string
-          tw_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -262,6 +258,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          head_lesson_id: string | null
           id: string
           title: string
           updated_at: string
@@ -269,6 +266,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          head_lesson_id?: string | null
           id?: string
           title: string
           updated_at?: string
@@ -276,11 +274,20 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          head_lesson_id?: string | null
           id?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "courses_head_lesson_id_fkey"
+            columns: ["head_lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lesson_progress: {
         Row: {
@@ -337,8 +344,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          next_lesson: string | null
+          order: number | null
           post_lesson_url: string | null
           pre_lesson_url: string | null
+          prev_lesson: string | null
           slide_show_url: string | null
           title: string
           updated_at: string
@@ -349,8 +359,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          next_lesson?: string | null
+          order?: number | null
           post_lesson_url?: string | null
           pre_lesson_url?: string | null
+          prev_lesson?: string | null
           slide_show_url?: string | null
           title: string
           updated_at?: string
@@ -361,8 +374,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          next_lesson?: string | null
+          order?: number | null
           post_lesson_url?: string | null
           pre_lesson_url?: string | null
+          prev_lesson?: string | null
           slide_show_url?: string | null
           title?: string
           updated_at?: string
@@ -422,35 +438,38 @@ export type Database = {
       parents: {
         Row: {
           account_id: string
+          avatar_url: string | null
           billing_email: string | null
           created_at: string
+          first_name: string | null
           id: string
-          name: string
+          last_name: string | null
           phone_number: string | null
           profile_access_pin: string | null
-          tw_id: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
+          avatar_url?: string | null
           billing_email?: string | null
           created_at?: string
+          first_name?: string | null
           id?: string
-          name: string
+          last_name?: string | null
           phone_number?: string | null
           profile_access_pin?: string | null
-          tw_id?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
+          avatar_url?: string | null
           billing_email?: string | null
           created_at?: string
+          first_name?: string | null
           id?: string
-          name?: string
+          last_name?: string | null
           phone_number?: string | null
           profile_access_pin?: string | null
-          tw_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -589,16 +608,19 @@ export type Database = {
         Row: {
           awarded_at: string
           badge_id: string
+          badge_url: string | null
           student_id: string
         }
         Insert: {
           awarded_at?: string
           badge_id: string
+          badge_url?: string | null
           student_id: string
         }
         Update: {
           awarded_at?: string
           badge_id?: string
+          badge_url?: string | null
           student_id?: string
         }
         Relationships: [
@@ -622,36 +644,36 @@ export type Database = {
         Row: {
           account_id: string
           cancelled_at: string | null
-          classes_left: number | null
           created_at: string
           current_period_end: string
           current_period_start: string
           id: string
           plan_id: string
+          sessions_remaining: number | null
           status: string
           student_id: string
         }
         Insert: {
           account_id?: string
           cancelled_at?: string | null
-          classes_left?: number | null
           created_at?: string
           current_period_end: string
           current_period_start: string
           id?: string
           plan_id?: string
+          sessions_remaining?: number | null
           status: string
           student_id?: string
         }
         Update: {
           account_id?: string
           cancelled_at?: string | null
-          classes_left?: number | null
           created_at?: string
           current_period_end?: string
           current_period_start?: string
           id?: string
           plan_id?: string
+          sessions_remaining?: number | null
           status?: string
           student_id?: string
         }
@@ -682,44 +704,44 @@ export type Database = {
       students: {
         Row: {
           account_id: string
+          avatar_url: string | null
           created_at: string
+          first_name: string | null
+          grade: string | null
           id: string
+          last_name: string | null
           lesson_space_id: string | null
           lesson_space_student_link: string | null
           lesson_space_teacher_link: string | null
-          name: string | null
-          profile_access_pin: string | null
-          remaining_lessons: number | null
           teach_works_url: string | null
-          tw_id: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
+          avatar_url?: string | null
           created_at?: string
+          first_name?: string | null
+          grade?: string | null
           id?: string
+          last_name?: string | null
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
-          name?: string | null
-          profile_access_pin?: string | null
-          remaining_lessons?: number | null
           teach_works_url?: string | null
-          tw_id?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
+          avatar_url?: string | null
           created_at?: string
+          first_name?: string | null
+          grade?: string | null
           id?: string
+          last_name?: string | null
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
-          name?: string | null
-          profile_access_pin?: string | null
-          remaining_lessons?: number | null
           teach_works_url?: string | null
-          tw_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -754,116 +776,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   public: {
