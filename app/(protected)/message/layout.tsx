@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import Bookmarks from "../components/coach-page/Bookmarks";
 import Contacts from "../components/coach-page/Contacts";
 import { createClient } from "@/utils/supabase/server";
-import { Contact } from "@/lib/types/contact";
+import { Contact } from "@/app/api/lib/types/contact";
 import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
 
 // Layout of Coach Page both for /coach and /coach/[conversation]

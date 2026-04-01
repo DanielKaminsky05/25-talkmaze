@@ -110,7 +110,7 @@ export default function Page() {
         .eq("student_id", studentId);
 
       const completedRows = (progressRows ?? []).filter(
-        (row) => row.status === "Done" || row.status === 1
+        (row) => JSON.stringify(row.status) === "Done" || row.status === 1
       );
       const completed = completedRows.length;
       

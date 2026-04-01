@@ -14,7 +14,7 @@ import CreateCoachModal from "./components/CreateCoachModal";
 import CourseTable from "./components/CourseTable";
 import CreateCourseModal from "./components/CreateCourseModal";
 import CourseLessonsPanel from "./components/CourseLessonPanel";
-import { Assignment } from "@/lib/types/assignments";
+import { Assignment } from "@/app/api/lib/types/assignments";
 import CoachAssignmentCard from "./components/CoachAssignmentCard";
 import AssignStudentDropDown, {
   Coach,

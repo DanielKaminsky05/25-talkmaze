@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lesson, LessonInput } from "@/lib/types/lesson";
+import { Lesson, LessonInput } from "@/app/api/lib/types/lesson";
 import { createClient } from "@/utils/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
@@ -18,7 +18,7 @@ const EMPTY_FORM: LessonInput = {
   content_url: "",
   pre_lesson_tasks: [],
   post_lesson_tasks: [],
-  slide_show_input: []
+  slide_show_input: [],
 };
 
 export default function CourseLessonsPanel({ courseId, students }: CourseLessonsPanelProps) {
@@ -538,6 +538,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
               key={lesson.id}
               className="border border-gray-200 rounded-lg bg-white overflow-hidden"
             >
+              {/**allow dragable  */}
               {editingId === lesson.id ? (
                 <div className="p-3 space-y-2">
                   {editError && (

@@ -2,7 +2,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatorIcon from "./AvatorIcon";
-import { signOut } from "@/lib/auth/signout";
+import { signOut } from "@/app/api/lib/auth/signout";
 
 
 //Navigation Bar Component

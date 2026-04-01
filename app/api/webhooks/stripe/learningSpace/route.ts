@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           id: lesson_space_id,
+          name: student.name,
           transcribe: true,
           summarize: true,
           record_av: true,

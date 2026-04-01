@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { TeachworksEmployee, TeachworksStudent } from "@/lib/teachworks/types";
-import { Assignment } from "@/lib/types/assignments";
+import { Assignment } from "@/app/api/lib/types/assignments";
 import { Student,Coach } from "./AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {
