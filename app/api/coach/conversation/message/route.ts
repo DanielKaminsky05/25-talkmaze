@@ -46,11 +46,8 @@ export async function GET(request: Request) {
       created_at: m.created_at,
       sender_id: m.sender_id,
       sender: {
-        name:
-          student?.name ??
-          coach?.name ??
-          account?.email ??
-          "Unknown",
+        name: student?.name ?? coach?.name ?? account?.email ?? "Unknown",
+        email: account?.email ?? "",
       },
     };
   })

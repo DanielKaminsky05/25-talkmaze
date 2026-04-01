@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "../lib/getCurrentUser";
 import { createClient } from "../server";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 export type Message = {
   id: string;
@@ -10,7 +11,7 @@ export type Message = {
   sender_id: string;
   sender: {
     name: string;
-    // image_url: string;
+    email: string;
   };
 };
 
@@ -33,8 +34,6 @@ export async function sendMessage(data: {
 
   const supabase = await createClient();
 
-  // Insert the message into the database. Immediately retrieve the newly
-  // selected message from database to confirm success.
   const { data: insertedMessage, error } = await supabase
     .from("messages")
     .insert({
@@ -42,15 +41,7 @@ export async function sendMessage(data: {
       conversation_id: data.conversationId,
       sender_id: user.id,
     })
-    .select(
-      `
-      id,
-      body,
-      created_at,
-      sender_id,
-      sender:account!messages_sender_id_fkey(email)
-    `,
-    )
+    .select("id, body, created_at, sender_id")
     .single();
 
   if (error) {
@@ -64,18 +55,41 @@ export async function sendMessage(data: {
     .eq("id", user.id)
     .single();
 
-  const { data: student } = !account
-    ? await supabase.from("students").select("name").eq("id", user.id).single()
-    : { data: null };
+  const profile = await getActiveProfile();
+  let senderName = account?.email ?? "Unknown";
 
-  const senderName = account?.email ?? student?.name ?? "Unknown";
+  if (profile) {
+    if (profile.type === "student") {
+      const { data: student } = await supabase
+        .from("students")
+        .select("name")
+        .eq("id", profile.id)
+        .maybeSingle();
+      if (student?.name) senderName = student.name;
+    } else {
+      const { data: parent } = await supabase
+        .from("parents")
+        .select("name")
+        .eq("id", profile.id)
+        .maybeSingle();
+      if (parent?.name) senderName = parent.name;
+    }
+  } else {
+    // Coach or admin - resolve name from coaches table
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("name")
+      .eq("account_id", user.id)
+      .maybeSingle();
+    if (coach?.name) senderName = coach.name;
+  }
 
   const message: Message = {
     id: insertedMessage.id,
     text: insertedMessage.body,
     created_at: insertedMessage.created_at,
     sender_id: insertedMessage.sender_id,
-    sender: { name: senderName },
+    sender: { name: senderName, email: account?.email ?? "" },
   };
 
   return { error: false, message };

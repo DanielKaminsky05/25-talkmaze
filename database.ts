@@ -147,6 +147,8 @@ export type Database = {
           id: string
           recipient_id: string
           sender_id: string
+          sender_profile_id: string | null
+          sender_profile_type: string | null
           subject: string | null
         }
         Insert: {
@@ -154,6 +156,8 @@ export type Database = {
           id?: string
           recipient_id: string
           sender_id: string
+          sender_profile_id?: string | null
+          sender_profile_type?: string | null
           subject?: string | null
         }
         Update: {
@@ -161,6 +165,8 @@ export type Database = {
           id?: string
           recipient_id?: string
           sender_id?: string
+          sender_profile_id?: string | null
+          sender_profile_type?: string | null
           subject?: string | null
         }
         Relationships: [

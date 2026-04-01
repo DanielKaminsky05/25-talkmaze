@@ -11,6 +11,10 @@ type Props = {
   icon?: ReactNode;
 };
 
+/**
+ * An item the user can select in the Sidebar component of a student or parent 
+ * dashboard, to navigate to the page they want. 
+ */
 export default function SideBarBox({
   id,
   name,
@@ -33,7 +37,7 @@ export default function SideBarBox({
         onClick={onSelect}
       >
         <p className={`${textColor} text-center lg:ml-6`}>{name}</p>
-        {icon}
+        <span className={textColor}>{icon}</span>
       </div>
     </Link>
   );
