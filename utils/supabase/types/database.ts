@@ -185,6 +185,8 @@ export type Database = {
           created_at: string
           id: string
           recipient_id: string
+          recipient_profile_id: string | null
+          recipient_profile_type: string | null
           sender_id: string
           sender_profile_id: string | null
           sender_profile_type: string | null
@@ -194,6 +196,8 @@ export type Database = {
           created_at?: string
           id?: string
           recipient_id: string
+          recipient_profile_id?: string | null
+          recipient_profile_type?: string | null
           sender_id: string
           sender_profile_id?: string | null
           sender_profile_type?: string | null
@@ -203,6 +207,8 @@ export type Database = {
           created_at?: string
           id?: string
           recipient_id?: string
+          recipient_profile_id?: string | null
+          recipient_profile_type?: string | null
           sender_id?: string
           sender_profile_id?: string | null
           sender_profile_type?: string | null
