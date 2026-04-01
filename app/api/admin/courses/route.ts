@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
+
 import { createClient } from "@/utils/supabase/server";
 
-const client = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
+
 
 export async function GET() {
   try {
+    
     const supabase = await createClient();
 
     const { data: courses, error } = await supabase
@@ -13,7 +14,7 @@ export async function GET() {
       .select("*");
 
     if (error) throw new Error(error.message);
-
+    
     return NextResponse.json(courses);
   } catch (err) {
     return NextResponse.json(

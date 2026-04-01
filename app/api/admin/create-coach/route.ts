@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
+
 
 export async function POST(request: Request) {
   try {
@@ -101,43 +101,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Push to Teachworks
-    let twId = null;
-    try {
-      if (process.env.TEACHWORKS_API_KEY) {
-        const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY);
-        const twResponse = await twClient.createEmployee({
-          first_name: firstName,
-          last_name: lastName,
-          employee_type: "Teacher",
-          email: email,
-          status: "Active",
-          email_lesson_reminders: true,
-          sms_lesson_reminders: false,
-          unviewed: true,
-          p_events: "manage",
-          p_student_contact: "view"
-        });
-        
-        if (twResponse && twResponse.id) {
-           twId = String(twResponse.id);
-        }
-      } else {
-        console.warn("TEACHWORKS_API_KEY not found in environment, skipping TW creation.");
-      }
-    } catch (twError) {
-      console.error("Failed to create Teachworks employee:", twError);
-      // We might choose to proceed even if TW fails, or throw an error based on strictness.
-      // Often better to log and proceed for resilience unless perfectly synced ID is mandatory.
-    }
 
     // Insert into coaches table
     const { error: coachError } = await supabase
       .from("coaches")
       .insert({
         account_id: authData.user.id,
-        name: `${firstName} ${lastName}`.trim(),
-        tw_id: twId
+        first_name: firstName,
+        last_name: lastName
       });
 
     if (coachError) {

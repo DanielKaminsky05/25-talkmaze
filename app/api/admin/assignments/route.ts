@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
-
 //fetch all assignments joined with coach/student names 
 export async function GET() {
   const supabase = await createClient();
@@ -32,7 +30,6 @@ export async function GET() {
 
   return NextResponse.json(mappedData);
 }
-
 //add assignment + sync TW
 export async function POST(req: NextRequest) {
   const { coach_id: coach_id_1, student_id: student_id_1 } = await req.json();
@@ -41,7 +38,7 @@ export async function POST(req: NextRequest) {
   console.log("Student_id: " + student_id_1)
  
   const { data: coachData } = await supabase.from('coaches').select('id, name').eq('id', String(coach_id_1)).single();
-  const { data: studentData } = await supabase.from('students').select('id, name').eq('id', String(student_id_1)).single();
+  const { data: studentData } = await supabase.from('students').select('id, first_name, last_name').eq('id', String(student_id_1)).single();
 
   console.log("Coach Data: " + coachData);
   console.log("Student Data :" + studentData);
@@ -131,28 +128,5 @@ export async function POST(req: NextRequest) {
     console.error("POST Assignment Select Error:", allAssignmentsError);
   }
 
-  // 3. Sync to Teachworks — build default_teacher_ids array
-  const twTeacherIds = allAssignments 
-    ? allAssignments.filter((a: any) => a.coaches?.tw_id).map((a: any) => Number(a.coaches.tw_id))
-    : [Number(coach_id_1)];
-
-  const twClient = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
-  
-  try {
-    await twClient.updateStudent(student_id_1, {
-      default_teacher_ids: twTeacherIds
-    });
-  } catch (e) {
-    console.error("Teachworks sync failed: ", e);
-  }
-
-  // Construct fake mapped return format matching GET endpoint format
-  const responseData = { 
-    id: `${coach_id}_${student_id}`, 
-    coach_id: String(coach_id_1),
-    student_id: String(student_id_1),
-    coaches: { name: coachData.name },
-    students: { name: studentData.name }
-  };
-  return NextResponse.json(responseData);
+  return NextResponse.json(allAssignments);
 }

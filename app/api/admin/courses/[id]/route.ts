@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TeachworksClient } from "@/lib/teachworks/client";
+
 import { createClient } from "@/utils/supabase/server";
 
-const client = new TeachworksClient(process.env.TEACHWORKS_API_KEY!);
 
 export async function PUT(
   req: NextRequest,
@@ -13,7 +12,6 @@ export async function PUT(
     const body = await req.json();
     const courseData = body.course;
 
-    const updated = await client.updateCourse(id, courseData);
     const supabase = await createClient();
 
     const payload: Record<string, unknown> = {};
@@ -28,7 +26,7 @@ export async function PUT(
       if (error) console.error("Supabase sync failed:", error.message);
     }
     
-    return NextResponse.json(updated);
+    return NextResponse.json(payload);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to update course" },
@@ -44,13 +42,13 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await client.deleteCourse(id);
     const supabase = await createClient();
 
+    console.log("ID passed to delete function: " + id);
     const { error } = await supabase
       .from("courses")
       .delete()
-      .eq("tw_course_id", id);
+      .eq('id', id);
     if (error) console.error("Supabase sync failed:", error.message);
 
     return NextResponse.json({ success: true });
