@@ -17,9 +17,7 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         }
     }
 
-
-
-
+    console.log("Insering into supabase: " + email);
     const supabase = await createClient();
 
     const { data, error } = await supabase.auth.signUp({
@@ -45,20 +43,20 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         role: 1,
     }
     )
+    console.log("Trying to sign up new user")
 
     const insertIntoParents = await supabase.from('parents').insert({
         account_id: data.user.id,
-        name: `${familyFirstName} ${familyLastName}`,
+        first_name: familyFirstName,
+        last_name: familyLastName,
         profile_access_pin: masterPin,
         billing_email: email,
-        tw_id: null,
         phone_number: null,
 
     })
-
     //write id to the database
-    if (error) {
-        console.error("There was a problem signing up:", error)
+    if (insertIntoParents.error) {
+        console.error("There was a problem signing up:", JSON.stringify(error))
         return { success: false, error }
     }
 
