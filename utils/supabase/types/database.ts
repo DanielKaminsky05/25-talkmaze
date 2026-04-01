@@ -77,6 +77,41 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_availabilities: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          end_time: string | null
+          id: number
+          start_time: string | null
+          weekday: number | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_availabilities_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_students: {
         Row: {
           coach_id: string
@@ -151,6 +186,8 @@ export type Database = {
           id: string
           recipient_id: string
           sender_id: string
+          sender_profile_id: string | null
+          sender_profile_type: string | null
           subject: string | null
         }
         Insert: {
@@ -158,6 +195,8 @@ export type Database = {
           id?: string
           recipient_id: string
           sender_id: string
+          sender_profile_id?: string | null
+          sender_profile_type?: string | null
           subject?: string | null
         }
         Update: {
@@ -165,24 +204,11 @@ export type Database = {
           id?: string
           recipient_id?: string
           sender_id?: string
+          sender_profile_id?: string | null
+          sender_profile_type?: string | null
           subject?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       course_assignment: {
         Row: {
@@ -305,8 +331,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          post_lesson_task: Json | null
-          pre_lesson_task: Json | null
+          post_lesson_url: string | null
+          pre_lesson_url: string | null
+          slide_show_url: string | null
           title: string
           updated_at: string
         }
@@ -316,8 +343,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          post_lesson_task?: Json | null
-          pre_lesson_task?: Json | null
+          post_lesson_url?: string | null
+          pre_lesson_url?: string | null
+          slide_show_url?: string | null
           title: string
           updated_at?: string
         }
@@ -327,8 +355,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          post_lesson_task?: Json | null
-          pre_lesson_task?: Json | null
+          post_lesson_url?: string | null
+          pre_lesson_url?: string | null
+          slide_show_url?: string | null
           title?: string
           updated_at?: string
         }
@@ -470,6 +499,86 @@ export type Database = {
         }
         Relationships: []
       }
+      sessions: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          end_time: string | null
+          id: number
+          start_time: string | null
+          student_id: string | null
+          weekday: number | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          student_id?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          student_id?: string | null
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_availabilities: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: number
+          start_time: string | null
+          student_id: string | null
+          weekday: number | null
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          student_id?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: number
+          start_time?: string | null
+          student_id?: string | null
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_availabilities_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_badges: {
         Row: {
           awarded_at: string
@@ -574,9 +683,9 @@ export type Database = {
           lesson_space_teacher_link: string | null
           name: string | null
           profile_access_pin: string | null
+          remaining_lessons: number | null
           teach_works_url: string | null
           tw_id: string | null
-          remaining_lessons: number | null
           updated_at: string
         }
         Insert: {
@@ -588,9 +697,9 @@ export type Database = {
           lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          remaining_lessons?: number | null
           teach_works_url?: string | null
           tw_id?: string | null
-          remaining_lessons?: number | null
           updated_at?: string
         }
         Update: {
@@ -602,9 +711,9 @@ export type Database = {
           lesson_space_teacher_link?: string | null
           name?: string | null
           profile_access_pin?: string | null
+          remaining_lessons?: number | null
           teach_works_url?: string | null
           tw_id?: string | null
-          remaining_lessons?: number | null
           updated_at?: string
         }
         Relationships: [

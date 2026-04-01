@@ -38,7 +38,7 @@ export default function Contacts({ contacts }: { contacts: Contact[] }) {
             <ContactsList
               contacts={contacts}
               filter={filter}
-              //onContactClick={handleContactClick}
+              onContactClick={handleContactClick}
             />
           </div>
         )}
