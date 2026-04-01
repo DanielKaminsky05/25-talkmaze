@@ -1,6 +1,4 @@
 "use server";
-
-import { createStudent } from "@/lib/profile-management/addProfile";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 
@@ -56,14 +54,14 @@ export async function handleStudentCreation(
     },
   };
 
-  const result = await createStudent(student_obj);
+
 
   const { data: studentInsert, error: studentError } = await supabase
     .from("students")
     .insert({
       account_id: account_id,
-      tw_id: JSON.stringify(result.id),
-      name: firstName + " " + lastName,
+      first_name: firstName,
+      last_name: lastName,
       profile_access_pin: pin,
     })
     .select()

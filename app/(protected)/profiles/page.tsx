@@ -8,7 +8,8 @@ import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
 // Profile to select as the "active profile"
 type Profile = {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   type: "student" | "parent";
   hasPin: boolean;
 };
@@ -30,15 +31,17 @@ async function getProfiles(): Promise<Profile[]> {
 
   if (!user) redirect("/login"); // Redirect to login if not authenticated
 
+  console.log("Fetching parents from: " + user.id);
+  
   // Fetch parent and student profiles in parrallel
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase
       .from("parents")
-      .select("id, name, profile_access_pin")
+      .select("id, first_name, last_name, profile_access_pin")
       .eq("account_id", user.id),
     supabase
       .from("students")
-      .select("id, name, profile_access_pin")
+      .select("id, name")
       .eq("account_id", user.id),
   ]);
 
@@ -49,7 +52,8 @@ async function getProfiles(): Promise<Profile[]> {
   return [
     ...(parents ?? []).map((p) => ({
       id: p.id,
-      name: p.name,
+      first_name: p.first_name,
+      last_name: p.last_name,
       type: "parent" as const,
       hasPin: p.profile_access_pin != null,
     })),
