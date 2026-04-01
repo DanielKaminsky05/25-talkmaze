@@ -1,33 +1,27 @@
-"use client";
+import { ReactNode } from "react";
+import ProtectedLayoutShell from "./components/ProtectedLayoutShell";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
-import NavigationBar from "./components/NavigationBar"
-import { ReactNode } from "react"
-import SideBar from "./components/Sidebar"
-import { usePathname } from "next/navigation"
+/**
+ * Server-side rendered layout for all protected routes
+ *
+ * Runs on the server so it can read the active profile cookie via
+ * getActiveProfile() and determine the profile type ("student" | "parent")
+ * before any client component renders. This avoids each child component
+ * having to fetch the profile independently
+ *
+ * profileType is passed down to ProtectedLayoutShell, which forwards it
+ * to SideBar and NavigationBar so they can render role-specific UI.
+ */
+export default async function Layout({ children }: { children: ReactNode }) {
+  const activeProfile = await getActiveProfile(); 
 
-export default function Layout({children} : {children: ReactNode}){
-    const pathname = usePathname();
+  // Fall back to "student" if no active profile cookie is set
+  const profileType = activeProfile?.type ?? "student";
 
-    // Check if pathname starts with /profiles or /admin to exclude sidebar/navbar
-    if (pathname?.startsWith('/profiles') || pathname?.startsWith('/admin') || pathname?.startsWith('/coach')) {
-        return <>{children}</>;
-    }
-
-    return (
-      
-             <div className = 'flex flex-row w-screen h-screen overflow-hidden'>
-                <SideBar/>
-                <div className = 'flex flex-1 flex-col overflow-y-auto pl-6 pr-6'>
-                    <NavigationBar/>
-                    <div className="bg-[#1f2e3b] w-full flex-1 min-w-[300px] rounded-2xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-6">
-                        {children}
-                    </div>
-                </div>
-                
-            </div>
-
-        
-         
-    ) 
-        
+  return (
+    <ProtectedLayoutShell profileType={profileType}>
+      {children}
+    </ProtectedLayoutShell>
+  );
 }

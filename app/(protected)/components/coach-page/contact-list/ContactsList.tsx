@@ -9,10 +9,10 @@ export type Contact = {
 export type ContactsListProps = {
   contacts?: Contact[];
   filter?: string;
-  //onContactClick?: (contactId: string) => void;
+  onContactClick?: (contactId: string) => void;
 };
 
-export default function ContactsList({ contacts = [], filter = "" }: ContactsListProps) {
+export default function ContactsList({ contacts = [], filter = "", onContactClick }: ContactsListProps) {
   const filterString = filter.trim().toLowerCase();
   const visible = filterString
     ? contacts.filter((c) => c.name.toLowerCase().includes(filterString))
@@ -24,7 +24,8 @@ export default function ContactsList({ contacts = [], filter = "" }: ContactsLis
         <Link
           key={c.id}
           href={`/message/${c.id}`}
-          className="flex items-center w-full h-13 px-3 py-1.5 
+          onMouseDown={(e) => { e.preventDefault(); onContactClick?.(c.id); }}
+          className="flex items-center w-full h-13 px-3 py-1.5
                      rounded-lg bg-white cursor-pointer"
         >
           <div className="bg-[#1F2E3B] h-full w-9 rounded-md flex justify-center items-center">
