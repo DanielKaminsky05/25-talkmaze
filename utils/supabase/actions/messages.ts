@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "../lib/getCurrentUser";
 import { createClient } from "../server";
-import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";;
 
 export type Message = {
   id: string;
@@ -62,20 +62,20 @@ export async function sendMessage(data: {
     if (profile.type === "student") {
       const { data: student } = await supabase
         .from("students")
-        .select("name")
+        .select("first_name, last_name")
         .eq("id", profile.id)
         .maybeSingle();
-      if (student?.name) senderName = student.name;
+      if (student) senderName = `${student.first_name || ""} ${student.last_name || ""}`.trim();
     } else {
       const { data: parent } = await supabase
         .from("parents")
-        .select("name")
+        .select("first_name, last_name")
         .eq("id", profile.id)
         .maybeSingle();
-      if (parent?.name) senderName = parent.name;
+      if (parent) senderName = `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
     }
   } else {
-    // Coach or admin - resolve name from coaches table
+    // Coach or admin - resolve name from coaches table (uses "name" column)
     const { data: coach } = await supabase
       .from("coaches")
       .select("name")

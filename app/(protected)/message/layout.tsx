@@ -49,7 +49,7 @@ async function getContacts(): Promise<Contact[]> {
 
   let query = supabase
     .from("account")
-    .select("id, email, tw_customer_id, role")
+    .select("id, email, role")
     .neq("id", user.id)
     .order("email");
 
@@ -70,9 +70,9 @@ async function getContacts(): Promise<Contact[]> {
   const { data: coaches } =
     coachAccountIds.length > 0
       ? await supabase
-          .from("coaches")
-          .select("account_id, name")
-          .in("account_id", coachAccountIds)
+        .from("coaches")
+        .select("account_id, name")
+        .in("account_id", coachAccountIds)
       : { data: [] as { account_id: string; name: string }[] };
 
   const coachNameMap = new Map(
@@ -87,11 +87,10 @@ async function getContacts(): Promise<Contact[]> {
     const { data: studentProfiles } =
       studentAccountIds.length > 0
         ? await supabase
-            .from("students")
-            .select("id, name, account_id")
-            .in("account_id", studentAccountIds)
-            .order("name")
-        : { data: [] as { id: string; name: string; account_id: string }[] };
+          .from("students")
+          .select("id, first_name, last_name, account_id")
+          .in("account_id", studentAccountIds)
+        : { data: [] as { id: string; first_name: string; last_name: string; account_id: string }[] };
 
     const nonStudentContacts = data
       .filter((a) => a.role !== 1)
@@ -101,15 +100,13 @@ async function getContacts(): Promise<Contact[]> {
           id: acc.id,
           name: `${displayName} (${acc.email})`,
           email: acc.email,
-          tw_customer_id: acc.tw_customer_id || "",
         };
       });
 
     const studentContacts = (studentProfiles ?? []).map((s) => ({
       id: s.id,
-      name: `${s.name} (${emailMap.get(s.account_id) ?? ""})`,
+      name: `${s.first_name} ${s.last_name} (${emailMap.get(s.account_id) ?? ""})`,
       email: emailMap.get(s.account_id) ?? "",
-      tw_customer_id: "",
     }));
 
     return [...nonStudentContacts, ...studentContacts];
@@ -121,7 +118,6 @@ async function getContacts(): Promise<Contact[]> {
       id: acc.id,
       name: `${displayName} (${acc.email})`,
       email: acc.email,
-      tw_customer_id: acc.tw_customer_id || "",
     };
   });
 }

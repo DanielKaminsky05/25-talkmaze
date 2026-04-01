@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import ProtectedLayoutShell from "./components/ProtectedLayoutShell";
-import { getActiveProfile } from "../api/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
 
 /**
  * Server-side rendered layout for all protected routes
@@ -14,7 +14,7 @@ import { getActiveProfile } from "../api/lib/profile-management/getActiveProfile
  * to SideBar and NavigationBar so they can render role-specific UI.
  */
 export default async function Layout({ children }: { children: ReactNode }) {
-  const activeProfile = await getActiveProfile(); 
+  const activeProfile = await getActiveProfile();
 
   // Fall back to "student" if no active profile cookie is set
   const profileType = activeProfile?.type ?? "student";
