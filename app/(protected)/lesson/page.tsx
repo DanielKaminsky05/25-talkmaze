@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
 
 type LessonRow = {
   id: string;
@@ -49,17 +50,26 @@ export default function Page() {
     async function fetchLessons() {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const profile = await getActiveProfile();
 
-        if (!user) {
-          throw new Error("Can not identify user");
+        if (!profile || profile.type !== "student") {
+          router.push("/profiles");
+          return;
         }
 
+        const studentId = profile.id;
+
         //get the student
-        const { data: student, error: studentError } = await supabase.from('students').select('id').eq("account_id", user.id).single();
+        const { data: student, error: studentError } = await supabase
+          .from("students")
+          .select("id")
+          .eq("id", studentId)
+          .single();
 
         if (!student) {
-          throw new Error("Can not identify student: " + JSON.stringify(studentError));
+          throw new Error(
+            "Can not identify student: " + JSON.stringify(studentError),
+          );
         }
         //first get the course
         const { data: course, error: courseError } = await supabase.from('course_assignment').select('course_id').eq("student_id", student.id).limit(1).maybeSingle();
@@ -71,12 +81,12 @@ export default function Page() {
           return;
         }
 
-        const { data: lessons, error: lessonsError } = await supabase.from('lessons').select('id, course_id , created_at, pre_lesson_url, post_lesson_url, slide_show_url, content_url, description, title').eq('course_id', course.course_id as string);
+        const { data: lessonsData, error: lessonsError } = await supabase.from('lessons').select('id, course_id , created_at, pre_lesson_url, post_lesson_url, slide_show_url, content_url, description, title').eq('course_id', course.course_id as string);
 
         if (lessonsError) {
           console.log("Lesson error: " + JSON.stringify(lessonsError));
         }
-        setLessons((lessons as LessonRow[]) ?? []);
+        setLessons((lessonsData as LessonRow[]) ?? []);
         setHasCourse(true);
       } catch (err: any) {
         setError(err.message || "An unexpected error occurred");
@@ -93,26 +103,16 @@ export default function Page() {
     if (lessons.length === 0) return;
 
     async function fetchProgress() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const profile = await getActiveProfile();
+
+      if (!profile || profile.type !== "student") {
         setProgress({ completed: 0, total: lessons.length });
         return;
       }
 
-      const { data: student } = await supabase
-        .from("students")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const studentId = student?.id;
+      const studentId = profile.id;
+      const supabase = createClient();
       const total = lessons.length;
-
-      if (!studentId) {
-        setProgress({ completed: 0, total });
-        return;
-      }
 
       const { data: progressRows } = await supabase
         .from("lesson_progress")
@@ -120,13 +120,13 @@ export default function Page() {
         .eq("student_id", studentId);
 
       const completedRows = (progressRows ?? []).filter(
-        (row) => JSON.stringify(row.status) === "Done" || row.status === 1
+        (row: any) => JSON.stringify(row.status) === "Done" || row.status === 1
       );
       const completed = completedRows.length;
 
       // Store completed lesson IDs for individual lesson status
-      const completedIds = new Set(completedRows.map(row => row.lesson_id));
-      setCompletedLessonIds(completedIds);
+      const completedIds = new Set(completedRows.map((row: any) => row.lesson_id));
+      setCompletedLessonIds(completedIds as Set<string>);
 
       setProgress({ completed, total });
     }
@@ -136,12 +136,12 @@ export default function Page() {
   useEffect(() => {
     async function fetchBadges() {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data: badgesData, error: badgesError } = await supabase
         .from("badges")
         .select("id, code, title, description, icon_url")
         .order("code", { ascending: true });
 
-      if (!error) setBadges(data ?? []);
+      if (!badgesError) setBadges(badgesData ?? []);
     }
     fetchBadges();
   }, []);

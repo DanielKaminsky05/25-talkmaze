@@ -1,13 +1,14 @@
-"use server"
-import { cookies } from "next/headers";
+"use server";
+
 import { createClient } from "@/utils/supabase/server";
-import { NextResponse } from "next/server";
+import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
+
 export async function getLessonSpace(){
     const supabase = await createClient();
-    const cookieStore = await cookies();
-    const student_id = cookieStore.get('active_profile_id')?.value;
+    const profile = await getActiveProfile();
+    const student_id = profile?.id;
 
-    if(!student_id){
+    if(!student_id || profile.type !== "student"){
         throw new Error("Unable to identify student")
     }
     try{
