@@ -16,12 +16,8 @@ const inter = Inter({
 const onBoardSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  address: z.string().min(1),
-  birthDate: z.string().min(1),
   grade: z.number().int().min(1).max(12),
-  school: z.string().min(1),
   timeZone: z.string().min(1),
-  mobilePhone: z.string().min(1),
   notes: z.string(),
   availability: z.record(
     z.string(),
@@ -39,16 +35,9 @@ export default function Onboarding() {
 
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-  const [birthDate, setBirthDate] = useState<string>("");
   const [grade, setGrade] = useState<number>(-1);
-  const [school, setSchool] = useState<string>("");
   const [timeZone, setTimeZone] = useState<OnboardingTimeZone>("America/Toronto");
-  const [homePhone, setHomePhone] = useState<string>("");
-  const [mobilePhone, setMobilePhone] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [pin, setPin] = useState<string>("");
   const [pageNum, setPage] = useState<number>(1);
   type Slot = { start: string; end: string };
   const [weeklyAvailability, setWeeklyAvailability] = useState<
@@ -166,49 +155,9 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <p className="text-[#A8A8A8]">
-                    Please enter your email for lesson notifications:{" "}
-                  </p>
-                  <div className="relative h-[58px]">
-                    <input
-                      type="text"
-                      placeholder="Email"
-                      value={email}
-                      className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                </div>
 
-                <div className="mt-3">
-                  <p className="text-[#A8A8A8]">Please enter your address.</p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="relative h-[58px]">
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        placeholder="Address"
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="mt-3">
-                  <p className="text-[#A8A8A8]">Please enter your birthday.</p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="relative h-[58px]">
-                      <input
-                        type="date"
-                        value={birthDate}
-                        onChange={(e) => setBirthDate(e.target.value)}
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] border-[0.7px]"
-                      />
-                    </div>
-                  </div>
-                </div>
+
 
                 <div className="mt-3">
                   <p className="text-[#A8A8A8]">Please select your grade.</p>
@@ -253,20 +202,7 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <p className="text-[#A8A8A8]">Please enter your school.</p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="relative h-[58px]">
-                      <input
-                        type="text"
-                        value={school}
-                        onChange={(e) => setSchool(e.target.value)}
-                        placeholder="School"
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      />
-                    </div>
-                  </div>
-                </div>
+
 
                 <div className="mt-3">
                   <p className="text-[#A8A8A8]">
@@ -306,67 +242,7 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <p className="text-[#A8A8A8]">
-                    Please enter your home phone.
-                  </p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="relative h-[58px]">
-                      <input
-                        type="tel"
-                        value={homePhone}
-                        onChange={(e) => {
-                          const digitsOnly = e.target.value.replace(/\D/g, "");
-                          setHomePhone(digitsOnly);
-                        }}
-                        placeholder="Mobile Phone"
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="mt-3">
-                  <p className="text-[#A8A8A8]">
-                    Please enter your mobile phone.
-                  </p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="relative h-[58px]">
-                      <input
-                        type="tel"
-                        value={mobilePhone}
-                        onChange={(e) => {
-                          const digitsOnly = e.target.value.replace(/\D/g, "");
-                          setMobilePhone(digitsOnly);
-                        }}
-                        placeholder="Mobile Phone"
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 w-full max-w-[260px]">
-                  <label className="text-black text-sm font-semibold">
-                    Account PIN Number (Do Not Share!)
-                  </label>
-
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    value={pin}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.currentTarget.value
-                        .replace(/\D/g, "")
-                        .slice(0, 4);
-                      setPin(value);
-                    }}
-                    placeholder="••••"
-                    className="w-full h-[44px] px-3 rounded-lg bg-[#1f2e3b] border border-[#4e4c4c] text-white text-center tracking-[0.3em] outline-none focus:border-[#65cfad] focus:ring-1 focus:ring-[#65cfad] transition"
-                  />
-                </div>
                 <div className="mt-3">
                   <p className="text-[#A8A8A8]">Any additional notes?</p>
                   <div className="flex flex-col gap-1">
@@ -409,15 +285,9 @@ export default function Onboarding() {
                     const res = await handleStudentCreation(
                       firstName,
                       lastName,
-                      email,
-                      birthDate,
-                      homePhone,
-                      mobilePhone,
-                      school,
                       grade,
                       notes,
                       timeZone,
-                      pin,
                       weeklyAvailability
                     );
 

@@ -6,15 +6,9 @@ import { createClient } from "@/utils/supabase/server";
 export async function handleStudentCreation(
   firstName: string,
   lastName: string,
-  email: string,
-  birth_date: string,
-  home_phone: string,
-  mobile_phone: string,
-  school: string,
   grade: number,
   additional_notes: string,
   time_zone: OnboardingTimeZone,
-  pin: string,
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
 ) {
   const supabase = (await createClient()) as any;
@@ -33,6 +27,7 @@ export async function handleStudentCreation(
       first_name: firstName,
       last_name: lastName,
       grade: String(grade),
+      notes: additional_notes,
     })
     .select()
     .single();

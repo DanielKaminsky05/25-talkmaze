@@ -5,6 +5,7 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -146,24 +147,27 @@ export type Database = {
           account_id: string
           avatar_url: string | null
           created_at: string
+          first_name: string | null
           id: string
-          name: string
+          last_name: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
           avatar_url?: string | null
           created_at?: string
+          first_name?: string | null
           id?: string
-          name: string
+          last_name?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
           avatar_url?: string | null
           created_at?: string
+          first_name?: string | null
           id?: string
-          name?: string
+          last_name?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -713,6 +717,7 @@ export type Database = {
           lesson_space_id: string | null
           lesson_space_student_link: string | null
           lesson_space_teacher_link: string | null
+          notes: string | null
           teach_works_url: string | null
           updated_at: string
         }
@@ -727,6 +732,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
         }
@@ -741,6 +747,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
         }
