@@ -78,6 +78,25 @@ export async function POST(request: Request) {
         .eq("id", user.id);
     }
 
+    // When a user navigate to the /checkouts page, the /api/checkout is
+    // called, it creates an "incomplete subscription" Stripe client secret to 
+    // be mounted, awaiting to be submitted when to user fills out and submits 
+    // the checkout form.
+    // A problem may occur if the user navigates back via the browser back 
+    // button, router.back(). In Next.js App Router, the page can remain in the
+    // Router Cache. And when the user returns to the checkout page with and
+    // submits the checkout form, it can cause cached background client  
+    // components to remount, submitting all danging "incomplete subscriptions".
+    
+    // This is why the below is added, to clean all previous "incomplete subs."
+    const existingIncomplete = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "incomplete",
+    });
+    await Promise.all(
+      existingIncomplete.data.map((sub) => stripe.subscriptions.cancel(sub.id)),
+    );
+
     // Create the subscription in an incomplete state so we can collect payment
     // details before confirming. Metadata links the subscription back to our
     // internal account and student records (used by the Stripe webhook handler)
