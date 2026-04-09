@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
-import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { ConversationClient } from "./_client";
 import { createClient } from "@/utils/supabase/server";
 

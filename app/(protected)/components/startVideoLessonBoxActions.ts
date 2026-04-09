@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 export async function getLessonSpace(){
     const supabase = await createClient();

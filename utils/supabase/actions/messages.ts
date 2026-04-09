@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "../lib/getCurrentUser";
 import { createClient } from "../server";
-import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";;
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";;
 
 export type Message = {
   id: string;
