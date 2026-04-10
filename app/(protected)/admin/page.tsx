@@ -2,11 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  TeachworksStudent,
-  TeachworksEmployee,
-  TeachworksCourse,
-} from "@/lib/teachworks/types";
+
 import StudentTable, { Student } from "./components/StudentTable";
 import EmployeeTable from "./components/EmployeeTable";
 import CreateAdminModal from "./components/CreateAdminModal";
@@ -88,18 +84,25 @@ export default function AdminPage() {
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
 
+ interface Course{
+  id: number;
+  name: string;
+  description?: string;
+  status?: string;
+
+}
   // Course state
-  const [courses, setCourses] = useState<TeachworksCourse[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [courseSearchQuery, setCourseSearchQuery] = useState("");
   const [courseCurrentPage, setCourseCurrentPage] = useState(1);
-  const [selectedCourse, setSelectedCourse] = useState<TeachworksCourse | null>(
+  const [selectedCourse, setSelectedCourse] = useState<Course| null>(
     null,
   );
   const [isEditingCourse, setIsEditingCourse] = useState(false);
   const [courseEditForm, setCourseEditForm] = useState<
-    Partial<TeachworksCourse>
+    Partial<Course>
   >({});
   const [isSavingCourse, setIsSavingCourse] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
@@ -151,11 +154,15 @@ export default function AdminPage() {
         const response = await fetch("/api/admin/courses");
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
+        
+        console.log("Retrieved Courses: " + JSON.stringify(data));
         const mapped = data.map((c: any) => ({
           id: c.id,
           name: c.title,
           description: c.description,
         }));
+
+        
         setCourses(mapped);
       } catch (err) {
         setCoursesError(
@@ -224,13 +231,16 @@ export default function AdminPage() {
     }
   };
   const handleDeleteCourse = async () => {
+ 
     if (
       !selectedCourse ||
       !confirm(`Delete "${selectedCourse.name}"? This cannot be undone.`)
     )
+
       return;
     setIsDeletingCourse(true);
     try {
+      console.log("Trying to delete")
       const response = await fetch(`/api/admin/courses/${selectedCourse.id}`, {
         method: "DELETE",
       });
@@ -278,7 +288,7 @@ export default function AdminPage() {
           ? data.map((s: any) => ({
               id: String(s.id),
               account_id: String(s.account_id),
-              name: s.name ?? "",
+              name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
               created_at: s.created_at ?? "",
               updated_at: s.updated_at ?? "",
               lesson_space_id: s.lesson_space_id ?? null,
@@ -311,6 +321,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error("Failed to fetch employees");
       const data = await response.json();
       setEmployees(data);
+      console.log("Fetched employees: " + JSON.stringify(data));
     } catch (err) {
       setEmployeesError(
         err instanceof Error ? err.message : "An error occurred",
@@ -552,7 +563,7 @@ export default function AdminPage() {
     try {
       console.log("Inside handleGetLessonSpaces");
       const response = await fetch("/api/learningSpace");
-
+      
       if (!response.ok) {
         console.log("Error with response");
       }
@@ -1567,6 +1578,7 @@ export default function AdminPage() {
                     >
                       {isDeletingCourse ? "Deleting..." : "Delete"}
                     </button>
+                    
                     <button
                       onClick={handleEditCourseStart}
                       className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
@@ -1663,6 +1675,7 @@ export default function AdminPage() {
               <CourseLessonsPanel
                 students={students}
                 courseId={String(selectedCourse.id)}
+                
               />
             </div>
           </div>
@@ -1673,8 +1686,8 @@ export default function AdminPage() {
       <CreateCourseModal
         isOpen={isCreateCourseModalOpen}
         onClose={() => setIsCreateCourseModalOpen(false)}
-        onSuccess={(created) =>
-          setCourses((prev) => [...prev, created as TeachworksCourse])
+        onSuccess={()=>{}//(created) =>
+          //setCourses((prev) => [...prev, created as TeachworksCourse])
         }
       />
 

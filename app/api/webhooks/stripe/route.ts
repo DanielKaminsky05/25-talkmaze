@@ -3,19 +3,10 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/app/api/lib/stripe";
 import { createServiceRoleClient } from "@/utils/supabase/service";
+import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 
-/**
- * POST /api/webhooks/stripe
- * Receives and processes Stripe webhook events.
- *
- * For testing in local env set the STRIPE_WEBHOOK_SECRET key given by STRIPE CLI
- * Then run the command:
- * stripe listen --forward-to localhost:3000/api/webhooks/stripe
- */
 export async function POST(request: Request) {
   try {
-    // Read the raw body as text. Required by Stripe's signature verification,
-    // which breaks if the body is parsed (e.g. via request.json()) first
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");
@@ -23,28 +14,21 @@ export async function POST(request: Request) {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
     }
-
     if (signature === null) {
       throw new Error("Stripe signature is not defined");
     }
 
-    // Verify the event came from Stripe and wasn't tampered with.
-    // Throws if the signature is invalid, which returns a 400 to Stripe.
     const event: Stripe.Event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET,
     );
 
-    /* 
-     STRIPE EVENT: invoice.paid
-     The 'invoice.paid' event fires for both the initial subscription payment 
-     and monthly renewals 
-    */
+
+
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as Stripe.Invoice;
 
-      // customer can be an expanded object or just an ID string
       const stripeCustomerId =
         typeof invoice.customer === "string"
           ? invoice.customer
@@ -55,10 +39,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
-      // Use the Supabase service-role client. Necessary for webhooks.
       const supabase = createServiceRoleClient();
-
-      // --- Create/update supabase student_subscriptions table record ---
 
       const invoiceAny = invoice as any;
       const stripeSubscriptionId: string | undefined =
@@ -68,14 +49,9 @@ export async function POST(request: Request) {
           : invoiceAny.subscription?.id) ??
         undefined;
 
-      // log the subscription id
       console.log("invoice.paid: stripeSubscriptionId =", stripeSubscriptionId);
 
-      let paymentDescription = "";
-
       if (stripeSubscriptionId) {
-        // Fetch the full subscription to read the metadata set during checkout
-        // (account_id, student_id, price_id — see /api/checkout)
         const subscription =
           await stripe.subscriptions.retrieve(stripeSubscriptionId);
         const {
@@ -91,7 +67,6 @@ export async function POST(request: Request) {
             subscription.metadata,
           );
         } else {
-          // Look up our internal plan record using the Stripe price ID
           const { data: plan, error: planError } = await supabase
             .from("plans")
             .select("id, classes, name")
@@ -105,7 +80,6 @@ export async function POST(request: Request) {
               planError,
             );
           } else {
-            // Convert Stripe's Unix timestamps to ISO strings for Supabase
             const subscriptionItem = subscription.items.data[0];
             const currentPeriodStart = new Date(
               subscriptionItem.current_period_start * 1000,
@@ -114,8 +88,6 @@ export async function POST(request: Request) {
               subscriptionItem.current_period_end * 1000,
             ).toISOString();
 
-            // Check if a subscription record already exists for this account/student/plan
-            // (most-recent-first so renewals update the right row)
             const { data: existing } = await supabase
               .from("student_subscriptions")
               .select("id")
@@ -128,8 +100,6 @@ export async function POST(request: Request) {
             const existingId = existing?.[0]?.id;
 
             if (existingId) {
-              // Renewal: update the existing record with the new billing period
-              // and reset classes_left to the plan's full class count
               const { error } = await supabase
                 .from("student_subscriptions")
                 .update({
@@ -144,8 +114,9 @@ export async function POST(request: Request) {
                   "invoice.paid: error updating student_subscription:",
                   error,
                 );
+              else console.log("invoice.paid: subscription renewed", existingId);
             } else {
-              // Initial payment: create a new subscription record
+              // Initial payment — insert and then assign a coach
               const { error } = await supabase
                 .from("student_subscriptions")
                 .insert({
@@ -157,27 +128,42 @@ export async function POST(request: Request) {
                   current_period_end: currentPeriodEnd,
                   sessions_remaining: plan.classes,
                 });
-              if (error)
+
+              if (error) {
                 console.error(
                   "invoice.paid: error creating student_subscription:",
                   error,
                 );
+              } else {
+                console.log("invoice.paid: subscription created for student", studentId);
+                try {
+                  await assignCoachToStudent(studentId);
+                  console.log(
+                    "invoice.paid: coach assigned to student",
+                    studentId,
+                  );
+                } catch (coachErr) {
+                  console.error(
+                    "invoice.paid: coach assignment failed:",
+                    coachErr,
+                  );
+                }
+              }
             }
 
-            // Build description for the Teachworks payment record
             const { data: student } = await supabase
               .from("students")
               .select("first_name, last_name")
               .eq("id", studentId)
               .single();
-            paymentDescription = `Payment for ${student ? `${student.first_name} ${student.last_name}`.trim() : "student"} - ${plan.name}`;
+            const paymentDescription = `Payment for ${student ? `${student.first_name} ${student.last_name}`.trim() : "student"} - ${plan.name}`;
+            console.log("invoice.paid: paymentDescription =", paymentDescription);
 
-            // Trigger LessonSpace creation for this student.
-            // The learningSpace route is idempotent — it skips if the student
-            // already has a space, so this is safe to call on renewals too.
+            const baseUrl =
+              process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
             try {
               const lsRes = await fetch(
-                `http://localhost:3000/api/webhooks/stripe/learningSpace`,
+                `${baseUrl}/api/webhooks/stripe/learningSpace`,
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -185,7 +171,11 @@ export async function POST(request: Request) {
                 },
               );
               const lsBody = await lsRes.json();
-              console.log("invoice.paid: LessonSpace response:", lsRes.status, lsBody);
+              console.log(
+                "invoice.paid: LessonSpace response:",
+                lsRes.status,
+                lsBody,
+              );
             } catch (lessonSpaceError) {
               console.error(
                 "invoice.paid: error creating LessonSpace:",
@@ -194,16 +184,13 @@ export async function POST(request: Request) {
             }
           }
         }
+      } else {
+        console.warn("invoice.paid: no subscription ID found on invoice", invoice.id);
       }
-
     }
 
-    // Always return 200 so Stripe knows the webhook was received.
-    // Errors inside event handling are logged but don't change this response.
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: unknown) {
-    // Return 400 for signature verification failures or missing env vars
-    // this tells Stripe the event was rejected and may trigger a retry
     const errorMessage =
       err instanceof Error ? err.message : "Unknown webhook error";
     console.log(`Stripe Webhook Error: ${errorMessage}`);

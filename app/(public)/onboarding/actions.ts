@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service";
 
 export async function handleStudentCreation(
   firstName: string,
@@ -69,44 +70,8 @@ export async function handleStudentCreation(
     }
   }
 
-  const match = await findCoachMatch(supabase, student_id);
-  console.log("MATCH RESULT:", match);
-
-  if (!match) {
-    revalidatePath("/profiles");
-    return {
-      success: true,
-      status: 200,
-      message: "Student created, but no coach available",
-    };
-  }
-
-  const { error: sessionError } = await supabase
-    .from("sessions")
-    .insert({
-      coach_id: match.coach_id,
-      student_id,
-      weekday: match.weekday,
-      start_time: match.start_time,
-      end_time: match.end_time,
-    });
-
-  if (sessionError) {
-    console.error("SESSION INSERT ERROR:", sessionError);
-    return {
-      success: false,
-      status: 500,
-      error: "Failed to create session",
-    };
-  }
-
   revalidatePath("/profiles");
-  return {
-    success: true,
-    status: 200,
-    message: "Student created and coach assigned",
-    match,
-  };
+  return { success: true, status: 200, message: "Student created", student_id };
 }
 
 // ------------------ HELPERS ------------------
@@ -178,8 +143,8 @@ async function findCoachMatch(
           .select("id")
           .eq("coach_id", coach.coach_id)
           .eq("weekday", slot.weekday)
-          .lt("start_time", currentEnd)
-          .gt("end_time", currentStart)
+          .lt("end_time", currentEnd)
+          .gt("start_time", currentStart)
           .maybeSingle();
 
         if (!existingSession) {
@@ -199,4 +164,33 @@ async function findCoachMatch(
   }
 
   return null;
+}
+
+export async function assignCoachToStudent(student_id: string) {
+  const supabase = createServiceRoleClient();
+
+  const match = await findCoachMatch(supabase, student_id);
+
+  if (!match) {
+    revalidatePath("/profiles");
+    return { success: true, status: 200, message: "No coach available yet" };
+  }
+
+  const { error: sessionError } = await supabase
+    .from("sessions")
+    .insert({
+      coach_id: match.coach_id,
+      student_id,
+      weekday: match.weekday,
+      start_time: match.start_time,
+      end_time: match.end_time,
+    });
+
+  if (sessionError) {
+    console.error("SESSION INSERT ERROR:", sessionError);
+    return { success: false, status: 500, error: "Failed to create session" };
+  }
+
+  revalidatePath("/profiles");
+  return { success: true, status: 200, message: "Coach assigned", match };
 }

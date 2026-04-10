@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import SuccessClient from "./SuccessClient";
 
+
 export default async function PaymentSuccessPage({
   searchParams,
 }: {
