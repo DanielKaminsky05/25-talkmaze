@@ -30,7 +30,8 @@ export default function ProtectedLayoutShell({ profileType, children }: Props) {
     pathname?.startsWith("/profiles") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/coach") ||
-    pathname?.startsWith("/payments")
+    pathname?.startsWith("/payments") ||
+    pathname?.endsWith("/profile") // students, parents: manage profile pages
   ) {
     return <>{children}</>;
   }

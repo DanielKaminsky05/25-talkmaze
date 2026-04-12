@@ -64,7 +64,7 @@ export default function AvatorIcon({ profileType }: Props) {
         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden">
           <button
             onClick={() => {
-              router.push("/manageProfile");
+              router.push(`/${profileType}/profile`);
               setOpen(false);
             }}
             className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
