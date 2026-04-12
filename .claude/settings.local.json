@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find /c/Users/Danie/code/25-talkmaze/utils -type f -name *.ts)"
-    ]
-  }
-}
