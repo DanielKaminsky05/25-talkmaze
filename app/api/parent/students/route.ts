@@ -22,6 +22,9 @@ export async function GET(request: Request) {
                 last_name,
                 grade,
                 avatar_url,
+                location,
+                date_of_birth,
+                bio,
                 student_subscriptions (
                     sessions_remaining,
                     status
@@ -43,6 +46,9 @@ export async function GET(request: Request) {
                 last_name: s.last_name,
                 grade: s.grade,
                 avatar_url: s.avatar_url,
+                location: s.location,
+                date_of_birth: s.date_of_birth,
+                bio: s.bio,
                 remaining_lessons: subscription?.sessions_remaining ?? 0,
                 status: subscription?.status || "inactive"
             };

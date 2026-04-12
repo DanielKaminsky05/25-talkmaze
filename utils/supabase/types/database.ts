@@ -715,7 +715,9 @@ export type Database = {
         Row: {
           account_id: string
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           first_name: string | null
           grade: string | null
           id: string
@@ -723,6 +725,7 @@ export type Database = {
           lesson_space_id: string | null
           lesson_space_student_link: string | null
           lesson_space_teacher_link: string | null
+          location: string | null
           notes: string | null
           teach_works_url: string | null
           updated_at: string
@@ -730,7 +733,9 @@ export type Database = {
         Insert: {
           account_id: string
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           first_name?: string | null
           grade?: string | null
           id?: string
@@ -738,6 +743,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          location?: string | null
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
@@ -745,7 +751,9 @@ export type Database = {
         Update: {
           account_id?: string
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           first_name?: string | null
           grade?: string | null
           id?: string
@@ -753,6 +761,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          location?: string | null
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
