@@ -17,9 +17,10 @@ const PROFILE_IMAGE = {
 
 type Props = {
   profileType: "student" | "parent";
+  avatarUrl: string | null;
 };
 
-export default function AvatorIcon({ profileType }: Props) {
+export default function AvatorIcon({ profileType, avatarUrl }: Props) {
   const [open, setOpen] = useState(false); // Dropdown menu visibility toggle
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function AvatorIcon({ profileType }: Props) {
       {/* Circular profile pic */}
       <div className="rounded-full w-[43px] h-[43px] md:w-[52px] md:h-[52px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden relative">
         <Image
-          src={PROFILE_IMAGE[profileType]}
+          src={avatarUrl ?? PROFILE_IMAGE[profileType]}
           alt="Profile"
           fill
           className="object-cover"

@@ -23,10 +23,11 @@ const PAGE_TITLE: { prefix: string; match: string }[] = [
 
 type Props = {
   profileType: "student" | "parent";
+  avatarUrl: string | null;
 };
 
 // Navigation Bar Component
-export default function NavigationBar({ profileType }: Props) {
+export default function NavigationBar({ profileType, avatarUrl }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -60,7 +61,7 @@ export default function NavigationBar({ profileType }: Props) {
       {/* Profile & Video Lesson Buttons */}
       <div className="flex flex-row gap-4 md:gap-10 items-center">
         {profileType === "student" && <StartVideoLessonBox />}
-        <AvatorIcon profileType={profileType} />
+        <AvatorIcon profileType={profileType} avatarUrl={avatarUrl} />
       </div>
     </div>
   );

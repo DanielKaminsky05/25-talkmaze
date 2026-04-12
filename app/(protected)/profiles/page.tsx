@@ -11,6 +11,7 @@ type Profile = {
   name: string;
   type: "student" | "parent";
   hasPin: boolean;
+  avatarUrl: string | null;
 };
 
 /**
@@ -34,11 +35,11 @@ async function getProfiles(): Promise<Profile[]> {
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase
       .from("parents")
-      .select("id, first_name, last_name, profile_access_pin")
+      .select("id, first_name, last_name, profile_access_pin, avatar_url")
       .eq("account_id", user.id),
     supabase
       .from("students")
-      .select("id, first_name, last_name")
+      .select("id, first_name, last_name, avatar_url")
       .eq("account_id", user.id),
   ]);
 
@@ -54,12 +55,14 @@ async function getProfiles(): Promise<Profile[]> {
       name: `${p.first_name} ${p.last_name}`.trim(),
       type: "parent" as const,
       hasPin: p.profile_access_pin != null,
+      avatarUrl: p.avatar_url ?? null,
     })),
     ...(students ?? []).map((s) => ({
       id: s.id,
       name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || "Unnamed",
       type: "student" as const,
-      hasPin: false, // Students no longer have PINs
+      hasPin: false,
+      avatarUrl: s.avatar_url ?? null,
     })),
   ];
 }
@@ -129,7 +132,7 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl="/meera-profile.png"
+                    imageUrl={profile.avatarUrl ?? "/meera-profile.png"}
                     hasPin={false}
                     asLink={true}
                   />
@@ -145,9 +148,10 @@ export default async function ProfilesPage({
                   id={profile.id}
                   name={profile.name}
                   imageUrl={
-                    profile.type === "student"
+                    profile.avatarUrl ??
+                    (profile.type === "student"
                       ? "/priya-profile.png"
-                      : "/meera-profile.png"
+                      : "/meera-profile.png")
                   }
                   hasPin={profile.hasPin}
                 />
