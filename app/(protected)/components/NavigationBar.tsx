@@ -2,7 +2,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
-import AvatorIcon from "./AvatorIcon";
+import AvatarIcon from "./AvatarIcon";
 import { signOut } from "@/lib/auth/signout";
 
 // Default title shown on dashboard/home pages, keyed by profile type
@@ -61,7 +61,7 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
       {/* Profile & Video Lesson Buttons */}
       <div className="flex flex-row gap-4 md:gap-10 items-center">
         {profileType === "student" && <StartVideoLessonBox />}
-        <AvatorIcon profileType={profileType} avatarUrl={avatarUrl} />
+        <AvatarIcon profileType={profileType} avatarUrl={avatarUrl} />
       </div>
     </div>
   );

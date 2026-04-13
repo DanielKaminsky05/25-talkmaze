@@ -20,7 +20,7 @@ type Props = {
   avatarUrl: string | null;
 };
 
-export default function AvatorIcon({ profileType, avatarUrl }: Props) {
+export default function AvatarIcon({ profileType, avatarUrl }: Props) {
   const [open, setOpen] = useState(false); // Dropdown menu visibility toggle
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
