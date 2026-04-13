@@ -1,4 +1,3 @@
-import { TeachworksEmployee } from "@/lib/teachworks/types";
 import { Coach } from "./AssignStudentDropDown";
 
 interface EmployeeTableProps {
@@ -21,8 +20,8 @@ export default function EmployeeTable({ employees, onEmployeeClick }: EmployeeTa
         <tbody className="divide-y divide-gray-200">
           {employees.length > 0 ? (
             employees.map((employee) => (
-              <tr 
-                key={employee.id} 
+              <tr
+                key={employee.id}
                 onClick={() => onEmployeeClick(employee)}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
               >

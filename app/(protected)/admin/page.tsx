@@ -84,20 +84,20 @@ export default function AdminPage() {
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
 
- interface Course{
-  id: number;
-  name: string;
-  description?: string;
-  status?: string;
+  interface Course {
+    id: number;
+    name: string;
+    description?: string;
+    status?: string;
 
-}
+  }
   // Course state
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [courseSearchQuery, setCourseSearchQuery] = useState("");
   const [courseCurrentPage, setCourseCurrentPage] = useState(1);
-  const [selectedCourse, setSelectedCourse] = useState<Course| null>(
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(
     null,
   );
   const [isEditingCourse, setIsEditingCourse] = useState(false);
@@ -154,7 +154,7 @@ export default function AdminPage() {
         const response = await fetch("/api/admin/courses");
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
-        
+
         console.log("Retrieved Courses: " + JSON.stringify(data));
         const mapped = data.map((c: any) => ({
           id: c.id,
@@ -162,7 +162,7 @@ export default function AdminPage() {
           description: c.description,
         }));
 
-        
+
         setCourses(mapped);
       } catch (err) {
         setCoursesError(
@@ -231,7 +231,7 @@ export default function AdminPage() {
     }
   };
   const handleDeleteCourse = async () => {
- 
+
     if (
       !selectedCourse ||
       !confirm(`Delete "${selectedCourse.name}"? This cannot be undone.`)
@@ -286,18 +286,18 @@ export default function AdminPage() {
 
         const mapped: Student[] = Array.isArray(data)
           ? data.map((s: any) => ({
-              id: String(s.id),
-              account_id: String(s.account_id),
-              name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
-              created_at: s.created_at ?? "",
-              updated_at: s.updated_at ?? "",
-              lesson_space_id: s.lesson_space_id ?? null,
-              profile_access_pin: s.profile_access_pin ?? null,
-              teach_works_url: s.teach_works_url ?? null,
-              lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
-              lesson_space_student_link: s.lesson_space_student_link ?? null,
-              remaining_lessons: s.remaining_lessons ?? null,
-            }))
+            id: String(s.id),
+            account_id: String(s.account_id),
+            name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
+            created_at: s.created_at ?? "",
+            updated_at: s.updated_at ?? "",
+            lesson_space_id: s.lesson_space_id ?? null,
+            profile_access_pin: s.profile_access_pin ?? null,
+            teach_works_url: s.teach_works_url ?? null,
+            lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
+            lesson_space_student_link: s.lesson_space_student_link ?? null,
+            remaining_lessons: s.remaining_lessons ?? null,
+          }))
           : [];
 
         setStudents(mapped);
@@ -563,7 +563,7 @@ export default function AdminPage() {
     try {
       console.log("Inside handleGetLessonSpaces");
       const response = await fetch("/api/learningSpace");
-      
+
       if (!response.ok) {
         console.log("Error with response");
       }
@@ -591,63 +591,57 @@ export default function AdminPage() {
       <div className="flex gap-2 mb-3 border-b border-gray-200">
         <button
           onClick={() => setActiveTab("students")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "students"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "students"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Students
         </button>
         <button
           onClick={() => setActiveTab("coaches")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "coaches"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "coaches"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Coaches
         </button>
         <button
           onClick={() => setActiveTab("courses")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "courses"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "courses"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Courses
         </button>
         <button
           onClick={() => setActiveTab("assignments")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "assignments"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "assignments"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Assignments
         </button>
 
         <button
           onClick={() => setActiveTab("learning_space")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "learning_space"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "learning_space"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Learning Spaces
         </button>
 
         <button
           onClick={() => setActiveTab("course_assignment")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "course_assignment"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "course_assignment"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Course Assignment
         </button>
@@ -1209,11 +1203,10 @@ export default function AdminPage() {
                       </select>
                     ) : (
                       <p
-                        className={`font-medium capitalize ${
-                          colorFn
+                        className={`font-medium capitalize ${colorFn
                             ? colorFn(selectedEmployee[fieldKey] as string)
                             : "text-gray-900"
-                        }`}
+                          }`}
                       >
                         {(selectedEmployee[fieldKey] as string) || "N/A"}
                       </p>
@@ -1578,7 +1571,7 @@ export default function AdminPage() {
                     >
                       {isDeletingCourse ? "Deleting..." : "Delete"}
                     </button>
-                    
+
                     <button
                       onClick={handleEditCourseStart}
                       className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
@@ -1675,7 +1668,7 @@ export default function AdminPage() {
               <CourseLessonsPanel
                 students={students}
                 courseId={String(selectedCourse.id)}
-                
+
               />
             </div>
           </div>
@@ -1686,7 +1679,7 @@ export default function AdminPage() {
       <CreateCourseModal
         isOpen={isCreateCourseModalOpen}
         onClose={() => setIsCreateCourseModalOpen(false)}
-        onSuccess={()=>{}//(created) =>
+        onSuccess={() => { }//(created) =>
           //setCourses((prev) => [...prev, created as TeachworksCourse])
         }
       />

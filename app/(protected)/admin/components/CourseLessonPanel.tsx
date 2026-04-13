@@ -5,7 +5,6 @@ import { Lesson, LessonInput } from "@/lib/types/lesson";
 import { createClient } from "@/utils/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
-import { TeachworksStudent } from "@/lib/teachworks/types";
 import { Student } from "./AssignStudentDropDown";
 interface CourseLessonsPanelProps {
   courseId: string;
@@ -22,7 +21,7 @@ const EMPTY_FORM: LessonInput = {
 };
 
 export default function CourseLessonsPanel({ courseId, students }: CourseLessonsPanelProps) {
-  
+
 
   //references for file inputs
   const preTaskRef = useRef<HTMLInputElement | null>(null)
@@ -50,8 +49,8 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
   const [editError, setEditError] = useState<string | null>(null);
   const [editNewPreTask, setEditNewPreTask] = useState<File | null>(null);
   const [editNewPostTask, setEditNewPostTask] = useState<File | null>(null);
-  const [editNewSlideDeck, setEditNewSlideDeck] = useState<File|null>(null);
-  
+  const [editNewSlideDeck, setEditNewSlideDeck] = useState<File | null>(null);
+
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -74,8 +73,8 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
     setter: (value: File | null) => void,
     formSetter: React.Dispatch<React.SetStateAction<LessonInput>>
   ) => {
-    
-    if(!value) return;
+
+    if (!value) return;
     formSetter((prev) => ({
       ...prev,
       [type]: [...(prev[type] ?? []), value],
@@ -105,87 +104,87 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
     setIsSubmitting(true);
     setAddError(null);
 
-  
+
     try {
 
-      
+
       const supabase = await createClient();
       const lesson_id = crypto.randomUUID();
 
       let preFileName = crypto.randomUUID();
       let postFileName = crypto.randomUUID();
       let slideFileName = crypto.randomUUID()
-      
-      try{
-        if(addForm.pre_lesson_tasks){
+
+      try {
+        if (addForm.pre_lesson_tasks) {
           console.log("Adding pre lesson tasks")
-          for(let i = 0; i < addForm.pre_lesson_tasks?.length; i++){
+          for (let i = 0; i < addForm.pre_lesson_tasks?.length; i++) {
             const file: File = addForm.pre_lesson_tasks[i];
             const fileExt = file.name.split(".").pop(); // get extension
             const fileName = `${preFileName}.${fileExt}`;
             const filePath = `${courseId}/${lesson_id}/pre_lesson_tasks/${fileName}`;
 
-            const{data: uploadData, error: uploadError} = await supabase.storage
-                  .from('course_files')
-                  .upload(filePath,file)
-              if(uploadError){
-                  console.log("Error uploading files to supabase storage: " + uploadError);
-                  throw new Error("Upload Error: " + uploadError);
-              }
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('course_files')
+              .upload(filePath, file)
+            if (uploadError) {
+              console.log("Error uploading files to supabase storage: " + uploadError);
+              throw new Error("Upload Error: " + uploadError);
+            }
           }
         }
 
-          
-        if(addForm.post_lesson_tasks){
-            console.log("adding post lesson tasks")
-            for(let i = 0; i < addForm.post_lesson_tasks?.length; i++){
+
+        if (addForm.post_lesson_tasks) {
+          console.log("adding post lesson tasks")
+          for (let i = 0; i < addForm.post_lesson_tasks?.length; i++) {
             const file: File = addForm.post_lesson_tasks[i];
             const fileExt = file.name.split(".").pop(); // get extension
             const fileName = `${postFileName}.${fileExt}`;
             const filePath = `${courseId}/${lesson_id}/post_lesson_tasks/${fileName}`;
 
-            const{data: uploadData, error: uploadError} = await supabase.storage
-                  .from('course_files')
-                  .upload(filePath,file)
-              if(uploadError){
-                  console.log("Error uploading files to supabase storage: " + uploadError);
-                  throw new Error("Upload Error: " + uploadError);
-              }
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('course_files')
+              .upload(filePath, file)
+            if (uploadError) {
+              console.log("Error uploading files to supabase storage: " + uploadError);
+              throw new Error("Upload Error: " + uploadError);
+            }
           }
 
           console.log("Sucessfully uploaded post lesson tasks");
-          
+
         }
 
-          
-        if(addForm.slide_show_input){
+
+        if (addForm.slide_show_input) {
           console.log("Uploading slide shows")
-          for(let i = 0; i < addForm.slide_show_input?.length; i++){
+          for (let i = 0; i < addForm.slide_show_input?.length; i++) {
             const file: File = addForm.slide_show_input[i];
             const fileExt = file.name.split(".").pop(); // get extension
             const fileName = `${slideFileName}.${fileExt}`;
             const filePath = `${courseId}/${lesson_id}/lessons/${fileName}`;
 
-            const{data: uploadData, error: uploadError} = await supabase.storage
-                  .from('course_files')
-                  .upload(filePath,file)
-              if(uploadError){
-                  console.log("Error uploading files to supabase storage: " + uploadError);
-                  throw new Error("Upload Error: " + uploadError);
-              }
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('course_files')
+              .upload(filePath, file)
+            if (uploadError) {
+              console.log("Error uploading files to supabase storage: " + uploadError);
+              throw new Error("Upload Error: " + uploadError);
+            }
           }
 
           console.log("Successfully uploaded slide show inputs")
         }
-      }catch(err){
+      } catch (err) {
         console.log("Error writing to S3 bucket");
         throw new Error("Error writing to S3 Bucket")
       }
 
 
-      
-      
-      
+
+
+
       const res = await fetch(`/api/admin/courses/${courseId}/lessons`, {
         method: "POST",
         body: JSON.stringify({
@@ -206,7 +205,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
       setAddForm({ ...EMPTY_FORM });
       setNewPreTask(null);
       setNewPostTask(null);
-      
+
       setIsAdding(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "Error");
@@ -366,25 +365,26 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
                 type="File"
                 ref={preTaskRef}
                 accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                onChange={(e)  => {
-                    const file = e.target.files?.[0] ?? null;
-                    if(!file) return;
-                    addTaskToForm("pre_lesson_tasks",e.target.files?.[0] ?? null,setNewPreTask,setAddForm)}
-                  }
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (!file) return;
+                  addTaskToForm("pre_lesson_tasks", e.target.files?.[0] ?? null, setNewPreTask, setAddForm)
+                }
+                }
                 placeholder="Add a pre-lesson task"
-                className = 'hidden'
+                className='hidden'
               />
               <button
-                type = 'button'
-                onClick = {(e) => preTaskRef.current?.click()}
+                type='button'
+                onClick={(e) => preTaskRef.current?.click()}
                 className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
               >
                 Upload Files
               </button>
-             
+
             </div>
-            
-                
+
+
 
             {(addForm.pre_lesson_tasks ?? []).length > 0 && (
               <div className="mt-2 space-y-1">
@@ -410,39 +410,40 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
           </div>
 
           {/**Let user add slideshows for lessons */}
-             <div>
-              <label className="block text-xs text-gray-600 mb-1">Add Slideshow</label>
-              <div className="flex gap-2">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Add Slideshow</label>
+            <div className="flex gap-2">
               <input
                 ref={slideShowRef}
                 type="file"
                 accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                onChange={(e)  => {
-                    const file = e.target.files?.[0] ?? null;
-                    if(!file) return;
-                    addTaskToForm("slide_show_input",e.target.files?.[0] ?? null,setNewSlideDeck,setAddForm)}
-                  }
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (!file) return;
+                  addTaskToForm("slide_show_input", e.target.files?.[0] ?? null, setNewSlideDeck, setAddForm)
+                }
+                }
                 placeholder="Add a pre-lesson task"
                 className="hidden"
               />
               <button
                 className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
                 type='button'
-                 onClick={() =>
+                onClick={() =>
                   slideShowRef.current?.click()
                 }
               >
                 Upload Files
               </button>
-              </div>
+            </div>
 
-               {(addForm.slide_show_input ?? []).length > 0 && (
+            {(addForm.slide_show_input ?? []).length > 0 && (
               <div className="mt-2 space-y-1">
                 {addForm.slide_show_input && addForm.slide_show_input.map((task, idx) => (
                   <div
                     key={`${task}-${idx}`}
                     className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1"
-                  > 
+                  >
                     <span className="text-xs text-gray-800">{task.name}</span>
                     <button
                       type="button"
@@ -455,7 +456,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
                 ))}
               </div>
             )}
-            </div>
+          </div>
 
           <div>
             <label className="block text-xs text-gray-600 mb-1">Post-lesson tasks</label>
@@ -465,10 +466,11 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
                 accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                 ref={postTaskRef}
                 onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    if(!file) return;
-                    addTaskToForm("post_lesson_tasks",e.target.files?.[0] ?? null,setNewPostTask,setAddForm)}
-                  }
+                  const file = e.target.files?.[0] ?? null;
+                  if (!file) return;
+                  addTaskToForm("post_lesson_tasks", e.target.files?.[0] ?? null, setNewPostTask, setAddForm)
+                }
+                }
                 placeholder="Add a post-lesson task"
                 className="hidden"
               />
@@ -767,7 +769,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
                 </div>
               )}
 
-              
+
             </div>
           ))}
 
