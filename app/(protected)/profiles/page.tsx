@@ -132,7 +132,7 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl={profile.avatarUrl ?? "/meera-profile.png"}
+                    imageUrl={profile.avatarUrl ?? "/blank_profile.png"}
                     hasPin={false}
                     asLink={true}
                   />
@@ -150,8 +150,8 @@ export default async function ProfilesPage({
                   imageUrl={
                     profile.avatarUrl ??
                     (profile.type === "student"
-                      ? "/priya-profile.png"
-                      : "/meera-profile.png")
+                      ? "/blank_profile.png"
+                      : "/blank_profile.png")
                   }
                   hasPin={profile.hasPin}
                 />

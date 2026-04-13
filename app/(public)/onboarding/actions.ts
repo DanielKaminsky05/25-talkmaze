@@ -74,6 +74,22 @@ export async function handleStudentCreation(
   return { success: true, status: 200, message: "Student created", student_id };
 }
 
+export async function updateStudentAvatar(studentId: string, avatarUrl: string) {
+  const supabase = (await createClient()) as any;
+  const { error } = await supabase
+    .from("students")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", studentId);
+
+  if (error) {
+    console.error("Error updating student avatar:", error);
+    return { success: false, error: "Failed to update avatar" };
+  }
+
+  revalidatePath("/profiles");
+  return { success: true };
+}
+
 // ------------------ HELPERS ------------------
 
 const toTimestamp = (time: string) => {
