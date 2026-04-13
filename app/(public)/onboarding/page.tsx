@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { handleStudentCreation, updateStudentAvatar } from "./actions";
+import { handleStudentCreation, updateStudentAvatar, setActiveProfile } from "./actions";
 import { OnboardingTimeZone, TIME_ZONES } from "./types";
 import { createClient } from "@/utils/supabase/client";
 import { useRef } from "react";
@@ -556,7 +556,11 @@ export default function Onboarding() {
                           console.error("Storage error:", err);
                         }
                       }
-                      router.push("/profiles");
+
+                      // Set active profile to the new student
+                      await setActiveProfile(res.student_id, "student");
+                      
+                      router.push("/payments");
                     } else {
                       alert(res.error || "Failed to create student profile");
                       setIsSubmitting(false);

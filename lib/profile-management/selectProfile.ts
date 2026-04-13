@@ -1,8 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { setProfileCookies } from "./profile-cookies";
 
 /**
  * Server action to select an active profile (parent or student).
@@ -59,17 +59,7 @@ export async function selectProfile(formData: FormData) {
   }
 
   // Set cookies for active profile id and type
-  const cookieStore = await cookies();
-  cookieStore.set("active_profile_id", profileId, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-  });
-  cookieStore.set("active_profile_type", profileType, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-  });
+  await setProfileCookies(profileId, profileType);
 
   
   if (profileType === "parent") {

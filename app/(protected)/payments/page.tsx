@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { PackageRenewaloptionsContainer } from "./_components/PackageRenewalOptionsContainer";
 import CurrentSubscription from "./_components/CurrentSubscription";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
+import { MoveLeft } from "lucide-react";
 
 interface Plan {
   id: string;
@@ -20,23 +22,42 @@ interface Plan {
  */
 export default async function PaymentPage() {
   const supabase = await createClient();
-
+  const activeProfile = await getActiveProfile();
+  
   // Fetch all Subscription plans from the database so that it can be displayed
   // in renewal options
   const { data: plans } = (await supabase.from("plans").select("*")) as {
     data: Plan[] | null;
   };
+  
+  // Check if student has an active subscription to determine back link
+  let hasSubscription = false;
+  if (activeProfile?.type === "student") {
+    const { data: subscription } = await supabase
+      .from("student_subscriptions")
+      .select("id")
+      .eq("student_id", activeProfile.id)
+      .eq("status", "active")
+      .maybeSingle();
+    hasSubscription = !!subscription;
+  } else if (activeProfile?.type === "parent") {
+    // Parents always go to /parent or dashboard
+    hasSubscription = true; 
+  }
+
+  const backLink = hasSubscription ? "/home" : "/profiles";
+  const backLabel = hasSubscription ? "Return to Dashboard" : "Return to Profiles";
 
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col ">
       {/* Header - Contains back to dashboard button*/}
       <header className="top-0 z-10 bg-[#2b4257] px-8 py-5 flex items-center">
         <a
-          href="/home"
+          href={backLink}
           className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
         >
           <CaretRight />
-          Return to Dashboard
+          {backLabel}
         </a>
       </header>
 

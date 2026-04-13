@@ -3,6 +3,11 @@ import { revalidatePath } from "next/cache";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service";
+import { setProfileCookies } from "@/lib/profile-management/profile-cookies";
+
+export async function setActiveProfile(profileId: string, profileType: "student" | "parent") {
+  return await setProfileCookies(profileId, profileType);
+}
 
 export async function handleStudentCreation(
   firstName: string,

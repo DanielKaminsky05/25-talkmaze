@@ -98,11 +98,33 @@ export async function middleware(request: NextRequest) {
       // If they are a regular user, check if they have an active profile
       if (isRegularUser) {
         const activeProfileId = request.cookies.get("active_profile_id")?.value;
+        const activeProfileType = request.cookies.get("active_profile_type")?.value;
+
         // If no active profile, redirect them to select a profile
         if (!activeProfileId && !pathname.startsWith('/profiles')) {
           const url = request.nextUrl.clone();
           url.pathname = "/profiles";
           return NextResponse.redirect(url);
+        }
+
+        // Student Subscription Gate
+        if (
+          activeProfileId && 
+          activeProfileType === "student" && 
+          pathname.startsWith("/home")
+        ) {
+          const { data: subscription } = await supabase
+            .from("student_subscriptions")
+            .select("id")
+            .eq("student_id", activeProfileId)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (!subscription) {
+            const url = request.nextUrl.clone();
+            url.pathname = "/payments";
+            return NextResponse.redirect(url);
+          }
         }
       }
     }
