@@ -91,7 +91,7 @@ export default function ParentDashboard() {
                     location={currentStudent.location || "Location"}
                     dob={currentStudent.date_of_birth || "Not set"}
                     grade={currentStudent.grade || "N/A"}
-                    description={currentStudent.notes || "Sweet and outgoing personality"}
+                    description={currentStudent.bio || ""}
                     glows="Excited to learn and share"
                     grows="Clarity with content"
                     onNext={students.length > 1 ? onNextStudent : undefined}

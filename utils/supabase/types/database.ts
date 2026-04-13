@@ -444,10 +444,12 @@ export type Database = {
           account_id: string
           avatar_url: string | null
           billing_email: string | null
+          bio: string | null
           created_at: string
           first_name: string | null
           id: string
           last_name: string | null
+          location: string | null
           phone_number: string | null
           profile_access_pin: string | null
           updated_at: string
@@ -456,10 +458,12 @@ export type Database = {
           account_id: string
           avatar_url?: string | null
           billing_email?: string | null
+          bio?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          location?: string | null
           phone_number?: string | null
           profile_access_pin?: string | null
           updated_at?: string
@@ -468,10 +472,12 @@ export type Database = {
           account_id?: string
           avatar_url?: string | null
           billing_email?: string | null
+          bio?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          location?: string | null
           phone_number?: string | null
           profile_access_pin?: string | null
           updated_at?: string
@@ -709,7 +715,9 @@ export type Database = {
         Row: {
           account_id: string
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           first_name: string | null
           grade: string | null
           id: string
@@ -717,6 +725,7 @@ export type Database = {
           lesson_space_id: string | null
           lesson_space_student_link: string | null
           lesson_space_teacher_link: string | null
+          location: string | null
           notes: string | null
           teach_works_url: string | null
           updated_at: string
@@ -724,7 +733,9 @@ export type Database = {
         Insert: {
           account_id: string
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           first_name?: string | null
           grade?: string | null
           id?: string
@@ -732,6 +743,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          location?: string | null
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
@@ -739,7 +751,9 @@ export type Database = {
         Update: {
           account_id?: string
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           first_name?: string | null
           grade?: string | null
           id?: string
@@ -747,6 +761,7 @@ export type Database = {
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
           lesson_space_teacher_link?: string | null
+          location?: string | null
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
