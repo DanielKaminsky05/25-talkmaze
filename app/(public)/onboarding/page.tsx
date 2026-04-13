@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { handleStudentCreation } from "./actions";
+import { handleStudentCreation, updateStudentAvatar } from "./actions";
 import { OnboardingTimeZone, TIME_ZONES } from "./types";
+import { createClient } from "@/utils/supabase/client";
+import { useRef } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,6 +41,17 @@ export default function Onboarding() {
   const [timeZone, setTimeZone] = useState<OnboardingTimeZone>("America/Toronto");
   const [notes, setNotes] = useState<string>("");
   const [pageNum, setPage] = useState<number>(1);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
   type Slot = { start: string; end: string };
   const [weeklyAvailability, setWeeklyAvailability] = useState<
     Record<string, Slot[]>
@@ -168,9 +181,8 @@ export default function Onboarding() {
                         onChange={(e) =>
                           setGrade(e.target.value ? Number(e.target.value) : -1)
                         }
-                        className={`w-full h-full px-5 text-[20px] border-[0.7px] bg-white appearance-none cursor-pointer ${
-                          !grade ? "text-[#1F2E3B]/60" : "text-[#1F2E3B]"
-                        }`}
+                        className={`w-full h-full px-5 text-[20px] border-[0.7px] bg-white appearance-none cursor-pointer ${!grade ? "text-[#1F2E3B]/60" : "text-[#1F2E3B]"
+                          }`}
                       >
                         <option value="" disabled hidden>
                           Grade
@@ -261,7 +273,7 @@ export default function Onboarding() {
                   type="submit"
                   className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
                   onClick={() => setPage(2)}
-                  //onClick={() => router.push("/profiles")}
+                //onClick={() => router.push("/profiles")}
                 >
                   Next
                 </button>
@@ -276,30 +288,11 @@ export default function Onboarding() {
               </form>
             )}
             {pageNum == 2 && (
-              <form className="flex flex-col gap-6"
-              onSubmit={
-                async (e)=>{
+              <form
+                className="flex flex-col gap-6"
+                onSubmit={(e) => {
                   e.preventDefault();
-
-                  try {
-                    const res = await handleStudentCreation(
-                      firstName,
-                      lastName,
-                      grade,
-                      notes,
-                      timeZone,
-                      weeklyAvailability
-                    );
-
-                    if (res.success) {
-                      router.push("/profiles");
-                    } else {
-                      alert(res.error || "Failed to create student profile");
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("An unexpected error occurred");
-                  }
+                  setPage(3);
                 }}
               >
                 <p className="text-[#A8A8A8]">Set your weekly availability.</p>
@@ -380,21 +373,130 @@ export default function Onboarding() {
                     )}
                   </div>
                 ))}
-              <button
-                type="submit"
-                className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
-              >
-                Submit
-              </button>
+                <button
+                  type="submit"
+                  className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                >
+                  Next
+                </button>
 
-              <div className="text-center mt-2">
-                <p className="text-[#1F2E3B]">
-                  <Link href="/signup" className="font-bold hover:underline">
-                    exit
-                  </Link>
-                </p>
-              </div>
-            </form>
+                <div className="text-center mt-2">
+                  <p className="text-[#1F2E3B]">
+                    <Link href="/signup" className="font-bold hover:underline">
+                      exit
+                    </Link>
+                  </p>
+                </div>
+              </form>
+            )}
+            {pageNum == 3 && (
+              <form
+                className="flex flex-col gap-6"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const res = await handleStudentCreation(
+                      firstName,
+                      lastName,
+                      grade,
+                      notes,
+                      timeZone,
+                      weeklyAvailability
+                    );
+
+                    if (res.success) {
+                      if (avatarFile && res.student_id) {
+                        const supabase = createClient();
+                        const fileExt = avatarFile.name.split(".").pop();
+                        const filePath = `students/${res.student_id}/avatar-${Date.now()}.${fileExt}`;
+
+                        const { error: uploadError } = await supabase.storage
+                          .from("avatars")
+                          .upload(filePath, avatarFile);
+
+                        if (!uploadError) {
+                          const { data: { publicUrl } } = supabase.storage
+                            .from("avatars")
+                            .getPublicUrl(filePath);
+
+                          await updateStudentAvatar(res.student_id, publicUrl);
+                        }
+                      }
+                      router.push("/profiles");
+                    } else {
+                      alert(res.error || "Failed to create student profile");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("An unexpected error occurred");
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <h2 className="text-xl font-bold text-[#1F2E3B] text-center">Profile Picture</h2>
+                  <p className="text-[#A8A8A8] text-center">
+                    Upload an image of your child to personalize their profile.
+                  </p>
+
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-40 h-40 rounded-full bg-[#F3F4F6] border-4 border-dashed border-[#B1E7D6] flex items-center justify-center cursor-pointer overflow-hidden relative group transition-all hover:border-solid hover:shadow-md"
+                  >
+                    {avatarPreview ? (
+                      <Image src={avatarPreview} alt="Avatar preview" fill className="object-cover" />
+                    ) : (
+                      <div className="text-center p-4">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span className="text-sm text-gray-500 font-medium">Click to upload</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">Change Image</span>
+                    </div>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  <div className="bg-[#B1E7D6]/20 border border-[#B1E7D6] rounded-lg px-4 py-2 mt-2">
+                    <p className="text-[#1F2E3B] text-sm font-medium text-center">
+                      This step is optional. You can always add a photo later!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-4">
+                  <button
+                    type="submit"
+                    className="w-full h-[48px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity shadow-sm"
+                  >
+                    Complete Onboarding
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPage(2)}
+                    className="text-[#1F2E3B] hover:underline text-sm font-medium text-center"
+                  >
+                    Back to availability
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-[#1F2E3B]">
+                    <Link href="/signup" className="font-bold hover:underline">
+                      exit
+                    </Link>
+                  </p>
+                </div>
+              </form>
             )}</div>
         </div>
       </div>
