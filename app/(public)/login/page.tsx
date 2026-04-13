@@ -35,8 +35,14 @@ export default function LoginPage() {
       }else{
         console.log("Error: login failed", result);
       }
-      
     }
+
+    const [successMessage] = useState(() => {
+        if (typeof window !== "undefined") {
+            return new URLSearchParams(window.location.search).get("message");
+        }
+        return null;
+    });
 
   return (
     <div className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}>
@@ -56,6 +62,12 @@ export default function LoginPage() {
                 priority
               />
             </div>
+
+            {successMessage && (
+              <div className="p-4 rounded-[10px] text-sm font-medium bg-[#DAFBE8] text-[#1D7A41] mb-2 text-center">
+                {successMessage}
+              </div>
+            )}
 
             <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
               <div className="relative h-[58px]">
@@ -92,6 +104,15 @@ export default function LoginPage() {
                     </svg>
                   )}
                 </button>
+              </div>
+
+              <div className="flex justify-end -mt-2">
+                <Link
+                  href="/forgot-password"
+                  className="text-[16px] text-[#1F2E3B]/60 hover:text-[#65CFAD] transition-colors font-medium"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               <button
