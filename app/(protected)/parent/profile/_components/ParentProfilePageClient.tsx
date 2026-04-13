@@ -108,6 +108,21 @@ function LeftPanel({ parent }: { parent: ParentData }) {
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("File is too large. Please select an image under 2MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const allowedExtensions = ["png", "jpg", "jpeg", "webp", "gif"];
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      setError(`Invalid file extension. Please use: ${allowedExtensions.join(", ")}`);
+      e.target.value = "";
+      return;
+    }
+
     setPendingFile(file);
     setPendingPreview(URL.createObjectURL(file));
     setError(null);

@@ -36,8 +36,13 @@ const onBoardSchema = z.object({
         path: ["end"],
       }),
     ),
-  ).refine((val) => Object.keys(val).length > 0, {
-    message: "Please add at least one availability slot",
+  ).refine((val) => {
+    const entries = Object.entries(val);
+    if (entries.length === 0) return false;
+    // Check if every enabled day has at least one valid slot
+    return entries.every(([_, slots]) => slots.some(slot => slot.start && slot.end));
+  }, {
+    message: "Please ensure all selected days have valid time slots",
   }),
 });
 
@@ -51,6 +56,7 @@ export default function Onboarding() {
   const [notes, setNotes] = useState<string>("");
   const [pageNum, setPage] = useState<number>(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +64,22 @@ export default function Onboarding() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File is too large. Please select an image under 2MB.");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        alert("Invalid file type. Please select an image.");
+        return;
+      }
+
+      const allowedExtensions = ["png", "jpg", "jpeg", "webp", "gif"];
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
+      if (!fileExt || !allowedExtensions.includes(fileExt)) {
+        alert(`Invalid file extension. Please use: ${allowedExtensions.join(", ")}`);
+        return;
+      }
+
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
@@ -354,7 +376,8 @@ export default function Onboarding() {
 
                 <button
                   type="submit"
-                  className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                  disabled={isSubmitting}
+                  className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
                   onClick={(e) => {
                     e.preventDefault();
                     if (validateStep1()) setPage(2);
@@ -467,7 +490,8 @@ export default function Onboarding() {
                 <div className="flex flex-col gap-3 mt-4">
                   <button
                     type="submit"
-                    className="w-1/2 mx-auto h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                    disabled={isSubmitting}
+                    className="w-1/2 mx-auto h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -495,6 +519,8 @@ export default function Onboarding() {
                 className="flex flex-col gap-6"
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  if (isSubmitting) return;
+                  setIsSubmitting(true);
                   try {
                     const res = await handleStudentCreation(
                       firstName,
@@ -507,29 +533,38 @@ export default function Onboarding() {
 
                     if (res.success) {
                       if (avatarFile && res.student_id) {
-                        const supabase = createClient();
-                        const fileExt = avatarFile.name.split(".").pop();
-                        const filePath = `students/${res.student_id}/avatar-${Date.now()}.${fileExt}`;
+                        try {
+                          const supabase = createClient();
+                          const fileExt = avatarFile.name.split(".").pop();
+                          const filePath = `students/${res.student_id}/avatar-${Date.now()}.${fileExt}`;
 
-                        const { error: uploadError } = await supabase.storage
-                          .from("avatars")
-                          .upload(filePath, avatarFile);
-
-                        if (!uploadError) {
-                          const { data: { publicUrl } } = supabase.storage
+                          const { error: uploadError } = await supabase.storage
                             .from("avatars")
-                            .getPublicUrl(filePath);
+                            .upload(filePath, avatarFile);
 
-                          await updateStudentAvatar(res.student_id, publicUrl);
+                          if (!uploadError) {
+                            const { data: { publicUrl } } = supabase.storage
+                              .from("avatars")
+                              .getPublicUrl(filePath);
+
+                            await updateStudentAvatar(res.student_id, publicUrl);
+                          } else {
+                            console.error("Avatar upload failed:", uploadError);
+                            alert("Profile created, but avatar upload failed. You can update it later in settings.");
+                          }
+                        } catch (err) {
+                          console.error("Storage error:", err);
                         }
                       }
                       router.push("/profiles");
                     } else {
                       alert(res.error || "Failed to create student profile");
+                      setIsSubmitting(false);
                     }
                   } catch (err) {
                     console.error(err);
                     alert("An unexpected error occurred");
+                    setIsSubmitting(false);
                   }
                 }}
               >
@@ -576,9 +611,20 @@ export default function Onboarding() {
                 <div className="flex flex-col gap-3 mt-4">
                   <button
                     type="submit"
-                    className="w-full h-[48px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity shadow-sm"
+                    disabled={isSubmitting}
+                    className="w-full h-[48px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Complete Onboarding
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-[#1F2E3B]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating profile...
+                      </>
+                    ) : (
+                      "Complete Onboarding"
+                    )}
                   </button>
 
                   <button
