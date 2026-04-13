@@ -15,8 +15,8 @@ export async function selectProfile(formData: FormData) {
   const profileId = formData.get("profileId") as string;
   const profileType = formData.get("profileType") as "student" | "parent";
   const pin = formData.get("pin") as string | null;
-  
- 
+
+
   // Ensure required fields are present
   if (!profileId || !profileType) throw new Error("Missing profile data");
 
@@ -61,10 +61,7 @@ export async function selectProfile(formData: FormData) {
   // Set cookies for active profile id and type
   await setProfileCookies(profileId, profileType);
 
-  
-  if (profileType === "parent") {
-    redirect("/parent");
-  } else {
-    redirect("/home");
-  }
+
+  const destination = (formData.get("destination") as string) || (profileType === "parent" ? "/parent" : "/home");
+  redirect(destination);
 }

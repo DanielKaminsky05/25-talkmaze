@@ -12,6 +12,7 @@ type Profile = {
   type: "student" | "parent";
   hasPin: boolean;
   avatarUrl: string | null;
+  hasSubscription: boolean;
 };
 
 /**
@@ -19,11 +20,7 @@ type Profile = {
  * Redirects to login if user is not authenticated.
  * @returns Array of Profile objects for selection
  */
-
-
 async function getProfiles(): Promise<Profile[]> {
-
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,7 +28,7 @@ async function getProfiles(): Promise<Profile[]> {
 
   if (!user) redirect("/login"); // Redirect to login if not authenticated
 
-  // Fetch parent and student profiles in parrallel
+  // Fetch parent and student profiles in parallel
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase
       .from("parents")
@@ -43,10 +40,17 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
   ]);
 
+  // Fetch active subscriptions for all student IDs we found
+  const studentIds = students?.map((s) => s.id) || [];
+  const { data: activeSubscriptions } = await supabase
+    .from("student_subscriptions")
+    .select("student_id")
+    .in("student_id", studentIds)
+    .eq("status", "active");
 
-  console.log("Account ID: " + user.id);
-  console.log("Retrieved parents: " + JSON.stringify(parents));
-  console.log("Retrieved Students: " + JSON.stringify(students))
+  const subscribedStudentIds = new Set(
+    activeSubscriptions?.map((sub) => sub.student_id) || []
+  );
 
   // Combine and return parent and student profiles
   return [
@@ -56,6 +60,7 @@ async function getProfiles(): Promise<Profile[]> {
       type: "parent" as const,
       hasPin: p.profile_access_pin != null,
       avatarUrl: p.avatar_url ?? null,
+      hasSubscription: true, // Parents don't need subscriptions
     })),
     ...(students ?? []).map((s) => ({
       id: s.id,
@@ -63,6 +68,7 @@ async function getProfiles(): Promise<Profile[]> {
       type: "student" as const,
       hasPin: false,
       avatarUrl: s.avatar_url ?? null,
+      hasSubscription: subscribedStudentIds.has(s.id),
     })),
   ];
 }
@@ -144,6 +150,9 @@ export default async function ProfilesPage({
               <form key={profile.id} action={selectProfile}>
                 <input type="hidden" name="profileId" value={profile.id} />
                 <input type="hidden" name="profileType" value={profile.type} />
+                {profile.type === "student" && !profile.hasSubscription && (
+                  <input type="hidden" name="destination" value="/payments" />
+                )}
                 <ProfileCard
                   id={profile.id}
                   name={profile.name}
