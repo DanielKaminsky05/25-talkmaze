@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,20 +17,28 @@ const inter = Inter({
 });
 
 const onBoardSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  grade: z.number().int().min(1).max(12),
-  timeZone: z.string().min(1),
-  notes: z.string(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  grade: z.number().min(1, "Please select a grade"),
+  timeZone: z.string().min(1, "Time zone is required"),
+  notes: z.string().optional(),
   availability: z.record(
     z.string(),
     z.array(
       z.object({
-        start: z.string(),
-        end: z.string(),
+        start: z.string().min(1, "Start time required"),
+        end: z.string().min(1, "End time required"),
+      }).refine((data) => {
+        if (!data.start || !data.end) return true;
+        return data.end > data.start;
+      }, {
+        message: "End time must be after start time",
+        path: ["end"],
       }),
     ),
-  ),
+  ).refine((val) => Object.keys(val).length > 0, {
+    message: "Please add at least one availability slot",
+  }),
 });
 
 export default function Onboarding() {
@@ -37,10 +46,11 @@ export default function Onboarding() {
 
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
-  const [grade, setGrade] = useState<number>(-1);
+  const [grade, setGrade] = useState<number>(1);
   const [timeZone, setTimeZone] = useState<OnboardingTimeZone>("America/Toronto");
   const [notes, setNotes] = useState<string>("");
   const [pageNum, setPage] = useState<number>(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +125,51 @@ export default function Onboarding() {
     });
   };
 
+  const validateStep1 = () => {
+    const result = onBoardSchema.pick({
+      firstName: true,
+      lastName: true,
+      grade: true,
+      timeZone: true,
+    }).safeParse({
+      firstName,
+      lastName,
+      grade,
+      timeZone,
+    });
+
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        newErrors[issue.path.join(".")] = issue.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  };
+
+  const validateStep2 = () => {
+    const result = onBoardSchema.pick({
+      availability: true,
+    }).safeParse({
+      availability: weeklyAvailability,
+    });
+
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        newErrors[issue.path.join(".")] = issue.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  };
 
   return (
     <div
@@ -149,10 +204,18 @@ export default function Onboarding() {
                         type="text"
                         placeholder="First Name"
                         value={firstName}
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                        onChange={(e) => setFirstName(e.target.value)}
+                        className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.firstName ? "border-red-500" : "border-[#1F2E3B]/20"}`}
+                        onChange={(e) => {
+                          setFirstName(e.target.value);
+                          if (errors.firstName) setErrors(prev => {
+                            const newErrs = { ...prev };
+                            delete newErrs.firstName;
+                            return newErrs;
+                          });
+                        }}
                       />
                     </div>
+                    {errors.firstName && <p className="text-red-500 text-xs ml-1 mt-0.5">{errors.firstName}</p>}
                   </div>
                 </div>
 
@@ -162,10 +225,18 @@ export default function Onboarding() {
                       type="text"
                       placeholder="Last Name"
                       value={lastName}
-                      className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px]"
-                      onChange={(e) => setLastName(e.target.value)}
+                      className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.lastName ? "border-red-500" : "border-[#1F2E3B]/20"}`}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        if (errors.lastName) setErrors(prev => {
+                          const newErrs = { ...prev };
+                          delete newErrs.lastName;
+                          return newErrs;
+                        });
+                      }}
                     />
                   </div>
+                  {errors.lastName && <p className="text-red-500 text-xs ml-1 mt-0.5">{errors.lastName}</p>}
                 </div>
 
 
@@ -178,11 +249,16 @@ export default function Onboarding() {
                     <div className="relative h-[58px]">
                       <select
                         value={grade ?? ""}
-                        onChange={(e) =>
-                          setGrade(e.target.value ? Number(e.target.value) : -1)
+                        onChange={(e) => {
+                          setGrade(Number(e.target.value));
+                          if (errors.grade) setErrors(prev => {
+                            const newErrs = { ...prev };
+                            delete newErrs.grade;
+                            return newErrs;
+                          });
+                        }}
+                        className={`w-full h-full px-5 text-[20px] border-[0.7px] bg-white appearance-none cursor-pointer ${errors.grade ? "border-red-500" : "border-[#1F2E3B]/20"} text-[#1F2E3B]`
                         }
-                        className={`w-full h-full px-5 text-[20px] border-[0.7px] bg-white appearance-none cursor-pointer ${!grade ? "text-[#1F2E3B]/60" : "text-[#1F2E3B]"
-                          }`}
                       >
                         <option value="" disabled hidden>
                           Grade
@@ -211,6 +287,7 @@ export default function Onboarding() {
                         </svg>
                       </div>
                     </div>
+                    {errors.grade && <p className="text-red-500 text-xs ml-1 mt-0.5">{errors.grade}</p>}
                   </div>
                 </div>
 
@@ -224,10 +301,15 @@ export default function Onboarding() {
                     <div className="relative h-[58px]">
                       <select
                         value={timeZone}
-                        onChange={(e) =>
-                          setTimeZone(e.target.value as OnboardingTimeZone)
-                        }
-                        className="w-full h-full px-5 text-[20px] text-[#1F2E3B] border-[0.7px] bg-white appearance-none cursor-pointer"
+                        onChange={(e) => {
+                          setTimeZone(e.target.value as OnboardingTimeZone);
+                          if (errors.timeZone) setErrors(prev => {
+                            const newErrs = { ...prev };
+                            delete newErrs.timeZone;
+                            return newErrs;
+                          });
+                        }}
+                        className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] border-[0.7px] bg-white appearance-none cursor-pointer ${errors.timeZone ? "border-red-500" : "border-[#1F2E3B]/20"}`}
                       >
                         {TIME_ZONES.map((tz) => (
                           <option key={tz} value={tz}>
@@ -251,6 +333,7 @@ export default function Onboarding() {
                         </svg>
                       </div>
                     </div>
+                    {errors.timeZone && <p className="text-red-500 text-xs ml-1 mt-0.5">{errors.timeZone}</p>}
                   </div>
                 </div>
 
@@ -272,15 +355,17 @@ export default function Onboarding() {
                 <button
                   type="submit"
                   className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
-                  onClick={() => setPage(2)}
-                //onClick={() => router.push("/profiles")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (validateStep1()) setPage(2);
+                  }}
                 >
                   Next
                 </button>
 
                 <div className="text-center mt-2">
                   <p className="text-[#1F2E3B]">
-                    <Link href="/signup" className="font-bold hover:underline">
+                    <Link href="/profiles" className="font-bold hover:underline">
                       exit
                     </Link>
                   </p>
@@ -292,10 +377,11 @@ export default function Onboarding() {
                 className="flex flex-col gap-6"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setPage(3);
+                  if (validateStep2()) setPage(3);
                 }}
               >
                 <p className="text-[#A8A8A8]">Set your weekly availability.</p>
+                {errors.availability && <p className="text-red-500 text-sm font-medium -mt-4">{errors.availability}</p>}
 
                 {[
                   "Monday",
@@ -333,32 +419,37 @@ export default function Onboarding() {
                     {isDayEnabled(day) && (
                       <div className="flex flex-col gap-2">
                         {getSlots(day).map((slot, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
-                            <input
-                              type="time"
-                              value={slot.start}
-                              onChange={(e) =>
-                                updateSlot(day, idx, "start", e.target.value)
-                              }
-                              className="border px-2 py-1"
-                            />
-                            <span>-</span>
-                            <input
-                              type="time"
-                              value={slot.end}
-                              onChange={(e) =>
-                                updateSlot(day, idx, "end", e.target.value)
-                              }
-                              className="border px-2 py-1"
-                            />
+                          <div key={idx} className="flex flex-col gap-1">
+                            <div className="flex gap-2 items-center">
+                              <input
+                                type="time"
+                                value={slot.start}
+                                onChange={(e) =>
+                                  updateSlot(day, idx, "start", e.target.value)
+                                }
+                                className="border px-2 py-1"
+                              />
+                              <span>-</span>
+                              <input
+                                type="time"
+                                value={slot.end}
+                                onChange={(e) =>
+                                  updateSlot(day, idx, "end", e.target.value)
+                                }
+                                className="border px-2 py-1"
+                              />
 
-                            <button
-                              type="button"
-                              onClick={() => removeSlot(day, idx)}
-                              className="text-red-500"
-                            >
-                              ✕
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => removeSlot(day, idx)}
+                                className="text-red-500"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            {errors[`availability.${day}.${idx}.end`] && (
+                              <p className="text-red-500 text-xs ml-1">{errors[`availability.${day}.${idx}.end`]}</p>
+                            )}
                           </div>
                         ))}
 
@@ -373,16 +464,26 @@ export default function Onboarding() {
                     )}
                   </div>
                 ))}
-                <button
-                  type="submit"
-                  className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
-                >
-                  Next
-                </button>
+                <div className="flex flex-col gap-3 mt-4">
+                  <button
+                    type="submit"
+                    className="w-1/2 mx-auto h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                  >
+                    Next
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPage(1)}
+                    className="text-[#1F2E3B] hover:underline text-sm font-medium text-center"
+                  >
+                    Back to student info
+                  </button>
+                </div>
 
                 <div className="text-center mt-2">
                   <p className="text-[#1F2E3B]">
-                    <Link href="/signup" className="font-bold hover:underline">
+                    <Link href="/profiles" className="font-bold hover:underline">
                       exit
                     </Link>
                   </p>
@@ -491,7 +592,7 @@ export default function Onboarding() {
 
                 <div className="text-center">
                   <p className="text-[#1F2E3B]">
-                    <Link href="/signup" className="font-bold hover:underline">
+                    <Link href="/profiles" className="font-bold hover:underline">
                       exit
                     </Link>
                   </p>
