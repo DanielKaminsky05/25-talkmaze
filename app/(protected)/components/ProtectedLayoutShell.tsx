@@ -29,7 +29,8 @@ export default function ProtectedLayoutShell({ profileType, children }: Props) {
   if (
     pathname?.startsWith("/profiles") ||
     pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/coach")
+    pathname?.startsWith("/coach") ||
+    pathname?.startsWith("/payments")
   ) {
     return <>{children}</>;
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { getActiveProfile } from "@/app/api/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 type LessonRow = {
   id: string;
