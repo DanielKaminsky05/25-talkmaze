@@ -18,17 +18,12 @@ export default async function CoachConversationPage({
   // Only scope conversations to the active profile for regular users (role=1)
   const profile = user.role === 1 ? await getActiveProfile() : null;
 
-  const conversation = await getConversation(user.id, contactId, profile);
-  const messages = await getMessages(
-    conversation.conversationId,
-    user.id,
-    conversation.senderProfileId,
-    conversation.senderProfileType
-  );
+  const conversationId = await getConversation(user.id, user.role, contactId, profile);
+  const messages = await getMessages(conversationId);
 
   return (
     <ConversationClient
-      conversation={{ id: conversation.conversationId }}
+      conversation={{ id: conversationId }}
       user={{ id: user.id, name: user.email }}
       messages={messages}
     />
@@ -52,129 +47,94 @@ async function getUser() {
 
 async function getConversation(
   userId: string,
+  userRole: number,
   contactId: string,
-  profile: { id: string; type: "student" | "parent" } | null
-) {
+  profile: { id: string; type: "student" | "parent" } | null,
+): Promise<string> {
   const supabase = await createClient();
 
-  const [{ data: accountExists }, { data: studentExists }] = await Promise.all([
-    supabase.from("account").select("id").eq("id", contactId).single(),
-    supabase.from("students").select("account_id").eq("id", contactId).single(),
-  ]);
+  if (userRole === 1 && profile) {
+    // Regular user: contactId is a coach's account_id — resolve their coaches.id
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("id")
+      .eq("account_id", contactId)
+      .single();
 
-  if (!accountExists && !studentExists) {
-    throw new Error("The selected contact does not exist.");
-  }
+    if (!coach) throw new Error("Coach not found for contact.");
 
-  // If the contact is a student, resolve their account_id
-  const resolvedContactId = studentExists?.account_id ?? contactId;
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("coach_id", coach.id)
+      .eq("profile_id", profile.id)
+      .maybeSingle();
 
-  if (profile) {
-    // There is exactly one conversation per (student profile, contact) pair.
-    // sender_profile_id identifies the student profile regardless of who initiated,
-    // so check both directions with the same filter.
-    const [{ data: initiated }, { data: contactInitiated }] = await Promise.all([
-      supabase
-        .from("conversations")
-        .select("id")
-        .eq("sender_id", userId)
-        .eq("recipient_id", resolvedContactId)
-        .eq("sender_profile_id", profile.id)
-        .maybeSingle(),
-      supabase
-        .from("conversations")
-        .select("id")
-        .eq("sender_id", resolvedContactId)
-        .eq("recipient_id", userId)
-        .eq("sender_profile_id", profile.id)
-        .maybeSingle(),
-    ]);
+    if (existing) return existing.id;
 
-    const existing = initiated ?? contactInitiated;
-    if (existing) {
-      return {
-        conversationId: existing.id,
-        senderProfileId: profile.id,
-        senderProfileType: profile.type,
-      };
-    }
+    const { data: newConv, error } = await supabase
+      .from("conversations")
+      .insert({ coach_id: coach.id, profile_id: profile.id, profile_type: profile.type })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return newConv.id;
   } else {
-    // Coach/admin: look for any existing conversation in either direction,
-    // preferring one started by the contact (so we join the student's thread).
-    // When the contact is a student profile, filter by sender_profile_id /
-    // recipient_profile_id so siblings on the same account don't share a thread.
-    let theirQuery = supabase
-      .from("conversations")
+    // Coach/admin: contactId is a student or parent profile ID — resolve own coaches.id
+    const { data: coach } = await supabase
+      .from("coaches")
       .select("id")
-      .eq("sender_id", resolvedContactId)
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .eq("account_id", userId)
+      .single();
 
-    let myQuery = supabase
-      .from("conversations")
+    if (!coach) throw new Error("Coach record not found for current user.");
+
+    // Determine profile type
+    const { data: studentProfile } = await supabase
+      .from("students")
       .select("id")
-      .eq("sender_id", userId)
-      .eq("recipient_id", resolvedContactId)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .eq("id", contactId)
+      .maybeSingle();
 
-    if (studentExists) {
-      theirQuery = theirQuery.eq("sender_profile_id", contactId);
-      myQuery = myQuery.eq("recipient_profile_id", contactId);
-    }
+    const profileType = studentProfile ? "student" : "parent";
 
-    const [{ data: theirConvs }, { data: myConvs }] = await Promise.all([
-      theirQuery,
-      myQuery,
-    ]);
+    const { data: conv, error } = await supabase
+      .from("conversations")
+      .upsert(
+        { coach_id: coach.id, profile_id: contactId, profile_type: profileType },
+        { onConflict: "coach_id,profile_id" },
+      )
+      .select("id")
+      .single();
 
-    const existing = theirConvs?.[0] ?? myConvs?.[0];
-    if (existing) {
-      return {
-        conversationId: existing.id,
-        senderProfileId: null,
-        senderProfileType: null,
-      };
-    }
+    if (error) throw error;
+    return conv.id;
   }
-
-  const { data: newConversation, error: insertError } = await supabase
-    .from("conversations")
-    .insert({
-      sender_id: userId,
-      recipient_id: resolvedContactId,
-      ...(profile && {
-        sender_profile_id: profile.id,
-        sender_profile_type: profile.type,
-      }),
-      ...(studentExists && {
-        recipient_profile_id: contactId,
-        recipient_profile_type: "student",
-      }),
-    })
-    .select("id")
-    .single();
-
-  if (insertError) {
-    console.error("Error creating conversation:", insertError);
-    throw insertError;
-  }
-
-  return {
-    conversationId: newConversation.id,
-    senderProfileId: profile?.id ?? null,
-    senderProfileType: profile?.type ?? null,
-  };
 }
 
-async function getMessages(
-  conversationId: string,
-  currentUserId: string,
-  senderProfileId: string | null,
-  senderProfileType: string | null
-) {
+async function getMessages(conversationId: string) {
   const supabase = await createClient();
+
+  // Fetch conversation to know coach_id and profile_id/type
+  const { data: conv, error: convError } = await supabase
+    .from("conversations")
+    .select("coach_id, profile_id, profile_type")
+    .eq("id", conversationId)
+    .single();
+
+  if (convError || !conv) {
+    console.error("Error fetching conversation:", convError);
+    return [];
+  }
+
+  // Resolve the coach's account_id so we can identify coach messages
+  const { data: coach } = await supabase
+    .from("coaches")
+    .select("account_id, first_name, last_name, avatar_url")
+    .eq("id", conv.coach_id)
+    .single();
+
   const { data, error } = await supabase
     .from("messages")
     .select("id, body, created_at, sender_id")
@@ -188,39 +148,36 @@ async function getMessages(
 
   const messages = await Promise.all(
     data.map(async (m) => {
-      const { data: account } = await supabase
-        .from("account")
-        .select("email")
-        .eq("id", m.sender_id)
-        .maybeSingle();
-
       let name: string;
+      let avatar_url: string | null = null;
 
-      if (m.sender_id === currentUserId && senderProfileId) {
-        // Resolve the specific active profile's name
-        if (senderProfileType === "student") {
+      if (coach && m.sender_id === coach.account_id) {
+        // Sender is the coach
+        name = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
+        avatar_url = coach.avatar_url ?? null;
+      } else {
+        // Sender is the user profile
+        if (conv.profile_type === "student") {
           const { data: student } = await supabase
             .from("students")
-            .select("first_name, last_name")
-            .eq("id", senderProfileId)
+            .select("first_name, last_name, avatar_url")
+            .eq("id", conv.profile_id)
             .maybeSingle();
-          name = student ? `${student.first_name} ${student.last_name}`.trim() : account?.email ?? "Unknown";
+          name = student
+            ? `${student.first_name || ""} ${student.last_name || ""}`.trim()
+            : "Unknown";
+          avatar_url = student?.avatar_url ?? null;
         } else {
           const { data: parent } = await supabase
             .from("parents")
-            .select("first_name, last_name")
-            .eq("id", senderProfileId)
+            .select("first_name, last_name, avatar_url")
+            .eq("id", conv.profile_id)
             .maybeSingle();
-          name = parent ? `${parent.first_name} ${parent.last_name}`.trim() : account?.email ?? "Unknown";
+          name = parent
+            ? `${parent.first_name || ""} ${parent.last_name || ""}`.trim()
+            : "Unknown";
+          avatar_url = parent?.avatar_url ?? null;
         }
-      } else {
-        // Coach, admin, or user without active profile — resolve by account
-        const { data: coach } = await supabase
-          .from("coaches")
-          .select("name")
-          .eq("account_id", m.sender_id)
-          .maybeSingle();
-        name = coach?.name ?? account?.email ?? "Unknown";
       }
 
       return {
@@ -228,12 +185,9 @@ async function getMessages(
         text: m.body,
         created_at: m.created_at,
         sender_id: m.sender_id,
-        sender: {
-          name,
-          email: account?.email ?? "",
-        },
+        sender: { name, avatar_url },
       };
-    })
+    }),
   );
 
   return messages;

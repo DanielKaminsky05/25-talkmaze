@@ -71,12 +71,15 @@ async function getContacts(): Promise<Contact[]> {
     coachAccountIds.length > 0
       ? await supabase
         .from("coaches")
-        .select("account_id, name")
+        .select("account_id, first_name, last_name")
         .in("account_id", coachAccountIds)
-      : { data: [] as { account_id: string; name: string }[] };
+      : { data: [] as { account_id: string; first_name: string | null; last_name: string | null }[] };
 
   const coachNameMap = new Map(
-    (coaches ?? []).map((c) => [c.account_id, c.name]),
+    (coaches ?? []).map((c) => [
+      c.account_id,
+      `${c.first_name || ""} ${c.last_name || ""}`.trim() || null,
+    ]),
   );
 
   // For coaches/admins: expand student accounts into one contact per profile

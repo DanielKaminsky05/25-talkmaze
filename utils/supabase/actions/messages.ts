@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "../lib/getCurrentUser";
 import { createClient } from "../server";
-import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";;
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 export type Message = {
   id: string;
@@ -11,7 +11,7 @@ export type Message = {
   sender_id: string;
   sender: {
     name: string;
-    email: string;
+    avatar_url: string | null;
   };
 };
 
@@ -49,39 +49,46 @@ export async function sendMessage(data: {
     return { error: true, message: "Failed to send message" };
   }
 
-  const { data: account } = await supabase
-    .from("account")
-    .select("email")
-    .eq("id", user.id)
-    .single();
-
   const profile = await getActiveProfile();
-  let senderName = account?.email ?? "Unknown";
+  let senderName = "Unknown";
+  let avatarUrl: string | null = null;
 
   if (profile) {
     if (profile.type === "student") {
       const { data: student } = await supabase
         .from("students")
-        .select("first_name, last_name")
+        .select("first_name, last_name, avatar_url")
         .eq("id", profile.id)
         .maybeSingle();
-      if (student) senderName = `${student.first_name || ""} ${student.last_name || ""}`.trim();
+      if (student) {
+        senderName =
+          `${student.first_name || ""} ${student.last_name || ""}`.trim();
+        avatarUrl = student.avatar_url ?? null;
+      }
     } else {
       const { data: parent } = await supabase
         .from("parents")
-        .select("first_name, last_name")
+        .select("first_name, last_name, avatar_url")
         .eq("id", profile.id)
         .maybeSingle();
-      if (parent) senderName = `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
+      if (parent) {
+        senderName =
+          `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
+        avatarUrl = parent.avatar_url ?? null;
+      }
     }
   } else {
     // Coach or admin - resolve name from coaches table (uses "name" column)
     const { data: coach } = await supabase
       .from("coaches")
-      .select("name")
+      .select("first_name, last_name, avatar_url")
       .eq("account_id", user.id)
       .maybeSingle();
-    if (coach?.name) senderName = coach.name;
+    if (coach)
+      senderName =
+        `${coach.first_name || ""} ${coach.last_name || ""}`.trim() ||
+        "Unknown";
+    avatarUrl = coach?.avatar_url ?? null;
   }
 
   const message: Message = {
@@ -89,7 +96,7 @@ export async function sendMessage(data: {
     text: insertedMessage.body,
     created_at: insertedMessage.created_at,
     sender_id: insertedMessage.sender_id,
-    sender: { name: senderName, email: account?.email ?? "" },
+    sender: { name: senderName, avatar_url: avatarUrl },
   };
 
   return { error: false, message };
