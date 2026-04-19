@@ -182,39 +182,35 @@ export type Database = {
       }
       conversations: {
         Row: {
+          coach_id: string
           created_at: string
           id: string
-          recipient_id: string
-          recipient_profile_id: string | null
-          recipient_profile_type: string | null
-          sender_id: string
-          sender_profile_id: string | null
-          sender_profile_type: string | null
-          subject: string | null
+          profile_id: string
+          profile_type: string
         }
         Insert: {
+          coach_id: string
           created_at?: string
           id?: string
-          recipient_id: string
-          recipient_profile_id?: string | null
-          recipient_profile_type?: string | null
-          sender_id: string
-          sender_profile_id?: string | null
-          sender_profile_type?: string | null
-          subject?: string | null
+          profile_id: string
+          profile_type: string
         }
         Update: {
+          coach_id?: string
           created_at?: string
           id?: string
-          recipient_id?: string
-          recipient_profile_id?: string | null
-          recipient_profile_type?: string | null
-          sender_id?: string
-          sender_profile_id?: string | null
-          sender_profile_type?: string | null
-          subject?: string | null
+          profile_id?: string
+          profile_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_assignment: {
         Row: {
@@ -264,6 +260,7 @@ export type Database = {
           description: string | null
           head_lesson_id: string | null
           id: string
+          tail_lesson_id: string | null
           title: string
           updated_at: string
         }
@@ -272,6 +269,7 @@ export type Database = {
           description?: string | null
           head_lesson_id?: string | null
           id?: string
+          tail_lesson_id?: string | null
           title: string
           updated_at?: string
         }
@@ -280,6 +278,7 @@ export type Database = {
           description?: string | null
           head_lesson_id?: string | null
           id?: string
+          tail_lesson_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -287,6 +286,13 @@ export type Database = {
           {
             foreignKeyName: "courses_head_lesson_id_fkey"
             columns: ["head_lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_tail_lesson_id_fkey"
+            columns: ["tail_lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
             referencedColumns: ["id"]
@@ -334,6 +340,48 @@ export type Database = {
           },
           {
             foreignKeyName: "lesson_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_summaries: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          student_id: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          student_id: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          student_id?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_summaries_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_summaries_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"

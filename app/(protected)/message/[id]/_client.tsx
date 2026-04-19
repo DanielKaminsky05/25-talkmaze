@@ -83,7 +83,7 @@ function useRealtimeChat({
 
       newChannel = supabase.channel(`room:${roomId}:messages`, {
         config: {
-          private: false, // TODO: implement the supabase RLS so that it works with private channels
+          private: false, // TODO: implement so that it works with private channels
         },
       });
 
@@ -99,11 +99,8 @@ function useRealtimeChat({
               created_at: record.created_at,
               sender_id: record.sender_id,
               sender: {
-                // The DB trigger sends the account email as sender_name.
-                // Profile name resolution for realtime messages requires
-                // updating the broadcast_message_insert trigger.
                 name: record.sender_name,
-                email: record.sender_name ?? "",
+                avatar_url: record.avatar_url ?? null,
               },
             },
           ]);

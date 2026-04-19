@@ -11,6 +11,23 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = await createClient();
+
+  // Fetch conversation to know coach and profile
+  const { data: conv, error: convError } = await supabase
+    .from("conversations")
+    .select("coach_id, profile_id, profile_type")
+    .eq("id", conversationId)
+    .single();
+
+  if (convError || !conv) return NextResponse.json([], { status: 404 });
+
+  // Resolve coach's account_id and display info
+  const { data: coach } = await supabase
+    .from("coaches")
+    .select("account_id, first_name, last_name, avatar_url")
+    .eq("id", conv.coach_id)
+    .single();
+
   const { data, error } = await supabase
     .from("messages")
     .select("id, body, created_at, sender_id")
@@ -19,39 +36,47 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json([], { status: 500 });
 
-  // Resolve sender names for each message
   const messages = await Promise.all(
-  data.map(async (m) => {
-    const { data: account } = await supabase
-      .from("account")
-      .select("email")
-      .eq("id", m.sender_id)
-      .maybeSingle();
+    data.map(async (m) => {
+      let name: string;
+      let avatar_url: string | null = null;
 
-    const { data: student } = await supabase
-      .from("students")
-      .select("name")
-      .eq("account_id", m.sender_id)
-      .maybeSingle();
+      if (coach && m.sender_id === coach.account_id) {
+        name = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
+        avatar_url = coach.avatar_url ?? null;
+      } else {
+        if (conv.profile_type === "student") {
+          const { data: student } = await supabase
+            .from("students")
+            .select("first_name, last_name, avatar_url")
+            .eq("id", conv.profile_id)
+            .maybeSingle();
+          name = student
+            ? `${student.first_name || ""} ${student.last_name || ""}`.trim()
+            : "Unknown";
+          avatar_url = student?.avatar_url ?? null;
+        } else {
+          const { data: parent } = await supabase
+            .from("parents")
+            .select("first_name, last_name, avatar_url")
+            .eq("id", conv.profile_id)
+            .maybeSingle();
+          name = parent
+            ? `${parent.first_name || ""} ${parent.last_name || ""}`.trim()
+            : "Unknown";
+          avatar_url = parent?.avatar_url ?? null;
+        }
+      }
 
-    const { data: coach } = await supabase
-      .from("coaches")
-      .select("name")
-      .eq("account_id", m.sender_id)
-      .maybeSingle();
-
-    return {
-      id: m.id,
-      text: m.body,
-      created_at: m.created_at,
-      sender_id: m.sender_id,
-      sender: {
-        name: student?.name ?? coach?.name ?? account?.email ?? "Unknown",
-        email: account?.email ?? "",
-      },
-    };
-  })
-);
+      return {
+        id: m.id,
+        text: m.body,
+        created_at: m.created_at,
+        sender_id: m.sender_id,
+        sender: { name, avatar_url },
+      };
+    }),
+  );
 
   return NextResponse.json(messages);
 }
