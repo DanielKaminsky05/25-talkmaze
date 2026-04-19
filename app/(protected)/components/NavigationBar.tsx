@@ -43,7 +43,7 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
   return (
     <div
       className="flex flex-row pl-3.5 pr-0 py-3 items-center justify-between 
-      md:pl-8 md:pr-0 md:py-6 lg:pl-0 max-w-full"
+      md:pl-8 md:pr-0 md:pt-[23px] md:pb-[15px]  lg:pl-0 max-w-full"
     >
       {/* Back Button */}
       <div
