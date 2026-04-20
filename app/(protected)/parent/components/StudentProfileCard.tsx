@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
+import { EditIcon, LocationPinFilledIcon } from "@/app/(protected)/components/ui/icons";
 
 interface StudentProfileCardProps {
   name: string;
@@ -9,8 +8,6 @@ interface StudentProfileCardProps {
   dob: string;
   grade: string | number;
   description: string;
-  glows: string;
-  grows: string;
   imageUrl?: string;
   onNext?: () => void;
   onPrev?: () => void;
@@ -18,89 +15,160 @@ interface StudentProfileCardProps {
   totalStudents?: number;
 }
 
+/**
+ * Displays the profile details (notes, DOB, etc.) of the selected student
+ */
 export default function StudentProfileCard({
   name = "Priya",
   location = "Location",
   dob = "April 11, 2016",
   grade = "3",
   description = "Sweet and outgoing personality",
-  glows = "Excited to learn and share",
-  grows = "Clarity with content",
   imageUrl = "https://placehold.co/120x120",
   onNext,
   onPrev,
   currentIndex = 0,
-  totalStudents = 1
+  totalStudents = 1,
 }: StudentProfileCardProps) {
   return (
-    <div className="bg-[#B1E7D6] rounded-2xl p-6 shadow-[0_4px_4px_rgba(0,0,0,0.25)] relative overflow-hidden h-full flex flex-col">
-      {/* Background Pattern (Optional - simple illustration of the leaf pattern) */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-          {/* We could use a leaf pattern here if available, but for now we'll skip it or use a simple SVG */}
-      </div>
-
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className="flex flex-col">
-          <h2 className="text-[#1F2E3B] text-xl font-bold">TalkMaze Student Profile</h2>
+    <div
+      className="rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] relative"
+      style={{
+        height: "100%",
+        backgroundColor: "#B1E7D6",
+        backgroundImage: "url('/student-profile-card-bg.png')",
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Green header bar */}
+      <div className="bg-[#65CFAD] h-[51px] w-full flex items-center justify-between px-4 absolute top-0 left-0 right-0 z-10">
+        <div className="flex items-baseline gap-3">
+          <h2
+            className="font-bold text-[#1F2E3B] text-[22px] leading-none"
+            style={{ fontFamily: "Inter, sans-serif" }}
+          >
+            TalkMaze Student {totalStudents > 1 ? "Profiles" : "Profile"}
+          </h2>
           {totalStudents > 1 && (
-            <div className="flex items-center gap-3 mt-2 bg-[#1F2E3B]/10 px-3 py-1.5 rounded-full w-fit">
-              <button 
+            <div className="flex items-center gap-1.5 bg-[#1F2E3B]/10 px-2 py-1 rounded-full">
+              <button
                 onClick={onPrev}
-                className="w-7 h-7 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all shadow-sm active:scale-95"
-                title="Previous Student"
+                className="w-5 h-5 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all active:scale-95"
               >
-                <span className="text-lg">‹</span>
+                <ChevronLeftIcon />
               </button>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] font-bold text-[#1F2E3B]/40 uppercase tracking-widest leading-none">Switching</span>
-                <span className="text-[11px] font-extrabold text-[#1F2E3B] leading-tight">
-                  {currentIndex + 1} of {totalStudents}
-                </span>
-              </div>
-              <button 
+              <span className="text-[11px] font-bold text-[#1F2E3B] leading-none -mb-px">
+                {currentIndex + 1} / {totalStudents}
+              </span>
+              <button
                 onClick={onNext}
-                className="w-7 h-7 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all shadow-sm active:scale-95"
-                title="Next Student"
+                className="w-5 h-5 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all active:scale-95"
               >
-                <span className="text-lg">›</span>
+                <ChevronRightIcon />
               </button>
             </div>
           )}
         </div>
-        <button className="bg-[#1F2E3B] text-white text-xs px-3 py-1 rounded flex items-center gap-1">
-          <span className="text-[10px]">✏️</span> EDIT
+        <button
+          className="bg-[#1F2E3B] text-white text-[10px] font-semibold px-3 py-1 rounded flex items-center gap-1"
+          style={{ borderRadius: "5px" }}
+        >
+          <EditIcon />
+          EDIT
         </button>
       </div>
 
-      <div className="flex flex-row gap-4 items-start relative z-10 flex-1">
-        <div className="flex flex-col items-center gap-2 min-w-[120px]">
-            <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden shadow-md">
-                <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
-            </div>
-            <p className="text-[#1F2E3B] font-bold text-base">{name}</p>
+      {/* Avatar — overlaps header */}
+      <div
+        className="absolute left-6 top-[51px] z-20 flex flex-col items-center"
+        style={{ top: "74px" }}
+      >
+        <div className="w-[153px] h-[153px] overflow-hidden rounded-full">
+          <img
+            src={imageUrl}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <p
+          className="text-[#2E2E2E] font-semibold text-[20px] mt-1 whitespace-nowrap"
+          style={{ fontFamily: "Roboto, sans-serif" }}
+        >
+          {name}
+        </p>
+      </div>
+
+      {/* Right info section */}
+      <div className="absolute left-[197px] right-4 top-[51px] bottom-4 flex flex-col">
+        {/* Location */}
+        <div className="flex items-center gap-1 my-1">
+          <LocationPinFilledIcon />
+          <span
+            className="text-[#2B4257] font-semibold text-[12px]"
+            style={{ fontFamily: "Roboto, sans-serif" }}
+          >
+            {location}
+          </span>
         </div>
 
-        <div className="flex flex-col gap-3 flex-1">
-           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[#1F2E3B] text-xs">
-                <div className="flex items-center gap-1 font-semibold">
-                    <span>📍</span> Location
-                </div>
-                <div className="truncate text-right">{location}</div>
-                
-                <div className="font-semibold">Date of Birth</div>
-                <div className="text-right">{dob}</div>
+        {/* Divider */}
+        <div className="border-t border-[#1F2E3B]/20 w-full" />
 
-                <div className="font-semibold">Grade</div>
-                <div className="text-right">{grade}</div>
-           </div>
+        {/* Date of Birth / Grade */}
+        <div className="flex my-2 pl-4 gap-7">
+          <div
+            className="flex flex-col gap-1 text-black/40 font-semibold text-[16px]"
+            style={{ fontFamily: "Roboto, sans-serif" }}
+          >
+            <span>Date of Birth</span>
+            <span>Grade</span>
+          </div>
+          <div
+            className="flex flex-col gap-1 text-[#1F2E3B] font-semibold text-[16px]"
+            style={{ fontFamily: "Roboto, sans-serif" }}
+          >
+            <span>{dob}</span>
+            <span>{grade}</span>
+          </div>
+        </div>
 
-           <div className="bg-white/80 rounded-xl p-3 text-[#1F2E3B] text-[11px] leading-tight italic shadow-inner mt-auto">
-                <p>"{description}</p>
-                <p>Glows: {glows}</p>
-                <p>Grows: {grows}"</p>
-           </div>
+        {/* Personality bio box */}
+        <div
+          className="bg-white rounded-xl p-3 text-[#1F2E3B] text-[14px] italic leading-snug shadow-[inset_0_3px_3.3px_rgba(0,0,0,0.25)] flex-1"
+          style={{ fontFamily: "Roboto, sans-serif" }}
+        >
+          <p>{description}</p>
         </div>
       </div>
     </div>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+      <path
+        d="M5 1L1 5L5 9"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+      <path
+        d="M1 1L5 5L1 9"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

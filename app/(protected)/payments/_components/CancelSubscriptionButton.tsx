@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CancelSubscriptionButton() {
+export default function CancelSubscriptionButton({ studentId }: { studentId?: string }) {
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,11 @@ export default function CancelSubscriptionButton() {
     setError(null);
 
     try {
-      const res = await fetch("/api/subscriptions/cancel", { method: "POST" });
+      const res = await fetch("/api/subscriptions/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId }),
+      });
       const data = await res.json();
 
       if (!res.ok) {

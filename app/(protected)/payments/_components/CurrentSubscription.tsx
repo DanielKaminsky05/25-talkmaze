@@ -7,9 +7,9 @@ import CancelSubscriptionButton from "./CancelSubscriptionButton";
  * Component displaying the information about a student's subscription status.
  * Includes details about plan, coaching sessions remaining, and cancelling.
  */
-export default async function CurrentSubscription() {
+export default async function CurrentSubscription({ studentId }: { studentId?: string }) {
   // Retrieve the student's subscription record
-  const subscription = await getCurrentSubscription();
+  const subscription = await getCurrentSubscription(studentId);
 
   // If student has no active subscription, render the following
   if (!subscription) {
@@ -69,7 +69,7 @@ export default async function CurrentSubscription() {
         </div>
 
         {/* Cancel plan */}
-        <CancelSubscriptionButton />
+        <CancelSubscriptionButton studentId={studentId} />
       </div>
     </div>
   );
@@ -79,10 +79,10 @@ export default async function CurrentSubscription() {
  * Get the subscription record of the current student
  * @returns object containing the current student's subscription record
  */
-async function getCurrentSubscription() {
+async function getCurrentSubscription(studentId?: string) {
   const supabase = await createClient();
-  const activeProfile = await getActiveProfile();
-  if (!activeProfile) return null;
+  const id = studentId ?? (await getActiveProfile())?.id;
+  if (!id) return null;
 
   const { data, error } = await supabase
     .from("student_subscriptions")
@@ -101,7 +101,7 @@ async function getCurrentSubscription() {
       )
     `,
     )
-    .eq("student_id", activeProfile.id)
+    .eq("student_id", id)
     .eq("status", "active")
     .order("current_period_end", { ascending: false })
     .limit(1)
