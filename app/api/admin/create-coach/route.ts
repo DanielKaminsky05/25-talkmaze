@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-
 export async function POST(request: Request) {
   try {
     const { email, password, firstName, lastName } = await request.json();
@@ -100,7 +99,6 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
 
     // Insert into coaches table
     const { error: coachError } = await supabase

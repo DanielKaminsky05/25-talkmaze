@@ -41,19 +41,19 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
     const insertIntoAccount = await supabase.from('account').insert({
         id: data.user.id,
         email: email,
-        role: 3,
+        role: 1,
     }
     )
     
 
-    // const insertIntoParents = await supabase.from('parents').insert({
-    //     account_id: data.user.id,
-    //     first_name: familyFirstName,
-    //     last_name: familyLastName,
-    //     profile_access_pin: masterPin,
-    //     billing_email: email,
-    //     phone_number: null,
-
+    const insertIntoParents = await supabase.from('parents').insert({
+        account_id: data.user.id,
+        first_name: familyFirstName,
+        last_name: familyLastName,
+        profile_access_pin: masterPin,
+        billing_email: email,
+        phone_number: null,
+    })
     // })
     // //write id to the database
     // if (insertIntoParents.error) {

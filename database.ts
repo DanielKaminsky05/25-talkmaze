@@ -192,7 +192,9 @@ export type Database = {
           description: string | null
           id: string
           title: string
-          updated_at: string
+          updated_at: string,
+          head_lesson_id: string,
+          tail_lesson_id: string
         }
         Insert: {
           created_at?: string
@@ -200,6 +202,8 @@ export type Database = {
           id?: string
           title: string
           updated_at?: string
+          head_lesson_id: string
+          tail_lesson_id: string
         }
         Update: {
           created_at?: string
@@ -207,6 +211,8 @@ export type Database = {
           id?: string
           title?: string
           updated_at?: string
+          head_lesson_id: string
+          tail_lesson_id: string
         }
         Relationships: []
       }

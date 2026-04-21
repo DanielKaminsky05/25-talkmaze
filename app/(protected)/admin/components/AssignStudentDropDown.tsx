@@ -19,7 +19,8 @@ export type Student = {
 export type Coach = {
   id: string;
   account_id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   created_at: string;
   updated_at: string;
 };
@@ -103,7 +104,7 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
               onClick={() => onStudentClick(student)}
               className="px-3 py-2 text-xs text-gray-800 hover:bg-blue-100 cursor-pointer flex justify-between"
             >
-              <span>{student.name}</span>
+              <span>{`${student.first_name} ${student.last_name}`}</span>
               <span className="text-gray-400">
                 {loadingId === student.id ? "Assigning..." : `#${student.id}`}
               </span>

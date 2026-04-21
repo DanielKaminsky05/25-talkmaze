@@ -5,7 +5,7 @@ import { Lesson, LessonInput } from "@/app/api/lib/types/lesson";
 import { createClient } from "@/utils/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
-import { TeachworksStudent } from "@/lib/teachworks/types";
+
 import { Student } from "./AssignStudentDropDown";
 interface CourseLessonsPanelProps {
   courseId: string;
@@ -51,7 +51,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
   const [editNewPreTask, setEditNewPreTask] = useState<File | null>(null);
   const [editNewPostTask, setEditNewPostTask] = useState<File | null>(null);
   const [editNewSlideDeck, setEditNewSlideDeck] = useState<File|null>(null);
-  
+  const[editLessonOrder, setEditLessonOrder] = useState<Lesson[]>([]);
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -116,14 +116,19 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
       let postFileName = crypto.randomUUID();
       let slideFileName = crypto.randomUUID()
       
+      let preFileNameWithExt = "";
+      let postFileNameWithExt = "";
+      let slideInputNameWithExt = ""; 
       try{
         if(addForm.pre_lesson_tasks){
           console.log("Adding pre lesson tasks")
           for(let i = 0; i < addForm.pre_lesson_tasks?.length; i++){
             const file: File = addForm.pre_lesson_tasks[i];
             const fileExt = file.name.split(".").pop(); // get extension
-            const fileName = `${preFileName}.${fileExt}`;
-            const filePath = `${courseId}/${lesson_id}/pre_lesson_tasks/${fileName}`;
+            preFileNameWithExt= `${preFileName}.${fileExt}`;
+ 
+            
+            const filePath = `${courseId}/${lesson_id}/pre_lesson_tasks/${preFileNameWithExt}`;
 
             const{data: uploadData, error: uploadError} = await supabase.storage
                   .from('course_files')
@@ -141,8 +146,8 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
             for(let i = 0; i < addForm.post_lesson_tasks?.length; i++){
             const file: File = addForm.post_lesson_tasks[i];
             const fileExt = file.name.split(".").pop(); // get extension
-            const fileName = `${postFileName}.${fileExt}`;
-            const filePath = `${courseId}/${lesson_id}/post_lesson_tasks/${fileName}`;
+            postFileNameWithExt = `${postFileName}.${fileExt}`;
+            const filePath = `${courseId}/${lesson_id}/post_lesson_tasks/${postFileNameWithExt}`;
 
             const{data: uploadData, error: uploadError} = await supabase.storage
                   .from('course_files')
@@ -163,8 +168,9 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
           for(let i = 0; i < addForm.slide_show_input?.length; i++){
             const file: File = addForm.slide_show_input[i];
             const fileExt = file.name.split(".").pop(); // get extension
-            const fileName = `${slideFileName}.${fileExt}`;
-            const filePath = `${courseId}/${lesson_id}/lessons/${fileName}`;
+            console.log("Slide show ext: " + fileExt);
+            slideInputNameWithExt = `${slideFileName}.${fileExt}`;
+            const filePath = `${courseId}/${lesson_id}/lessons/${slideInputNameWithExt}`;
 
             const{data: uploadData, error: uploadError} = await supabase.storage
                   .from('course_files')
@@ -175,7 +181,12 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
               }
           }
 
+
           console.log("Successfully uploaded slide show inputs")
+
+          console.log("Updating the ordering of the lessons")
+          
+          
         }
       }catch(err){
         console.log("Error writing to S3 bucket");
@@ -183,9 +194,10 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
       }
 
 
-      
-      
-      
+      console.log("Submitting Files1: " + preFileNameWithExt)
+      console.log("Submitting Files2: " + postFileNameWithExt)
+      console.log("Submitting Files3 " +  slideInputNameWithExt)
+    
       const res = await fetch(`/api/admin/courses/${courseId}/lessons`, {
         method: "POST",
         body: JSON.stringify({
@@ -193,9 +205,9 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
           lesson_id: lesson_id,
           content_url: addForm.content_url,
           description: addForm.description,
-          pre_file_name: preFileName,
-          post_file_name: postFileName,
-          slide_file_name: slideFileName
+          pre_file_name: preFileNameWithExt,
+          post_file_name: postFileNameWithExt,
+          slide_input_name: slideInputNameWithExt
         })
       });
 
@@ -538,6 +550,7 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
               key={lesson.id}
               className="border border-gray-200 rounded-lg bg-white overflow-hidden"
             >
+             
               {/**allow dragable  */}
               {editingId === lesson.id ? (
                 <div className="p-3 space-y-2">

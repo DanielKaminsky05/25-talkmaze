@@ -513,7 +513,6 @@ export default function Onboarding() {
               <button
                 type="submit"
                 className="w-1/2 mx-auto h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
-                onClick={() => router.push("/profiles")}
               >
                 Submit
               </button>

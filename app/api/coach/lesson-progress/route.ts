@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function PATCH(request: Request) {
   try {
+    console.log("Inside PATCH")
     const supabase = await createClient();
 
     // Authenticate
@@ -14,6 +15,8 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { student_id, lesson_id, status } = body;
 
+
+    
     if (!student_id || !lesson_id || status === undefined) {
       return NextResponse.json({ error: "Missing required fields: student_id, lesson_id, status" }, { status: 400 });
     }
@@ -44,6 +47,9 @@ export async function PATCH(request: Request) {
       console.error("Upsert progress error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    //if status is completed, we assign the badge to the student
+    
 
     return NextResponse.json(data);
 

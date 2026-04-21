@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { createClient } from "@/utils/supabase/server";
-
 
 export async function PUT(
   req: NextRequest,
@@ -15,15 +13,21 @@ export async function PUT(
     const supabase = await createClient();
 
     const payload: Record<string, unknown> = {};
-    if (courseData.name !== undefined)        payload.name        = courseData.name;
+    if (courseData.name !== undefined)        payload.title       = courseData.name;
     if (courseData.description !== undefined) payload.description = courseData.description;
 
     if (Object.keys(payload).length > 0) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("courses")
         .update(payload)
-        .eq("tw_course_id", id);
-      if (error) console.error("Supabase sync failed:", error.message);
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) {
+        console.error("Supabase update failed:", error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(updated);
     }
     
     return NextResponse.json(payload);
@@ -48,8 +52,11 @@ export async function DELETE(
     const { error } = await supabase
       .from("courses")
       .delete()
-      .eq('id', id);
-    if (error) console.error("Supabase sync failed:", error.message);
+      .eq("id", id);
+    if (error) {
+      console.error("Supabase delete failed:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

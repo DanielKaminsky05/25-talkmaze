@@ -67,11 +67,12 @@ export default function Page() {
     
       const{data: lessons, error: lessonsError} = await supabase.from('lessons').select('id, course_id , created_at, pre_lesson_url, post_lesson_url, slide_show_url, content_url, description, title').eq('course_id',course.course_id);
      
+      console.log("Retrieved Lessons: " + JSON.stringify(lessons));
       if(lessonsError){
         console.log("Lesson error: " + JSON.stringify(lessonsError));
       }
       setLessons(lessons ?? []);
-
+     
       setLoading(false);
     }
 
@@ -157,7 +158,7 @@ console.log("Folder path: " + JSON.stringify(cleanPath));
        
         const { data:filesPre} = await supabase.storage
         .from("course_files")
-        .getPublicUrl(`${cleanPath}.pdf`)
+        .getPublicUrl(`${cleanPath}`)
         
         console.log("Files" + filesPre);
         console.log("Files JSON:", JSON.stringify(filesPre, null, 2));
@@ -173,15 +174,18 @@ console.log("Folder path: " + JSON.stringify(cleanPath));
         
         const {data: filesPost} = await supabase.storage
         .from("course_files")
-        .getPublicUrl(`${cleanPath2}.pdf`)
+        .getPublicUrl(`${cleanPath2}`)
         setPostLessonTasks(filesPost.publicUrl)
       }
 
       if(lesson.slide_show_input){
+
+            console.log("Trying to get slide show");
+            console.log("Link: " + lesson.slide_show_input)
             const cleanPath3 = lesson.slide_show_input.replace(/^course_files\//, "");
              const {data: filesSlide} = await supabase.storage
             .from("course_files")
-            .getPublicUrl(`${cleanPath3}.ppt`)
+            .getPublicUrl(`${cleanPath3}`)
 
             setSlideShow(filesSlide.publicUrl);
              

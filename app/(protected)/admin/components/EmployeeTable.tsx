@@ -26,7 +26,7 @@ export default function EmployeeTable({ employees, onEmployeeClick }: EmployeeTa
                 onClick={() => onEmployeeClick(employee)}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.name}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.first_name} {employee.last_name}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">{employee.id}</td>
               </tr>
             ))

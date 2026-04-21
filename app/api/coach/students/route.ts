@@ -29,8 +29,8 @@ export async function GET() {
         student_id,
         students(
           id,
-          name,
-          tw_id,
+          first_name,
+          last_name,
           lesson_space_id
         )
       `)

@@ -30,8 +30,9 @@ export default function ContactsList({ contacts = [], filter = "", onContactClic
         >
           <div className="bg-[#1F2E3B] h-full w-9 rounded-md flex justify-center items-center">
             {/* SVG icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M21.3243 20.0625C19.7755 17.385 17.293 15.5569 ..." fill="#B1E7D6"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B1E7D6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </div>
           <p className="ml-3 text-[#1f2e3b]">{c.name}</p>

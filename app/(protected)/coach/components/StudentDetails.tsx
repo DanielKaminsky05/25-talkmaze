@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
+import type { Database } from "@/database";
 
-interface Student {
-  id: string;
-  name: string;
-  tw_id: string | null;
-}
+type Student = Database['public']['Tables']['students']['Row']
 
 interface StudentDetailsProps {
   student: Student | null;
@@ -64,7 +61,7 @@ export default function StudentDetails({
       setLoadingSchedule(true);
       try {
         const res = await fetch(
-          `/api/coach/student/schedule?studentId=${student.id}`
+        `/api/admin/students`
         );
         if (!res.ok) throw new Error("Failed to load schedule");
 
@@ -93,8 +90,11 @@ export default function StudentDetails({
       const res = await fetch(
         `/api/coach/conversation?contactId=${student.id}`
       );
-      if (!res.ok) throw new Error("Failed to load conversation");
-
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log("can not get conversation: " + res.status + " " + errorText)
+        throw new Error("Failed to load conversation");
+      }
       const { conversationId } = await res.json();
 
       const msgsRes = await fetch(
@@ -153,6 +153,18 @@ export default function StudentDetails({
             ? "Hide Chat"
             : "Message Student"}
         </button>
+
+        <button
+          onClick={handleMessageClick}
+          disabled={loadingChat}
+          className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          {loadingChat
+            ? "Loading..."
+            : showChat
+            ? "Hide Chat"
+            : "Message Parent"}
+        </button>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -167,16 +179,13 @@ export default function StudentDetails({
             {/* Student header */}
             <div className="flex items-center space-x-5 mb-8">
               <div className="h-20 w-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {student.name.charAt(0).toUpperCase()}
+                {(student.first_name || student.last_name || "?").charAt(0).toUpperCase()}
               </div>
 
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {student.name}
+                  {`${student.first_name || ""} ${student.last_name || ""}`.trim()}
                 </h1>
-                <p className="text-sm text-gray-500">
-                  Student ID: {student.tw_id || "N/A"}
-                </p>
               </div>
             </div>
 

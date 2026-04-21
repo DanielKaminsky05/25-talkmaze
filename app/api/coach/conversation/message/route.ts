@@ -30,23 +30,34 @@ export async function GET(request: Request) {
 
     const { data: student } = await supabase
       .from("students")
-      .select("name")
+      .select("first_name, last_name")
       .eq("account_id", m.sender_id)
       .maybeSingle();
 
     const { data: coach } = await supabase
       .from("coaches")
-      .select("name")
+      .select("first_name, last_name")
       .eq("account_id", m.sender_id)
       .maybeSingle();
 
+
+      let name = "Unknown";
+
+      if (student) {
+        name = `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim();
+      } else if (coach) {
+        name = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim();
+      } else if (account?.email) {
+        name = account.email;
+      }
+    
     return {
       id: m.id,
       text: m.body,
       created_at: m.created_at,
       sender_id: m.sender_id,
       sender: {
-        name: student?.name ?? coach?.name ?? account?.email ?? "Unknown",
+        name: name,
         email: account?.email ?? "",
       },
     };

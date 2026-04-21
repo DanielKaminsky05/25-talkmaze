@@ -13,20 +13,9 @@ const DAY_MAP: Record<string, number> = {
 
 async function resolveCoachUUID(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  twId: string,
+  id: string,
 ): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("coaches")
-    .select("id")
-    .eq("id", twId)
-    .maybeSingle();
-
-  if (error) {
-    console.log("Coach lookup error:", error);
-    return null;
-  }
-
-  return data?.id ?? null;
+  return id;
 }
 
 export async function GET(

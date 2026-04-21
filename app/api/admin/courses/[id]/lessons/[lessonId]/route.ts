@@ -63,12 +63,40 @@ export async function DELETE(
     const { id, lessonId } = await params;
     const supabase = await createClient();
 
+    //get the prev and next lesson
+
+    const {data: linked_position_data, error: linked_position_error} = await supabase.from('lessons').select('next_lesson, prev_lesson').eq('id',lessonId).single()
+
     const { error } = await supabase
       .from("lessons")
       .delete()
       .eq("id", lessonId)
       .eq("course_id", id);
 
+    if(linked_position_error){
+      return NextResponse.json({status: 500, message: "Unable to determine lesson's position in course"})
+    }
+
+    if(linked_position_data){
+      if(linked_position_data.prev_lesson != null){
+
+          const {data: prev_lesson_update, error: prev_lesson_update_error} = await supabase.from('lessons').update({next_lesson :linked_position_data.next_lesson}).eq('id', linked_position_data.prev_lesson).single();
+
+          if(prev_lesson_update_error){
+            return NextResponse.json({error: 500, message: "Unable to update previous lesson's next pointer"})
+          }
+        
+      }
+
+      if(linked_position_data.next_lesson != null){
+        const {data: next_lesson_update, error: next_lesson_update_error} = await supabase.from('lessons').update({prev_lesson: linked_position_data.prev_lesson}).eq('id', linked_position_data.next_lesson).single();
+         if(next_lesson_update_error){
+            return NextResponse.json({error: 500, message: "Unable to update next lesson's previous pointer"})
+          }
+      }
+    }
+
+  
     if (error) throw new Error(error.message);
 
     return NextResponse.json({ success: true });

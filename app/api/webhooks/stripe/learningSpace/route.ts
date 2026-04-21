@@ -54,12 +54,12 @@ export async function POST(req: NextRequest) {
     const { student_id } = await req.json();
 
     if (!student_id) {
-      throw new Error("Missing student_id");
+      return NextResponse.json({ status: 400, message: "Missing student_id" });
     }
 
     const { data: student, error } = await supabase
       .from("students")
-      .select("lesson_space_id, name")
+      .select("lesson_space_id, first_name, last_name")
       .eq("id", student_id)
       .single();
 
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const fullName = `${student.first_name || ""} ${student.last_name || ""}`.trim();
     let lesson_space_id = student.lesson_space_id;
 
     if (!lesson_space_id) {
@@ -85,17 +86,17 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           id: lesson_space_id,
-          name: student.name,
+          name: fullName,
           transcribe: true,
           summarize: true,
           record_av: true,
           user: {
-            id: student.name,
+            id: fullName,
             role: "participant",
             custom_jwt_parameters: {
               meta: {
-                displayName: student.name,
-                lessonTitle: `${student.name} Public Speaking Room!`,
+                displayName: fullName,
+                lessonTitle: `${fullName} Public Speaking Room!`,
               },
             },
           },
@@ -112,25 +113,32 @@ export async function POST(req: NextRequest) {
         });
       }
 
-        //upon successful creation of lessonspace, update both the lesson_space_id
-    //and student link in student table
-    const lesson_space_update = await supabase
-      .from("students")
-      .update({
-        lesson_space_id: lesson_space_id,
-        lesson_space_student_link: createJson.client_url,
-      })
-      .eq("id", student_id);
+      // Update student table
+      const { error: updateError } = await supabase
+        .from("students")
+        .update({
+          lesson_space_id: lesson_space_id,
+          lesson_space_student_link: createJson.client_url,
+        })
+        .eq("id", student_id);
 
-      if(!lesson_space_update.error){
-        return NextResponse.json({status:500, message: "Error updating supabase"})
+      if (updateError) {
+        return NextResponse.json({ status: 500, message: "Error updating supabase: " + updateError.message });
       }
-     }
-    }catch(err){
-      return NextResponse.json({status:500, message:"Error creating lessonspace " + err});
+
+      return NextResponse.json({ success: true, url: createJson.client_url });
     }
-    
+
+    // If room already exists, we might still want to return the link or refresh it
+    return NextResponse.json({ success: true, message: "Room already exists" });
+
+  } catch (err) {
+    return NextResponse.json({
+      status: 500,
+      message: "Error creating lessonspace " + err,
+    });
   }
+}
 
 
 

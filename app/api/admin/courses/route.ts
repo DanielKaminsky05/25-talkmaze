@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { createClient } from "@/utils/supabase/server";
-
-
 
 export async function GET() {
   try {
-    
+    console.log("Inside get all courses");
     const supabase = await createClient();
 
     const { data: courses, error } = await supabase

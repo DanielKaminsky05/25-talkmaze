@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import type { Database } from "@/database";
 //fetch all assignments joined with coach/student names 
+
+type student = Database['public']['Tables']['students']['Row']
+type Coach = Database['public']['Tables']['coaches']['Row']
 export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -8,8 +12,8 @@ export async function GET() {
     .select(`
       coach_id,
       student_id,
-      coaches(name, tw_id),
-      students(name, tw_id)
+      coaches(name),
+      students(first_name, last_name)
     `);
     
   if (error) {
@@ -22,10 +26,8 @@ export async function GET() {
     id: `${row.coach_id}_${row.student_id}`, // Used strictly for the DELETE route decomposition
     coach_id: String(row.coach_id),
     student_id: String(row.student_id),
-    coach_tw_id: row.coaches?.tw_id || null,
-    student_tw_id: row.students?.tw_id || null,
     coaches: { name: row.coaches?.name || null },
-    students: { name: row.students?.name || null }
+    students: { name: row.students ? `${row.students.first_name || ""} ${row.students.last_name || ""}`.trim() : null }
   }));
 
   return NextResponse.json(mappedData);
@@ -58,55 +60,9 @@ export async function POST(req: NextRequest) {
     .from("coach_students")
     .insert({ coach_id, student_id });
   
-    //make lessonspace room on assignment
 
-    const lesson_space_base = process.env.LESSONSPACE_BASE_URL
-
-    if(!lesson_space_base){
-      return NextResponse.json({error: 404, message: "Unable to find Lessonspace api base url"})
-    }
-
-    //get the student lessonspace room
-
-    const {data: student_room, error: supabase_room_error} = await supabase.from('students').select('lesson_space_id').eq("id",student_id).single();
-
-    if(!student_room || supabase_room_error){
-      return NextResponse.json({status: 400, message: "Student does not currently have a lessonspace " + supabase_room_error});
-    }
-
-    console.log("Found student room id: " + student_room.lesson_space_id)
-    console.log("Trying to get coach link");
-    console.log("URL: " + `${lesson_space_base}/spaces/launch/`);
-    const make_coach_url_res = await fetch(`${lesson_space_base}/spaces/launch/`,{
-      method: 'POST',
-      headers: {
-        'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
-        'Content-Type': 'application/json'
-      },body: JSON.stringify({
-        id: student_room.lesson_space_id,
-        name: studentData.name,
-        transcribe: true,
-        summarize: true,
-        record_av: true,
-        user:{
-          id: coach_id,
-          role: 'teacher',
-          leader: true,
-          custom_jwt_parameters: {
-              meta: {
-                  displayName: `Coach ${coachData.name}`,
-                  lessonTitle: `${studentData.name} Public Speaking Room!`
-              }
-          }
-        }
-      })
-
-    })
-
-    const make_coach_url_res_json = await make_coach_url_res.json();
-    console.log("Made room New: " + JSON.stringify(make_coach_url_res_json));
     //save this into supabase for the teacher
-
+    const make_coach_url_res_json = await CreateTeacherRoom(studentData,coachData)
     const insert_teacher_url = await (supabase.from('students') as any).update({lesson_space_teacher_link: make_coach_url_res_json.client_url}).eq("id",student_id)
 
     if(insert_teacher_url.error){
@@ -129,4 +85,55 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(allAssignments);
+}
+
+export async function CreateTeacherRoom(studentData: student, coachData: Coach){
+  const supabase = await createClient();
+  const lesson_space_base = process.env.LESSONSPACE_BASE_URL
+
+    if(!lesson_space_base){
+      return NextResponse.json({error: 404, message: "Unable to find Lessonspace api base url"})
+    }
+
+    //get the student lessonspace room
+
+    const {data: student_room, error: supabase_room_error} = await supabase.from('students').select('lesson_space_id').eq("id",studentData.id).single();
+
+    if(!student_room || supabase_room_error){
+      return NextResponse.json({status: 400, message: "Student does not currently have a lessonspace " + supabase_room_error});
+    }
+
+    console.log("Found student room id: " + student_room.lesson_space_id)
+    console.log("Trying to get coach link");
+    console.log("URL: " + `${lesson_space_base}/spaces/launch/`);
+    const make_coach_url_res = await fetch(`${lesson_space_base}/spaces/launch/`,{
+      method: 'POST',
+      headers: {
+        'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
+        'Content-Type': 'application/json'
+      },body: JSON.stringify({
+        id: student_room.lesson_space_id,
+        name: `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim(),
+        transcribe: true,
+        summarize: true,
+        record_av: true,
+        user:{
+          id: coachData.id,
+          role: 'teacher',
+          leader: true,
+          custom_jwt_parameters: {
+              meta: {
+                  displayName: `Coach ${coachData.name}`,
+                  lessonTitle: `${studentData.first_name} ${studentData.last_name} Public Speaking Room!`
+              }
+          }
+        }
+      })
+
+    })
+
+    const make_coach_url_res_json = await make_coach_url_res.json();
+    
+    console.log("Made room New: " + JSON.stringify(make_coach_url_res_json));
+    return make_coach_url_res_json
 }

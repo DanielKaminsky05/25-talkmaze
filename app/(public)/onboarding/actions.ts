@@ -25,44 +25,13 @@ export async function handleStudentCreation(
     return { success: false, error: "Account ID is missing" };
   }
 
-  const { data: accountData, error: accountError } = await supabase
-    .from("account")
-    .select("tw_customer_id")
-    .eq("id", account_id)
-    .single();
-
-  if (accountError || !accountData) {
-    console.error("Account fetch error:", accountError);
-    return { success: false, error: "Failed to fetch account info" };
-  }
-
-  const tw_id = accountData.tw_customer_id;
-
-  const student_obj = {
-    student: {
-      customer_id: tw_id,
-      first_name: firstName,
-      last_name: lastName,
-      email: email,
-      home_phone: home_phone,
-      mobile_phone: mobile_phone,
-      birth_date: birth_date,
-      school: school,
-      grade: grade,
-      additional_notes: additional_notes,
-      time_zone: null,
-    },
-  };
-
-
-
+  console.log("Inside handle student creation");
   const { data: studentInsert, error: studentError } = await supabase
     .from("students")
     .insert({
       account_id: account_id,
       first_name: firstName,
       last_name: lastName,
-      profile_access_pin: pin,
     })
     .select()
     .single();

@@ -60,6 +60,7 @@ export async function selectProfile(formData: FormData) {
 
   // Set cookies for active profile id and type
   const cookieStore = await cookies();
+
   cookieStore.set("active_profile_id", profileId, {
     path: "/",
     httpOnly: true,

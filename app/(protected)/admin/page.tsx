@@ -89,6 +89,7 @@ export default function AdminPage() {
   name: string;
   description?: string;
   status?: string;
+
 }
   // Course state
   const [courses, setCourses] = useState<Course[]>([]);
@@ -320,6 +321,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error("Failed to fetch employees");
       const data = await response.json();
       setEmployees(data);
+      console.log("Fetched employees: " + JSON.stringify(data));
     } catch (err) {
       setEmployeesError(
         err instanceof Error ? err.message : "An error occurred",
@@ -561,7 +563,7 @@ export default function AdminPage() {
     try {
       console.log("Inside handleGetLessonSpaces");
       const response = await fetch("/api/learningSpace");
-
+      
       if (!response.ok) {
         console.log("Error with response");
       }
@@ -1576,6 +1578,7 @@ export default function AdminPage() {
                     >
                       {isDeletingCourse ? "Deleting..." : "Delete"}
                     </button>
+                    
                     <button
                       onClick={handleEditCourseStart}
                       className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
@@ -1672,6 +1675,7 @@ export default function AdminPage() {
               <CourseLessonsPanel
                 students={students}
                 courseId={String(selectedCourse.id)}
+                
               />
             </div>
           </div>
