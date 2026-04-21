@@ -3,7 +3,7 @@
 import { useState } from "react";
 import StudentProfileCard from "./StudentProfileCard";
 import StudentPostLessonTaskSettings from "./StudentPostLessonTaskSettings";
-import StudentAttendanceDetails from "./StudentAttendanceDetails";
+import StudentAttendanceDetails, { AttendanceItem } from "./StudentAttendanceDetails";
 import SelectedStudentSubscriptionStatus from "./SelectedStudentSubscriptionStatus";
 import ScheduleList from "../../components/ScheduleList";
 import { Appointment } from "../../types/lesson";
@@ -26,6 +26,8 @@ export interface Student {
 interface Props {
   students: Student[];
   schedule: Appointment[];
+  attendanceByStudent: Record<string, AttendanceItem[]>;
+  streakByStudent: Record<string, number>;
 }
 
 /**
@@ -34,7 +36,7 @@ interface Props {
  * Passes data down to the sub-components (attendance, schedule, etc).
  * Renders all the sub components of the page in the correct layout.
  */
-export default function ParentDashboardClient({ students, schedule }: Props) {
+export default function ParentDashboardClient({ students, schedule, attendanceByStudent, streakByStudent }: Props) {
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
 
   const onNextStudent = () => {
@@ -82,7 +84,10 @@ export default function ParentDashboardClient({ students, schedule }: Props) {
           </div>
 
           <div className="flex-2 min-h-0">
-            <StudentAttendanceDetails streak={8} studentId={currentStudent.id} />
+            <StudentAttendanceDetails
+                streak={streakByStudent[currentStudent.id] ?? 0}
+                attendance={attendanceByStudent[currentStudent.id] ?? Array.from({ length: 12 }, () => ({ status: "future" as const }))}
+              />
           </div>
         </div>
 

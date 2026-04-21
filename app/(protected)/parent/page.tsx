@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import ParentDashboardClient, { Student } from "./components/ParentDashboardClient";
+import ParentDashboardClient, {
+  Student,
+} from "./components/ParentDashboardClient";
+import { AttendanceItem } from "./components/StudentAttendanceDetails";
 import { Appointment } from "../types/lesson";
 
 /**
@@ -73,5 +76,65 @@ export default async function ParentDashboard() {
     }));
   }
 
-  return <ParentDashboardClient students={students} schedule={schedule} />;
+  // Fetch attendance for all students
+  const attendanceByStudent: Record<string, AttendanceItem[]> = {};
+  const streakByStudent: Record<string, number> = {};
+
+  if (studentIds.length > 0) {
+    const { data: attendanceRaw } = await supabase
+      .from("session_attendance")
+      .select(
+        "student_id, session_date, status, coaches(first_name, last_name)",
+      )
+      .in("student_id", studentIds)
+      .order("session_date", { ascending: false })
+      .limit(100);
+
+    for (const student of students) {
+      // Get this student's records (newest first), cap at 12
+      const records = (attendanceRaw ?? [])
+        .filter((r) => r.student_id === student.id)
+        .slice(0, 12);
+
+      // Streak: consecutive "attended" from the most recent record.
+      // Cancelled sessions are skipped — they don't count toward or break the streak.
+      let streak = 0;
+      for (const r of records) {
+        if (r.status === "attended") streak++;
+        else if (r.status === "cancelled") continue;
+        else break; // "missed" breaks the streak
+      }
+      streakByStudent[student.id] = streak;
+
+      // Build display array: oldest first, padded with "future" slots to fill 12
+      const pastItems: AttendanceItem[] = [...records].reverse().map((r) => {
+        const coach = r.coaches as any;
+        const coachName = coach
+          ? `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || null
+          : null;
+        return {
+          status: r.status as AttendanceItem["status"],
+          session_date: r.session_date,
+          coach_name: coachName,
+        };
+      });
+
+      const futureCount = Math.max(0, 12 - pastItems.length);
+      const futureItems: AttendanceItem[] = Array.from(
+        { length: futureCount },
+        () => ({ status: "future" as const }),
+      );
+
+      attendanceByStudent[student.id] = [...pastItems, ...futureItems];
+    }
+  }
+
+  return (
+    <ParentDashboardClient
+      students={students}
+      schedule={schedule}
+      attendanceByStudent={attendanceByStudent}
+      streakByStudent={streakByStudent}
+    />
+  );
 }
