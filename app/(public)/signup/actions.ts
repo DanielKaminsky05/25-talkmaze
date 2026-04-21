@@ -36,6 +36,7 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         console.log("No data.user");
         return;
     }
+    
     //note customer is 1, coach is 2, and admin is 3
     const insertIntoAccount = await supabase.from('account').insert({
         id: data.user.id,
@@ -43,7 +44,7 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         role: 1,
     }
     )
-    console.log("Trying to sign up new user")
+    
 
     const insertIntoParents = await supabase.from('parents').insert({
         account_id: data.user.id,
@@ -52,13 +53,13 @@ export const signUpNewUser = async (familyFirstName: string, familyLastName: str
         profile_access_pin: masterPin,
         billing_email: email,
         phone_number: null,
-
     })
-    //write id to the database
-    if (insertIntoParents.error) {
-        console.error("There was a problem signing up:", JSON.stringify(error))
-        return { success: false, error }
-    }
+    // })
+    // //write id to the database
+    // if (insertIntoParents.error) {
+    //     console.error("There was a problem signing up:", JSON.stringify(error))
+    //     return { success: false, error }
+    // }
 
 
 

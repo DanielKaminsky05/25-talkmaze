@@ -105,7 +105,8 @@ export async function POST(request: Request) {
       .from("coaches")
       .insert({
         account_id: authData.user.id,
-        name: `${firstName} ${lastName}`.trim(),
+        first_name: firstName,
+        last_name: lastName
       });
 
     if (coachError) {

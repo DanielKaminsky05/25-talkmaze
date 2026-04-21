@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+<<<<<<< HEAD
 import { TeachworksEmployee, TeachworksStudent } from "@/lib/teachworks/types";
 import { Assignment } from "@/lib/types/assignments";
+=======
+
+import { Assignment } from "@/app/api/lib/types/assignments";
+>>>>>>> origin/coach-page-new
 import { Student,Coach } from "./AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {
@@ -28,6 +33,9 @@ export default function CoachAssignmentCard({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    console.log("Coach: " + JSON.stringify(coach));
+  },[])
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -97,7 +105,7 @@ const filteredAvailable = availableStudents.filter((s) => {
           </svg>
 
           <span className="text-xs font-semibold text-gray-900 truncate">
-            {coach.name}
+            {`${coach.first_name}  ${coach.last_name}`}
           </span>
         </div>
 

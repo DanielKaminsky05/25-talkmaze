@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
+import type { Database } from "@/database";
 
-interface Student {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-}
+type Student = Database['public']['Tables']['students']['Row']
 
 interface StudentDetailsProps {
   student: Student | null;
@@ -64,7 +61,7 @@ export default function StudentDetails({
       setLoadingSchedule(true);
       try {
         const res = await fetch(
-          `/api/coach/student/schedule?studentId=${student.id}`
+        `/api/admin/students`
         );
         if (!res.ok) throw new Error("Failed to load schedule");
 
@@ -93,8 +90,11 @@ export default function StudentDetails({
       const res = await fetch(
         `/api/coach/conversation?contactId=${student.id}`
       );
-      if (!res.ok) throw new Error("Failed to load conversation");
-
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log("can not get conversation: " + res.status + " " + errorText)
+        throw new Error("Failed to load conversation");
+      }
       const { conversationId } = await res.json();
 
       const msgsRes = await fetch(
@@ -152,6 +152,18 @@ export default function StudentDetails({
             : showChat
             ? "Hide Chat"
             : "Message Student"}
+        </button>
+
+        <button
+          onClick={handleMessageClick}
+          disabled={loadingChat}
+          className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          {loadingChat
+            ? "Loading..."
+            : showChat
+            ? "Hide Chat"
+            : "Message Parent"}
         </button>
       </div>
 

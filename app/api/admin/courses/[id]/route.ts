@@ -30,7 +30,7 @@ export async function PUT(
       return NextResponse.json(updated);
     }
     
-    return NextResponse.json({ message: "No changes provided" });
+    return NextResponse.json(payload);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to update course" },
@@ -48,6 +48,7 @@ export async function DELETE(
 
     const supabase = await createClient();
 
+    console.log("ID passed to delete function: " + id);
     const { error } = await supabase
       .from("courses")
       .delete()

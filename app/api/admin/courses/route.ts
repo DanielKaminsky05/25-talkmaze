@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET() {
   try {
+    console.log("Inside get all courses");
     const supabase = await createClient();
 
     const { data: courses, error } = await supabase
@@ -10,7 +11,7 @@ export async function GET() {
       .select("*");
 
     if (error) throw new Error(error.message);
-
+    
     return NextResponse.json(courses);
   } catch (err) {
     return NextResponse.json(

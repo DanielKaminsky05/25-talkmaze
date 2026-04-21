@@ -93,6 +93,34 @@ export default function Page() {
       } finally {
         setLoading(false);
       }
+<<<<<<< HEAD
+=======
+
+      //get the student
+      const {data: student, error: studentError} = await supabase.from('students').select('id').eq("account_id", user.id).single();
+
+      if(!student){
+        throw new Error("Can not identify student: " + JSON.stringify(studentError));
+      } 
+      //first get the course
+      const{data: course, error: courseError} = await supabase.from('course_assignment').select('course_id').eq("student_id", student.id).limit(1).single();
+
+      //fetch the lessons of the course
+      if(!course){
+        throw new Error("Can not find the user's course: " + JSON.stringify(courseError));
+      }
+
+    
+      const{data: lessons, error: lessonsError} = await supabase.from('lessons').select('id, course_id , created_at, pre_lesson_url, post_lesson_url, slide_show_url, content_url, description, title').eq('course_id',course.course_id);
+     
+      console.log("Retrieved Lessons: " + JSON.stringify(lessons));
+      if(lessonsError){
+        console.log("Lesson error: " + JSON.stringify(lessonsError));
+      }
+      setLessons(lessons ?? []);
+     
+      setLoading(false);
+>>>>>>> origin/coach-page-new
     }
 
     fetchLessons();
@@ -162,6 +190,7 @@ export default function Page() {
         const cleanPath = lesson.pre_lesson_url.replace(/^course_files\//, "");
 
 
+<<<<<<< HEAD
 
         console.log("Folder path: " + JSON.stringify(cleanPath));
 
@@ -169,6 +198,15 @@ export default function Page() {
           .from("course_files")
           .getPublicUrl(`${cleanPath}.pdf`)
 
+=======
+       
+console.log("Folder path: " + JSON.stringify(cleanPath));
+       
+        const { data:filesPre} = await supabase.storage
+        .from("course_files")
+        .getPublicUrl(`${cleanPath}`)
+        
+>>>>>>> origin/coach-page-new
         console.log("Files" + filesPre);
         console.log("Files JSON:", JSON.stringify(filesPre, null, 2));
         console.log("Error" + error);
@@ -177,6 +215,7 @@ export default function Page() {
 
 
       }
+<<<<<<< HEAD
       if (lesson.post_lesson_url) {
 
         const cleanPath2 = lesson.post_lesson_url.replace(/^course_files\//, "");
@@ -194,6 +233,26 @@ export default function Page() {
           .getPublicUrl(`${cleanPath3}.ppt`)
 
         setSlideShow(filesSlide.publicUrl);
+=======
+      if(lesson.post_lesson_url){
+        
+          const cleanPath2 = lesson.post_lesson_url.replace(/^course_files\//, "");
+        
+        const {data: filesPost} = await supabase.storage
+        .from("course_files")
+        .getPublicUrl(`${cleanPath2}`)
+        setPostLessonTasks(filesPost.publicUrl)
+      }
+
+      if(lesson.slide_show_input){
+
+            console.log("Trying to get slide show");
+            console.log("Link: " + lesson.slide_show_input)
+            const cleanPath3 = lesson.slide_show_input.replace(/^course_files\//, "");
+             const {data: filesSlide} = await supabase.storage
+            .from("course_files")
+            .getPublicUrl(`${cleanPath3}`)
+>>>>>>> origin/coach-page-new
 
 
       }

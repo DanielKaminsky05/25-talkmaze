@@ -5,52 +5,66 @@ import MyStudents from "./components/MyStudents";
 import StudentDetails from "./components/StudentDetails";
 import LessonsTable from "./components/LessonsTable";
 
-interface Student {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-}
+import type { Database } from "@/database";
+
+type Student = Database["public"]["Tables"]["students"]["Row"];
 
 interface CoachPageClientProps {
   currentUserId: string;
   currentUserEmail: string;
 }
 
-export default function CoachPageClient({ currentUserId, currentUserEmail }: CoachPageClientProps) {
+export default function CoachPageClient({
+  currentUserId,
+  currentUserEmail,
+}: CoachPageClientProps) {
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
   const [openChatForStudent, setOpenChatForStudent] = useState<Student | null>(null);
 
-  const handleMessageClick = (student: Student) => {
+  const handleMessageClick = (student: Student | null) => {
+    if (!student) return;
+
     setActiveStudent(student);
-    setOpenChatForStudent(student); // signals StudentDetails to open chat
+    setOpenChatForStudent(student);
   };
 
   return (
-    <div className="h-full w-full bg-white rounded-2xl p-8 shadow-sm overflow-y-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 border-b pb-4">Coach Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 min-h-[500px]">
-        <div className="h-full md:col-span-1">
-          <MyStudents
-            activeStudentId={activeStudent?.id}
-            onStudentClick={setActiveStudent}
-            onMessageClick={handleMessageClick}
-          />
+    <div className="w-full p-8 mx-auto">
+      <div className="flex flex-col gap-8 w-full">
+        <div className="rounded-2xl bg-[#2B4257]/10 border border-[#2B4257]/15 px-6 py-5">
+          <h1 className="text-3xl font-bold text-[#2B4257]">Coach Dashboard</h1>
+          <p className="mt-2 text-sm text-[#2B4257]/70">
+            Manage students, review lesson progress, and open conversations.
+          </p>
         </div>
-        <div className="h-full md:col-span-3">
-          <StudentDetails
-            student={activeStudent}
-            currentUserId={currentUserId}
-            currentUserEmail={currentUserEmail}
-            autoOpenChat={openChatForStudent?.id} // ← new prop
+
+        <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-8 w-full min-h-[560px]">
+          <div className="rounded-2xl bg-white/80 border border-[#2B4257]/10 shadow-sm overflow-hidden">
+            <MyStudents
+              activeStudentId={activeStudent?.id}
+              onStudentClick={setActiveStudent}
+              onMessageClick={handleMessageClick}
+              coachId={currentUserId}
+            />
+          </div>
+
+          <div className="rounded-2xl bg-white/80 border border-[#2B4257]/10 shadow-sm overflow-hidden min-h-[560px]">
+            <StudentDetails
+              student={activeStudent}
+              currentUserId={currentUserId}
+              currentUserEmail={currentUserEmail}
+              autoOpenChat={openChatForStudent?.id}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white/80 border border-[#2B4257]/10 shadow-sm overflow-hidden">
+          <LessonsTable
+            studentId={activeStudent?.id}
+            studentName={`${activeStudent?.first_name || ""} ${activeStudent?.last_name || ""}`.trim()}
           />
         </div>
       </div>
-
-      <LessonsTable
-        studentId={activeStudent?.id}
-        studentName={`${activeStudent?.first_name || ""} ${activeStudent?.last_name || ""}`.trim()}
-      />
     </div>
   );
 }

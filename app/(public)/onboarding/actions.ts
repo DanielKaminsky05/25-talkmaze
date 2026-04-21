@@ -1,5 +1,4 @@
 "use server";
-import { revalidatePath } from "next/cache";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service";
@@ -26,21 +25,25 @@ export async function handleStudentCreation(
     return { success: false, error: "Account ID is missing" };
   }
 
+  console.log("Inside handle student creation");
   const { data: studentInsert, error: studentError } = await supabase
     .from("students")
     .insert({
       account_id: account_id,
       first_name: firstName,
       last_name: lastName,
+<<<<<<< HEAD
       grade: String(grade),
       notes: additional_notes,
+=======
+>>>>>>> origin/coach-page-new
     })
     .select()
     .single();
 
   if (studentError || !studentInsert) {
     console.error("Student insert error:", studentError);
-    return { success: false, status: 500, error: "Error inserting student" };
+    return { status: 500, message: "Error inserting student" };
   }
 
   const student_id = studentInsert.id;
@@ -68,9 +71,8 @@ export async function handleStudentCreation(
     if (availabilityError) {
       console.error("Availability insert error:", availabilityError);
       return {
-        success: false,
         status: 500,
-        error: "Error inserting availability",
+        message: "Error inserting availability",
       };
     }
   }
@@ -79,6 +81,7 @@ export async function handleStudentCreation(
   return { success: true, status: 200, message: "Student created", student_id };
 }
 
+<<<<<<< HEAD
 export async function updateStudentAvatar(studentId: string, avatarUrl: string) {
   const supabase = (await createClient()) as any;
   const { error } = await supabase
@@ -93,6 +96,39 @@ export async function updateStudentAvatar(studentId: string, avatarUrl: string) 
 
   revalidatePath("/profiles");
   return { success: true };
+=======
+  if (!match) {
+    return {
+      status: 200,
+      message: "Student created, but no coach available",
+    };
+  }
+
+  const { error: sessionError } = await supabase
+    .from("sessions")
+    .insert({
+      coach_id: match.coach_id,
+      student_id,
+      weekday: match.weekday,
+      start_time: match.start_time,
+      end_time: match.end_time,
+    });
+
+  if (sessionError) {
+    console.error("SESSION INSERT ERROR:", sessionError);
+    return {
+      status: 500,
+      message: "Failed to create session",
+    };
+  }
+
+  return {
+    success: true,
+    status: 200,
+    message: "Student created and coach assigned",
+    match,
+  };
+>>>>>>> origin/coach-page-new
 }
 
 // ------------------ HELPERS ------------------

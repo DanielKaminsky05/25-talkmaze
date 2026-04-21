@@ -1,29 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AssignCourseModal from "./AssignCourseModal";
+import type { Database } from "@/database";
 
-interface Student {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  lesson_space_id?: string | null;
-}
+type Course = Database['public']['Tables']['courses']['Row']
+type Student = Database['public']['Tables']['students']['Row']
 
 interface MyStudentsProps {
   activeStudentId?: string | null;
-  onStudentClick?: (student: Student) => void;
-  onMessageClick?: (student: Student) => void; // ← new
+  onStudentClick?: (student: Student | null) => void;
+  onMessageClick?: (student: Student | null) => void; // ← new
+  coachId: string
 }
-
 export default function MyStudents({
   activeStudentId,
   onStudentClick,
   onMessageClick,
+  coachId
 }: MyStudentsProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [isAssigningCourse, setIsAssigningCourse] = useState<boolean>(false);
+  const[fetchCourseError, setFetchCourseError] = useState<string | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [assigningStudent, setAssigningStudent] = useState<Student | null>(null);
+  const [room, setRoom] = useState<String | null>(null);
   useEffect(() => {
     async function fetchStudents() {
       try {
@@ -37,8 +40,53 @@ export default function MyStudents({
         setLoading(false);
       }
     }
+    
+    async function fetchCourses(){
+      try{
+        const response = await fetch('/api/admin/courses')
+       
+        if(!response.ok){
+          setFetchCourseError("Error fetching available courses")
+        }
+         const response_data = await response.json();
+        console.log("Retrieved Courses: " + JSON.stringify(response_data));
+        setCourses(response_data)
+
+      }catch(err){
+        console.log(err);
+      }
+
+    }
+
+
+    
     fetchStudents();
+    fetchCourses();
+    
   }, []);
+
+
+async function LessonSpaceButtonOnClick(studentId: String){
+  try{
+    const response = await fetch(`/api/coach/lessonspace/${coachId}/${studentId}`)
+
+    if(!response.ok){
+      alert("Error fetching student room")
+      return;
+    }
+
+    const response_json = await response.json();
+
+    console.log("Setting room " + response_json.lesson_space_teacher_link)
+
+    window.location.href = response_json.client_url;
+    
+  }catch(err){
+    console.log("Error fetching room")
+  }
+
+}
+  
 
   if (loading) {
     return (
@@ -77,7 +125,8 @@ export default function MyStudents({
     );
   }
 
-  return (
+  return isAssigningCourse ? (assigningStudent && <AssignCourseModal student={assigningStudent} courses={courses} setIsAssigningCourse={setIsAssigningCourse}/>) : (
+    
     <div className="bg-white border rounded-xl overflow-hidden shadow-sm h-full max-h-[700px] flex flex-col">
       <div className="px-6 py-5 border-b bg-gray-50/50 flex justify-between items-center">
         <div>
@@ -126,43 +175,28 @@ export default function MyStudents({
 
                       {/* Lesson Space Button */}
                       <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-
-                          try {
-                            const res = await fetch(
-                              "/api/webhooks/stripe/learningSpace",
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  student_id: student.id,
-                                }),
-                              },
-                            );
-
-                            const data = await res.json();
-                            console.log(data);
-
-                            if (data?.url) {
-                              window.location.href = data.url;
-                            }
-                          } catch (err) {
-                            console.error(err);
-                          }
-                        }}
-                        disabled={!student.lesson_space_id}
-                        className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition-colors
-                                    ${
-                                      student.lesson_space_id
-                                        ? "text-white bg-green-600 hover:bg-green-700"
-                                        : "text-gray-400 bg-gray-200 cursor-not-allowed"
-                                    }`}
+                        onClick = {() => LessonSpaceButtonOnClick(student.id)}
+                        
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition-colors
+                                    text-white bg-green-600 hover:bg-green-700"
+                                        
                       >
                         Lesson Space
                       </button>
+                      {/*Assign Course Buttonn  */}
+                      {/* Assign Course Button */}
+                    <button
+                      onClick={(e) => {
+                      e.stopPropagation();
+
+                      setIsAssigningCourse(true)
+                      setAssigningStudent(student)
+                      // handle assign course here
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                    >
+                        Assign Course
+                    </button>
                     </div>
                   </div>
                 </li>

@@ -1,0 +1,49 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { CreateTeacherRoom } from "@/app/api/admin/assignments/route";
+export async function GET(
+    req: NextRequest,
+    {params}: {params: Promise<{coachId: string, studentId: string}>}
+){
+    
+
+    
+    
+    const {coachId, studentId} = await params;
+    console.log("Trying to get all rooms ", coachId)
+    try{
+        const supabase = await createClient();
+
+        //get coach_id
+        const {data: coach_id_data, error: coach_id_data_error} = await supabase.from('coaches').select('*').eq('account_id',coachId).single();
+
+        if(coach_id_data_error){
+            return NextResponse.json({status:500,message: "Unable to identify coach"})
+        }
+        console.log("Retrieved coach id: " + coach_id_data?.id)
+        console.log("Whole coach: " + JSON.stringify(coach_id_data))
+        const {data: studentData, error: studentDataError} = await supabase.from('students').select("*").eq('id', studentId).single();
+        //make a new link for the teacher in case of expiry
+        const teacher_link = await CreateTeacherRoom(studentData,coach_id_data)
+
+
+        if(studentDataError){
+            console.log("Error creating teacher link for coach page")
+            return NextResponse.json({status:500, message: "Error creating new teacher link"})
+        }
+
+        console.log("Returning teacher link " + JSON.stringify(teacher_link))
+        
+        return NextResponse.json(teacher_link);
+
+        
+        //make new room for coach
+
+        
+       
+    }catch(err){
+
+    }
+
+
+}
