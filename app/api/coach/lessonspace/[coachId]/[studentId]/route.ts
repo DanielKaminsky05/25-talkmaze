@@ -32,8 +32,10 @@ export async function GET(
             return NextResponse.json({status:500, message: "Error creating new teacher link"})
         }
 
-        console.log("Returning teacher link " + JSON.stringify(teacher_link))
+     
         
+        //store teacher link into supabase
+        const {error: supabaseLsInsert} = await supabase.from('students').update({lesson_space_teacher_link: teacher_link.client_url}).eq('id', studentId)
         return NextResponse.json(teacher_link);
 
         

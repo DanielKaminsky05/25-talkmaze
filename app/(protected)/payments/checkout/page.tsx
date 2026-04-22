@@ -43,6 +43,10 @@ function CheckoutForm({
    * On success, Stripe redirects to return_url with the payment result
    */
   const handleSubmit = async (e: React.FormEvent) => {
+
+    console.log("Submitting payment!");
+    console.log("Amount: " + amountDisplay);
+    console.log("Plan Name: " + planName);
     e.preventDefault();
     if (!stripe || !elements) return;
 

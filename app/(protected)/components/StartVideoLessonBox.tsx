@@ -5,19 +5,17 @@ import Link from 'next/link';
 import { getLessonSpace } from "./startVideoLessonBoxActions";
 import { NextResponse } from "next/server";
 export default function StartVideoLessonBox() {
-  const[link,setLink] = useState<string>("");
-  useEffect(() => {
-    async function getLink(){
-      const link_res = await getLessonSpace();
-      if(!link_res){
-        return new Error("Can get lesson link")
-      }
-      console.log("Setting link: " + link_res);
-      setLink(link_res)
-    }
+  
+  
 
-    getLink();
-  },[])
+  async function handleClick(){
+    const link_res = await getLessonSpace();
+      if(!link_res){
+        return new Error("Cant get lesson link")
+      }
+    console.log("Setting link: " + link_res);
+    window.location.href = link_res;
+  }
   
   return (
     <div className="text-[12px] md:text-[16px] md:font-semibold h-[30px] w-[172px] md:w-[272.29px] md:h-[51px] border-[0.5px]  rounded-[15px] bg-[#1F2E3B] border-[#1F2E3B] shadow-[0_4px_4px_rgba(0,0,0,0.25)] text-white flex justify-center items-center gap-2.5">
@@ -33,14 +31,13 @@ export default function StartVideoLessonBox() {
           fill="white"
         />
       </svg>
-      <a
+      <button
         className="text-center"
-        href={link}
-        target="_blank"
+        onClick = {handleClick}
         rel="noopener noreferrer"
       >
         Start Video Lesson
-      </a>
+      </button>
     </div>
   );
 }

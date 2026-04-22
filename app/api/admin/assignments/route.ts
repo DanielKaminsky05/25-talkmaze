@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import type { Database } from "@/database";
+import { Josefin_Slab } from "next/font/google";
 //fetch all assignments joined with coach/student names 
 
 type student = Database['public']['Tables']['students']['Row']
@@ -39,11 +40,11 @@ export async function POST(req: NextRequest) {
   console.log("Coach_id: " + coach_id_1);
   console.log("Student_id: " + student_id_1)
  
-  const { data: coachData } = await supabase.from('coaches').select('id, name').eq('id', String(coach_id_1)).single();
+  const { data: coachData } = await supabase.from('coaches').select('id, first_name, last_name').eq('id', String(coach_id_1)).single();
   const { data: studentData } = await supabase.from('students').select('id, first_name, last_name').eq('id', String(student_id_1)).single();
 
-  console.log("Coach Data: " + coachData);
-  console.log("Student Data :" + studentData);
+  console.log("Coach Data: " + JSON.stringify(coachData));
+  console.log("Student Data :" + JSON.stringify(studentData));
   if (!coachData) {
     console.error("404 Coach not found for TW ID:", coach_id_1);
     return NextResponse.json({ error: "Coach not found in local TalkMaze database." }, { status: 404 });
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
     console.error("POST Assignment Select Error:", allAssignmentsError);
   }
 
+  console.log("All assignments: " + JSON.stringify(allAssignments));
   return NextResponse.json(allAssignments);
 }
 
@@ -123,7 +125,7 @@ export async function CreateTeacherRoom(studentData: student, coachData: Coach){
           leader: true,
           custom_jwt_parameters: {
               meta: {
-                  displayName: `Coach ${coachData.name}`,
+                  displayName: `Coach ${coachData.first_name} ${coachData.last_name}`,
                   lessonTitle: `${studentData.first_name} ${studentData.last_name} Public Speaking Room!`
               }
           }

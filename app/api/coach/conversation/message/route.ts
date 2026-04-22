@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
+  console.log("Retrieved messages: " + JSON.stringify(data))
   if (error) return NextResponse.json([], { status: 500 });
 
   const messages = await Promise.all(

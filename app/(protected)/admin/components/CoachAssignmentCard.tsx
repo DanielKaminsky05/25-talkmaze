@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-<<<<<<< HEAD
-import { TeachworksEmployee, TeachworksStudent } from "@/lib/teachworks/types";
 import { Assignment } from "@/lib/types/assignments";
-=======
-
-import { Assignment } from "@/app/api/lib/types/assignments";
->>>>>>> origin/coach-page-new
 import { Student,Coach } from "./AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {

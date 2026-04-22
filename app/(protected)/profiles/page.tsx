@@ -28,13 +28,7 @@ async function getProfiles(): Promise<Profile[]> {
 
   if (!user) redirect("/login"); // Redirect to login if not authenticated
 
-<<<<<<< HEAD
   // Fetch parent and student profiles in parallel
-=======
-  console.log("Fetching parents from: " + user.id);
-  
-  // Fetch parent and student profiles in parrallel
->>>>>>> origin/coach-page-new
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase
       .from("parents")
@@ -46,7 +40,6 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
   ]);
 
-<<<<<<< HEAD
   // Fetch active subscriptions for all student IDs we found
   const studentIds = students?.map((s) => s.id) || [];
   const { data: activeSubscriptions } = await supabase
@@ -58,11 +51,6 @@ async function getProfiles(): Promise<Profile[]> {
   const subscribedStudentIds = new Set(
     activeSubscriptions?.map((sub) => sub.student_id) || []
   );
-=======
-  console.log("Account ID: " + user.id);
-  console.log("Retrieved parents: " + JSON.stringify(parents));
-  console.log("Retrieved Students: " + JSON.stringify(students))
->>>>>>> origin/coach-page-new
 
   // Combine and return parent and student profiles
   return [

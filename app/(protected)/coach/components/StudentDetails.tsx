@@ -49,7 +49,7 @@ export default function StudentDetails({
   // Auto-open chat
   useEffect(() => {
     if (autoOpenChat && autoOpenChat === student?.id && !showChat) {
-      handleMessageClick();
+      handleMessageClick("student");
     }
   }, [autoOpenChat, student?.id]);
 
@@ -77,18 +77,36 @@ export default function StudentDetails({
     fetchSchedule();
   }, [student?.id]);
 
-  const handleMessageClick = async () => {
+  const handleMessageClick = async (profileType: String) => {
     if (showChat) {
       setShowChat(false);
       return;
     }
 
+    //based on profile type, we pass different id, i.e. parent or student id
+    
+    let client_id = student?.id;
+    if(profileType === 'parent'){
+      try{
+        console.log("Passed student_id: " + student?.id)
+        const response = await fetch(`/api/parent/students/${student?.id}`)
+
+        if(!response.ok){
+          console.log("Unable to fetch parent id")
+        }
+
+        const response_json = await response.json();
+        client_id = response_json.id;
+      }catch(err){
+        alert("Unable to get parent id")
+      }
+    }
     if (!student) return;
 
     setLoadingChat(true);
     try {
       const res = await fetch(
-        `/api/coach/conversation?contactId=${student.id}`
+        `/api/coach/conversation?contactId=${client_id}`
       );
       if (!res.ok) {
         const errorText = await res.text();
@@ -143,7 +161,7 @@ export default function StudentDetails({
         </h2>
 
         <button
-          onClick={handleMessageClick}
+          onClick={() => handleMessageClick("student")}
           disabled={loadingChat}
           className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
         >
@@ -155,7 +173,7 @@ export default function StudentDetails({
         </button>
 
         <button
-          onClick={handleMessageClick}
+          onClick={() => handleMessageClick("parent")}
           disabled={loadingChat}
           className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
         >

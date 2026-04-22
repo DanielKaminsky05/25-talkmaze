@@ -16,6 +16,8 @@ export const logInUser = async (email: string, password: string) => {
 
   // Handle login error FIRST
   if (error || !data.user) {
+
+    console.log("Login error somehow");
     return {
       success: false,
       message: "Invalid login credentials",
@@ -24,6 +26,7 @@ export const logInUser = async (email: string, password: string) => {
 
   const id = data.user.id;
 
+  console.log("Setting cookie");
   // Set cookie
   cookieStore.set({
     name: "account_id",

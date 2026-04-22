@@ -59,22 +59,7 @@ export async function selectProfile(formData: FormData) {
   }
 
   // Set cookies for active profile id and type
-<<<<<<< HEAD:lib/profile-management/selectProfile.ts
   await setProfileCookies(profileId, profileType);
-=======
-  const cookieStore = await cookies();
-
-  cookieStore.set("active_profile_id", profileId, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-  });
-  cookieStore.set("active_profile_type", profileType, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-  });
->>>>>>> origin/coach-page-new:app/api/lib/profile-management/selectProfile.ts
 
 
   const destination = (formData.get("destination") as string) || (profileType === "parent" ? "/parent" : "/home");

@@ -3,7 +3,7 @@ import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service";
 import { setProfileCookies } from "@/lib/profile-management/profile-cookies";
-
+import { revalidatePath } from "next/cache";
 export async function setActiveProfile(profileId: string, profileType: "student" | "parent") {
   return await setProfileCookies(profileId, profileType);
 }
@@ -26,17 +26,16 @@ export async function handleStudentCreation(
   }
 
   console.log("Inside handle student creation");
+
+  
   const { data: studentInsert, error: studentError } = await supabase
     .from("students")
     .insert({
       account_id: account_id,
       first_name: firstName,
       last_name: lastName,
-<<<<<<< HEAD
       grade: String(grade),
       notes: additional_notes,
-=======
->>>>>>> origin/coach-page-new
     })
     .select()
     .single();
@@ -77,27 +76,9 @@ export async function handleStudentCreation(
     }
   }
 
-  revalidatePath("/profiles");
-  return { success: true, status: 200, message: "Student created", student_id };
-}
+   const match = await findCoachMatch(supabase, student_id)
 
-<<<<<<< HEAD
-export async function updateStudentAvatar(studentId: string, avatarUrl: string) {
-  const supabase = (await createClient()) as any;
-  const { error } = await supabase
-    .from("students")
-    .update({ avatar_url: avatarUrl })
-    .eq("id", studentId);
-
-  if (error) {
-    console.error("Error updating student avatar:", error);
-    return { success: false, error: "Failed to update avatar" };
-  }
-
-  revalidatePath("/profiles");
-  return { success: true };
-=======
-  if (!match) {
+   if (!match) {
     return {
       status: 200,
       message: "Student created, but no coach available",
@@ -122,17 +103,27 @@ export async function updateStudentAvatar(studentId: string, avatarUrl: string) 
     };
   }
 
-  return {
-    success: true,
-    status: 200,
-    message: "Student created and coach assigned",
-    match,
-  };
->>>>>>> origin/coach-page-new
+  revalidatePath("/profiles");
+  return { success: true, status: 200, message: "Student created", student_id };
 }
 
-// ------------------ HELPERS ------------------
+export async function updateStudentAvatar(studentId: string, avatarUrl: string) {
+  const supabase = (await createClient()) as any;
+  const { error } = await supabase
+    .from("students")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", studentId);
 
+  if (error) {
+    console.error("Error updating student avatar:", error);
+    return { success: false, error: "Failed to update avatar" };
+  }
+
+  revalidatePath("/profiles");
+  return { success: true };
+}
+ 
+// ------------------ HELPERS ------------------
 const toTimestamp = (time: string) => {
   return new Date(`1970-01-01T${time}:00Z`).toISOString();
 };

@@ -29,6 +29,8 @@ export default function LoginPage() {
       e.preventDefault();
       const result = await logInUser(email, password);
       //Redirects the user to the home page if successful:
+
+      console.log("Inside handle submit")
       if(result?.success){
         
           router.push('/profiles')

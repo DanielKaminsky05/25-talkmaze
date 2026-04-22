@@ -5,10 +5,6 @@ import { Lesson, LessonInput } from "@/lib/types/lesson";
 import { createClient } from "@/utils/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/coach-page-new
 import { Student } from "./AssignStudentDropDown";
 interface CourseLessonsPanelProps {
   courseId: string;
@@ -53,13 +49,8 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
   const [editError, setEditError] = useState<string | null>(null);
   const [editNewPreTask, setEditNewPreTask] = useState<File | null>(null);
   const [editNewPostTask, setEditNewPostTask] = useState<File | null>(null);
-<<<<<<< HEAD
-  const [editNewSlideDeck, setEditNewSlideDeck] = useState<File | null>(null);
-
-=======
   const [editNewSlideDeck, setEditNewSlideDeck] = useState<File|null>(null);
   const[editLessonOrder, setEditLessonOrder] = useState<Lesson[]>([]);
->>>>>>> origin/coach-page-new
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -123,18 +114,12 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
       let preFileName = crypto.randomUUID();
       let postFileName = crypto.randomUUID();
       let slideFileName = crypto.randomUUID()
-<<<<<<< HEAD
-
-      try {
-        if (addForm.pre_lesson_tasks) {
-=======
       
       let preFileNameWithExt = "";
       let postFileNameWithExt = "";
       let slideInputNameWithExt = ""; 
       try{
         if(addForm.pre_lesson_tasks){
->>>>>>> origin/coach-page-new
           console.log("Adding pre lesson tasks")
           for (let i = 0; i < addForm.pre_lesson_tasks?.length; i++) {
             const file: File = addForm.pre_lesson_tasks[i];
@@ -208,16 +193,9 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
       }
 
 
-<<<<<<< HEAD
 
 
 
-=======
-      console.log("Submitting Files1: " + preFileNameWithExt)
-      console.log("Submitting Files2: " + postFileNameWithExt)
-      console.log("Submitting Files3 " +  slideInputNameWithExt)
-    
->>>>>>> origin/coach-page-new
       const res = await fetch(`/api/admin/courses/${courseId}/lessons`, {
         method: "POST",
         body: JSON.stringify({

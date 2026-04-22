@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if(pathname.startsWith("/api/webhooks/stripe")){
+  if(pathname.startsWith("/api/webhooks/stripe") || pathname.startsWith("/api/webhooks/lessonspace")){
     return NextResponse.next();
   }
   const isProfileLockedRoute =
