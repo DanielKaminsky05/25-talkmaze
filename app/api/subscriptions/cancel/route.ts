@@ -7,7 +7,7 @@ import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
  * POST /api/subscriptions/cancel
  * Cancels the active student subscription both in Stripe and in Supabase.
  */
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -19,19 +19,40 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const activeProfile = await getActiveProfile();
-    if (!activeProfile || activeProfile.type !== "student") {
-      return NextResponse.json(
-        { error: "No active student profile" },
-        { status: 400 },
-      );
+    // Prefer studentId from request body (parent flow); fall back to active profile cookie (student flow)
+    const body = await req.json().catch(() => ({}));
+    const bodyStudentId: string | undefined = body?.studentId;
+
+    let studentId: string | undefined;
+
+    if (bodyStudentId) {
+      // Verify the authenticated user owns this student
+      const { data: student } = await supabase
+        .from("students")
+        .select("id")
+        .eq("id", bodyStudentId)
+        .eq("account_id", user.id)
+        .maybeSingle();
+      if (!student) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+      studentId = student.id;
+    } else {
+      const activeProfile = await getActiveProfile();
+      if (!activeProfile || activeProfile.type !== "student") {
+        return NextResponse.json(
+          { error: "No active student profile" },
+          { status: 400 },
+        );
+      }
+      studentId = activeProfile.id;
     }
 
     // Find the active subscription record in Supabase
     const { data: subscription } = await supabase
       .from("student_subscriptions")
       .select("id")
-      .eq("student_id", activeProfile.id)
+      .eq("student_id", studentId)
       .eq("status", "active")
       .order("current_period_end", { ascending: false })
       .limit(1)
@@ -65,7 +86,7 @@ export async function POST() {
     });
 
     const stripeSubscription = stripeSubscriptions.data.find(
-      (sub) => sub.metadata?.student_id === activeProfile.id,
+      (sub) => sub.metadata?.student_id === studentId,
     );
 
     if (!stripeSubscription) {

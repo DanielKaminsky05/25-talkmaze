@@ -1,127 +1,140 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import StudentProfileCard from "./components/StudentProfileCard";
-import PostLessonTasks from "./components/PostLessonTasks";
-import AttendanceStreak from "./components/AttendanceStreak";
-import PaymentStatus from "./components/PaymentStatus";
-import ScheduleList from "../components/ScheduleList";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
+import ParentDashboardClient, {
+  Student,
+} from "./components/ParentDashboardClient";
+import { AttendanceItem } from "./components/StudentAttendanceDetails";
 import { Appointment } from "../types/lesson";
 
-export default function ParentDashboard() {
-  const [schedule, setSchedule] = useState<Appointment[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Top-level page component for Parent Dashboard Home
+ * Fetches all the required data, and passes it to the client component
+ */
+export default async function ParentDashboard() {
+  const supabase = await createClient();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        // Fetch Lessons (Family-wide from local Sessions)
-        const sessionsResponse = await fetch("/api/parent/sessions");
-        if (sessionsResponse.ok) {
-          const sessionsData = await sessionsResponse.json();
-          const mappedSchedule: Appointment[] = sessionsData.map((session: any) => {
-              const student = session.students;
-              const coach = session.coaches;
-              return {
-                  id: session.id.toString(),
-                  title: "Public Speaking Session",
-                  start_date: session.start_time,
-                  end_date: session.end_time,
-                  description: "",
-                  studentName: student?.first_name || "Student",
-                  coachName: coach?.name || "Coach",
-                  status: "scheduled"
-              };
-          });
-          setSchedule(mappedSchedule);
-        }
+  // Check if user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-        // Fetch Students (Specific to this parent)
-        const studentsResponse = await fetch("/api/parent/students");
-        if (studentsResponse.ok) {
-           const studentsData = await studentsResponse.json();
-           setStudents(studentsData);
-        }
-
-      } catch (err: any) {
-        console.error("Error fetching dashboard data:", err);
-        setError("Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
-  const onNextStudent = () => {
-    if (students.length > 1) {
-      setCurrentStudentIndex((prev) => (prev + 1) % students.length);
-    }
-  };
-
-  const onPrevStudent = () => {
-    if (students.length > 1) {
-      setCurrentStudentIndex((prev) => (prev - 1 + students.length) % students.length);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="w-full h-full p-4 lg:p-6 flex items-center justify-center bg-[#1f2e3b]">
-        <div className="text-white text-xl">Loading dashboard...</div>
-      </div>
-    );
+  if (!user) {
+    redirect("/login");
   }
 
-  const currentStudent = students[currentStudentIndex] || {};
+  // Fetch students for this account
+  const { data: studentsRaw } = await supabase
+    .from("students")
+    .select(
+      `id, first_name, last_name, grade, avatar_url, location, date_of_birth, bio,
+       student_subscriptions(sessions_remaining, status, plans(classes))`,
+    )
+    .eq("account_id", user.id);
+
+  const students: Student[] = (studentsRaw ?? []).map((s: any) => {
+    const subscription = s.student_subscriptions?.[0] ?? null;
+    return {
+      id: s.id,
+      name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
+      first_name: s.first_name,
+      last_name: s.last_name,
+      grade: s.grade,
+      avatar_url: s.avatar_url,
+      location: s.location,
+      date_of_birth: s.date_of_birth,
+      bio: s.bio,
+      remaining_lessons: subscription?.sessions_remaining ?? 0,
+      total_lessons: subscription?.plans?.classes ?? 0,
+      status: subscription?.status ?? "inactive",
+    };
+  });
+
+  // Fetch upcoming sessions for these students
+  const studentIds = students.map((s) => s.id);
+  let schedule: Appointment[] = [];
+
+  if (studentIds.length > 0) {
+    const { data: sessions } = await supabase
+      .from("sessions")
+      .select(
+        `id, start_time, end_time, student_id,
+         students(first_name),
+         coaches(name)`,
+      )
+      .in("student_id", studentIds)
+      .order("start_time", { ascending: true });
+
+    schedule = (sessions ?? []).map((session: any) => ({
+      id: session.id.toString(),
+      title: "Public Speaking Session",
+      start_date: session.start_time,
+      end_date: session.end_time,
+      description: "",
+      studentName: session.students?.first_name ?? "Student",
+      coachName: session.coaches?.name ?? "Coach",
+      status: "scheduled",
+    }));
+  }
+
+  // Fetch attendance for all students
+  const attendanceByStudent: Record<string, AttendanceItem[]> = {};
+  const streakByStudent: Record<string, number> = {};
+
+  if (studentIds.length > 0) {
+    const { data: attendanceRaw } = await supabase
+      .from("session_attendance")
+      .select(
+        "student_id, session_date, status, coaches(first_name, last_name)",
+      )
+      .in("student_id", studentIds)
+      .order("session_date", { ascending: false })
+      .limit(100);
+
+    for (const student of students) {
+      // Get this student's records (newest first), cap at 12
+      const records = (attendanceRaw ?? [])
+        .filter((r) => r.student_id === student.id)
+        .slice(0, 12);
+
+      // Streak: consecutive "attended" from the most recent record.
+      // Cancelled sessions are skipped — they don't count toward or break the streak.
+      let streak = 0;
+      for (const r of records) {
+        if (r.status === "attended") streak++;
+        else if (r.status === "cancelled") continue;
+        else break; // "missed" breaks the streak
+      }
+      streakByStudent[student.id] = streak;
+
+      // Build display array: oldest first, padded with "future" slots to fill 12
+      const pastItems: AttendanceItem[] = [...records].reverse().map((r) => {
+        const coach = r.coaches as any;
+        const coachName = coach
+          ? `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || null
+          : null;
+        return {
+          status: r.status as AttendanceItem["status"],
+          session_date: r.session_date,
+          coach_name: coachName,
+        };
+      });
+
+      const futureCount = Math.max(0, 12 - pastItems.length);
+      const futureItems: AttendanceItem[] = Array.from(
+        { length: futureCount },
+        () => ({ status: "future" as const }),
+      );
+
+      attendanceByStudent[student.id] = [...pastItems, ...futureItems];
+    }
+  }
 
   return (
-    <div className="w-full h-full p-4 lg:p-6 overflow-y-auto bg-[#1f2e3b] animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6">
-        
-        {/* Left Column */}
-        <div className="flex flex-col gap-6">
-           <div className="h-[240px]">
-                <StudentProfileCard 
-                    name={currentStudent.first_name || currentStudent.name || "Select Student"}
-                    location={currentStudent.location || "Location"}
-                    dob={currentStudent.date_of_birth || "Not set"}
-                    grade={currentStudent.grade || "N/A"}
-                    description={currentStudent.bio || ""}
-                    glows="Excited to learn and share"
-                    grows="Clarity with content"
-                    onNext={students.length > 1 ? onNextStudent : undefined}
-                    onPrev={students.length > 1 ? onPrevStudent : undefined}
-                    currentIndex={currentStudentIndex}
-                    totalStudents={students.length}
-                />
-           </div>
-
-           <div className="h-[200px]">
-                <PostLessonTasks studentId={currentStudent.id} />
-           </div>
-
-           <div className="h-[200px]">
-                <AttendanceStreak streak={8} studentId={currentStudent.id} />
-           </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-            <div className="flex-1">
-                <PaymentStatus sessionsLeft={currentStudent.remaining_lessons} studentId={currentStudent.id} />
-            </div>
-
-            <div className="flex-1 min-h-[516px] bg-[#B1E7D6] rounded-2xl p-6 shadow-[0_4px_4px_rgba(0,0,0,0.25)]">
-                <ScheduleList schedule={schedule} />
-            </div>
-        </div>
-
-      </div>
-    </div>
+    <ParentDashboardClient
+      students={students}
+      schedule={schedule}
+      attendanceByStudent={attendanceByStudent}
+      streakByStudent={streakByStudent}
+    />
   );
 }

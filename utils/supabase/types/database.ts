@@ -582,6 +582,54 @@ export type Database = {
         }
         Relationships: []
       }
+      session_attendance: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          session_date: string
+          status: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          session_date: string
+          status: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          session_date?: string
+          status?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_attendance_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           coach_id: string | null

@@ -17,10 +17,15 @@ export default function ConversationMessage({
   text,
   sender,
   created_at,
-}: Message) {
+  status,
+}: Message & { status?: "pending" | "error" | "success" }) {
   return (
     // The container of the user profile image and the message contents
-    <div className="w-auto h-fit flex gap-3">
+    <div className={[
+      "w-auto h-fit flex gap-3",
+      status === "pending" ? "opacity-70" : "",
+      status === "error" ? "bg-red-50 text-red-600 rounded-lg px-2" : "",
+    ].join(" ")}>
       {/* Profile Image */}
       {sender.avatar_url ? (
         <div className="relative min-w-[35px] h-10 rounded-sm overflow-hidden border bg-gray-300">
