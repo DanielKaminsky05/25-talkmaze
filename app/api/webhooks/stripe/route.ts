@@ -5,8 +5,17 @@ import { stripe } from "@/lib/stripe";
 import { createServiceRoleClient } from "@/utils/supabase/service";
 import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 
+/**
+ * POST /api/webhooks/stripe
+ * Receives and processes Stripe webhook events.
+ *
+ * For testing in local env set the STRIPE_WEBHOOK_SECRET key given by STRIPE CLI
+ * Then run the command:
+ * stripe listen --forward-to localhost:3000/api/webhooks/stripe
+ */
 export async function POST(request: Request) {
   try {
+    // Read the raw body as text. Required by Stripe's signature verification,
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");
@@ -18,14 +27,19 @@ export async function POST(request: Request) {
       throw new Error("Stripe signature is not defined");
     }
 
+    // Verify the event came from Stripe and wasn't tampered with.
+    // Throws if the signature is invalid, which returns a 400 to Stripe.
     const event: Stripe.Event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET,
     );
 
-
-
+    /* 
+     STRIPE EVENT: invoice.paid
+     The 'invoice.paid' event fires for both the initial subscription payment 
+     and monthly renewals 
+    */
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as Stripe.Invoice;
 
@@ -40,6 +54,8 @@ export async function POST(request: Request) {
       }
 
       const supabase = createServiceRoleClient();
+
+      // --- Create/update the Student's subscription record ---
 
       const invoiceAny = invoice as any;
       const stripeSubscriptionId: string | undefined =
@@ -88,6 +104,7 @@ export async function POST(request: Request) {
               subscriptionItem.current_period_end * 1000,
             ).toISOString();
 
+            // Check if this is a first time customer
             const { data: existing } = await supabase
               .from("student_subscriptions")
               .select("id")
@@ -99,6 +116,7 @@ export async function POST(request: Request) {
 
             const existingId = existing?.[0]?.id;
 
+            // If customer already exists in database, update their record
             if (existingId) {
               const { error } = await supabase
                 .from("student_subscriptions")
@@ -114,9 +132,10 @@ export async function POST(request: Request) {
                   "invoice.paid: error updating student_subscription:",
                   error,
                 );
-              else console.log("invoice.paid: subscription renewed", existingId);
+              else
+                console.log("invoice.paid: subscription renewed", existingId);
             } else {
-              // Initial payment — insert and then assign a coach
+              // Else: Insert new subscription record and then assign a coach
               const { error } = await supabase
                 .from("student_subscriptions")
                 .insert({
@@ -135,7 +154,10 @@ export async function POST(request: Request) {
                   error,
                 );
               } else {
-                console.log("invoice.paid: subscription created for student", studentId);
+                console.log(
+                  "invoice.paid: subscription created for student",
+                  studentId,
+                );
                 try {
                   await assignCoachToStudent(studentId);
                   console.log(
@@ -151,14 +173,7 @@ export async function POST(request: Request) {
               }
             }
 
-            const { data: student } = await supabase
-              .from("students")
-              .select("first_name, last_name")
-              .eq("id", studentId)
-              .single();
-            const paymentDescription = `Payment for ${student ? `${student.first_name} ${student.last_name}`.trim() : "student"} - ${plan.name}`;
-            console.log("invoice.paid: paymentDescription =", paymentDescription);
-
+            // Update/Create LessonSpace records
             const baseUrl =
               process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
             try {
@@ -185,7 +200,10 @@ export async function POST(request: Request) {
           }
         }
       } else {
-        console.warn("invoice.paid: no subscription ID found on invoice", invoice.id);
+        console.warn(
+          "invoice.paid: no subscription ID found on invoice",
+          invoice.id,
+        );
       }
     }
 

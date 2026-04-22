@@ -3,13 +3,13 @@ import SideBarBox from "./SideBarBox";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import {
-  Home,
-  BookOpen,
-  MessageCircle,
-  Award,
-  CalendarDays,
-} from "lucide-react";
+  HomeIcon,
+  LessonsIcon,
+  MessageCircleIcon,
+  RewardsIcon,
+} from "./ui/icons";
 
 /**
  * Role-specific navigation items.
@@ -20,36 +20,26 @@ import {
  */
 const NAV_ITEMS = {
   student: [
-    { id: 0, name: "Home", link: "/home", icon: <Home size={20} /> },
-    { id: 1, name: "Lessons", link: "/lesson", icon: <BookOpen size={20} /> },
-    {
-      id: 2,
-      name: "Messages",
-      link: "/message",
-      icon: <MessageCircle size={20} />,
-    },
-    { id: 3, name: "Rewards", link: "/reward", icon: <Award size={20} /> },
+    { id: 0, name: "Home", link: "/home", icon: <HomeIcon /> },
+    { id: 1, name: "Lessons", link: "/lesson", icon: <LessonsIcon /> },
+    { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
+    { id: 3, name: "Rewards", link: "/reward", icon: <RewardsIcon /> },
   ],
   parent: [
-    { id: 0, name: "Home", link: "/parent", icon: <Home size={20} /> }, // parent dashboard home is /parent
+    { id: 0, name: "Home", link: "/parent", icon: <HomeIcon /> },
     {
       id: 1,
       name: "Lessons",
-      link: "/parent/lessons", // different than /lessons page in student dash.
-      icon: <BookOpen size={20} />,
-    }, 
+      link: "/parent/lessons",
+      icon: <LessonsIcon />,
+    },
     {
       id: 2,
       name: "Schedule",
       link: "/session",
       icon: <CalendarDays size={20} />,
     },
-    {
-      id: 3,
-      name: "Messages",
-      link: "/message",
-      icon: <MessageCircle size={20} />,
-    },
+    { id: 3, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
   ],
 };
 
@@ -78,21 +68,30 @@ export default function SideBar({ profileType }: Props) {
   }, [pathname, items]);
 
   return (
-    <div className="flex flex-col gap-8 w-auto h-full px-6 pt-6 ">
+    <div className="flex flex-col w-auto h-full px-6 pt-[26px]">
       {/* Logo */}
-      <Image src="/logo.png" alt="Talk Maze Logo" width={204} height={68} />
-      {/* Navigation items list. Renders different list for parent vs student */}
-      {items.map((item) => (
-        <SideBarBox
-          key={item.id}
-          id={item.id}
-          name={item.name}
-          state={activeId === item.id}
-          link={item.link}
-          icon={item.icon}
-          onSelect={() => setActiveId(item.id)}
-        />
-      ))}
+      <Image
+        src="/talkmaze.svg"
+        alt="Talk Maze Logo"
+        className="self-center mb-[13px]"
+        width={150}
+        height={68}
+      />
+      <nav className="flex flex-col gap-[18px]">
+        {/* Navigation items list. Renders different list for parent vs student */}
+        {items.map((item) => (
+          <SideBarBox
+            key={item.id}
+            id={item.id}
+            name={item.name}
+            state={activeId === item.id}
+            link={item.link}
+            icon={item.icon}
+            onSelect={() => setActiveId(item.id)}
+          />
+        ))}
+      </nav>
     </div>
   );
 }
+

@@ -216,6 +216,7 @@ function CheckoutPageContent() {
   const planName = searchParams.get("name") || "Unknown Plan";
   const amountCents = searchParams.get("amount");
   const priceId = searchParams.get("price_id");
+  const studentId = searchParams.get("studentId");
 
   // Convert amount from cents (Stripe format) to a display string (e.g. "$49")
   const amountDisplay = amountCents
@@ -244,7 +245,7 @@ function CheckoutPageContent() {
         const res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId }),
+          body: JSON.stringify({ priceId, studentId }),
           signal: abortController.signal,
         });
         clearTimeout(timeoutId);

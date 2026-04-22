@@ -6,6 +6,16 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
+/**
+ * Chatbox client displaying messages between this user and the contact they
+ * want to send messages to.
+ * 
+ * Establishes a connection to the websocket of the conversation channel
+ * 
+ * @param conversation conversation between this user and selected contact
+ * @param user the current user
+ * @param messages message history between this user and selected contact
+ */
 export function ConversationClient({
   conversation,
   user,
@@ -17,6 +27,7 @@ export function ConversationClient({
   user: {
     id: string;
     name: string;
+    avatar_url: string | null;
   };
   messages: Message[];
 }) {
@@ -34,7 +45,15 @@ export function ConversationClient({
     userId: user.id, // kept for hook signature compatibility
   });
 
-  const visibleMessages = messages.concat(realTimeMessages);
+  // Optimistic rendering: track messages the user sends before server confirms
+  const [sentMessages, setSentMessages] = useState<
+    (Message & { status: "pending" | "error" | "success" })[]
+  >([]);
+
+  const visibleMessages = messages.concat(
+    realTimeMessages,
+    sentMessages.filter((m) => !realTimeMessages.find((rm) => rm.id === m.id)),
+  );
 
   return (
     <div
@@ -50,12 +69,43 @@ export function ConversationClient({
       >
         <div className="flex flex-col gap-2">
           {visibleMessages.map((message) => (
-            <ConversationMessage key={message.id} {...message} />
+            <ConversationMessage
+              key={message.id}
+              {...message}
+              status={"status" in message ? (message as { status: "pending" | "error" | "success" }).status : undefined}
+            />
           ))}
         </div>
       </div>
       {/* Send Message Input */}
-      <ConversationMessageInput conversationId={conversation.id} />
+      <ConversationMessageInput
+        conversationId={conversation.id}
+        onSend={(message) => {
+          setSentMessages((prev) => [
+            ...prev,
+            {
+              id: message.id,
+              text: message.text,
+              created_at: new Date().toISOString(),
+              sender_id: user.id,
+              sender: { name: user.name, avatar_url: user.avatar_url },
+              status: "pending",
+            },
+          ]);
+        }}
+        onSuccessfulSend={(message) => {
+          setSentMessages((prev) =>
+            prev.map((m) =>
+              m.id === message.id ? { ...message, status: "success" } : m
+            )
+          );
+        }}
+        onErrorSend={(id) => {
+          setSentMessages((prev) =>
+            prev.map((m) => (m.id === id ? { ...m, status: "error" } : m))
+          );
+        }}
+      />
     </div>
   );
 }

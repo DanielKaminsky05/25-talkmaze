@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { PackageRenewaloptionsContainer } from "./_components/PackageRenewalOptionsContainer";
 import CurrentSubscription from "./_components/CurrentSubscription";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import { MoveLeft } from "lucide-react";
 
 interface Plan {
   id: string;
@@ -20,33 +19,57 @@ interface Plan {
  * Top level page component for the /payments.
  * Contains the CurrentSubscription and the Plan Renewal Package Options
  */
-export default async function PaymentPage() {
+export default async function PaymentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ studentId?: string }>;
+}) {
+  const { studentId: queryStudentId } = await searchParams;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Resolve which student this page is for.
+  // If ?studentId= is present, verify the account owns that student.
+  // Otherwise fall back to the active profile cookie.
+  let resolvedStudentId: string | undefined;
+
+  if (queryStudentId && user) {
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("id", queryStudentId)
+      .eq("account_id", user.id)
+      .maybeSingle();
+    if (student) resolvedStudentId = student.id;
+  }
+
   const activeProfile = await getActiveProfile();
-  
+
+  if (!resolvedStudentId && activeProfile?.type === "student") {
+    resolvedStudentId = activeProfile.id;
+  }
+
   // Fetch all Subscription plans from the database so that it can be displayed
   // in renewal options
   const { data: plans } = (await supabase.from("plans").select("*")) as {
     data: Plan[] | null;
   };
-  
+
   // Check if student has an active subscription to determine back link
   let hasSubscription = false;
-  if (activeProfile?.type === "student") {
+  if (resolvedStudentId) {
     const { data: subscription } = await supabase
       .from("student_subscriptions")
       .select("id")
-      .eq("student_id", activeProfile.id)
+      .eq("student_id", resolvedStudentId)
       .eq("status", "active")
       .maybeSingle();
     hasSubscription = !!subscription;
-  } else if (activeProfile?.type === "parent") {
-    // Parents always go to /parent or dashboard
-    hasSubscription = true; 
   }
 
-  const backLink = hasSubscription ? "/home" : "/profiles";
-  const backLabel = hasSubscription ? "Return to Dashboard" : "Return to Profiles";
+  const isParentFlow = !!resolvedStudentId && resolvedStudentId === queryStudentId;
+  const backLink = isParentFlow ? "/parent" : hasSubscription ? "/home" : "/profiles";
+  const backLabel = isParentFlow ? "Return to Dashboard" : hasSubscription ? "Return to Dashboard" : "Return to Profiles";
 
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col ">
@@ -69,7 +92,7 @@ export default async function PaymentPage() {
             Current subscription in progress
           </span>
         </div>
-        <CurrentSubscription />
+        <CurrentSubscription studentId={resolvedStudentId} />
 
         {/* Section 2 Heading - Renewal Options*/}
         <div className="flex justify-center my-4">
@@ -78,7 +101,7 @@ export default async function PaymentPage() {
           </span>
         </div>
 
-        <PackageRenewaloptionsContainer renewalOptions={plans ?? []} />
+        <PackageRenewaloptionsContainer renewalOptions={plans ?? []} studentId={resolvedStudentId} />
       </main>
     </div>
   );

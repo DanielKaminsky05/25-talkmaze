@@ -3,6 +3,11 @@ import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { ConversationClient } from "./_client";
 import { createClient } from "@/utils/supabase/server";
 
+/**
+ * Renders a conversation page for the given contact.
+ * Resolves the current account, scopes by active profile for role=1 users,
+ * ensures a conversation exists, and loads message history for the client UI.
+ */
 export default async function CoachConversationPage({
   params,
 }: {
@@ -20,16 +25,59 @@ export default async function CoachConversationPage({
 
   const conversationId = await getConversation(user.id, user.role, contactId, profile);
   const messages = await getMessages(conversationId);
+  const currentSender = await getCurrentSender(user.id, user.role, profile);
 
   return (
     <ConversationClient
       conversation={{ id: conversationId }}
-      user={{ id: user.id, name: user.email }}
+      user={{ id: user.id, name: currentSender.name, avatar_url: currentSender.avatar_url }}
       messages={messages}
     />
   );
 }
 
+/**
+ * Resolves sender display metadata for the current actor.
+ * Uses the active parent/student profile for role=1 users,
+ * or the coach profile linked to the account for coach/admin users.
+ */
+async function getCurrentSender(
+  userId: string,
+  userRole: number,
+  profile: { id: string; type: "student" | "parent" } | null,
+): Promise<{ name: string; avatar_url: string | null }> {
+  const supabase = await createClient();
+
+  if (userRole === 1 && profile) {
+    const table = profile.type === "parent" ? "parents" : "students";
+    const { data } = await supabase
+      .from(table)
+      .select("first_name, last_name, avatar_url")
+      .eq("id", profile.id)
+      .single();
+    return {
+      name: data ? `${data.first_name || ""} ${data.last_name || ""}`.trim() : "Unknown",
+      avatar_url: data?.avatar_url ?? null,
+    };
+  }
+
+  // Coach or admin
+  const { data } = await supabase
+    .from("coaches")
+    .select("first_name, last_name, avatar_url")
+    .eq("account_id", userId)
+    .single();
+  return {
+    name: data ? `${data.first_name || ""} ${data.last_name || ""}`.trim() : "Unknown",
+    avatar_url: data?.avatar_url ?? null,
+  };
+}
+
+/**
+ * Get the authenticated account row with role information.
+ * @returns Account row as an object
+ *          NULL when there is no active auth session or account lookup fails.
+ */
 async function getUser() {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -45,6 +93,12 @@ async function getUser() {
   return data;
 }
 
+/**
+ * Finds or creates a conversation between a coach and a profile.
+ * For role=1 users, contactId is a coach account_id and profile comes from
+ * the active profile context. For coach/admin users, contactId is treated as
+ * a student/parent profile id and the conversation is upserted.
+ */
 async function getConversation(
   userId: string,
   userRole: number,
@@ -113,6 +167,10 @@ async function getConversation(
   }
 }
 
+/**
+ * Loads chronological messages for a conversation and along with the messages
+ * get the message sender's name and avatar expected by ConversationClient.
+ */
 async function getMessages(conversationId: string) {
   const supabase = await createClient();
 

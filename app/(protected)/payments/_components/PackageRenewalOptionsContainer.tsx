@@ -21,8 +21,10 @@ interface Plan {
  */
 export const PackageRenewaloptionsContainer = ({
   renewalOptions,
+  studentId,
 }: {
   renewalOptions: Plan[];
+  studentId?: string;
 }) => {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -42,8 +44,9 @@ export const PackageRenewaloptionsContainer = ({
       alert("Please select a plan first.");
       return;
     }
+    const studentParam = studentId ? `&studentId=${studentId}` : "";
     router.push(
-      `/payments/checkout?price_id=${selectedPlan.stripe_price_id}&name=${encodeURIComponent(selectedPlan.name)}&amount=${selectedPlan.cents}`,
+      `/payments/checkout?price_id=${selectedPlan.stripe_price_id}&name=${encodeURIComponent(selectedPlan.name)}&amount=${selectedPlan.cents}${studentParam}`,
     );
   };
 

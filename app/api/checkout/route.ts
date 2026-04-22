@@ -13,8 +13,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 */
 export async function POST(request: Request) {
   try {
-    // Retrieve the Stripe (product) price_id from the request body
-    const { priceId } = await request.json();
+    // Retrieve the Stripe (product) price_id from the request body.
+    // studentId is optional — provided when a parent is checking out on behalf of a child.
+    const { priceId, studentId: studentIdOverride } = await request.json();
     if (!priceId) {
       return NextResponse.json(
         { error: "Price ID is required" },
@@ -33,29 +34,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Only student profiles can check out.
-    // Reject parents/admins or missing profiles
-    const activeProfile = await getActiveProfile();
-    if (!activeProfile || activeProfile.type !== "student") {
-      return NextResponse.json(
-        { error: "Select a student profile before checkout" },
-        { status: 400 },
-      );
-    }
+    // Resolve which student this checkout is for.
+    // If studentId was passed (parent flow), verify the account owns that student.
+    // Otherwise fall back to the active student profile cookie.
+    let studentId: string;
 
-    // Verify the active student profile belongs to the authenticated account
-    const { data: student, error: studentError } = await supabase
-      .from("students")
-      .select("id")
-      .eq("id", activeProfile.id)
-      .eq("account_id", user.id)
-      .single();
+    if (studentIdOverride) {
+      const { data: student, error: studentError } = await supabase
+        .from("students")
+        .select("id")
+        .eq("id", studentIdOverride)
+        .eq("account_id", user.id)
+        .single();
 
-    if (studentError || !student) {
-      return NextResponse.json(
-        { error: "Active student profile is invalid" },
-        { status: 403 },
-      );
+      if (studentError || !student) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+      studentId = student.id;
+    } else {
+      const activeProfile = await getActiveProfile();
+      if (!activeProfile || activeProfile.type !== "student") {
+        return NextResponse.json(
+          { error: "Select a student profile before checkout" },
+          { status: 400 },
+        );
+      }
+
+      const { data: student, error: studentError } = await supabase
+        .from("students")
+        .select("id")
+        .eq("id", activeProfile.id)
+        .eq("account_id", user.id)
+        .single();
+
+      if (studentError || !student) {
+        return NextResponse.json(
+          { error: "Active student profile is invalid" },
+          { status: 403 },
+        );
+      }
+      studentId = student.id;
     }
 
     // Look up the account's existing Stripe customer ID,
@@ -107,7 +125,7 @@ export async function POST(request: Request) {
       payment_settings: { save_default_payment_method: "on_subscription" },
       metadata: {
         account_id: user.id,
-        student_id: student.id,
+        student_id: studentId,
         price_id: priceId,
       },
       // Expand nested objects so we can extract the client secret in one call

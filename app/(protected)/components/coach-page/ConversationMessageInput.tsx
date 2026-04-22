@@ -5,10 +5,14 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ConversationMessageInput({
   conversationId,
-  onMessageSent,
+  onSend,
+  onSuccessfulSend,
+  onErrorSend,
 }: {
   conversationId: string;
-  onMessageSent?: (message: Message) => void;
+  onSend: (message: { id: string; text: string }) => void;
+  onSuccessfulSend: (message: Message) => void;
+  onErrorSend: (id: string) => void;
 }) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -26,11 +30,15 @@ export default function ConversationMessageInput({
     if (!text) return;
     setMessage("");
 
-    const result = await sendMessage({ text, conversationId });
+    const id = crypto.randomUUID();
+    onSend({ id, text });
+
+    const result = await sendMessage({ id, text, conversationId });
     if (result.error) {
       console.error("Send error:", result.message);
+      onErrorSend(id);
     } else {
-      onMessageSent?.(result.message); // ← bubble up to parent
+      onSuccessfulSend(result.message);
     }
   }
 

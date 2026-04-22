@@ -40,9 +40,9 @@ export default function ProtectedLayoutShell({ profileType, avatarUrl, children 
   return (
     <div className="flex flex-row w-screen h-screen overflow-hidden">
       <SideBar profileType={profileType} />
-      <div className="flex flex-1 flex-col overflow-y-auto pr-6">
+      <div className="flex flex-1 flex-col overflow-hidden pr-6">
         <NavigationBar profileType={profileType} avatarUrl={avatarUrl} />
-        <div className="bg-[#1f2e3b] w-full flex-1 min-w-[300px] rounded-2xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-6">
+        <div className="bg-[#1f2e3b] w-full flex-1 min-h-0 min-w-[300px] rounded-2xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-6 overflow-y-auto">
           {children}
         </div>
       </div>
