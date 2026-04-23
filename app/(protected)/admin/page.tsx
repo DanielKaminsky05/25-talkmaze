@@ -85,7 +85,7 @@ export default function AdminPage() {
   const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
 
  interface Course{
-  id: number;
+  id: string;
   name: string;
   description?: string;
   status?: string;
@@ -111,6 +111,9 @@ export default function AdminPage() {
   // Assignment state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
+
+  const getCoachDisplayName = (coach: Partial<Coach> | Coach) =>
+    `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim();
 
   const handleAddAssignment = async (coachId: string, studentId: string) => {
     const res = await fetch("/api/admin/assignments", {
@@ -391,8 +394,9 @@ export default function AdminPage() {
     const query = employeeSearchQuery.toLowerCase();
 
     return employees.filter((coach) => {
+      const fullName = getCoachDisplayName(coach).toLowerCase();
       return (
-        coach.name.toLowerCase().includes(query) ||
+        fullName.includes(query) ||
         coach.id.toLowerCase().includes(query) ||
         coach.account_id.toLowerCase().includes(query)
       );
@@ -1097,8 +1101,8 @@ export default function AdminPage() {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditingEmployee
-                  ? `${employeeEditForm.name ?? selectedEmployee.name}`
-                  : `${selectedEmployee.name}`}
+                  ? getCoachDisplayName({ ...selectedEmployee, ...employeeEditForm }) || "N/A"
+                  : getCoachDisplayName(selectedEmployee) || "N/A"}
               </h2>
               <div className="flex items-center gap-2">
                 {!isEditingEmployee ? (
@@ -1268,9 +1272,13 @@ export default function AdminPage() {
                         </div>
 
                         <Field
-                          label="Name"
-                          fieldKey="name"
-                          colSpan="col-span-2"
+                          label="First Name"
+                          fieldKey="first_name"
+                        />
+
+                        <Field
+                          label="Last Name"
+                          fieldKey="last_name"
                         />
                       </div>
                     </div>
