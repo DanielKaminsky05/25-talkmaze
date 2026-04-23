@@ -402,6 +402,7 @@ export type Database = {
           pre_lesson_url: string | null
           prev_lesson: string | null
           slide_show_url: string | null
+          slug: string | null
           title: string
           updated_at: string
         }
@@ -417,6 +418,7 @@ export type Database = {
           pre_lesson_url?: string | null
           prev_lesson?: string | null
           slide_show_url?: string | null
+          slug?: string | null
           title: string
           updated_at?: string
         }
@@ -432,6 +434,7 @@ export type Database = {
           pre_lesson_url?: string | null
           prev_lesson?: string | null
           slide_show_url?: string | null
+          slug?: string | null
           title?: string
           updated_at?: string
         }
@@ -825,6 +828,7 @@ export type Database = {
           notes: string | null
           teach_works_url: string | null
           updated_at: string
+          webhook_room_id: string | null
         }
         Insert: {
           account_id: string
@@ -843,6 +847,7 @@ export type Database = {
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
+          webhook_room_id?: string | null
         }
         Update: {
           account_id?: string
@@ -861,6 +866,7 @@ export type Database = {
           notes?: string | null
           teach_works_url?: string | null
           updated_at?: string
+          webhook_room_id?: string | null
         }
         Relationships: [
           {
