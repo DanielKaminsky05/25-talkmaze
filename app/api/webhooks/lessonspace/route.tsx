@@ -61,21 +61,31 @@ export async function POST(
          try{
 
             console.log("Sending email")
+
+            
+            //for actual deployment, replace to with emailData.email
             const {data, error} = await resend.emails.send({
-                from: JSON.stringify(company_email),
-                to: JSON.stringify(emailData.email),
+                from: 'Talk Maze <onboarding@resend.dev>',
+                to: 'wdstalkmaze@gmail.com',
                 subject: 'Talkmaze Lessonspace AI summary',
-                react: EmailTemplate({firstName: studentData.first_name, lastName: studentData.last_name, summary: body.summary, date: new Date()}),
+                react: (
+                    <EmailTemplate
+                        firstName={studentData.first_name}
+                        lastName={studentData.last_name}
+                        summary={body.summary}
+                        date={new Date()}
+                    />
+                )
             })
 
              if (error) {
-                console.log("Error sending email: " + error)
+                console.log("Error sending email: " + JSON.stringify(error))
                 return Response.json({ error }, { status: 500 });
             }
 
             return Response.json(data);
          }catch(err){
-            console.log("Error sending AI summary");
+            console.log("Error sending AI summary: " + JSON.stringify(err));
             return NextResponse.json({status:500, message: "Error sending AI summary"})
          }
 
