@@ -130,8 +130,7 @@ export async function CreateTeacherRoom(studentData: student, coachData: Coach) 
               }
           }
         }
-      }
-    })
+      })
 
   })
 
