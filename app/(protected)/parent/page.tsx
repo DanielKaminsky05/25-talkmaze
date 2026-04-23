@@ -54,24 +54,37 @@ export default async function ParentDashboard() {
   let schedule: Appointment[] = [];
 
   if (studentIds.length > 0) {
-    const { data: sessions } = await supabase
+    const now = new Date().toISOString();
+
+    const { data: sessions, error: sessionsError } = await supabase
       .from("sessions")
       .select(
         `id, start_time, end_time, student_id,
          students(first_name),
-         coaches(name)`,
+         coaches(first_name, last_name)`,
       )
       .in("student_id", studentIds)
+      .gte("start_time", now)
       .order("start_time", { ascending: true });
 
+    if (sessionsError) {
+      console.error(
+        "[ParentDashboard] Failed to fetch sessions:",
+        sessionsError.message,
+        { code: sessionsError.code, details: sessionsError.details }
+      );
+    }
     schedule = (sessions ?? []).map((session: any) => ({
       id: session.id.toString(),
       title: "Public Speaking Session",
       start_date: session.start_time,
       end_date: session.end_time,
       description: "",
+      student_id: session.student_id,
       studentName: session.students?.first_name ?? "Student",
-      coachName: session.coaches?.name ?? "Coach",
+      coachName: session.coaches
+        ? `${session.coaches.first_name ?? ""} ${session.coaches.last_name ?? ""}`.trim()
+        : "",
       status: "scheduled",
     }));
   }

@@ -101,7 +101,9 @@ export default function ParentDashboardClient({ students, schedule, attendanceBy
           />
 
           <div className="flex-1 min-h-0">
-            <ScheduleList schedule={schedule} />
+            <ScheduleList
+              schedule={schedule.filter((s) => s.student_id === currentStudent.id)}
+            />
           </div>
         </div>
       </div>

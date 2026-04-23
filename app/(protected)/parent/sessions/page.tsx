@@ -59,7 +59,8 @@ export default async function ParentSessionsPage() {
       .from("sessions")
       .select(
         `id, start_time, end_time, student_id,
-         students(first_name, last_name)`
+         students(first_name, last_name),
+         coaches(first_name, last_name)`
       )
       .in("student_id", studentIds)
       .gte("start_time", now)
@@ -82,7 +83,9 @@ export default async function ParentSessionsPage() {
         ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim() ||
         "Student"
         : "Student",
-      coachName: s.coaches?.name ?? "",
+      coachName: s.coaches
+        ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
+        : "",
     }));
   }
 

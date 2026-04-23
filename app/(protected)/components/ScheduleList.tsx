@@ -13,58 +13,56 @@ export default function ScheduleList({
     null,
   );
 
-  if (schedule.length === 0) {
-    return (
-      <div className="w-[100%] h-[300px] rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400">
-        No upcoming lessons.
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full flex flex-col gap-4">
-      <h3 className="text-xl font-bold text-[#2B4257]">Upcoming Lessons</h3>
-      <div className="flex flex-col gap-3">
-        {schedule.slice(0, 3).map((item) => {
-          const startDate = new Date(item.start_date);
-          const dateStr = startDate.toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          });
-          const timeStr = startDate.toLocaleTimeString(undefined, {
-            hour: "numeric",
-            minute: "2-digit",
-          });
+    <div className="w-full h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3">
+      <h3 className="font-semibold text-[#1F2E3B]">Upcoming Sessions</h3>
 
-          return (
-            <div
-              key={item.id}
-              onClick={() => setSelectedLesson(item)}
-              className="block group cursor-pointer"
-            >
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex justify-between items-center">
+      {/* Session list or empty state */}
+      <div className="flex flex-col gap-3 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {schedule.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center h-full">
+            <p className="text-[#2B4257] text-sm font-medium opacity-60">
+              No upcoming sessions
+            </p>
+          </div>
+        ) : (
+          schedule.map((item) => {
+            const startDate = new Date(item.start_date);
+            const dateStr = startDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            });
+            const timeStr = startDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedLesson(item)}
+                className="w-full min-h-[72px] p-4 border-[0.5px] rounded-xl font-semibold border-[#4E4C4C] shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] flex justify-between items-center bg-white text-[#2B4257] cursor-pointer hover:shadow-md transition-shadow"
+              >
                 <div>
-                  <div className="flex items-center gap-2">
-                    <div className="font-semibold text-[#2B4257] group-hover:text-[#65CFAD] transition-colors">
-                      {item.title}
-                    </div>
-                    {item.studentName && (
-                      <span className="text-[10px] bg-[#B1E7D6] text-[#2B4257] px-2 py-0.5 rounded-full font-bold uppercase">
-                        {item.studentName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {dateStr} • {timeStr}
-                  </div>
+                  <p>{dateStr}</p>
+                  {item.studentName && (
+                    <p className="text-sm font-normal text-[#4E4C4C] mt-0.5">
+                      {item.studentName}
+                      {item.coachName && (
+                        <span className="text-[#2B4257]">
+                          {" "}· with {item.coachName}
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
-                <div className="w-8 h-8 rounded-full bg-[#f0f9f6] flex items-center justify-center text-[#2B4257] group-hover:bg-[#B1E7D6] transition-colors">
-                  →
-                </div>
+                <p className="shrink-0 ml-3">{timeStr}</p>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {selectedLesson && (
