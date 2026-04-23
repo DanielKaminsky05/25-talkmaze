@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Roboto, Inter } from "next/font/google";
 
 // Fonts imported from next/font
@@ -14,7 +14,12 @@ const inter = Inter({
 });
 
 // Calendar component
-export default function Calendar() {
+interface CalendarProps {
+  /** ISO datetime strings for sessions — days with a session get a dot */
+  sessionDates?: string[];
+}
+
+export default function Calendar({ sessionDates }: CalendarProps = {}) {
   const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const monthsOfYear = [
     "January",
@@ -36,6 +41,19 @@ export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
   const [selected, setSelected] = useState<Date | null>(null);
+
+  // Build a Set of "Y-M-D" keys for O(1) session-day lookup
+  const sessionDaySet = useMemo(() => {
+    const set = new Set<string>();
+    for (const iso of sessionDates ?? []) {
+      const d = new Date(iso);
+      set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    }
+    return set;
+  }, [sessionDates]);
+
+  const hasSession = (y: number, m: number, d: number) =>
+    sessionDaySet.has(`${y}-${m}-${d}`);
 
   // Get last day of the current month
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -200,9 +218,9 @@ export default function Calendar() {
               onClick={() => handleSelect(currentYear, currentMonth, dayNum)}
             >
               {dayNum}
-              {/* Render dot under the current day on calendar */}
-              {isToday && (
-                <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#65CFAD]" />
+              {/* Session dot */}
+              {hasSession(currentYear, currentMonth, dayNum) && (
+                <span className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white/70" />
               )}
             </span>
           );

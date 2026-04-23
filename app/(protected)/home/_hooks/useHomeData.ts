@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
+import { Appointment } from "@/app/(protected)/types/lesson";
 
 type LessonSummary = {
   id: string;
@@ -28,6 +29,7 @@ export function useHomeData() {
   const [currentLesson, setCurrentLesson] = useState<HomeLesson | null>(null);
   const [prevLesson, setPrevLesson] = useState<HomeLesson | null>(null);
   const [nextLesson, setNextLesson] = useState<HomeLesson | null>(null);
+  const [sessions, setSessions] = useState<Appointment[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -39,6 +41,30 @@ export function useHomeData() {
           router.push("/profiles");
           return;
         }
+
+        const now = new Date().toISOString();
+        const { data: sessionsRaw } = await supabase
+          .from("sessions")
+          .select(`id, start_time, end_time, students(first_name, last_name), coaches(first_name, last_name)`)
+          .eq("student_id", profile.id)
+          .gte("start_time", now)
+          .order("start_time", { ascending: true });
+
+        setSessions(
+          (sessionsRaw ?? []).map((s: any) => ({
+            id: s.id.toString(),
+            title: "Public Speaking Session",
+            start_date: s.start_time,
+            end_date: s.end_time,
+            studentName: s.students
+              ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim()
+              : "",
+            coachName: s.coaches
+              ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
+              : "",
+            status: "scheduled",
+          })),
+        );
 
         const { data: assignment } = await supabase
           .from("course_assignment")
@@ -122,5 +148,5 @@ export function useHomeData() {
     load();
   }, []);
 
-  return { loading, progress, currentLesson, prevLesson, nextLesson };
+  return { loading, progress, currentLesson, prevLesson, nextLesson, sessions };
 }
