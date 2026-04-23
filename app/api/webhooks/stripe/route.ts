@@ -16,11 +16,8 @@ import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 export async function POST(request: Request) {
   try {
     // Read the raw body as text. Required by Stripe's signature verification,
-<<<<<<< HEAD
     // which breaks if the body is parsed (e.g. via request.json()) first
     console.log("Webhook hit!")
-=======
->>>>>>> 34bf612d8b1bc2e7ce5e7849960d161f516a7d49
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");
@@ -132,13 +129,20 @@ export async function POST(request: Request) {
                   sessions_remaining: plan.classes,
                 })
                 .eq("id", existingId);
-              if (error)
+              if (error) {
                 console.error(
                   "invoice.paid: error updating student_subscription:",
                   error,
                 );
-              else
+              } else {
                 console.log("invoice.paid: subscription renewed", existingId);
+                try {
+                  await assignCoachToStudent(studentId, plan.classes);
+                  console.log("invoice.paid: sessions bulk-generated for renewed student", studentId);
+                } catch (coachErr) {
+                  console.error("invoice.paid: session generation failed:", coachErr);
+                }
+              }
             } else {
               // Else: Insert new subscription record and then assign a coach
               const { error } = await supabase
@@ -164,9 +168,9 @@ export async function POST(request: Request) {
                   studentId,
                 );
                 try {
-                  await assignCoachToStudent(studentId);
+                  await assignCoachToStudent(studentId, plan.classes);
                   console.log(
-                    "invoice.paid: coach assigned to student",
+                    "invoice.paid: coach assigned & sessions bulk-generated for student",
                     studentId,
                   );
                 } catch (coachErr) {
