@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import type { Database } from "@/database";
+import type { Assignment } from "@/lib/types/assignments";
 import { Josefin_Slab } from "next/font/google";
 //fetch all assignments joined with coach/student names 
 
@@ -46,11 +47,11 @@ export async function POST(req: NextRequest) {
   console.log("Coach Data: " + JSON.stringify(coachData));
   console.log("Student Data :" + JSON.stringify(studentData));
   if (!coachData) {
-    console.error("404 Coach not found for TW ID:", coach_id_1);
+    
     return NextResponse.json({ error: "Coach not found in local TalkMaze database." }, { status: 404 });
   }
   if (!studentData) {
-    console.error("404 Student not found for TW ID:", student_id_1);
+    
     return NextResponse.json({ error: "Student not found in local TalkMaze database." }, { status: 404 });
   }
 
@@ -60,33 +61,31 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase
     .from("coach_students")
     .insert({ coach_id, student_id });
-
-
   //save this into supabase for the teacher
-  const make_coach_url_res_json = await CreateTeacherRoom(studentData, coachData)
-  const insert_teacher_url = await (supabase.from('students') as any).update({ lesson_space_teacher_link: make_coach_url_res_json.client_url }).eq("id", student_id)
+  //const make_coach_url_res_json = await CreateTeacherRoom(studentData, coachData)
+  //const insert_teacher_url = await (supabase.from('students') as any).update({ lesson_space_teacher_link: make_coach_url_res_json.client_url }).eq("id", student_id)
 
-  if (insert_teacher_url.error) {
-    console.log("Error inserting teacher url: " + insert_teacher_url.error);
-    return NextResponse.json({ error: 500, message: "Error inserting teacher lessonspace url link into students table in supabase" });
-  }
+  // if (insert_teacher_url.error) {
+  //   console.log("Error inserting teacher url: " + insert_teacher_url.error);
+  //   return NextResponse.json({ error: 500, message: "Error inserting teacher lessonspace url link into students table in supabase" });
+  // }
   if (error) {
     console.error("POST Assignment Insert Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Find all coach ID's for this student to sync to Teachworks
-  const { data: allAssignments, error: allAssignmentsError } = await supabase
-    .from("coach_students")
-    .select("coaches(tw_id)")
-    .eq("student_id", student_id);
-
-  if (allAssignmentsError) {
-    console.error("POST Assignment Select Error:", allAssignmentsError);
+  const newAssignment: Assignment = {
+    id: `${coach_id}_${student_id}`,
+    coach_id: coach_id,
+    student_id: student_id,
+    coaches: { name: coachData ? `${coachData.first_name || ""} ${coachData.last_name || ""}`.trim() : null },
+    students: { name: studentData ? `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim() : null }
   }
 
-  console.log("All assignments: " + JSON.stringify(allAssignments));
-  return NextResponse.json(allAssignments);
+
+  return NextResponse.json(newAssignment)
+  
+
 }
 
 export async function CreateTeacherRoom(studentData: student, coachData: Coach) {
