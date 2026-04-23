@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Appointment } from "../types/lesson";
 import LessonDetailModal from "./LessonDetailModal";
 
@@ -14,7 +14,7 @@ export default function ScheduleList({
   );
 
   return (
-    <div className="w-full h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3">
+    <div className="w-full h-full max-h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3 overflow-hidden">
       <h3 className="font-semibold text-[#1F2E3B]">Upcoming Sessions</h3>
 
       {/* Session list or empty state */}

@@ -114,14 +114,14 @@ export async function middleware(request: NextRequest) {
           activeProfileType === "student" && 
           pathname.startsWith("/home")
         ) {
-          const { data: subscription } = await supabase
+          const { data: subscriptions } = await supabase
             .from("student_subscriptions")
             .select("id")
             .eq("student_id", activeProfileId)
             .eq("status", "active")
-            .maybeSingle();
+            .limit(1);
 
-          if (!subscription) {
+          if (!subscriptions || subscriptions.length === 0) {
             const url = request.nextUrl.clone();
             url.pathname = "/payments";
             return NextResponse.redirect(url);

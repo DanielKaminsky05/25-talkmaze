@@ -3,16 +3,14 @@
 import { useEffect, useState } from "react";
 import Calendar from "../components/calendar/Calendar";
 import ScheduleSidebar from "../components/schedule-sidebar/ScheduleSidebar";
-
+import { createClient } from "@/utils/supabase/client";
+import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 type Lesson = {
     id: string;
     title: string;
     starts_at: Date;
 };
-
-
-
 
 const CalendarPage = () => {
     const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
@@ -23,27 +21,35 @@ const CalendarPage = () => {
             try {
                 setLoading(true);
 
-                const res = await fetch(`/api/teachworks/lessons`);
-
-                if (!res.ok) {
-                    console.error("Failed to load schedule");
+                const profile = await getActiveProfile();
+                if (!profile || profile.type !== "student") {
                     setUpcomingLessons([]);
                     return;
                 }
 
-                const data = await res.json();
+                const supabase = createClient();
+                const now = new Date().toISOString();
 
-                if (Array.isArray(data)) {
-                    // Map TeachworksLesson format to component Lesson state
-                    const mappedLessons: Lesson[] = data.map((item: any) => ({
-                        id: String(item.id),
-                        title: item.name,
-                        starts_at: new Date(item.from_datetime), // Use ISO datetime
-                    }));
-                    setUpcomingLessons(mappedLessons);
-                } else {
+                const { data: sessionsRaw, error } = await supabase
+                    .from("sessions")
+                    .select("id, start_time")
+                    .eq("student_id", profile.id)
+                    .gte("start_time", now)
+                    .order("start_time", { ascending: true });
+
+                if (error) {
+                    console.error("Failed to load schedule:", error.message);
                     setUpcomingLessons([]);
+                    return;
                 }
+
+                setUpcomingLessons(
+                    (sessionsRaw ?? []).map((s: any) => ({
+                        id: s.id.toString(),
+                        title: "Public Speaking Session",
+                        starts_at: new Date(s.start_time),
+                    })),
+                );
             } catch (err) {
                 console.error("Error loading schedule:", err);
             } finally {
