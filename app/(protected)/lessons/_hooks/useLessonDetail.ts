@@ -32,6 +32,7 @@ export function useLessonDetail(slug: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const [lessonNumber, setLessonNumber] = useState<number | null>(null);
   const [preLessonUrl, setPreLessonUrl] = useState<string | null>(null);
   const [postLessonUrl, setPostLessonUrl] = useState<string | null>(null);
   const [slideShowUrl, setSlideShowUrl] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function useLessonDetail(slug: string) {
         // Fetch progress counts in parallel 
         const [{ data: allLessons }, { data: progressRows }] =
           await Promise.all([
-            supabase.from("lessons").select("id").eq("course_id", courseId),
+            supabase.from("lessons").select("id, order").eq("course_id", courseId).order("order", { ascending: true, nullsFirst: false }),
             supabase
               .from("lesson_progress")
               .select("lesson_id, status")
@@ -106,7 +107,11 @@ export function useLessonDetail(slug: string) {
           (row: any) => row.status === 3,
         ).length;
 
-        setProgress({ completed, total: (allLessons ?? []).length });
+        const lessons = allLessons ?? [];
+        const idx = lessons.findIndex((l) => l.id === lessonData.id);
+        if (idx !== -1) setLessonNumber(idx + 1);
+
+        setProgress({ completed, total: lessons.length });
       } catch (err: any) {
         setError(err.message || "An unexpected error occurred");
       } finally {
@@ -122,6 +127,7 @@ export function useLessonDetail(slug: string) {
     loading,
     error,
     progress,
+    lessonNumber,
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,

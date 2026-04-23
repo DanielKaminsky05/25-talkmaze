@@ -17,15 +17,17 @@ export default function LessonDetailPage() {
     loading,
     error,
     progress,
+    lessonNumber,
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,
   } = useLessonDetail(slug);
 
   useEffect(() => {
-    if (lesson?.title) setTitle(lesson.title);
+    if (lesson?.title && lessonNumber != null)
+      setTitle(`Lesson ${lessonNumber}: ${lesson.title}`);
     return () => setTitle(null);
-  }, [lesson?.title, setTitle]);
+  }, [lesson?.title, lessonNumber, setTitle]);
 
   if (loading) {
     return (
@@ -83,7 +85,9 @@ export default function LessonDetailPage() {
 
         <div className="mt-8 w-full">
           <div className="bg-linear-to-r from-[#9b72cb] to-[#8659c2] rounded-t-3xl flex items-center px-12 h-[60px]">
-            <span className="text-white font-semibold text-lg">Lesson Slideshow</span>
+            <span className="text-white font-semibold text-lg">
+              Lesson Slideshow
+            </span>
           </div>
           {slideShowUrl ? (
             <SlideshowViewer url={slideShowUrl} />
