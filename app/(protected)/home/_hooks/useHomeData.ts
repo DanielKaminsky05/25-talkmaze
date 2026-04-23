@@ -10,6 +10,7 @@ type LessonSummary = {
   title: string;
   slug: string | null;
   order: number | null;
+  slide_show_url: string | null;
 };
 
 export type HomeLesson = {
@@ -17,6 +18,7 @@ export type HomeLesson = {
   title: string;
   slug: string | null;
   lessonNumber: number;
+  slideShowUrl: string | null;
 };
 
 export function useHomeData() {
@@ -54,7 +56,7 @@ export function useHomeData() {
           await Promise.all([
             supabase
               .from("lessons")
-              .select("id, title, slug, order")
+              .select("id, title, slug, order, slide_show_url")
               .eq("course_id", assignment.course_id)
               .order("order", { ascending: true }),
             supabase
@@ -70,11 +72,19 @@ export function useHomeData() {
             .map((r: any) => r.lesson_id as string),
         );
 
+        const resolveSlideUrl = (raw: string | null): string | null => {
+          if (!raw) return null;
+          const clean = raw.replace(/^course_files\//, "");
+          return supabase.storage.from("course_files").getPublicUrl(clean).data
+            .publicUrl;
+        };
+
         const toHomeLesson = (l: LessonSummary, index: number): HomeLesson => ({
           id: l.id,
           title: l.title,
           slug: l.slug,
           lessonNumber: index + 1,
+          slideShowUrl: resolveSlideUrl(l.slide_show_url),
         });
 
         const currentIndex = lessons.findIndex((l) => !completedIds.has(l.id));
@@ -82,7 +92,6 @@ export function useHomeData() {
         setProgress({ completed: completedIds.size, total: lessons.length });
 
         if (currentIndex === -1) {
-          // If all lessons complete, then no current lesson
           setCurrentLesson(null);
           setPrevLesson(
             lessons.length > 0

@@ -43,32 +43,32 @@ export type Database = {
       }
       badges: {
         Row: {
-          awarding_rule: Json
           code: string
           created_at: string
           description: string | null
           icon_url: string | null
           id: string
+          lesson_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
-          awarding_rule?: Json
           code: string
           created_at?: string
           description?: string | null
           icon_url?: string | null
           id?: string
+          lesson_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
-          awarding_rule?: Json
           code?: string
           created_at?: string
           description?: string | null
           icon_url?: string | null
           id?: string
+          lesson_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -79,24 +79,33 @@ export type Database = {
           coach_id: string | null
           created_at: string
           end_time: string | null
+          end_time_new: string | null
           id: number
           start_time: string | null
+          start_time_new: string | null
+          timezone: string | null
           weekday: number | null
         }
         Insert: {
           coach_id?: string | null
           created_at?: string
           end_time?: string | null
+          end_time_new?: string | null
           id?: number
           start_time?: string | null
+          start_time_new?: string | null
+          timezone?: string | null
           weekday?: number | null
         }
         Update: {
           coach_id?: string | null
           created_at?: string
           end_time?: string | null
+          end_time_new?: string | null
           id?: number
           start_time?: string | null
+          start_time_new?: string | null
+          timezone?: string | null
           weekday?: number | null
         }
         Relationships: [
@@ -682,25 +691,34 @@ export type Database = {
         Row: {
           created_at: string
           end_time: string | null
+          end_time_new: string | null
           id: number
           start_time: string | null
+          start_time_new: string | null
           student_id: string | null
+          timezone: string | null
           weekday: number | null
         }
         Insert: {
           created_at?: string
           end_time?: string | null
+          end_time_new?: string | null
           id?: number
           start_time?: string | null
+          start_time_new?: string | null
           student_id?: string | null
+          timezone?: string | null
           weekday?: number | null
         }
         Update: {
           created_at?: string
           end_time?: string | null
+          end_time_new?: string | null
           id?: number
           start_time?: string | null
+          start_time_new?: string | null
           student_id?: string | null
+          timezone?: string | null
           weekday?: number | null
         }
         Relationships: [

@@ -16,11 +16,6 @@ import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 export async function POST(request: Request) {
   try {
     // Read the raw body as text. Required by Stripe's signature verification,
-<<<<<<< HEAD
-    // which breaks if the body is parsed (e.g. via request.json()) first
-    console.log("Webhook hit!")
-=======
->>>>>>> 34bf612d8b1bc2e7ce5e7849960d161f516a7d49
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");

@@ -15,7 +15,8 @@ function lessonPath(lesson: { slug: string | null; id: string }) {
 
 export default function Home() {
   const router = useRouter();
-  const { loading, progress, currentLesson, prevLesson, nextLesson } = useHomeData();
+  const { loading, progress, currentLesson, prevLesson, nextLesson } =
+    useHomeData();
 
   if (loading) {
     return (
@@ -29,11 +30,18 @@ export default function Home() {
     <div className="w-full p-8 mx-auto">
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full">
         <div className="flex flex-col gap-8 w-full">
-          <LessonProgressBar current={progress.completed} total={progress.total} />
+          <LessonProgressBar
+            current={progress.completed}
+            total={progress.total}
+          />
 
           <CurrentLessonBanner
             lesson={currentLesson}
-            onClick={currentLesson ? () => router.push(lessonPath(currentLesson)) : undefined}
+            onClick={
+              currentLesson
+                ? () => router.push(lessonPath(currentLesson))
+                : undefined
+            }
           />
 
           <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
