@@ -8,6 +8,7 @@ import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
+import PageSpinner from "../../components/PageSpinner";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -31,11 +32,7 @@ export default function LessonDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white">
-        <div className="flex items-center justify-center min-h-[200px] text-[#B1E7D6]">
-          Loading lesson...
-        </div>
-      </div>
+      <PageSpinner />
     );
   }
 

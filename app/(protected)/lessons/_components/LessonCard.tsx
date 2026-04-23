@@ -23,8 +23,13 @@ const LessonCard = memo(function LessonCard({
   return (
     <div
       onClick={onClick}
-      className="relative w-full h-60 rounded-xl bg-[#C5F0E1] p-4
+      className="relative w-full h-60 rounded-xl p-4
                  shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+      style={{
+        backgroundImage: "url('/lesson-card-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       {/* Lesson number label & completion checkbox */}
       <div className="absolute top-4 left-5 flex items-center gap-2">

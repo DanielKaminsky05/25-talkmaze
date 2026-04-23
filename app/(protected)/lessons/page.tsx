@@ -2,22 +2,12 @@
 
 import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
+import PageSpinner from "../components/PageSpinner";
 import ProgressCard from "./_components/ProgressCard";
 import BadgesCard from "./_components/BadgesCard";
 import LessonCard from "./_components/LessonCard";
 
-const LESSON_ICONS = [
-  "🧭",
-  "🔭",
-  "⭐️",
-  "🏹",
-  "🍍",
-  "🗺️",
-  "🐚",
-  "🥥",
-  "👓",
-  "📚",
-];
+import { LESSON_TOKENS } from "./_lib/tokens";
 
 export default function LessonsPage() {
   const {
@@ -35,7 +25,7 @@ export default function LessonsPage() {
       lessons.map((lesson, index) => ({
         lesson,
         lessonNumber: index + 1,
-        icon: LESSON_ICONS[index % LESSON_ICONS.length],
+        icon: LESSON_TOKENS[index] ?? "🧭",
         isCompleted: completedLessonIds.has(lesson.id),
       })),
     [lessons, completedLessonIds],
@@ -43,11 +33,7 @@ export default function LessonsPage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white">
-        <div className="flex items-center justify-center min-h-[200px] text-[#B1E7D6]">
-          Loading lessons...
-        </div>
-      </div>
+      <PageSpinner />
     );
   }
 

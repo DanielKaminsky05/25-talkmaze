@@ -41,39 +41,6 @@ export type Database = {
         }
         Relationships: []
       }
-      badges: {
-        Row: {
-          code: string
-          created_at: string
-          description: string | null
-          icon_url: string | null
-          id: string
-          lesson_id: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          description?: string | null
-          icon_url?: string | null
-          id?: string
-          lesson_id?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          description?: string | null
-          icon_url?: string | null
-          id?: string
-          lesson_id?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       coach_availabilities: {
         Row: {
           coach_id: string | null
@@ -731,42 +698,6 @@ export type Database = {
           },
         ]
       }
-      student_badges: {
-        Row: {
-          awarded_at: string
-          badge_id: string
-          badge_url: string | null
-          student_id: string
-        }
-        Insert: {
-          awarded_at?: string
-          badge_id: string
-          badge_url?: string | null
-          student_id: string
-        }
-        Update: {
-          awarded_at?: string
-          badge_id?: string
-          badge_url?: string | null
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_badges_badge_id_fkey"
-            columns: ["badge_id"]
-            isOneToOne: false
-            referencedRelation: "badges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_badges_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_subscriptions: {
         Row: {
           account_id: string
@@ -824,6 +755,42 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_tokens: {
+        Row: {
+          awarded_at: string
+          badge_id: string
+          badge_url: string | null
+          student_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_id: string
+          badge_url?: string | null
+          student_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_id?: string
+          badge_url?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -895,6 +862,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tokens: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          lesson_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          lesson_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          lesson_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

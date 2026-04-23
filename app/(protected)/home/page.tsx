@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import PageSpinner from "../components/PageSpinner";
 import LessonProgressBar from "../components/LessonProgressBar";
 import TokenBar from "../components/TokensBar";
 import ReviewLessonCard from "../components/ReviewLesson";
@@ -20,9 +21,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="w-full p-8 mx-auto flex items-center justify-center min-h-[300px] text-[#B1E7D6]">
-        Loading...
-      </div>
+      <PageSpinner />
     );
   }
 
