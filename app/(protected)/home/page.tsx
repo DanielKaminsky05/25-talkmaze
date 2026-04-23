@@ -1,115 +1,63 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import LessonProgressBar from "../components/LessonProgressBar";
 import TokenBar from "../components/TokensBar";
 import ReviewLessonCard from "../components/ReviewLesson";
 import NextLessonCard from "../components/UpNextLesson";
 import ScheduleList from "../components/ScheduleList";
-import { getProgress } from "./actions";
-import { Appointment } from "../types/lesson";
+import CurrentLessonBanner from "./_components/CurrentLessonBanner";
+import { useHomeData } from "./_hooks/useHomeData";
 
-interface ProgressData {
-  current: number;
-  total: number;
+function lessonPath(lesson: { slug: string | null; id: string }) {
+  return `/lessons/${lesson.slug ?? lesson.id}`;
 }
 
-
-
 export default function Home() {
-  const [progress, setProgress] = useState<ProgressData>({ current: 0, total: 24 });
-  const [studentId, setStudentId] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState<Appointment[]>([]);
+  const router = useRouter();
+  const { loading, progress, currentLesson, prevLesson, nextLesson } = useHomeData();
 
-  /*
-  useEffect(() => {
-    
-    async function fetchData() {
-      try {
-        // Fetch Progress
-        const progressRes = await getProgress()
-
-
-        if (progressRes.ok) {
-          const data = await progressRes.json();
-          setProgress({
-            current: typeof data.completed === 'number' ? data.completed : 8,
-            total: typeof data.total === 'number' ? data.total : 24
-          });
-          if (data.studentId) {
-            setStudentId(data.studentId);
-          }
-        }
-
-        // Fetch Schedule (Lessons)
-        /*
-        const lessonsRes = await fetch("/api/teachworks/lessons");
-        if (lessonsRes.ok) {
-            const lessonsData = await lessonsRes.json();
-            if (Array.isArray(lessonsData)) {
-                const mapped: Appointment[] = lessonsData.map((item: any) => ({
-                    id: String(item.id),
-                    title: item.name,
-                    start_date: item.from_datetime,
-                    end_date: item.to_datetime,
-                }));
-                setSchedule(mapped);
-            }
-        }
-            
-
-      } catch (e) {
-        console.error("Failed to fetch data", e);
-      }
-    }
-    fetchData();
-  }, []);
-  */
-
-  const nextLesson = schedule.length > 0 ? schedule[0] : null;
+  if (loading) {
+    return (
+      <div className="w-full p-8 mx-auto flex items-center justify-center min-h-[300px] text-[#B1E7D6]">
+        Loading...
+      </div>
+    );
+  }
 
   return (
-    <div
-      className=" w-full p-8 mx-auto"
-    >
-
+    <div className="w-full p-8 mx-auto">
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full">
-
-
         <div className="flex flex-col gap-8 w-full">
+          <LessonProgressBar current={progress.completed} total={progress.total} />
 
+          <CurrentLessonBanner
+            lesson={currentLesson}
+            onClick={currentLesson ? () => router.push(lessonPath(currentLesson)) : undefined}
+          />
 
-          <LessonProgressBar current={progress.current} total={progress.total} />
-
-
-          <div className="w-full h-[300px] rounded-2xl bg-[#2B4257]/20 border-2 border-dashed border-[#2B4257]/40 flex items-center justify-center text-[#B1E7D6]">
-            Video Component Area
-          </div>
-
-            {/* 3. Bottom Row: Review & Up Next Cards */}
           <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
-              {/* Review Lesson Card */}
-              <ReviewLessonCard 
-                lessonNumber={7} 
-                title="Overcoming Nerves" 
+            {prevLesson && (
+              <ReviewLessonCard
+                lessonNumber={prevLesson.lessonNumber}
+                title={prevLesson.title}
+                onClick={() => router.push(lessonPath(prevLesson))}
               />
-              
-              {/* Up Next Lesson Card */}
-              <NextLessonCard 
-                lessonNumber={9}
-                title="Speech Blocking"
+            )}
+            {nextLesson && (
+              <NextLessonCard
+                lessonNumber={nextLesson.lessonNumber}
+                title={nextLesson.title}
+                onClick={() => router.push(lessonPath(nextLesson))}
               />
-            </div>
+            )}
+          </div>
         </div>
-
 
         <div className="flex flex-col gap-8">
-          <TokenBar />
-
-
-          <ScheduleList schedule={schedule} />
+          <TokenBar completedCount={progress.completed} />
+          <ScheduleList schedule={[]} />
         </div>
-
       </div>
     </div>
   );
