@@ -93,40 +93,41 @@ export async function CreateTeacherRoom(studentData: student, coachData: Coach) 
   const supabase = await createClient();
   const lesson_space_base = process.env.LESSONSPACE_BASE_URL
 
-  if (!lesson_space_base) {
-    return NextResponse.json({ error: 404, message: "Unable to find Lessonspace api base url" })
-  }
+    if(!lesson_space_base){
+      return NextResponse.json({error: 404, message: "Unable to find Lessonspace api base url"})
+    }
 
-  //get the student lessonspace room
+    //get the student lessonspace room
 
-  const { data: student_room, error: supabase_room_error } = await supabase.from('students').select('lesson_space_id').eq("id", studentData.id).single();
+    const {data: student_room, error: supabase_room_error} = await supabase.from('students').select('lesson_space_id').eq("id",studentData.id).single();
 
-  if (!student_room || supabase_room_error) {
-    return NextResponse.json({ status: 400, message: "Student does not currently have a lessonspace " + supabase_room_error });
-  }
+    if(!student_room || supabase_room_error){
+      return NextResponse.json({status: 400, message: "Student does not currently have a lessonspace " + supabase_room_error});
+    }
 
-  console.log("Found student room id: " + student_room.lesson_space_id)
-  console.log("Trying to get coach link");
-  console.log("URL: " + `${lesson_space_base}/spaces/launch/`);
-  const make_coach_url_res = await fetch(`${lesson_space_base}/spaces/launch/`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
-      'Content-Type': 'application/json'
-    }, body: JSON.stringify({
-      id: student_room.lesson_space_id,
-      name: `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim(),
-      transcribe: true,
-      summarize: true,
-      record_av: true,
-      user: {
-        id: coachData.id,
-        role: 'teacher',
-        leader: true,
-        custom_jwt_parameters: {
-          meta: {
-            displayName: `Coach ${coachData.first_name} ${coachData.last_name}`,
-            lessonTitle: `${studentData.first_name} ${studentData.last_name} Public Speaking Room!`
+    console.log("Found student room id: " + student_room.lesson_space_id)
+    console.log("Trying to get coach link");
+    console.log("URL: " + `${lesson_space_base}/spaces/launch/`);
+    const make_coach_url_res = await fetch(`${lesson_space_base}/spaces/launch/`,{
+      method: 'POST',
+      headers: {
+        'Authorization': `Organisation ${process.env.LESSONSPACE_API_KEY!.trim()}`,
+        'Content-Type': 'application/json'
+      },body: JSON.stringify({
+        id: student_room.lesson_space_id,
+        name: `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim(),
+        transcribe: true,
+        summarise: true,
+        record_av: true,
+        user:{
+          id: coachData.id,
+          role: 'teacher',
+          leader: true,
+          custom_jwt_parameters: {
+              meta: {
+                  displayName: `Coach ${coachData.first_name} ${coachData.last_name}`,
+                  lessonTitle: `${studentData.first_name} ${studentData.last_name} Public Speaking Room!`
+              }
           }
         }
       }

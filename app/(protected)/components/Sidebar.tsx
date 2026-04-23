@@ -21,7 +21,7 @@ import {
 const NAV_ITEMS = {
   student: [
     { id: 0, name: "Home", link: "/home", icon: <HomeIcon /> },
-    { id: 1, name: "Lessons", link: "/lesson", icon: <LessonsIcon /> },
+    { id: 1, name: "Lessons", link: "/lessons", icon: <LessonsIcon /> },
     { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
     { id: 3, name: "Rewards", link: "/reward", icon: <RewardsIcon /> },
   ],

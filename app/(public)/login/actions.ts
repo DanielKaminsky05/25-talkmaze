@@ -16,8 +16,6 @@ export const logInUser = async (email: string, password: string) => {
 
   // Handle login error FIRST
   if (error || !data.user) {
-
-    console.log("Login error somehow");
     return {
       success: false,
       message: "Invalid login credentials",
@@ -37,5 +35,5 @@ export const logInUser = async (email: string, password: string) => {
   });
 
   // Redirect AFTER success
-  redirect("/");
+  redirect("/profiles");
 };
