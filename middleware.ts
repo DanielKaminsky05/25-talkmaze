@@ -67,6 +67,8 @@ export async function middleware(request: NextRequest) {
       const isCoach = account?.role === 2;
       const isAdmin = account?.role === 3;
 
+      
+      
       if(pathname.startsWith('/profiles') && (isCoach || isAdmin)){
         const url = request.nextUrl.clone();
         if(isCoach){
