@@ -17,7 +17,7 @@ const DASHBOARD_TITLE = {
  * Falls back to DASHBOARD_TITLE[profileType] if no match is found.
  */
 const PAGE_TITLE: { prefix: string; match: string }[] = [
-  { prefix: "Lessons", match: "/lesson" },
+  { prefix: "Lessons", match: "/lessons" },
   // { prefix: "Rewards", match: "/reward" },
 ];
 
