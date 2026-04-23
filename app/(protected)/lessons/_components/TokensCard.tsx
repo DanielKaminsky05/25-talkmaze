@@ -1,27 +1,26 @@
 "use client";
 
 import { memo } from "react";
-
-const TOKEN_EMOJIS = ["🧭", "🔭", "⭐️", "🏹", "🍍", "🗺️", "🐚", "🥥"];
-const TOTAL_SLOTS = 11;
+import { LESSON_TOKENS } from "../_lib/tokens";
 
 interface TokensCardProps {
   completedCount: number;
 }
 
 const TokensCard = memo(function TokensCard({ completedCount }: TokensCardProps) {
-  const earned = Math.min(completedCount, TOKEN_EMOJIS.length);
-  const locked = Math.max(0, TOTAL_SLOTS - earned);
-
   return (
-    <div className="bg-[#B1E7D6] text-[#1f2e3b] rounded-lg p-6 flex flex-col justify-center shadow-lg h-[180px] w-full relative">
-      <div className="font-bold text-sm mb-4">Tokens</div>
-      <div className="flex flex-wrap gap-4 md:gap-8 text-3xl md:text-4xl">
-        {TOKEN_EMOJIS.slice(0, earned).map((emoji, i) => (
-          <span key={i}>{emoji}</span>
-        ))}
-        {Array.from({ length: locked }).map((_, i) => (
-          <span key={`locked-${i}`} className="opacity-30">⭐️</span>
+    <div className="bg-[#B1E7D6] rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] p-4 w-full">
+      <p className="text-[#2b4257] font-semibold text-sm mb-3">Tokens</p>
+      <div className="grid grid-cols-12 gap-3">
+        {LESSON_TOKENS.map((emoji, i) => (
+          <div
+            key={i}
+            className={`w-12 h-12 flex items-center justify-center text-3xl rounded-lg transition-all ${
+              i < completedCount ? "" : "grayscale opacity-40"
+            }`}
+          >
+            {i < completedCount ? emoji : "⭐"}
+          </div>
         ))}
       </div>
     </div>

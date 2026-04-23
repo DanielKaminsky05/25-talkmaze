@@ -1,18 +1,50 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useLayoutEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-interface SlideshowViewerInnerProps {
+function SlideshowThumbnail({ url }: { url: string }) {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = divRef.current;
+    if (!el) return;
+    setWidth(el.clientWidth);
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={divRef} className="w-full overflow-hidden pointer-events-none">
+      {width > 0 && (
+        <Document file={url} loading={null} error={null}>
+          <Page
+            pageNumber={1}
+            width={width}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+          />
+        </Document>
+      )}
+    </div>
+  );
+}
+
+export interface SlideshowViewerInnerProps {
   url: string;
+  /** Renders only page 1 at reduced size — no controls, for use as a thumbnail */
+  thumbnailMode?: boolean;
 }
 
 export default function SlideshowViewerInner({
   url,
+  thumbnailMode = false,
 }: SlideshowViewerInnerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +78,10 @@ export default function SlideshowViewerInner({
         Failed to load slideshow.
       </div>
     );
+  }
+
+  if (thumbnailMode) {
+    return <SlideshowThumbnail url={url} />;
   }
 
   return (
