@@ -4,6 +4,7 @@ import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatarIcon from "./AvatarIcon";
 import { signOut } from "@/lib/auth/signout";
+import { usePageTitle } from "../_context/PageTitleContext";
 
 // Default title shown on dashboard/home pages, keyed by profile type
 const DASHBOARD_TITLE = {
@@ -37,8 +38,9 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
 
   // Use a sub-page title if the current route matches, otherwise show the
   // role-appropriate dashboard title ("Student Dashboard" / "Parent Dashboard")
+  const { title: contextTitle } = usePageTitle();
   const page = PAGE_TITLE.find((p) => pathname.startsWith(p.match));
-  const title = page ? page.prefix : DASHBOARD_TITLE[profileType];
+  const title = contextTitle ?? (page ? page.prefix : DASHBOARD_TITLE[profileType]);
 
   return (
     <div

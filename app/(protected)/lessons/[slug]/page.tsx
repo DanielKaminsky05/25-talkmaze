@@ -1,7 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useParams } from "next/navigation";
 import { useLessonDetail } from "../_hooks/useLessonDetail";
+import { usePageTitle } from "../../_context/PageTitleContext";
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";
@@ -9,7 +11,7 @@ import SlideshowViewer from "../_components/SlideshowViewer";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const router = useRouter();
+  const { setTitle } = usePageTitle();
   const {
     lesson,
     loading,
@@ -19,6 +21,11 @@ export default function LessonDetailPage() {
     postLessonUrl,
     slideShowUrl,
   } = useLessonDetail(slug);
+
+  useEffect(() => {
+    if (lesson?.title) setTitle(lesson.title);
+    return () => setTitle(null);
+  }, [lesson?.title, setTitle]);
 
   if (loading) {
     return (
@@ -43,27 +50,6 @@ export default function LessonDetailPage() {
   return (
     <div className="w-full max-w-[1400px] p-6 md:p-12 flex flex-col gap-8 mx-auto text-white">
       <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-right-8 duration-300">
-        <button
-          onClick={() => router.push("/lessons")}
-          className="group flex items-center gap-2 text-xl font-bold text-white hover:text-[#B1E7D6] transition-colors self-start mb-2"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={3}
-            stroke="currentColor"
-            className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 19.5L8.25 12l7.5-7.5"
-            />
-          </svg>
-          {lesson.title}
-        </button>
-
         <ProgressCard
           completed={progress.completed}
           total={progress.total}
