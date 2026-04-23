@@ -117,7 +117,7 @@ export async function CreateTeacherRoom(studentData: student, coachData: Coach){
         id: student_room.lesson_space_id,
         name: `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim(),
         transcribe: true,
-        summarize: true,
+        summarise: true,
         record_av: true,
         user:{
           id: coachData.id,
