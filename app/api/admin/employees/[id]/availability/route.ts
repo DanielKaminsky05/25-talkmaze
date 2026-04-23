@@ -72,7 +72,8 @@ export async function PUT(
 
   const {
     availability,
-  }: { availability: Record<string, { start: string; end: string }[]> } =
+    timezone,
+  }: { availability: Record<string, { start: string; end: string }[]>, timezone?: string } =
     await req.json();
 
   const { error: deleteError } = await supabase
@@ -99,6 +100,9 @@ export async function PUT(
         weekday: DAY_MAP[day],
         start_time: new Date(`1970-01-01T${s.start}:00Z`).toISOString(),
         end_time: new Date(`1970-01-01T${s.end}:00Z`).toISOString(),
+        start_time_new: `${s.start}:00`,
+        end_time_new: `${s.end}:00`,
+        timezone: timezone || "America/New_York", // Default fallback if not sent yet
       })),
   );
 
