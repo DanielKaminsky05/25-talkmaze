@@ -11,10 +11,14 @@ interface SlideshowViewerInnerProps {
   url: string;
 }
 
-export default function SlideshowViewerInner({ url }: SlideshowViewerInnerProps) {
+export default function SlideshowViewerInner({
+  url,
+}: SlideshowViewerInnerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadError, setLoadError] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [pageHeight, setPageHeight] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const onLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
@@ -22,8 +26,19 @@ export default function SlideshowViewerInner({ url }: SlideshowViewerInnerProps)
     setCurrentPage(1);
   }, []);
 
-  const prev = () => setCurrentPage((p) => Math.max(1, p - 1));
-  const next = () => setCurrentPage((p) => Math.min(numPages, p + 1));
+  const onRenderSuccess = useCallback(({ height }: { height: number }) => {
+    setPageHeight(height);
+    setPageLoading(false);
+  }, []);
+
+  const prev = () => {
+    setPageLoading(true);
+    setCurrentPage((p) => Math.max(1, p - 1));
+  };
+  const next = () => {
+    setPageLoading(true);
+    setCurrentPage((p) => Math.min(numPages, p + 1));
+  };
 
   if (loadError) {
     return (
@@ -35,7 +50,10 @@ export default function SlideshowViewerInner({ url }: SlideshowViewerInnerProps)
 
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 pb-6">
-      <div className="w-full overflow-hidden rounded-b-3xl bg-white flex justify-center">
+      <div
+        className="w-full overflow-hidden rounded-b-3xl bg-white flex justify-center relative"
+        style={{ minHeight: pageHeight ?? 400 }}
+      >
         <Document
           file={url}
           onLoadSuccess={onLoadSuccess}
@@ -51,30 +69,53 @@ export default function SlideshowViewerInner({ url }: SlideshowViewerInnerProps)
             width={containerRef.current?.clientWidth ?? 900}
             renderTextLayer={false}
             renderAnnotationLayer={false}
+            onRenderSuccess={onRenderSuccess}
+            loading={<div style={{ height: pageHeight ?? 400 }} />}
           />
         </Document>
+        {pageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+            <div className="w-8 h-8 border-4 border-[#2b4257] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
       </div>
 
       {numPages > 0 && (
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-1.5 bg-[#1F2E3B]/10 px-2 py-1 rounded-full">
           <button
             onClick={prev}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#2b4257] text-white disabled:opacity-30 hover:bg-[#1f2e3b] transition-colors"
+            disabled={currentPage === 1 || pageLoading}
+            className="w-9 h-9 rounded-full bg-[#65CFAD] shadow-md flex items-center justify-center hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-30"
             aria-label="Previous slide"
           >
-            ←
+            <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+              <path
+                d="M5 1L1 5L5 9"
+                stroke="#1F2E3B"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
-          <span className="text-white font-semibold text-sm">
+          <span className="text-[1rem] font-bold text-white w-16 text-center tabular-nums">
             {currentPage} / {numPages}
           </span>
           <button
             onClick={next}
-            disabled={currentPage === numPages}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#2b4257] text-white disabled:opacity-30 hover:bg-[#1f2e3b] transition-colors"
+            disabled={currentPage === numPages || pageLoading}
+            className="w-9 h-9 rounded-full bg-[#65CFAD] shadow-md flex items-center justify-center hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-30"
             aria-label="Next slide"
           >
-            →
+            <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+              <path
+                d="M1 1L5 5L1 9"
+                stroke="#1F2E3B"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </div>
       )}

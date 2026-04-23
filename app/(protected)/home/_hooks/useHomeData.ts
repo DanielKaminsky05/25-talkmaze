@@ -45,22 +45,23 @@ export function useHomeData() {
           .limit(1)
           .maybeSingle();
 
-        if (!assignment) {
+        if (!assignment?.course_id) {
           setLoading(false);
           return;
         }
 
-        const [{ data: lessonsData }, { data: progressData }] = await Promise.all([
-          supabase
-            .from("lessons")
-            .select("id, title, slug, order")
-            .eq("course_id", assignment.course_id)
-            .order("order", { ascending: true }),
-          supabase
-            .from("lesson_progress")
-            .select("lesson_id, status")
-            .eq("student_id", profile.id),
-        ]);
+        const [{ data: lessonsData }, { data: progressData }] =
+          await Promise.all([
+            supabase
+              .from("lessons")
+              .select("id, title, slug, order")
+              .eq("course_id", assignment.course_id)
+              .order("order", { ascending: true }),
+            supabase
+              .from("lesson_progress")
+              .select("lesson_id, status")
+              .eq("student_id", profile.id),
+          ]);
 
         const lessons: LessonSummary[] = lessonsData ?? [];
         const completedIds = new Set(
@@ -81,14 +82,26 @@ export function useHomeData() {
         setProgress({ completed: completedIds.size, total: lessons.length });
 
         if (currentIndex === -1) {
-          // All lessons complete — no current lesson
+          // If all lessons complete, then no current lesson
           setCurrentLesson(null);
-          setPrevLesson(lessons.length > 0 ? toHomeLesson(lessons[lessons.length - 1], lessons.length - 1) : null);
+          setPrevLesson(
+            lessons.length > 0
+              ? toHomeLesson(lessons[lessons.length - 1], lessons.length - 1)
+              : null,
+          );
           setNextLesson(null);
         } else {
           setCurrentLesson(toHomeLesson(lessons[currentIndex], currentIndex));
-          setPrevLesson(currentIndex > 0 ? toHomeLesson(lessons[currentIndex - 1], currentIndex - 1) : null);
-          setNextLesson(currentIndex < lessons.length - 1 ? toHomeLesson(lessons[currentIndex + 1], currentIndex + 1) : null);
+          setPrevLesson(
+            currentIndex > 0
+              ? toHomeLesson(lessons[currentIndex - 1], currentIndex - 1)
+              : null,
+          );
+          setNextLesson(
+            currentIndex < lessons.length - 1
+              ? toHomeLesson(lessons[currentIndex + 1], currentIndex + 1)
+              : null,
+          );
         }
       } catch (err) {
         console.error("useHomeData error:", err);
