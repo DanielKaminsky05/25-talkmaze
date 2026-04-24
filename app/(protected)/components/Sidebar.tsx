@@ -1,6 +1,7 @@
 "use client";
 import SideBarBox from "./SideBarBox";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarDays } from "lucide-react";
@@ -45,12 +46,18 @@ const NAV_ITEMS = {
 
 type Props = {
   profileType: "student" | "parent";
+  isOpen: boolean;
+  onToggle: () => void;
 };
 
 /**
- * Sidebar component, containing the navlinks for student and parent dashboards
+ * Sidebar component, containing the navlinks for student and parent dashboards.
+ *
+ * On desktop (lg+) the sidebar is always visible.
+ * On mobile/tablet (< lg) it renders as a fixed overlay that slides in from the
+ * left.
  */
-export default function SideBar({ profileType }: Props) {
+export default function SideBar({ profileType, isOpen, onToggle }: Props) {
   const pathname = usePathname();
   const [activeId, setActiveId] = useState(0);
 
@@ -68,30 +75,99 @@ export default function SideBar({ profileType }: Props) {
   }, [pathname, items]);
 
   return (
-    <div className="flex flex-col w-auto h-full px-6 pt-[26px]">
-      {/* Logo */}
-      <Image
-        src="/talkmaze.svg"
-        alt="Talk Maze Logo"
-        className="self-center mb-[13px]"
-        width={150}
-        height={68}
-      />
-      <nav className="flex flex-col gap-[18px]">
-        {/* Navigation items list. Renders different list for parent vs student */}
-        {items.map((item) => (
-          <SideBarBox
-            key={item.id}
-            id={item.id}
-            name={item.name}
-            state={activeId === item.id}
-            link={item.link}
-            icon={item.icon}
-            onSelect={() => setActiveId(item.id)}
+    <>
+      {/* ========== Mobile sidebar (< lg) ======== */}
+      {/* Backdrop - clicking outside closes the sidebar */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+
+      {/*
+        Sliding panel + pull-tab.
+        --panel-w drives both the panel width and the closed-state translateX,
+        keeping them in sync across breakpoints without duplicating values.
+      */}
+      <div
+        className="fixed inset-y-0 left-0 z-50 flex flex-row lg:hidden transition-transform duration-300 ease-in-out [--panel-w:120px] sm:[--panel-w:160px]"
+        style={{
+          transform: isOpen
+            ? "translateX(0)"
+            : "translateX(calc(-1 * var(--panel-w)))",
+        }}
+      >
+        {/* Sidebar panel - width comes from the CSS var, so itmatches the 
+        close sidebar translateX */}
+        <div
+          className="bg-[#2B4257] flex flex-col pt-[26px] px-2 overflow-hidden"
+          style={{ width: "var(--panel-w)" }}
+        >
+          <Image
+            src="/talkmaze.svg"
+            alt="Talk Maze Logo"
+            className="self-center mb-4"
+            width={80}
+            height={36}
           />
-        ))}
-      </nav>
-    </div>
+          <nav className="flex flex-col gap-6">
+            {items.map((item) => (
+              <Link
+                key={item.id}
+                href={item.link}
+                onClick={onToggle}
+                className={`flex items-center gap-2 text-sm font-semibold pl-[7px] transition-colors
+                  ${activeId === item.id ? "text-[#B1E7D6]" : "text-white hover:text-[#B1E7D6]"}`}
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Pull tab */}
+        <button
+          onClick={onToggle}
+          className="self-center w-[27px] h-[188px] bg-[#2B4257] rounded-tr-[15px] rounded-br-[15px] flex items-center justify-center cursor-pointer"
+          aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          <Image
+            src="/caret.png"
+            alt=""
+            width={18}
+            height={17}
+            className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
+
+      {/* ===== Desktop sidebar (lg+) ====== */}
+      <div className="hidden lg:flex flex-col w-auto h-full px-6 pt-[26px]">
+        {/* Logo */}
+        <Image
+          src="/talkmaze.svg"
+          alt="Talk Maze Logo"
+          className="self-center mb-[13px]"
+          width={150}
+          height={68}
+        />
+        <nav className="flex flex-col gap-[18px]">
+          {/* Navigation items list. Renders different list for parent vs student */}
+          {items.map((item) => (
+            <SideBarBox
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              state={activeId === item.id}
+              link={item.link}
+              icon={item.icon}
+              onSelect={() => setActiveId(item.id)}
+            />
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }
-
