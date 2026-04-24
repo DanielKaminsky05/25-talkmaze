@@ -29,14 +29,16 @@ export default function SideBarBox({
   return (
     <Link href={link}>
       <div
-        className={`text-sm md:text-[1rem] flex flex-row lg:flex-row-reverse 
-          justify-between lg:justify-end items-center 
-          w-auto lg:max-w-[204px] lg:h-[78px] px-1 lg:px-10
-          lg:shadow-[0_4px_4px_rgba(0,0,0,0.25)] ${backgroundColor} 
+        className={`text-sm lg:text-[clamp(0.8rem,1.1vw,1rem)]
+          flex flex-row lg:flex-row-reverse justify-between lg:justify-end items-center
+          w-auto lg:max-w-[clamp(160px,calc(68px+9vw),204px)]
+          lg:h-[clamp(56px,calc(-9px+6.4vw),78px)]
+          px-1 lg:px-[clamp(16px,calc(-50px+6.4vw),40px)]
+          lg:shadow-[0_4px_4px_rgba(0,0,0,0.25)] ${backgroundColor}
           rounded-lg lg:rounded-2xl font-semibold`}
         onClick={onSelect}
       >
-        <p className={`${textColor} text-center lg:ml-6`}>{name}</p>
+        <p className={`${textColor} text-center lg:ml-[clamp(8px,calc(-16px+2.4vw),24px)]`}>{name}</p>
         <span className={textColor}>{icon}</span>
       </div>
     </Link>

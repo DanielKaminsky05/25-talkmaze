@@ -144,17 +144,27 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
       </div>
 
       {/* ===== Desktop sidebar (lg+) ====== */}
-      <div className="hidden lg:flex flex-col w-auto h-full px-6 pt-[26px]">
-        {/* Logo */}
-        <Image
-          src="/talkmaze.svg"
-          alt="Talk Maze Logo"
-          className="self-center mb-[13px]"
-          width={150}
-          height={68}
-        />
+      {/*
+        pt-[23px] matches the navbar's md:pt-[23px], so:
+        23px (pt) + 68px (logo wrapper) + 13px (mb) = 104px = navbar height
+        Nav items therefore always start at the same Y as the dark container top
+      */}
+      <div className="hidden lg:flex flex-col w-auto h-full pt-[23px] lg:px-[clamp(12px,1.5vw,24px)]">
+        {/* 
+          Fixed-height logo wrapper 
+          logo scales inside but the 68px area never shrinks 
+        */}
+        <div className="h-[68px] flex items-center justify-center mb-[13px]">
+          <Image
+            src="/talkmaze.svg"
+            alt="Talk Maze Logo"
+            width={150}
+            height={68}
+            style={{ width: "clamp(100px, 10.5vw, 150px)", height: "auto" }}
+          />
+        </div>
         <nav className="flex flex-col gap-[18px]">
-          {/* Navigation items list. Renders different list for parent vs student */}
+          {/* Sidebar items list. Renders different list for parent vs student */}
           {items.map((item) => (
             <SideBarBox
               key={item.id}
