@@ -40,7 +40,8 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
   // role-appropriate dashboard title ("Student Dashboard" / "Parent Dashboard")
   const { title: contextTitle } = usePageTitle();
   const page = PAGE_TITLE.find((p) => pathname.startsWith(p.match));
-  const title = contextTitle ?? (page ? page.prefix : DASHBOARD_TITLE[profileType]);
+  const title =
+    contextTitle ?? (page ? page.prefix : DASHBOARD_TITLE[profileType]);
 
   return (
     <div
@@ -54,8 +55,8 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
       >
         <Image src="/caret.png" alt="caret" width={36} height={34.88} />
         <p
-          className="hidden sm:inline text-white
-          md:text-2xl lg:text-3xl font-bold ml-3"
+          className="inline text-white text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold ml-3
+          truncate max-w-[130px] sm:max-w-xs md:max-w-sm lg:max-w-none"
         >
           {title}
         </p>

@@ -12,7 +12,7 @@ const SlideshowViewerInner = dynamic<SlideshowViewerInnerProps>(
         Loading slides...
       </div>
     ),
-  }
+  },
 );
 
 interface SlideshowViewerProps {
@@ -20,6 +20,9 @@ interface SlideshowViewerProps {
   thumbnailMode?: boolean;
 }
 
-export default function SlideshowViewer({ url, thumbnailMode }: SlideshowViewerProps) {
+export default function SlideshowViewer({
+  url,
+  thumbnailMode,
+}: SlideshowViewerProps) {
   return <SlideshowViewerInner url={url} thumbnailMode={thumbnailMode} />;
 }

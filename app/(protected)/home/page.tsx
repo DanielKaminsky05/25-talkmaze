@@ -20,15 +20,13 @@ export default function Home() {
     useHomeData();
 
   if (loading) {
-    return (
-      <PageSpinner />
-    );
+    return <PageSpinner />;
   }
 
   return (
-    <div className="w-full p-8 mx-auto h-full">
+    <div className="w-full p-8 2xl:px-24 mx-auto h-full">
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-8 w-full xl:h-full">
-        <div className="flex flex-col gap-8 w-full">
+        <div className="flex flex-col gap-6 w-full xl:h-full min-h-0">
           <LessonProgressBar
             current={progress.completed}
             total={progress.total}
