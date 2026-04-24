@@ -20,18 +20,25 @@ export default function LessonsPage() {
     navigateToLesson,
   } = useLessons();
 
+  const firstIncompleteIdx = lessons.findIndex(
+    (l) => !completedLessonIds.has(l.id),
+  );
+
   const lessonCards = useMemo(
     () =>
       lessons.map((lesson, index) => {
         const token = courseTokens.find((t) => t.lesson_id === lesson.id);
+        const isLocked =
+          firstIncompleteIdx !== -1 && index > firstIncompleteIdx;
         return {
           lesson,
           lessonNumber: index + 1,
           icon: token?.icon_url ?? "🧭",
           isCompleted: completedLessonIds.has(lesson.id),
+          isLocked,
         };
       }),
-    [lessons, completedLessonIds, courseTokens],
+    [lessons, completedLessonIds, courseTokens, firstIncompleteIdx],
   );
 
   if (loading) {
@@ -83,13 +90,14 @@ export default function LessonsPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] pb-12 animate-in fade-in duration-300">
-        {lessonCards.map(({ lesson, lessonNumber, icon, isCompleted }) => (
+        {lessonCards.map(({ lesson, lessonNumber, icon, isCompleted, isLocked }) => (
           <LessonCard
             key={lesson.id}
             lessonNumber={lessonNumber}
             title={lesson.title}
             icon={icon}
             isCompleted={isCompleted}
+            isLocked={isLocked}
             onClick={() => navigateToLesson(lesson)}
           />
         ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useLessonDetail } from "../_hooks/useLessonDetail";
 import { usePageTitle } from "../../_context/PageTitleContext";
 import ProgressCard from "../_components/ProgressCard";
@@ -12,6 +12,7 @@ import PageSpinner from "../../components/PageSpinner";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
   const { setTitle } = usePageTitle();
   const {
     lesson,
@@ -24,6 +25,7 @@ export default function LessonDetailPage() {
     slideShowUrl,
     courseTokens,
     earnedTokenIds,
+    isLocked,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -41,6 +43,31 @@ export default function LessonDetailPage() {
       <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white">
         <div className="rounded-2xl bg-red-500/20 text-red-200 p-6">
           {error ?? "Lesson not found."}
+        </div>
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto flex items-center justify-center">
+        <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center gap-6 border border-[#B1E7D6]/20 shadow-2xl max-w-md w-full">
+          <div className="w-16 h-16 rounded-full bg-[#B1E7D6]/20 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#B1E7D6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white">Lesson Locked</h2>
+          <p className="text-[#B1E7D6]/80">
+            Complete your current lesson before unlocking this one.
+          </p>
+          <button
+            onClick={() => router.push("/lessons")}
+            className="mt-2 px-6 py-2.5 bg-[#B1E7D6] text-[#2B4257] font-semibold rounded-xl hover:bg-[#9ddbc8] transition-colors"
+          >
+            Back to Lessons
+          </button>
         </div>
       </div>
     );

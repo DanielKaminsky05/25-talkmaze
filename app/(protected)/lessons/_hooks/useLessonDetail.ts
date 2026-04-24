@@ -38,6 +38,7 @@ export function useLessonDetail(slug: string) {
   const [slideShowUrl, setSlideShowUrl] = useState<string | null>(null);
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
+  const [isLocked, setIsLocked] = useState(false);
 
   // Re-runs every time the [slug] changes
   useEffect(() => {
@@ -116,15 +117,26 @@ export function useLessonDetail(slug: string) {
             .eq("student_id", studentId),
         ]);
 
-        const completed = (progressRows ?? []).filter(
-          (row: any) => row.status === 3,
-        ).length;
-
         const lessons = allLessons ?? [];
+
+        const completedIds = new Set(
+          (progressRows ?? [])
+            .filter((row: any) => row.status === 3)
+            .map((row: any) => row.lesson_id as string),
+        );
+        const completed = completedIds.size;
+
         const idx = lessons.findIndex((l) => l.id === lessonData.id);
         if (idx !== -1) setLessonNumber(idx + 1);
 
         setProgress({ completed, total: lessons.length });
+
+        const firstIncompleteIdx = lessons.findIndex(
+          (l) => !completedIds.has(l.id),
+        );
+        setIsLocked(
+          firstIncompleteIdx !== -1 && idx !== -1 && idx > firstIncompleteIdx,
+        );
 
         setEarnedTokenIds(
           new Set(
@@ -169,5 +181,6 @@ export function useLessonDetail(slug: string) {
     slideShowUrl,
     courseTokens,
     earnedTokenIds,
+    isLocked,
   };
 }
