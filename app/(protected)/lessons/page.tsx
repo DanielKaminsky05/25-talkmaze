@@ -74,7 +74,7 @@ export default function LessonsPage() {
             width="w-full"
           />
         </div>
-        <div className="w-full lg:w-[300px] shrink-0">
+        <div className="w-full lg:w-[320px] shrink-0">
           <TokensRow
             courseTokens={courseTokens}
             earnedTokenIds={earnedTokenIds}

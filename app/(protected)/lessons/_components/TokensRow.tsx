@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { useState } from "react";
 import type { TokenRow } from "../types";
 import { TokenIcon } from "../../components/TokenIcon";
 import { TokenMysteryStar } from "../../components/TokenMysteryStar";
@@ -10,26 +10,30 @@ type Props = {
   earnedTokenIds: Set<string>;
 };
 
-const TokensRow = memo(function TokensRow({
-  courseTokens,
-  earnedTokenIds,
-}: Props) {
+const COLS = 7;
+
+export default function TokensRow({ courseTokens, earnedTokenIds }: Props) {
+  const [expanded, setExpanded] = useState(false);
+
+  const visibleTokens = expanded ? courseTokens : courseTokens.slice(0, COLS);
+  const hasMore = courseTokens.length > COLS;
+
   return (
     <div className="border-[#B1E7D6] border-6 bg-white rounded-xl shadow-lg px-3 py-2 w-full h-full">
       <p className="text-[#2b4257] font-semibold text-xs mb-1">Tokens</p>
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {courseTokens.map((token) => {
+      <div className="grid grid-cols-7 gap-1">
+        {visibleTokens.map((token) => {
           const earned = earnedTokenIds.has(token.id);
           return (
             <div
               key={token.id}
-              className="shrink-0 transition-all w-6 h-6 flex items-center justify-center text-2xl leading-none"
+              className="w-8 h-8 flex items-center justify-center text-2xl leading-none mx-auto"
             >
               {earned ? (
                 <TokenIcon
                   iconUrl={token.icon_url}
                   title={token.title}
-                  className="w-6 h-6 object-contain block text-xl"
+                  className="w-8 h-8 object-contain block text-xl"
                 />
               ) : (
                 <TokenMysteryStar className="w-6 h-6 block" />
@@ -38,8 +42,15 @@ const TokensRow = memo(function TokensRow({
           );
         })}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="mt-1.5 w-full text-[11px] text-[#2b4257]/50 hover:text-[#2b4257] transition-colors text-center"
+        >
+          {expanded ? "Show less" : `Show all (${courseTokens.length})`}
+        </button>
+      )}
     </div>
   );
-});
-
-export default TokensRow;
+}

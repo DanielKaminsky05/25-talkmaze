@@ -67,7 +67,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 xl:h-full xl:min-h-0">
+        <div className="flex flex-col gap-6 xl:h-full xl:min-h-0">
           <TokenBar
             courseTokens={courseTokens}
             earnedTokenIds={earnedTokenIds}

@@ -1,13 +1,14 @@
 "use client";
 
 import { memo } from "react";
+import { TokenIcon } from "../../components/TokenIcon";
 
 type Props = {
-  lessonNumber: number; // 1-based index shown on the card label
-  title: string; // lesson title shown in the footer strip
-  icon: string; // emoji assigned to this lesson (cycles through LESSON_ICONS)
-  onClick: () => void; // navigates to /lessons/[slug]
-  isCompleted?: boolean; // whether the student has completed this lesson
+  lessonNumber: number;
+  title: string;
+  icon: string | null;
+  onClick: () => void;
+  isCompleted?: boolean;
 };
 
 /**
@@ -60,7 +61,11 @@ const LessonCard = memo(function LessonCard({
 
       {/* Reward token for the lesson */}
       <div className="absolute top-4 right-5 w-14 h-14 rounded-xl bg-white text-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-        {icon}
+        <TokenIcon
+          iconUrl={icon}
+          title={title}
+          className="w-9 h-9 object-contain"
+        />
       </div>
 
       {/* Lesson title */}
