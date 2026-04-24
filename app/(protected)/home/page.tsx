@@ -16,8 +16,16 @@ function lessonPath(lesson: { slug: string | null; id: string }) {
 
 export default function Home() {
   const router = useRouter();
-  const { loading, progress, currentLesson, prevLesson, nextLesson, sessions } =
-    useHomeData();
+  const {
+    loading,
+    progress,
+    currentLesson,
+    prevLesson,
+    nextLesson,
+    sessions,
+    courseTokens,
+    earnedTokenIds,
+  } = useHomeData();
 
   if (loading) {
     return <PageSpinner />;
@@ -60,7 +68,10 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col gap-8 xl:h-full xl:min-h-0">
-          <TokenBar completedCount={progress.completed} />
+          <TokenBar
+            courseTokens={courseTokens}
+            earnedTokenIds={earnedTokenIds}
+          />
           <div className="flex-1 min-h-0">
             <ScheduleList schedule={sessions} />
           </div>

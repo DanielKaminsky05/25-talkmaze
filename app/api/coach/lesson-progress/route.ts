@@ -3,11 +3,14 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function PATCH(request: Request) {
   try {
-    console.log("Inside PATCH")
+    console.log("Inside PATCH");
     const supabase = await createClient();
 
     // Authenticate
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -15,20 +18,26 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { student_id, lesson_id, status } = body;
 
-
-    
     if (!student_id || !lesson_id || status === undefined) {
-      return NextResponse.json({ error: "Missing required fields: student_id, lesson_id, status" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields: student_id, lesson_id, status" },
+        { status: 400 },
+      );
     }
 
     if (![1, 2, 3].includes(status)) {
-      return NextResponse.json({ error: "Invalid status. Must be 1 (not started), 2 (in progress), or 3 (done)." }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            "Invalid status. Must be 1 (not started), 2 (in progress), or 3 (done).",
+        },
+        { status: 400 },
+      );
     }
 
     // Upsert: if the row exists update it; if not, create it.
     // Cast to `any` to work around stale TS type generation where lesson_id is mistyped.
-    const { data, error } = await (supabase
-      .from("lesson_progress") as any)
+    const { data, error } = await (supabase.from("lesson_progress") as any)
       .upsert(
         {
           student_id,
@@ -38,7 +47,7 @@ export async function PATCH(request: Request) {
           completed_at: status === 3 ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "student_id,lesson_id" }
+        { onConflict: "student_id,lesson_id" },
       )
       .select()
       .single();
@@ -48,13 +57,35 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    //if status is completed, we assign the badge to the student
-    
+    const { data: token } = await (supabase.from("tokens") as any)
+      .select("id")
+      .eq("lesson_id", lesson_id)
+      .maybeSingle();
+
+    if (token) {
+      if (status === 3) {
+        await (supabase.from("student_tokens") as any).upsert(
+          {
+            student_id,
+            token_id: token.id,
+            awarded_at: new Date().toISOString(),
+          },
+          { onConflict: "student_id,token_id" },
+        );
+      } else {
+        await (supabase.from("student_tokens") as any)
+          .delete()
+          .eq("student_id", student_id)
+          .eq("token_id", token.id);
+      }
+    }
 
     return NextResponse.json(data);
-
   } catch (error) {
     console.error("Error in PATCH /api/coach/lesson-progress:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

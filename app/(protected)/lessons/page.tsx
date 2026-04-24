@@ -4,10 +4,8 @@ import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
 import PageSpinner from "../components/PageSpinner";
 import ProgressCard from "./_components/ProgressCard";
-import BadgesCard from "./_components/BadgesCard";
+import TokensRow from "./_components/TokensRow";
 import LessonCard from "./_components/LessonCard";
-
-import { LESSON_TOKENS } from "./_lib/tokens";
 
 export default function LessonsPage() {
   const {
@@ -15,6 +13,8 @@ export default function LessonsPage() {
     loading,
     error,
     progress,
+    courseTokens,
+    earnedTokenIds,
     completedLessonIds,
     hasCourse,
     navigateToLesson,
@@ -22,19 +22,20 @@ export default function LessonsPage() {
 
   const lessonCards = useMemo(
     () =>
-      lessons.map((lesson, index) => ({
-        lesson,
-        lessonNumber: index + 1,
-        icon: LESSON_TOKENS[index] ?? "🧭",
-        isCompleted: completedLessonIds.has(lesson.id),
-      })),
-    [lessons, completedLessonIds],
+      lessons.map((lesson, index) => {
+        const token = courseTokens.find((t) => t.lesson_id === lesson.id);
+        return {
+          lesson,
+          lessonNumber: index + 1,
+          icon: token?.icon_url ?? "🧭",
+          isCompleted: completedLessonIds.has(lesson.id),
+        };
+      }),
+    [lessons, completedLessonIds, courseTokens],
   );
 
   if (loading) {
-    return (
-      <PageSpinner />
-    );
+    return <PageSpinner />;
   }
 
   if (error) {
@@ -66,7 +67,7 @@ export default function LessonsPage() {
   return (
     <div className="w-full max-w-[1400px] p-6 md:p-12 flex flex-col gap-8 mx-auto text-white">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="flex-grow">
+        <div className="grow">
           <ProgressCard
             completed={progress.completed}
             total={progress.total}
@@ -74,7 +75,10 @@ export default function LessonsPage() {
           />
         </div>
         <div className="w-full lg:w-[300px] shrink-0">
-          <BadgesCard completedCount={progress.completed} />
+          <TokensRow
+            courseTokens={courseTokens}
+            earnedTokenIds={earnedTokenIds}
+          />
         </div>
       </div>
 

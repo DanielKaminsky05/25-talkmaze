@@ -22,6 +22,8 @@ export default function LessonDetailPage() {
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,
+    courseTokens,
+    earnedTokenIds,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -31,9 +33,7 @@ export default function LessonDetailPage() {
   }, [lesson?.title, lessonNumber, setTitle]);
 
   if (loading) {
-    return (
-      <PageSpinner />
-    );
+    return <PageSpinner />;
   }
 
   if (error || !lesson) {
@@ -54,7 +54,10 @@ export default function LessonDetailPage() {
           total={progress.total}
           width="w-full"
         />
-        <TokensCard completedCount={progress.completed} />
+        <TokensCard
+          courseTokens={courseTokens}
+          earnedTokenIds={earnedTokenIds}
+        />
       </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">

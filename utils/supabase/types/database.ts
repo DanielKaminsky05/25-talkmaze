@@ -762,26 +762,26 @@ export type Database = {
       student_tokens: {
         Row: {
           awarded_at: string
-          badge_id: string
+          token_id: string
           badge_url: string | null
           student_id: string
         }
         Insert: {
           awarded_at?: string
-          badge_id: string
+          token_id: string
           badge_url?: string | null
           student_id: string
         }
         Update: {
           awarded_at?: string
-          badge_id?: string
+          token_id?: string
           badge_url?: string | null
           student_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "student_badges_badge_id_fkey"
-            columns: ["badge_id"]
+            columns: ["token_id"]
             isOneToOne: false
             referencedRelation: "tokens"
             referencedColumns: ["id"]
