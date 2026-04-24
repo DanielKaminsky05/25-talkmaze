@@ -7,28 +7,52 @@ import "react-pdf/dist/Page/TextLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+/**
+ * Altnative display mode where the first-slide of the ppt slideshow is used
+ * as a thumbnail.
+ * 
+ * Render this component instead of the interactive slideshow if the
+ * thumbnailMode prop is true. 
+ */
 function SlideshowThumbnail({ url }: { url: string }) {
   const divRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+  const [pdfAspect, setPdfAspect] = useState<number | null>(null);
 
+  // Re-renders the component to maintain the ppt slide aspect ratio 
   useLayoutEffect(() => {
     const el = divRef.current;
     if (!el) return;
-    setWidth(el.clientWidth);
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    const update = () => setDims({ w: el.clientWidth, h: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
+  // Cover: fill container in both axes, clipping overflow symmetrically
+  const renderWidth =
+    dims.w > 0 && dims.h > 0
+      ? pdfAspect !== null
+        ? Math.max(dims.w, Math.round(dims.h * pdfAspect))
+        : dims.w
+      : 0;
+
   return (
-    <div ref={divRef} className="w-full overflow-hidden pointer-events-none">
-      {width > 0 && (
+    <div
+      ref={divRef}
+      className="w-full h-full overflow-hidden pointer-events-none flex justify-center items-center"
+    >
+      {renderWidth > 0 && (
         <Document file={url} loading={null} error={null}>
           <Page
             pageNumber={1}
-            width={width}
+            width={renderWidth}
             renderTextLayer={false}
             renderAnnotationLayer={false}
+            onRenderSuccess={({ originalWidth, originalHeight }) => {
+              setPdfAspect(originalWidth / originalHeight);
+            }}
           />
         </Document>
       )}
@@ -38,10 +62,13 @@ function SlideshowThumbnail({ url }: { url: string }) {
 
 export interface SlideshowViewerInnerProps {
   url: string;
-  /** Renders only page 1 at reduced size — no controls, for use as a thumbnail */
+  /** Renders only page 1 at reduced size no controls, for use as a thumbnail */
   thumbnailMode?: boolean;
 }
 
+/**
+ * Load and display the pdf file as an interactive slideshow.
+ */
 export default function SlideshowViewerInner({
   url,
   thumbnailMode = false,

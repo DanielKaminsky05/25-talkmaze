@@ -14,7 +14,7 @@ export default function CurrentLessonBanner({
 }: CurrentLessonBannerProps) {
   if (!lesson) {
     return (
-      <div className="w-full h-[300px] rounded-2xl bg-[#65CFAD]/30 border-2 border-[#65CFAD]/50 flex flex-col items-center justify-center gap-3 text-white">
+      <div className="w-full h-full rounded-2xl bg-[#65CFAD]/30 border-2 border-[#65CFAD]/50 flex flex-col items-center justify-center gap-3 text-white">
         <span className="text-4xl">🎉</span>
         <p className="text-2xl font-bold">Course Complete!</p>
         <p className="text-[#B1E7D6] text-sm">
@@ -27,13 +27,13 @@ export default function CurrentLessonBanner({
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-2xl overflow-hidden block cursor-pointer"
+      className="w-full h-full rounded-2xl overflow-hidden block cursor-pointer"
     >
       {lesson.slideShowUrl ? (
         <SlideshowViewer url={lesson.slideShowUrl} thumbnailMode />
       ) : (
         <div
-          className="w-full h-[300px]"
+          className="w-full h-full"
           style={{
             background:
               "linear-gradient(135deg, #6b3fa0 0%, #2b4257 60%, #1f2e3b 100%)",
