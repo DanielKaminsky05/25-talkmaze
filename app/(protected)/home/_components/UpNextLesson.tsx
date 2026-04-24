@@ -16,7 +16,9 @@ export default function NextLessonCard({
       onClick={onClick}
       className="relative rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden cursor-pointer w-full h-[244px]"
       style={{
-        background: "linear-gradient(90deg, #B1E7D6 0%, #B1E7D6 100%)",
+        backgroundImage: "url('/lesson-card-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       }}
     >
       {/* Label pill */}
