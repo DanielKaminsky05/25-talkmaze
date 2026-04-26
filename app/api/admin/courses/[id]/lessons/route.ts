@@ -40,7 +40,7 @@ export async function POST(
     }
 
     
-   const {lesson_id, title, description, content_url, pre_file_name, post_file_name, slide_input_name} = body;
+   const {lesson_id, title, description, content_url, pre_file_name, post_file_name, slide_pdf_name, slide_pptx_name} = body;
 
     if(!lesson_id){
       return NextResponse.json({status: 404, message: "Lesson id not found"})
@@ -56,22 +56,26 @@ export async function POST(
     const supabase = await createClient();
     
   
-    const pre_lesson_url = `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`;
-    const post_lesson_url = `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`;
-    const slide_show_url = `course_files/${id}/${lesson_id}/lessons/${slide_input_name}`
+    const slug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + lesson_id.slice(0, 8);
 
-   
+    const pre_lesson_url = pre_file_name ? `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}` : null;
+    const post_lesson_url = post_file_name ? `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}` : null;
+    const slide_show_url = slide_pdf_name ? `course_files/${id}/${lesson_id}/lessons/${slide_pdf_name}` : null;
+    const slide_pptx_url = slide_pptx_name ? `course_files/${id}/${lesson_id}/lessons/${slide_pptx_name}` : null;
+
     const { data, error } = await supabase
       .from("lessons")
       .insert({
         id: lesson_id,
         course_id: id,
         title: title.trim(),
+        slug,
         description: description?.trim() || null,
         content_url: content_url?.trim() || null,
-        pre_lesson_url: pre_lesson_url,
-        post_lesson_url: post_lesson_url,
-        slide_show_url: slide_show_url,
+        pre_lesson_url,
+        post_lesson_url,
+        slide_show_url,
+        slide_pptx_url,
       })
       .select()
       .single();
@@ -105,6 +109,9 @@ export async function POST(
               return NextResponse.json({status: 500, message: "Error retrieving tail of course"})
             }
             console.log("Retrieved current tail: " + tail_data.tail_lesson_id);
+            if (!tail_data.tail_lesson_id) {
+              return NextResponse.json({ status: 500, message: "Tail lesson id is null" });
+            }
             const {data:update_tail, error: update_tail_error} = await supabase.from('courses').update({'tail_lesson_id': lesson_id}).eq('id',id);
             //update the next lesson of the previous
             const {data: update_lesson_prev_data, error: update_lesson_prev_error} = await supabase.from('lessons').update({'prev_lesson': tail_data.tail_lesson_id}).eq('id', lesson_id);

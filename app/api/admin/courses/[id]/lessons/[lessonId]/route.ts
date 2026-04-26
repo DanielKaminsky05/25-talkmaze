@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id, lessonId } = await params;
     const body = await req.json();
-    const { title, description, content_url,pre_lesson_tasks,post_lesson_tasks} = body;
+    const { title, description, content_url, pre_file_name, post_file_name, slide_pdf_name, slide_pptx_name } = body;
 
     if (title !== undefined && !title?.trim()) {
       return NextResponse.json(
@@ -23,12 +23,10 @@ export async function PUT(
     if (title !== undefined)       payload.title       = title.trim();
     if (description !== undefined) payload.description = description?.trim() || null;
     if (content_url !== undefined) payload.content_url = content_url?.trim() || null;
-    if(pre_lesson_tasks !== undefined) payload.pre_lesson_task = pre_lesson_tasks
-    if(post_lesson_tasks !== undefined) payload.post_lesson_task = post_lesson_tasks
-    
-    console.log("")
-    console.log("Post lesson task: " + post_lesson_tasks);
-    console.log("Pre lesson task: " + pre_lesson_tasks);
+    if (pre_file_name !== undefined) payload.pre_lesson_url = pre_file_name ? `course_files/${id}/${lessonId}/pre_lesson_tasks/${pre_file_name}` : null;
+    if (post_file_name !== undefined) payload.post_lesson_url = post_file_name ? `course_files/${id}/${lessonId}/post_lesson_tasks/${post_file_name}` : null;
+    if (slide_pdf_name !== undefined) payload.slide_show_url = slide_pdf_name ? `course_files/${id}/${lessonId}/lessons/${slide_pdf_name}` : null;
+    if (slide_pptx_name !== undefined) payload.slide_pptx_url = slide_pptx_name ? `course_files/${id}/${lessonId}/lessons/${slide_pptx_name}` : null;
     if (Object.keys(payload).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
@@ -63,41 +61,60 @@ export async function DELETE(
     const { id, lessonId } = await params;
     const supabase = await createClient();
 
-    //get the prev and next lesson
+    // Fetch linked-list pointers and file URLs before deletion
+    const { data: lessonData, error: lessonFetchError } = await supabase
+      .from("lessons")
+      .select("next_lesson, prev_lesson, pre_lesson_url, post_lesson_url, slide_show_url, slide_pptx_url")
+      .eq("id", lessonId)
+      .single();
 
-    const {data: linked_position_data, error: linked_position_error} = await supabase.from('lessons').select('next_lesson, prev_lesson').eq('id',lessonId).single()
+    if (lessonFetchError) {
+      return NextResponse.json({ status: 500, message: "Unable to fetch lesson before deletion" });
+    }
 
-    const { error } = await supabase
+    const { error: deleteError } = await supabase
       .from("lessons")
       .delete()
       .eq("id", lessonId)
       .eq("course_id", id);
 
-    if(linked_position_error){
-      return NextResponse.json({status: 500, message: "Unable to determine lesson's position in course"})
-    }
+    if (deleteError) throw new Error(deleteError.message);
 
-    if(linked_position_data){
-      if(linked_position_data.prev_lesson != null){
-
-          const {data: prev_lesson_update, error: prev_lesson_update_error} = await supabase.from('lessons').update({next_lesson :linked_position_data.next_lesson}).eq('id', linked_position_data.prev_lesson).single();
-
-          if(prev_lesson_update_error){
-            return NextResponse.json({error: 500, message: "Unable to update previous lesson's next pointer"})
-          }
-        
+    if (lessonData) {
+      if (lessonData.prev_lesson != null) {
+        const { error: prevUpdateError } = await supabase
+          .from("lessons")
+          .update({ next_lesson: lessonData.next_lesson })
+          .eq("id", lessonData.prev_lesson);
+        if (prevUpdateError) {
+          return NextResponse.json({ status: 500, message: "Unable to update previous lesson's next pointer" });
+        }
       }
 
-      if(linked_position_data.next_lesson != null){
-        const {data: next_lesson_update, error: next_lesson_update_error} = await supabase.from('lessons').update({prev_lesson: linked_position_data.prev_lesson}).eq('id', linked_position_data.next_lesson).single();
-         if(next_lesson_update_error){
-            return NextResponse.json({error: 500, message: "Unable to update next lesson's previous pointer"})
-          }
+      if (lessonData.next_lesson != null) {
+        const { error: nextUpdateError } = await supabase
+          .from("lessons")
+          .update({ prev_lesson: lessonData.prev_lesson })
+          .eq("id", lessonData.next_lesson);
+        if (nextUpdateError) {
+          return NextResponse.json({ status: 500, message: "Unable to update next lesson's previous pointer" });
+        }
+      }
+
+      // Delete storage files (strip the 'course_files/' bucket prefix from stored paths)
+      const filePaths = [
+        lessonData.pre_lesson_url,
+        lessonData.post_lesson_url,
+        lessonData.slide_show_url,
+        lessonData.slide_pptx_url,
+      ]
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^course_files\//, ""));
+
+      if (filePaths.length > 0) {
+        await supabase.storage.from("course_files").remove(filePaths);
       }
     }
-
-  
-    if (error) throw new Error(error.message);
 
     return NextResponse.json({ success: true });
   } catch (err) {
