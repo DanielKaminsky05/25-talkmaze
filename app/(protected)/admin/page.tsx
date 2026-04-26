@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 import StudentTable, { Student } from "./components/StudentTable";
 import EmployeeTable from "./components/EmployeeTable";
@@ -84,29 +85,34 @@ export default function AdminPage() {
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
 
- interface Course{
-  id: number;
-  name: string;
-  description?: string;
-  status?: string;
-
-}
+  interface Course {
+    id: number;
+    name: string;
+    description?: string;
+    status?: string;
+  }
   // Course state
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [courseSearchQuery, setCourseSearchQuery] = useState("");
   const [courseCurrentPage, setCourseCurrentPage] = useState(1);
-  const [selectedCourse, setSelectedCourse] = useState<Course| null>(
-    null,
-  );
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isEditingCourse, setIsEditingCourse] = useState(false);
-  const [courseEditForm, setCourseEditForm] = useState<
-    Partial<Course>
-  >({});
+  const [courseEditForm, setCourseEditForm] = useState<Partial<Course>>({});
   const [isSavingCourse, setIsSavingCourse] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
+
+  // Course badge state
+  const [courseBadge, setCourseBadge] = useState<{
+    id: string;
+    title: string;
+    image_url: string | null;
+  } | null>(null);
+  const [badgeTitle, setBadgeTitle] = useState("");
+  const [uploadingBadge, setUploadingBadge] = useState(false);
+  const badgeInputRef = useRef<HTMLInputElement | null>(null);
 
   // Assignment state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -154,7 +160,7 @@ export default function AdminPage() {
         const response = await fetch("/api/admin/courses");
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
-        
+
         console.log("Retrieved Courses: " + JSON.stringify(data));
         const mapped = data.map((c: any) => ({
           id: c.id,
@@ -162,7 +168,6 @@ export default function AdminPage() {
           description: c.description,
         }));
 
-        
         setCourses(mapped);
       } catch (err) {
         setCoursesError(
@@ -198,7 +203,70 @@ export default function AdminPage() {
     setSelectedCourse(null);
     setIsEditingCourse(false);
     setCourseEditForm({});
+    setCourseBadge(null);
+    setBadgeTitle("");
   };
+
+  useEffect(() => {
+    if (!selectedCourse) return;
+    const supabase = createClient();
+    supabase
+      .from("badges")
+      .select("id, title, image_url")
+      .eq("course_id", String(selectedCourse.id))
+      .maybeSingle()
+      .then(({ data }) => {
+        setCourseBadge(data ?? null);
+        setBadgeTitle(data?.title ?? "");
+      });
+  }, [selectedCourse?.id]);
+
+  async function handleBadgeUpload(file: File | undefined) {
+    if (!file || !selectedCourse) return;
+    if (file.type !== "image/png") {
+      alert("PNG only");
+      return;
+    }
+    setUploadingBadge(true);
+    const supabase = createClient();
+
+    let badge = courseBadge;
+    if (!badge) {
+      const { data: newBadge } = await supabase
+        .from("badges")
+        .insert({
+          course_id: String(selectedCourse.id),
+          title: badgeTitle || selectedCourse.name,
+        })
+        .select("id, title, image_url")
+        .single();
+      badge = newBadge;
+    }
+
+    if (!badge) {
+      setUploadingBadge(false);
+      return;
+    }
+
+    const path = `${badge.id}.png`;
+    await supabase.storage
+      .from("badges")
+      .upload(path, file, { upsert: true, contentType: "image/png" });
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("badges").getPublicUrl(path);
+    await supabase
+      .from("badges")
+      .update({ image_url: publicUrl, title: badgeTitle || badge.title })
+      .eq("id", badge.id);
+
+    setCourseBadge({
+      ...badge,
+      image_url: publicUrl,
+      title: badgeTitle || badge.title,
+    });
+    setUploadingBadge(false);
+  }
   const handleEditCourseStart = () => {
     setCourseEditForm({ ...selectedCourse });
     setIsEditingCourse(true);
@@ -231,16 +299,14 @@ export default function AdminPage() {
     }
   };
   const handleDeleteCourse = async () => {
- 
     if (
       !selectedCourse ||
       !confirm(`Delete "${selectedCourse.name}"? This cannot be undone.`)
     )
-
       return;
     setIsDeletingCourse(true);
     try {
-      console.log("Trying to delete")
+      console.log("Trying to delete");
       const response = await fetch(`/api/admin/courses/${selectedCourse.id}`, {
         method: "DELETE",
       });
@@ -286,18 +352,18 @@ export default function AdminPage() {
 
         const mapped: Student[] = Array.isArray(data)
           ? data.map((s: any) => ({
-            id: String(s.id),
-            account_id: String(s.account_id),
-            name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
-            created_at: s.created_at ?? "",
-            updated_at: s.updated_at ?? "",
-            lesson_space_id: s.lesson_space_id ?? null,
-            profile_access_pin: s.profile_access_pin ?? null,
-            teach_works_url: s.teach_works_url ?? null,
-            lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
-            lesson_space_student_link: s.lesson_space_student_link ?? null,
-            remaining_lessons: s.remaining_lessons ?? null,
-          }))
+              id: String(s.id),
+              account_id: String(s.account_id),
+              name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
+              created_at: s.created_at ?? "",
+              updated_at: s.updated_at ?? "",
+              lesson_space_id: s.lesson_space_id ?? null,
+              profile_access_pin: s.profile_access_pin ?? null,
+              teach_works_url: s.teach_works_url ?? null,
+              lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
+              lesson_space_student_link: s.lesson_space_student_link ?? null,
+              remaining_lessons: s.remaining_lessons ?? null,
+            }))
           : [];
 
         setStudents(mapped);
@@ -564,7 +630,7 @@ export default function AdminPage() {
     try {
       console.log("Inside handleGetLessonSpaces");
       const response = await fetch("/api/learningSpace");
-      
+
       if (!response.ok) {
         console.log("Error with response");
       }
@@ -592,57 +658,63 @@ export default function AdminPage() {
       <div className="flex gap-2 mb-3 border-b border-gray-200">
         <button
           onClick={() => setActiveTab("students")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "students"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "students"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Students
         </button>
         <button
           onClick={() => setActiveTab("coaches")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "coaches"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "coaches"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Coaches
         </button>
         <button
           onClick={() => setActiveTab("courses")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "courses"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "courses"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Courses
         </button>
         <button
           onClick={() => setActiveTab("assignments")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "assignments"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "assignments"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Assignments
         </button>
 
         <button
           onClick={() => setActiveTab("learning_space")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "learning_space"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "learning_space"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Learning Spaces
         </button>
 
         <button
           onClick={() => setActiveTab("course_assignment")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${activeTab === "course_assignment"
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "course_assignment"
               ? "text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           Course Assignment
         </button>
@@ -1098,8 +1170,8 @@ export default function AdminPage() {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isEditingEmployee
-                  ? `${employeeEditForm.name ?? selectedEmployee.name}`
-                  : `${selectedEmployee.name}`}
+                  ? `${(employeeEditForm as any).first_name ?? selectedEmployee.first_name} ${(employeeEditForm as any).last_name ?? selectedEmployee.last_name}`
+                  : `${selectedEmployee.first_name} ${selectedEmployee.last_name}`}
               </h2>
               <div className="flex items-center gap-2">
                 {!isEditingEmployee ? (
@@ -1204,10 +1276,11 @@ export default function AdminPage() {
                       </select>
                     ) : (
                       <p
-                        className={`font-medium capitalize ${colorFn
+                        className={`font-medium capitalize ${
+                          colorFn
                             ? colorFn(selectedEmployee[fieldKey] as string)
                             : "text-gray-900"
-                          }`}
+                        }`}
                       >
                         {(selectedEmployee[fieldKey] as string) || "N/A"}
                       </p>
@@ -1269,9 +1342,14 @@ export default function AdminPage() {
                         </div>
 
                         <Field
-                          label="Name"
-                          fieldKey="name"
-                          colSpan="col-span-2"
+                          label="First Name"
+                          fieldKey="first_name"
+                          colSpan="col-span-1"
+                        />
+                        <Field
+                          label="Last Name"
+                          fieldKey="last_name"
+                          colSpan="col-span-1"
                         />
                       </div>
                     </div>
@@ -1512,7 +1590,7 @@ export default function AdminPage() {
         <div className="space-y-3">
           {filteredEmployees.map((coach) => {
             const coachAssignments = assignments.filter(
-              (a) => a.coach_id=== coach.id.toString(),
+              (a) => a.coach_id === coach.id.toString(),
             );
             const assignedStudentIds = new Set(
               coachAssignments.map((a) => a.student_id),
@@ -1572,7 +1650,7 @@ export default function AdminPage() {
                     >
                       {isDeletingCourse ? "Deleting..." : "Delete"}
                     </button>
-                    
+
                     <button
                       onClick={handleEditCourseStart}
                       className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
@@ -1665,11 +1743,59 @@ export default function AdminPage() {
               {/* Divider */}
               <hr className="border-gray-100" />
 
+              {/* --------- Upload Course Badge ------------ */}
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  Course Badge
+                </p>
+                <div className="flex items-center gap-3">
+                  {courseBadge?.image_url ? (
+                    <img
+                      src={courseBadge.image_url}
+                      className="w-16 h-16 object-contain rounded-lg border"
+                      alt="Badge"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-gray-100 border flex items-center justify-center text-gray-400 text-xs">
+                      None
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <input
+                      value={badgeTitle}
+                      onChange={(e) => setBadgeTitle(e.target.value)}
+                      placeholder="Badge title"
+                      className="px-2 py-1 text-xs border rounded"
+                    />
+                    <input
+                      type="file"
+                      accept="image/png"
+                      ref={badgeInputRef}
+                      onChange={(e) => handleBadgeUpload(e.target.files?.[0])}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => badgeInputRef.current?.click()}
+                      disabled={uploadingBadge}
+                      className="px-3 py-1 text-xs bg-purple-600 text-white rounded disabled:opacity-50 hover:bg-purple-700 transition-colors"
+                    >
+                      {uploadingBadge
+                        ? "Uploading…"
+                        : courseBadge
+                          ? "Replace image"
+                          : "Upload PNG"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <hr className="border-gray-100" />
+
               {/* ── Lessons Panel ── */}
               <CourseLessonsPanel
                 students={students}
                 courseId={String(selectedCourse.id)}
-                
               />
             </div>
           </div>
@@ -1680,7 +1806,8 @@ export default function AdminPage() {
       <CreateCourseModal
         isOpen={isCreateCourseModalOpen}
         onClose={() => setIsCreateCourseModalOpen(false)}
-        onSuccess={() => { }//(created) =>
+        onSuccess={
+          () => {} //(created) =>
           //setCourses((prev) => [...prev, created as TeachworksCourse])
         }
       />
