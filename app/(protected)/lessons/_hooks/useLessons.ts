@@ -64,13 +64,33 @@ export function useLessons() {
           return;
         }
 
-        const { data: lessonsData, error: lessonsError } = await supabase
-          .from("lessons")
-          .select("id, course_id, created_at, description, title, slug")
-          .eq("course_id", course.course_id as string)
-          .order("order", { ascending: true });
+        const [{ data: courseHeadData }, { data: lessonsRaw, error: lessonsError }] =
+          await Promise.all([
+            supabase
+              .from("courses")
+              .select("head_lesson_id")
+              .eq("id", course.course_id as string)
+              .single(),
+            supabase
+              .from("lessons")
+              .select("id, course_id, created_at, description, title, slug, next_lesson")
+              .eq("course_id", course.course_id as string),
+          ]);
 
         if (lessonsError) console.error("Lessons fetch error:", lessonsError);
+
+        // Traverse linked list from head to get lessons in display order
+        const lessonMap = new Map((lessonsRaw ?? []).map((l: any) => [l.id, l]));
+        const orderedLessons: typeof lessonsRaw = [];
+        let cur: string | null = courseHeadData?.head_lesson_id ?? null;
+        while (cur) {
+          const node = lessonMap.get(cur) as any;
+          if (!node) break;
+          orderedLessons.push(node);
+          cur = node.next_lesson;
+        }
+        // Fallback if head is not set or list is broken
+        const lessonsData = orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
 
         const lessonIds = (lessonsData ?? []).map((l: any) => l.id);
 
