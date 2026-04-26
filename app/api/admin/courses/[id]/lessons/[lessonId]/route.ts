@@ -72,6 +72,40 @@ export async function DELETE(
       return NextResponse.json({ status: 500, message: "Unable to fetch lesson before deletion" });
     }
 
+    if (lessonData) {
+      // Patch course head/tail BEFORE deleting the lesson row.
+      // courses.head_lesson_id and courses.tail_lesson_id are FK-constrained to
+      // lessons.id, so deleting the row while either pointer still references it
+      // causes a FK violation.
+      const courseUpdate: Record<string, string | null> = {};
+      if (lessonData.prev_lesson == null) courseUpdate.head_lesson_id = lessonData.next_lesson;
+      if (lessonData.next_lesson == null) courseUpdate.tail_lesson_id = lessonData.prev_lesson;
+      if (Object.keys(courseUpdate).length > 0) {
+        const { error: courseUpdateError } = await supabase
+          .from("courses")
+          .update(courseUpdate)
+          .eq("id", id);
+        if (courseUpdateError) throw new Error(courseUpdateError.message);
+      }
+
+      // Patch sibling pointers before deleting
+      if (lessonData.prev_lesson != null) {
+        const { error: prevUpdateError } = await supabase
+          .from("lessons")
+          .update({ next_lesson: lessonData.next_lesson })
+          .eq("id", lessonData.prev_lesson);
+        if (prevUpdateError) throw new Error(prevUpdateError.message);
+      }
+
+      if (lessonData.next_lesson != null) {
+        const { error: nextUpdateError } = await supabase
+          .from("lessons")
+          .update({ prev_lesson: lessonData.prev_lesson })
+          .eq("id", lessonData.next_lesson);
+        if (nextUpdateError) throw new Error(nextUpdateError.message);
+      }
+    }
+
     const { error: deleteError } = await supabase
       .from("lessons")
       .delete()
@@ -81,25 +115,6 @@ export async function DELETE(
     if (deleteError) throw new Error(deleteError.message);
 
     if (lessonData) {
-      if (lessonData.prev_lesson != null) {
-        const { error: prevUpdateError } = await supabase
-          .from("lessons")
-          .update({ next_lesson: lessonData.next_lesson })
-          .eq("id", lessonData.prev_lesson);
-        if (prevUpdateError) {
-          return NextResponse.json({ status: 500, message: "Unable to update previous lesson's next pointer" });
-        }
-      }
-
-      if (lessonData.next_lesson != null) {
-        const { error: nextUpdateError } = await supabase
-          .from("lessons")
-          .update({ prev_lesson: lessonData.prev_lesson })
-          .eq("id", lessonData.next_lesson);
-        if (nextUpdateError) {
-          return NextResponse.json({ status: 500, message: "Unable to update next lesson's previous pointer" });
-        }
-      }
 
       // Delete storage files (strip the 'course_files/' bucket prefix from stored paths)
       const filePaths = [

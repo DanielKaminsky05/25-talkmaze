@@ -81,6 +81,14 @@ export async function POST(
       .single();
 
       if (error) throw new Error(error.message);
+
+      // Create a token row for this lesson so the admin can upload an icon immediately
+      await supabase.from("tokens").insert({
+        lesson_id: lesson_id,
+        title: title.trim(),
+        code: lesson_id.slice(0, 8).toUpperCase(),
+      });
+
       //now need to update the lesson head and tail
 
       //make sure the course is not empty
