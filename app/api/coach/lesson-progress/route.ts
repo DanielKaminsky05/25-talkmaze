@@ -36,7 +36,6 @@ export async function PATCH(request: Request) {
     }
 
     // Upsert: if the row exists update it; if not, create it.
-    // Cast to `any` to work around stale TS type generation where lesson_id is mistyped.
     const { data, error } = await (supabase.from("lesson_progress") as any)
       .upsert(
         {
@@ -77,6 +76,57 @@ export async function PATCH(request: Request) {
           .delete()
           .eq("student_id", student_id)
           .eq("token_id", token.id);
+      }
+    }
+
+    // Badge award/retract logic
+    const { data: lessonRow } = await supabase
+      .from("lessons")
+      .select("course_id")
+      .eq("id", lesson_id)
+      .maybeSingle();
+
+    if (lessonRow?.course_id) {
+      const course_id = lessonRow.course_id;
+      const { data: badge } = await supabase
+        .from("badges")
+        .select("id")
+        .eq("course_id", course_id)
+        .maybeSingle();
+
+      if (badge) {
+        if (status === 3) {
+          const [{ data: allLessons }, { data: completedRows }] =
+            await Promise.all([
+              supabase.from("lessons").select("id").eq("course_id", course_id),
+              (supabase.from("lesson_progress") as any)
+                .select("lesson_id")
+                .eq("student_id", student_id)
+                .eq("status", 3),
+            ]);
+          const completedIds = new Set(
+            (completedRows ?? []).map((r: any) => r.lesson_id),
+          );
+          const allDone = (allLessons ?? []).every((l: any) =>
+            completedIds.has(l.id),
+          );
+          if (allDone) {
+            await supabase.from("student_badges").upsert(
+              {
+                student_id,
+                badge_id: badge.id,
+                awarded_at: new Date().toISOString(),
+              },
+              { onConflict: "student_id,badge_id" },
+            );
+          }
+        } else {
+          await supabase
+            .from("student_badges")
+            .delete()
+            .eq("student_id", student_id)
+            .eq("badge_id", badge.id);
+        }
       }
     }
 

@@ -41,6 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      badges: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badges_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_availabilities: {
         Row: {
           coach_id: string | null
@@ -698,6 +730,42 @@ export type Database = {
           },
         ]
       }
+      student_badges: {
+        Row: {
+          awarded_at: string | null
+          badge_id: string
+          claimed_at: string | null
+          student_id: string
+        }
+        Insert: {
+          awarded_at?: string | null
+          badge_id: string
+          claimed_at?: string | null
+          student_id: string
+        }
+        Update: {
+          awarded_at?: string | null
+          badge_id?: string
+          claimed_at?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_badges_badge_id_fkey1"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_student_id_fkey1"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_subscriptions: {
         Row: {
           account_id: string
@@ -762,21 +830,21 @@ export type Database = {
       student_tokens: {
         Row: {
           awarded_at: string
-          token_id: string
           badge_url: string | null
           student_id: string
+          token_id: string
         }
         Insert: {
           awarded_at?: string
-          token_id: string
           badge_url?: string | null
           student_id: string
+          token_id: string
         }
         Update: {
           awarded_at?: string
-          token_id?: string
           badge_url?: string | null
           student_id?: string
+          token_id?: string
         }
         Relationships: [
           {
