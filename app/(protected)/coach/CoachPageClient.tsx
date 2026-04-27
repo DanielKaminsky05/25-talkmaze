@@ -34,18 +34,13 @@ export default function CoachPageClient({
     <div className="w-full px-4 sm:px-6 lg:px-8 py-8 mx-auto max-w-[1600px]">
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <header className="rounded-2xl bg-[#2B4257]/10 border border-[#2B4257]/15 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#2B4257]">
-              Coach Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-[#2B4257]/70">
-              Manage students, review lesson progress, and open conversations.
-            </p>
-          </div>
+        <header className="rounded-2xl bg-white/10 border border-white/10 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            Coach Dashboard
+          </h1>
           <Link
             href="/coach/calendar"
-            className="self-start sm:self-auto text-sm font-medium text-[#2B4257] border border-[#2B4257]/30 rounded-lg px-4 py-2 hover:bg-[#2B4257]/10 transition-colors whitespace-nowrap"
+            className="self-start sm:self-auto text-sm font-medium text-white border border-white/25 rounded-lg px-4 py-2 hover:bg-white/10 transition-colors whitespace-nowrap"
           >
             View Calendar →
           </Link>

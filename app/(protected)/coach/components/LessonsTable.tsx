@@ -155,11 +155,6 @@ export default function LessonsTable({
               ? `Lessons — ${studentName}`
               : "Lessons"}
           </h2>
-          <p className="text-xs text-[#2B4257]/60 mt-0.5">
-            {showProgress
-              ? "Track and update this student's lesson progress."
-              : "Select a student above to see their progress."}
-          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">

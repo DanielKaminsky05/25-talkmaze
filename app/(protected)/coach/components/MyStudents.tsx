@@ -36,7 +36,7 @@ export default function MyStudents({
         if (!r.ok) throw new Error("Failed to load students");
         return r.json();
       }),
-      fetch("/api/admin/courses").then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/admin/courses").then((r) => (r.ok ? r.json() : [])).catch(() => []),
     ])
       .then(([studentsData, coursesData]) => {
         setStudents(studentsData);
@@ -69,14 +69,9 @@ export default function MyStudents({
       <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden flex flex-col max-h-[600px] xl:max-h-none">
         {/* Panel header */}
         <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex items-center justify-between flex-shrink-0">
-          <div>
-            <h2 className="text-base font-semibold text-[#2B4257]">
-              My Students
-            </h2>
-            <p className="text-xs text-[#2B4257]/60 mt-0.5">
-              Students assigned to you.
-            </p>
-          </div>
+          <h2 className="text-base font-semibold text-[#2B4257]">
+            My Students
+          </h2>
           {!loading && !error && (
             <span className="bg-[#2B4257]/10 text-[#2B4257] text-xs font-semibold px-2.5 py-1 rounded-full">
               {students.length}
