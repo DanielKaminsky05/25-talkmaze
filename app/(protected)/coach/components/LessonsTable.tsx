@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import type { Database } from "@/database";
 
@@ -44,7 +45,10 @@ type OrganizedLessons = {
   slide_show_inputs: (string | null)[];
 };
 
-export default function LessonsTable({ studentId, studentName }: LessonsTableProps) {
+export default function LessonsTable({
+  studentId,
+  studentName,
+}: LessonsTableProps) {
   const [lessons, setLessons] = useState<OrganizedLessons[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,8 +88,7 @@ export default function LessonsTable({ studentId, studentName }: LessonsTablePro
 
   const handleStatusChange = async (lessonId: string, newStatus: number) => {
     if (!studentId) return;
-    
-    
+
     setUpdatingId(lessonId);
 
     try {
@@ -101,24 +104,24 @@ export default function LessonsTable({ studentId, studentName }: LessonsTablePro
 
       if (!res.ok) throw new Error("Failed to update status");
 
-      setLessons(prev => 
-        prev.map(courseGroup => {
-          const idx = courseGroup.lessons.findIndex(lesson => lesson.id == lessonId)
-           if(idx == -1){
-            return courseGroup
-           }
+      setLessons((prev) =>
+        prev.map((courseGroup) => {
+          const idx = courseGroup.lessons.findIndex(
+            (lesson) => lesson.id == lessonId,
+          );
+          if (idx == -1) {
+            return courseGroup;
+          }
 
-           const newStatusArr = [...courseGroup.status];
-           newStatusArr[idx] = newStatus;
+          const newStatusArr = [...courseGroup.status];
+          newStatusArr[idx] = newStatus;
 
-           return {
+          return {
             ...courseGroup,
-            status: newStatusArr
-           }
-        })
-
-        )
-      
+            status: newStatusArr,
+          };
+        }),
+      );
     } catch (err: any) {
       alert("Error updating lesson status: " + err.message);
     } finally {
@@ -126,29 +129,32 @@ export default function LessonsTable({ studentId, studentName }: LessonsTablePro
     }
   };
 
-const filtered = useMemo(() => {
-  if (!Array.isArray(lessons)) return [];
+  const filtered = useMemo(() => {
+    if (!Array.isArray(lessons)) return [];
 
-  return lessons.flatMap(course =>
-    (course.lessons ?? [])
-      .map((lesson, idx) => ({
-        ...lesson,
-        status: course.status?.[idx] ?? 1,
-        course_name: course.course_name,
-        pre_lesson_url: course.pre_lesson_urls?.[idx] ?? null,
-        post_lesson_url: course.post_lesson_urls?.[idx] ?? null,
-        slide_show_input: course.slide_show_inputs?.[idx] ?? null,
-      }))
-      .filter(lesson =>
-        lesson.title.toLowerCase().includes(search.toLowerCase()) ||
-        (lesson.courses?.title ?? "").toLowerCase().includes(search.toLowerCase())
-      )
-  );
-}, [lessons, search]);
+    return lessons.flatMap((course) =>
+      (course.lessons ?? [])
+        .map((lesson, idx) => ({
+          ...lesson,
+          status: course.status?.[idx] ?? 1,
+          course_name: course.course_name,
+          pre_lesson_url: course.pre_lesson_urls?.[idx] ?? null,
+          post_lesson_url: course.post_lesson_urls?.[idx] ?? null,
+          slide_show_input: course.slide_show_inputs?.[idx] ?? null,
+        }))
+        .filter(
+          (lesson) =>
+            lesson.title.toLowerCase().includes(search.toLowerCase()) ||
+            (lesson.courses?.title ?? "")
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+        ),
+    );
+  }, [lessons, search]);
 
-useEffect(() => {
-  console.log("Filtered: " + JSON.stringify(filtered));
-},[filtered])
+  useEffect(() => {
+    console.log("Filtered: " + JSON.stringify(filtered));
+  }, [filtered]);
 
   const showProgress = Boolean(studentId);
 
@@ -157,7 +163,9 @@ useEffect(() => {
       <div className="px-6 py-5 border-b bg-gray-50/50 flex justify-between items-center gap-4 flex-wrap">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
-            {showProgress && studentName ? `Lessons — ${studentName}` : "All Lessons"}
+            {showProgress && studentName
+              ? `Lessons — ${studentName}`
+              : "All Lessons"}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
             {showProgress
@@ -174,7 +182,7 @@ useEffect(() => {
             type="search"
             placeholder="Search lessons..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
           />
         </div>
@@ -199,14 +207,25 @@ useEffect(() => {
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-6 py-3 text-left font-medium">Lesson Title</th>
+                <th className="px-6 py-3 text-left font-medium">
+                  Lesson Title
+                </th>
                 <th className="px-6 py-3 text-left font-medium">Course</th>
                 <th className="px-6 py-3 text-left font-medium">Description</th>
-                <th className="px-6 py-3 text-left font-medium">Pre Lesson Task</th>
-                <th className="px-6 py-3 text-left font-medium">Post Lesson Task</th>
+                <th className="px-6 py-3 text-left font-medium">
+                  Pre Lesson Task
+                </th>
+                <th className="px-6 py-3 text-left font-medium">
+                  Post Lesson Task
+                </th>
                 <th className="px-6 py-3 text-left font-medium">Slide Show</th>
-                {showProgress && <th className="px-6 py-3 text-left font-medium">Progress</th>}
+                {showProgress && (
+                  <th className="px-6 py-3 text-left font-medium">Progress</th>
+                )}
                 <th className="px-6 py-3 text-left font-medium">Created</th>
+                {showProgress && (
+                  <th className="px-6 py-3 text-left font-medium">Details</th>
+                )}
               </tr>
             </thead>
 
@@ -217,7 +236,10 @@ useEffect(() => {
                 const isUpdating = updatingId === lesson.id;
 
                 return (
-                  <tr key={lesson.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={lesson.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                       {lesson.title}
                     </td>
@@ -229,7 +251,9 @@ useEffect(() => {
                     </td>
 
                     <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                      {lesson.description ?? <span className="text-gray-400 italic">—</span>}
+                      {lesson.description ?? (
+                        <span className="text-gray-400 italic">—</span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4">
@@ -262,7 +286,6 @@ useEffect(() => {
                       )}
                     </td>
 
-
                     <td className="px-6 py-4">
                       {lesson.post_lesson_url ? (
                         <a
@@ -292,8 +315,6 @@ useEffect(() => {
                         <span className="text-gray-400 italic">—</span>
                       )}
                     </td>
-
-
 
                     <td className="px-6 py-4">
                       {lesson.slide_show_input ? (
@@ -337,7 +358,12 @@ useEffect(() => {
                           <select
                             disabled={isUpdating}
                             value={status}
-                            onChange={e => handleStatusChange(lesson.id, Number(e.target.value))}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                lesson.id,
+                                Number(e.target.value),
+                              )
+                            }
                             className="border border-gray-200 rounded-md text-xs py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
                           >
                             <option value={1}>Not Started</option>
@@ -359,6 +385,18 @@ useEffect(() => {
                         day: "numeric",
                       })}
                     </td>
+
+                    {/* Navigates to the dedicated coach lesson detail page for feedback editing */}
+                    {showProgress && studentId && (
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/coach/students/${studentId}/lessons/${lesson.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-[#2B4257] hover:text-[#2B4257]/70 border border-[#2B4257]/30 rounded-md px-2.5 py-1.5 hover:bg-[#2B4257]/5 transition-colors"
+                        >
+                          View Details
+                        </Link>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

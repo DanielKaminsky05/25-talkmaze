@@ -39,6 +39,10 @@ export function useLessonDetail(slug: string) {
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
   const [isLocked, setIsLocked] = useState(false);
+  const [positiveFeedback, setPositiveFeedback] = useState<string | null>(null);
+  const [improvementFeedback, setImprovementFeedback] = useState<string | null>(
+    null,
+  );
 
   // Re-runs every time the [slug] changes
   useEffect(() => {
@@ -123,7 +127,9 @@ export function useLessonDetail(slug: string) {
             .eq("course_id", courseId),
           supabase
             .from("lesson_progress")
-            .select("lesson_id, status")
+            .select(
+              "lesson_id, status, positive_feedback, improvement_feedback",
+            )
             .eq("student_id", studentId),
           supabase
             .from("student_tokens")
@@ -145,8 +151,18 @@ export function useLessonDetail(slug: string) {
         }
         // Fallback if head is not set or list is broken
         if (lessons.length === 0 && (allLessonsRaw?.length ?? 0) > 0) {
-          lessons.push(...(allLessonsRaw ?? []).map((l: any) => ({ id: l.id })));
+          lessons.push(
+            ...(allLessonsRaw ?? []).map((l: any) => ({ id: l.id })),
+          );
         }
+
+        const thisLessonProgress = (progressRows ?? []).find(
+          (row: any) => row.lesson_id === lessonData.id,
+        ) as any;
+        setPositiveFeedback(thisLessonProgress?.positive_feedback ?? null);
+        setImprovementFeedback(
+          thisLessonProgress?.improvement_feedback ?? null,
+        );
 
         const completedIds = new Set(
           (progressRows ?? [])
@@ -211,5 +227,7 @@ export function useLessonDetail(slug: string) {
     courseTokens,
     earnedTokenIds,
     isLocked,
+    positiveFeedback,
+    improvementFeedback,
   };
 }
