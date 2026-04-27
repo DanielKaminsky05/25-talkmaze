@@ -33,6 +33,11 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Token icon state
+  const [tokenByLesson, setTokenByLesson] = useState<Map<string, { id: string; icon_url: string | null }>>(new Map());
+  const [uploadingLessonId, setUploadingLessonId] = useState<string | null>(null);
+  const tokenIconRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
   // Add form state
   const [isAdding, setIsAdding] = useState(false);
   const [addForm, setAddForm] = useState<LessonInput>({ ...EMPTY_FORM });
@@ -53,6 +58,72 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
   const[editLessonOrder, setEditLessonOrder] = useState<Lesson[]>([]);
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Fetch token for each lesson whenever the lesson list changes
+  useEffect(() => {
+    if (lessons.length === 0) return;
+
+    async function loadTokens() {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("tokens")
+        .select("id, icon_url, lesson_id")
+        .in("lesson_id", lessons.map((l) => l.id));
+
+      const map = new Map<string, { id: string; icon_url: string | null }>();
+      (data ?? []).forEach((t: any) => {
+        if (t.lesson_id) map.set(t.lesson_id, { id: t.id, icon_url: t.icon_url });
+      });
+      setTokenByLesson(map);
+    }
+
+    loadTokens();
+  }, [lessons]);
+
+  async function handleTokenIconUpload(lessonId: string, file: File | undefined) {
+    if (!file) return;
+
+    if (file.type !== "image/png") {
+      alert("Only PNG files are accepted.");
+      return;
+    }
+    if (file.size > 512 * 1024) {
+      alert("File must be under 512 KB.");
+      return;
+    }
+
+    const token = tokenByLesson.get(lessonId);
+    if (!token) return;
+
+    setUploadingLessonId(lessonId);
+    try {
+      const supabase = await createClient();
+      const path = `${token.id}.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("token-icons")
+        .upload(path, file, { upsert: true, contentType: "image/png" });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("token-icons")
+        .getPublicUrl(path);
+
+      await supabase.from("tokens").update({ icon_url: publicUrl }).eq("id", token.id);
+
+      setTokenByLesson((prev) => {
+        const next = new Map(prev);
+        next.set(lessonId, { ...token, icon_url: publicUrl });
+        return next;
+      });
+    } catch (err) {
+      console.error("Token icon upload failed:", err);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploadingLessonId(null);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -764,6 +835,34 @@ export default function CourseLessonsPanel({ courseId, students }: CourseLessons
                   </div>
 
                   <div className="flex-shrink-0 flex items-center gap-1">
+                    {/* Token icon preview + upload */}
+                    <div className="flex items-center gap-1 mr-1 border-r border-gray-200 pr-2">
+                      {(() => {
+                        const token = tokenByLesson.get(lesson.id);
+                        const iconUrl = token?.icon_url ?? null;
+                        return iconUrl?.startsWith("http") ? (
+                          <img src={iconUrl} alt="Token" className="w-6 h-6 object-contain rounded" />
+                        ) : (
+                          <span className="text-base leading-none">{iconUrl ?? "🧭"}</span>
+                        );
+                      })()}
+                      <input
+                        type="file"
+                        accept="image/png"
+                        ref={(el) => { tokenIconRefs.current[lesson.id] = el; }}
+                        onChange={(e) => handleTokenIconUpload(lesson.id, e.target.files?.[0])}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        title="Upload token icon (PNG, max 512 KB)"
+                        onClick={() => tokenIconRefs.current[lesson.id]?.click()}
+                        disabled={uploadingLessonId === lesson.id || !tokenByLesson.has(lesson.id)}
+                        className="px-2 py-0.5 text-[11px] font-medium text-purple-600 hover:bg-purple-50 rounded transition-colors disabled:opacity-40"
+                      >
+                        {uploadingLessonId === lesson.id ? "…" : "Icon"}
+                      </button>
+                    </div>
                     <button
                       onClick={() => startEdit(lesson)}
                       className="px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"

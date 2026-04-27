@@ -14,10 +14,9 @@ export type LessonDetailRow = LessonRow & {
   slide_show_url: string | null;
 };
 
-export type BadgeRow = {
+export type TokenRow = {
   id: string;
-  code: string;
   title: string;
-  description: string | null;
   icon_url: string | null;
+  lesson_id: string | null;
 };

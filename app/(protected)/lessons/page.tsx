@@ -4,10 +4,8 @@ import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
 import PageSpinner from "../components/PageSpinner";
 import ProgressCard from "./_components/ProgressCard";
-import BadgesCard from "./_components/BadgesCard";
+import TokensRow from "./_components/TokensRow";
 import LessonCard from "./_components/LessonCard";
-
-import { LESSON_TOKENS } from "./_lib/tokens";
 
 export default function LessonsPage() {
   const {
@@ -15,26 +13,36 @@ export default function LessonsPage() {
     loading,
     error,
     progress,
+    courseTokens,
+    earnedTokenIds,
     completedLessonIds,
     hasCourse,
     navigateToLesson,
   } = useLessons();
 
+  const firstIncompleteIdx = lessons.findIndex(
+    (l) => !completedLessonIds.has(l.id),
+  );
+
   const lessonCards = useMemo(
     () =>
-      lessons.map((lesson, index) => ({
-        lesson,
-        lessonNumber: index + 1,
-        icon: LESSON_TOKENS[index] ?? "🧭",
-        isCompleted: completedLessonIds.has(lesson.id),
-      })),
-    [lessons, completedLessonIds],
+      lessons.map((lesson, index) => {
+        const token = courseTokens.find((t) => t.lesson_id === lesson.id);
+        const isLocked =
+          firstIncompleteIdx !== -1 && index > firstIncompleteIdx;
+        return {
+          lesson,
+          lessonNumber: index + 1,
+          icon: token?.icon_url ?? "🧭",
+          isCompleted: completedLessonIds.has(lesson.id),
+          isLocked,
+        };
+      }),
+    [lessons, completedLessonIds, courseTokens, firstIncompleteIdx],
   );
 
   if (loading) {
-    return (
-      <PageSpinner />
-    );
+    return <PageSpinner />;
   }
 
   if (error) {
@@ -66,26 +74,30 @@ export default function LessonsPage() {
   return (
     <div className="w-full max-w-[1400px] p-6 md:p-12 flex flex-col gap-8 mx-auto text-white">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="flex-grow">
+        <div className="grow">
           <ProgressCard
             completed={progress.completed}
             total={progress.total}
             width="w-full"
           />
         </div>
-        <div className="w-full lg:w-[300px] shrink-0">
-          <BadgesCard completedCount={progress.completed} />
+        <div className="w-full lg:w-[320px] shrink-0">
+          <TokensRow
+            courseTokens={courseTokens}
+            earnedTokenIds={earnedTokenIds}
+          />
         </div>
       </div>
 
       <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] pb-12 animate-in fade-in duration-300">
-        {lessonCards.map(({ lesson, lessonNumber, icon, isCompleted }) => (
+        {lessonCards.map(({ lesson, lessonNumber, icon, isCompleted, isLocked }) => (
           <LessonCard
             key={lesson.id}
             lessonNumber={lessonNumber}
             title={lesson.title}
             icon={icon}
             isCompleted={isCompleted}
+            isLocked={isLocked}
             onClick={() => navigateToLesson(lesson)}
           />
         ))}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import type { LessonDetailRow } from "../types";
+import type { LessonDetailRow, TokenRow } from "../types";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
@@ -36,6 +36,9 @@ export function useLessonDetail(slug: string) {
   const [preLessonUrl, setPreLessonUrl] = useState<string | null>(null);
   const [postLessonUrl, setPostLessonUrl] = useState<string | null>(null);
   const [slideShowUrl, setSlideShowUrl] = useState<string | null>(null);
+  const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
+  const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
+  const [isLocked, setIsLocked] = useState(false);
 
   // Re-runs every time the [slug] changes
   useEffect(() => {
@@ -60,7 +63,7 @@ export function useLessonDetail(slug: string) {
           .limit(1)
           .maybeSingle();
 
-          // If no course assigned send back to the lessons list
+        // If no course assigned send back to the lessons list
         if (!course) {
           router.push("/lessons");
           return;
@@ -84,7 +87,7 @@ export function useLessonDetail(slug: string) {
 
         setLesson(lessonData as LessonDetailRow);
 
-        // Resolve storage URLs only for fields that have a value 
+        // Resolve storage URLs only for fields that have a value
         // null means no file was uploaded
         if (lessonData.pre_lesson_url)
           setPreLessonUrl(storageUrl(supabase, lessonData.pre_lesson_url));
@@ -93,25 +96,70 @@ export function useLessonDetail(slug: string) {
         if (lessonData.slide_show_url)
           setSlideShowUrl(storageUrl(supabase, lessonData.slide_show_url));
 
-        // Fetch progress counts in parallel 
-        const [{ data: allLessons }, { data: progressRows }] =
-          await Promise.all([
-            supabase.from("lessons").select("id, order").eq("course_id", courseId).order("order", { ascending: true, nullsFirst: false }),
-            supabase
-              .from("lesson_progress")
-              .select("lesson_id, status")
-              .eq("student_id", studentId),
-          ]);
-
-        const completed = (progressRows ?? []).filter(
-          (row: any) => row.status === 3,
-        ).length;
+        // Fetch progress, all lessons (for ordering), and earned tokens in parallel
+        const [
+          { data: allLessons },
+          { data: progressRows },
+          { data: earnedTokensData },
+        ] = await Promise.all([
+          supabase
+            .from("lessons")
+            .select("id, order")
+            .eq("course_id", courseId)
+            .order("order", { ascending: true, nullsFirst: false }),
+          supabase
+            .from("lesson_progress")
+            .select("lesson_id, status")
+            .eq("student_id", studentId),
+          supabase
+            .from("student_tokens")
+            .select("token_id")
+            .eq("student_id", studentId),
+        ]);
 
         const lessons = allLessons ?? [];
+
+        const completedIds = new Set(
+          (progressRows ?? [])
+            .filter((row: any) => row.status === 3)
+            .map((row: any) => row.lesson_id as string),
+        );
+        const completed = completedIds.size;
+
         const idx = lessons.findIndex((l) => l.id === lessonData.id);
         if (idx !== -1) setLessonNumber(idx + 1);
 
         setProgress({ completed, total: lessons.length });
+
+        const firstIncompleteIdx = lessons.findIndex(
+          (l) => !completedIds.has(l.id),
+        );
+        setIsLocked(
+          firstIncompleteIdx !== -1 && idx !== -1 && idx > firstIncompleteIdx,
+        );
+
+        setEarnedTokenIds(
+          new Set(
+            (earnedTokensData ?? []).map((r: any) => r.token_id as string),
+          ),
+        );
+
+        // Fetch course tokens using the lesson IDs we now have
+        const lessonIds = lessons.map((l) => l.id);
+        if (lessonIds.length > 0) {
+          const { data: tokensData } = await supabase
+            .from("tokens")
+            .select("id, title, icon_url, lesson_id")
+            .in("lesson_id", lessonIds);
+
+          const orderedTokens = lessons
+            .map((l) =>
+              (tokensData ?? []).find((t: any) => t.lesson_id === l.id),
+            )
+            .filter(Boolean) as TokenRow[];
+
+          setCourseTokens(orderedTokens);
+        }
       } catch (err: any) {
         setError(err.message || "An unexpected error occurred");
       } finally {
@@ -131,5 +179,8 @@ export function useLessonDetail(slug: string) {
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,
+    courseTokens,
+    earnedTokenIds,
+    isLocked,
   };
 }

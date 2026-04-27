@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import PageSpinner from "../components/PageSpinner";
 import LessonProgressBar from "../components/LessonProgressBar";
 import TokenBar from "../components/TokensBar";
-import ReviewLessonCard from "../components/ReviewLesson";
-import NextLessonCard from "../components/UpNextLesson";
+import ReviewLessonCard from "./_components/ReviewLesson";
+import NextLessonCard from "./_components/UpNextLesson";
 import ScheduleList from "../components/ScheduleList";
 import CurrentLessonBanner from "./_components/CurrentLessonBanner";
 import { useHomeData } from "./_hooks/useHomeData";
@@ -16,8 +16,16 @@ function lessonPath(lesson: { slug: string | null; id: string }) {
 
 export default function Home() {
   const router = useRouter();
-  const { loading, progress, currentLesson, prevLesson, nextLesson, sessions } =
-    useHomeData();
+  const {
+    loading,
+    progress,
+    currentLesson,
+    prevLesson,
+    nextLesson,
+    sessions,
+    courseTokens,
+    earnedTokenIds,
+  } = useHomeData();
 
   if (loading) {
     return <PageSpinner />;
@@ -59,8 +67,11 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 xl:h-full xl:min-h-0">
-          <TokenBar completedCount={progress.completed} />
+        <div className="flex flex-col gap-6 xl:h-full xl:min-h-0">
+          <TokenBar
+            courseTokens={courseTokens}
+            earnedTokenIds={earnedTokenIds}
+          />
           <div className="flex-1 min-h-0">
             <ScheduleList schedule={sessions} />
           </div>

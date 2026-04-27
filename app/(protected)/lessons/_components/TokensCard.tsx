@@ -1,27 +1,43 @@
 "use client";
 
 import { memo } from "react";
-import { LESSON_TOKENS } from "../_lib/tokens";
+import type { TokenRow } from "../types";
+import { TokenIcon } from "../../components/TokenIcon";
+import { TokenMysteryStar } from "../../components/TokenMysteryStar";
 
 interface TokensCardProps {
-  completedCount: number;
+  courseTokens: TokenRow[];
+  earnedTokenIds: Set<string>;
 }
 
-const TokensCard = memo(function TokensCard({ completedCount }: TokensCardProps) {
+const TokensCard = memo(function TokensCard({ courseTokens, earnedTokenIds }: TokensCardProps) {
   return (
     <div className="bg-[#B1E7D6] rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] p-4 w-full">
       <p className="text-[#2b4257] font-semibold text-sm mb-3">Tokens</p>
       <div className="grid grid-cols-12 gap-3">
-        {LESSON_TOKENS.map((emoji, i) => (
-          <div
-            key={i}
-            className={`w-12 h-12 flex items-center justify-center text-3xl rounded-lg transition-all ${
-              i < completedCount ? "" : "grayscale opacity-40"
-            }`}
-          >
-            {i < completedCount ? emoji : "⭐"}
-          </div>
-        ))}
+        {courseTokens.map((token) => {
+          const earned = earnedTokenIds.has(token.id);
+          return (
+            <div
+              key={token.id}
+              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all ${
+                earned ? "" : "grayscale opacity-40"
+              }`}
+            >
+              <div className="w-8 h-8 flex items-center justify-center leading-none">
+                {earned ? (
+                  <TokenIcon
+                    iconUrl={token.icon_url}
+                    title={token.title}
+                    className="w-8 h-8 object-contain block text-3xl"
+                  />
+                ) : (
+                  <TokenMysteryStar className="w-8 h-8 block" />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

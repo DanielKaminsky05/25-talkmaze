@@ -38,24 +38,28 @@ export default function AvatarIcon({ profileType, avatarUrl }: Props) {
   }, []);
 
   return (
-    <div ref={ref} className="relative flex items-center gap-1.5">
-      {/* Circular profile pic */}
-      <div className="rounded-full w-[43px] h-[43px] md:w-[66px] md:h-[66px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden relative">
-        <Image
-          src={avatarUrl ?? PROFILE_IMAGE[profileType]}
-          alt="Profile"
-          fill
-          className="object-cover"
-        />
-      </div>
-
-      {/* Dropdown triangle arrow */}
+    <div ref={ref} className="relative flex items-center">
+      {/* Avatar + arrow — single clickable area */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Profile menu"
-        className="text-white leading-none"
+        className="flex items-center gap-1.5 text-white cursor-pointer"
       >
-        <svg width="10" height="7" viewBox="0 0 10 7" fill="currentColor">
+        <div className="rounded-full w-[43px] h-[43px] md:w-[66px] md:h-[66px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden relative">
+          <Image
+            src={avatarUrl ?? PROFILE_IMAGE[profileType]}
+            alt="Profile"
+            fill
+            className="object-cover"
+          />
+        </div>
+        <svg
+          width="10"
+          height="7"
+          viewBox="0 0 10 7"
+          fill="currentColor"
+          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        >
           <path d="M0 0L5 7L10 0H0Z" />
         </svg>
       </button>

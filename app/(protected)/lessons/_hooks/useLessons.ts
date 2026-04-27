@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import type { LessonRow, BadgeRow } from "../types";
+import type { LessonRow, TokenRow } from "../types";
 
 /**
  * Fetches all data needed for the /lessons grid page.
@@ -17,15 +17,15 @@ export function useLessons() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
-  const [badges, setBadges] = useState<BadgeRow[]>([]);
-  const [earnedBadgeIds, setEarnedBadgeIds] = useState(new Set<string>());
+  const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
+  const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
   const [completedLessonIds, setCompletedLessonIds] = useState(
     new Set<string>(),
   );
   // hasCourse is false when the student exists but has no assigned course
   const [hasCourse, setHasCourse] = useState(true);
 
-  // Load the student's lessons on page mount
+  // Load the student's lessons and tokens on page mount
   useEffect(() => {
     async function load() {
       try {
@@ -58,7 +58,7 @@ export function useLessons() {
           .limit(1)
           .maybeSingle();
 
-        // If student exists but no course, show the "no coursed assigned"
+        // If student exists but no course, show the "no course assigned" state
         if (!course) {
           setHasCourse(false);
           return;
@@ -71,6 +71,36 @@ export function useLessons() {
           .order("order", { ascending: true });
 
         if (lessonsError) console.error("Lessons fetch error:", lessonsError);
+
+        const lessonIds = (lessonsData ?? []).map((l: any) => l.id);
+
+        if (lessonIds.length > 0) {
+          const [{ data: courseTokensData }, { data: earnedTokensData }] =
+            await Promise.all([
+              supabase
+                .from("tokens")
+                .select("id, title, icon_url, lesson_id")
+                .in("lesson_id", lessonIds),
+              supabase
+                .from("student_tokens")
+                .select("token_id")
+                .eq("student_id", student.id),
+            ]);
+
+          // Sort tokens to match the lesson order
+          const orderedTokens = (lessonsData ?? [])
+            .map((l: any) =>
+              (courseTokensData ?? []).find((t: any) => t.lesson_id === l.id),
+            )
+            .filter(Boolean) as TokenRow[];
+
+          setCourseTokens(orderedTokens);
+          setEarnedTokenIds(
+            new Set(
+              (earnedTokensData ?? []).map((r: any) => r.token_id as string),
+            ),
+          );
+        }
 
         setLessons((lessonsData as LessonRow[]) ?? []);
         setHasCourse(true);
@@ -102,7 +132,6 @@ export function useLessons() {
         .select("lesson_id, status")
         .eq("student_id", profile.id);
 
-      // status === 1 means "Done"
       const completedRows = (progressRows ?? []).filter(
         (row: any) => row.status === 3,
       );
@@ -115,37 +144,6 @@ export function useLessons() {
 
     loadProgress();
   }, [lessons]); // re-runs if the lessons list changes
-
-  // Effect 3: badges are independent of the student's course, so fetch them separately
-  useEffect(() => {
-    async function loadBadges() {
-      const supabase = createClient();
-      const profile = await getActiveProfile();
-
-      const badgesPromise = supabase
-        .from("badges")
-        .select("id, code, title, description, icon_url")
-        .order("code", { ascending: true });
-
-      const earnedBadgesPromise =
-        profile && profile.type === "student"
-          ? supabase
-              .from("student_badges")
-              .select("badge_id")
-              .eq("student_id", profile.id)
-          : Promise.resolve({ data: [], error: null });
-
-      const [{ data: badgesData, error: badgesError }, { data: earnedData }] =
-        await Promise.all([badgesPromise, earnedBadgesPromise]);
-
-      if (!badgesError) setBadges(badgesData ?? []);
-      setEarnedBadgeIds(
-        new Set((earnedData ?? []).map((row: any) => row.badge_id as string)),
-      );
-    }
-
-    loadBadges();
-  }, []); // runs once on mount
 
   // Navigate to the detail page using slug if available
   const navigateToLesson = useCallback(
@@ -160,8 +158,8 @@ export function useLessons() {
     loading,
     error,
     progress,
-    badges,
-    earnedBadgeIds,
+    courseTokens,
+    earnedTokenIds,
     completedLessonIds,
     hasCourse,
     navigateToLesson,

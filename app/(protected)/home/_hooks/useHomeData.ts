@@ -22,6 +22,13 @@ export type HomeLesson = {
   slideShowUrl: string | null;
 };
 
+export type TokenRow = {
+  id: string;
+  title: string;
+  icon_url: string | null;
+  lesson_id: string | null;
+};
+
 export function useHomeData() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -30,6 +37,8 @@ export function useHomeData() {
   const [prevLesson, setPrevLesson] = useState<HomeLesson | null>(null);
   const [nextLesson, setNextLesson] = useState<HomeLesson | null>(null);
   const [sessions, setSessions] = useState<Appointment[]>([]);
+  const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
+  const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
 
   useEffect(() => {
     async function load() {
@@ -45,7 +54,9 @@ export function useHomeData() {
         const now = new Date().toISOString();
         const { data: sessionsRaw } = await supabase
           .from("sessions")
-          .select(`id, start_time, end_time, students(first_name, last_name), coaches(first_name, last_name)`)
+          .select(
+            `id, start_time, end_time, students(first_name, last_name), coaches(first_name, last_name)`,
+          )
           .eq("student_id", profile.id)
           .gte("start_time", now)
           .order("start_time", { ascending: true });
@@ -98,6 +109,35 @@ export function useHomeData() {
             .map((r: any) => r.lesson_id as string),
         );
 
+        // Fetch tokens for this course and the student's earned tokens
+        const lessonIds = lessons.map((l) => l.id);
+        if (lessonIds.length > 0) {
+          const [{ data: courseTokensData }, { data: earnedTokensData }] =
+            await Promise.all([
+              supabase
+                .from("tokens")
+                .select("id, title, icon_url, lesson_id")
+                .in("lesson_id", lessonIds),
+              supabase
+                .from("student_tokens")
+                .select("token_id")
+                .eq("student_id", profile.id),
+            ]);
+
+          const orderedTokens = lessons
+            .map((l) =>
+              (courseTokensData ?? []).find((t: any) => t.lesson_id === l.id),
+            )
+            .filter(Boolean) as TokenRow[];
+
+          setCourseTokens(orderedTokens);
+          setEarnedTokenIds(
+            new Set(
+              (earnedTokensData ?? []).map((r: any) => r.token_id as string),
+            ),
+          );
+        }
+
         const resolveSlideUrl = (raw: string | null): string | null => {
           if (!raw) return null;
           const clean = raw.replace(/^course_files\//, "");
@@ -148,5 +188,14 @@ export function useHomeData() {
     load();
   }, []);
 
-  return { loading, progress, currentLesson, prevLesson, nextLesson, sessions };
+  return {
+    loading,
+    progress,
+    currentLesson,
+    prevLesson,
+    nextLesson,
+    sessions,
+    courseTokens,
+    earnedTokenIds,
+  };
 }
