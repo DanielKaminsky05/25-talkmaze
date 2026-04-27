@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import ExternalLinkIcon from "./ui/ExternalLinkIcon";
 import StatusBadge from "./ui/StatusBadge";
-import type { Database } from "@/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
 type LessonProgress = Database["public"]["Tables"]["lesson_progress"]["Row"];

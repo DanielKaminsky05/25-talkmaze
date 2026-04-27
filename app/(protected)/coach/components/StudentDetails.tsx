@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
-import type { Database } from "@/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 

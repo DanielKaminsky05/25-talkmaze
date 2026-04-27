@@ -1,5 +1,5 @@
 "use server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { CreateRoomParticipant } from "@/app/api/webhooks/stripe/learningSpace/route";
 import { NextResponse } from "next/server";

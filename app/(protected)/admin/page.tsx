@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 
 import StudentTable, { Student } from "./components/StudentTable";
 import EmployeeTable from "./components/EmployeeTable";

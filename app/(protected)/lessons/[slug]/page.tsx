@@ -29,6 +29,8 @@ export default function LessonDetailPage() {
     isLocked,
     positiveFeedback,
     improvementFeedback,
+    preLessonDesc,
+    postLessonDesc,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -110,6 +112,7 @@ export default function LessonDetailPage() {
                 "Complete the pre-lesson work for this lesson."
               }
               url={preLessonUrl}
+              richDescription={preLessonDesc}
             />
             <TaskCard
               title="Post-Lesson Work"
@@ -118,6 +121,7 @@ export default function LessonDetailPage() {
                 "Complete the post-lesson work for this lesson."
               }
               url={postLessonUrl}
+              richDescription={postLessonDesc}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import ParentProfilePageClient from "./_components/ParentProfilePageClient";
 
 /**

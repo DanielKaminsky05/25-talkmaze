@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Lesson, LessonInput } from "@/lib/types/lesson";
-import { createClient } from "@/utils/supabase/clientServer";
+import { createClient } from "@/services/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
 import { Student } from "./AssignStudentDropDown";
+import FeedbackEditor from "@/app/(protected)/components/ui/text-editor/FeedbackEditor";
 interface CourseLessonsPanelProps {
   courseId: string;
   students: Student[];
@@ -70,6 +71,12 @@ export default function CourseLessonsPanel({
   const [editLessonOrder, setEditLessonOrder] = useState<Lesson[]>([]);
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Rich-text descriptions for pre/post lesson tasks
+  const [addPreDesc, setAddPreDesc] = useState("");
+  const [addPostDesc, setAddPostDesc] = useState("");
+  const [editPreDesc, setEditPreDesc] = useState("");
+  const [editPostDesc, setEditPostDesc] = useState("");
 
   // Fetch token for each lesson whenever the lesson list changes
   useEffect(() => {
@@ -298,6 +305,8 @@ export default function CourseLessonsPanel({
           post_file_name: postFileNameWithExt,
           slide_pdf_name: slidePdfNameWithExt,
           slide_pptx_name: slidePptxNameWithExt,
+          pre_lesson_description: addPreDesc || null,
+          post_lesson_description: addPostDesc || null,
         }),
       });
 
@@ -308,7 +317,8 @@ export default function CourseLessonsPanel({
       setAddForm({ ...EMPTY_FORM });
       setNewPreTask(null);
       setNewPostTask(null);
-
+      setAddPreDesc("");
+      setAddPostDesc("");
       setIsAdding(false);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "Error");
@@ -328,6 +338,8 @@ export default function CourseLessonsPanel({
       slide_show_input: lesson.slide_show_input ?? null,
       slide_pptx_input: null,
     });
+    setEditPreDesc(lesson.pre_lesson_description ?? "");
+    setEditPostDesc(lesson.post_lesson_description ?? "");
     setEditNewPreTask(null);
     setEditNewPostTask(null);
     setEditNewSlidePdf(null);
@@ -409,6 +421,8 @@ export default function CourseLessonsPanel({
         title: editForm.title.trim(),
         description: editForm.description?.trim() || null,
         content_url: editForm.content_url?.trim() || null,
+        pre_lesson_description: editPreDesc || null,
+        post_lesson_description: editPostDesc || null,
       };
       if (preFileNameWithExt) body.pre_file_name = preFileNameWithExt;
       if (postFileNameWithExt) body.post_file_name = postFileNameWithExt;
@@ -488,6 +502,8 @@ export default function CourseLessonsPanel({
               setNewPostTask(null);
               setNewSlidePdf(null);
               setNewSlidePptx(null);
+              setAddPreDesc("");
+              setAddPostDesc("");
             }}
             className="px-2 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
           >
@@ -776,6 +792,18 @@ export default function CourseLessonsPanel({
             )}
           </div>
 
+          <FeedbackEditor
+            title="Pre-Lesson Task Description"
+            content={addPreDesc}
+            onChange={setAddPreDesc}
+          />
+
+          <FeedbackEditor
+            title="Post-Lesson Task Description"
+            content={addPostDesc}
+            onChange={setAddPostDesc}
+          />
+
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleAdd}
@@ -788,6 +816,8 @@ export default function CourseLessonsPanel({
               onClick={() => {
                 setIsAdding(false);
                 setAddError(null);
+                setAddPreDesc("");
+                setAddPostDesc("");
               }}
               className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
             >
@@ -1018,6 +1048,18 @@ export default function CourseLessonsPanel({
                     )}
                   </div>
 
+                  <FeedbackEditor
+                    title="Pre-Lesson Task Description"
+                    content={editPreDesc}
+                    onChange={setEditPreDesc}
+                  />
+
+                  <FeedbackEditor
+                    title="Post-Lesson Task Description"
+                    content={editPostDesc}
+                    onChange={setEditPostDesc}
+                  />
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleSave(lesson.id)}
@@ -1030,6 +1072,8 @@ export default function CourseLessonsPanel({
                       onClick={() => {
                         setEditingId(null);
                         setEditError(null);
+                        setEditPreDesc("");
+                        setEditPostDesc("");
                       }}
                       className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                     >
