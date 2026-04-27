@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import MyStudents from "./components/MyStudents";
 import StudentDetails from "./components/StudentDetails";
 import LessonsTable from "./components/LessonsTable";
@@ -31,11 +32,19 @@ export default function CoachPageClient({
   return (
     <div className="w-full p-8 mx-auto">
       <div className="flex flex-col gap-8 w-full">
-        <div className="rounded-2xl bg-[#2B4257]/10 border border-[#2B4257]/15 px-6 py-5">
-          <h1 className="text-3xl font-bold text-[#2B4257]">Coach Dashboard</h1>
-          <p className="mt-2 text-sm text-[#2B4257]/70">
-            Manage students, review lesson progress, and open conversations.
-          </p>
+        <div className="rounded-2xl bg-[#2B4257]/10 border border-[#2B4257]/15 px-6 py-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#2B4257]">Coach Dashboard</h1>
+            <p className="mt-2 text-sm text-[#2B4257]/70">
+              Manage students, review lesson progress, and open conversations.
+            </p>
+          </div>
+          <Link
+            href="/coach/calendar"
+            className="text-sm font-medium text-[#2B4257] border border-[#2B4257]/30 rounded-lg px-4 py-2 hover:bg-[#2B4257]/10 transition-colors"
+          >
+            Calendar →
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-8 w-full min-h-[560px]">

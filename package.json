@@ -10,6 +10,11 @@
     "gen-types": "supabase gen types typescript --project-id zfnmverkmybrasrwhjyg > ./utils/supabase/types/database.ts"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
     "@react-email/components": "^1.0.12",
     "@stripe/react-stripe-js": "^5.6.1",
     "@stripe/stripe-js": "^8.10.0",
