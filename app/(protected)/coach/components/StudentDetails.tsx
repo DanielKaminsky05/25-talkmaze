@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
+import StudentAvatar from "./student-details/StudentAvatar";
+import StudentSchedule from "./student-details/StudentSchedule";
 import type { Database } from "@/database";
 
-type Student = Database['public']['Tables']['students']['Row']
+type Student = Database["public"]["Tables"]["students"]["Row"];
 
 interface StudentDetailsProps {
   student: Student | null;
@@ -13,16 +15,7 @@ interface StudentDetailsProps {
   autoOpenChat?: string | null;
 }
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes().toString().padStart(2, "0");
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${m} ${period}`;
-}
+type ChatTarget = "student" | "parent" | null;
 
 export default function StudentDetails({
   student,
@@ -30,231 +23,186 @@ export default function StudentDetails({
   currentUserEmail,
   autoOpenChat,
 }: StudentDetailsProps) {
-  const [showChat, setShowChat] = useState(false);
+  const [activeChat, setActiveChat] = useState<ChatTarget>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
-
   const [sessions, setSessions] = useState<any[]>([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
-  // Reset when student changes
+  // Reset state when student changes
   useEffect(() => {
-    setShowChat(false);
+    setActiveChat(null);
     setConversationId(null);
     setMessages([]);
     setSessions([]);
   }, [student?.id]);
 
-  // Auto-open chat
+  // Auto-open student chat when triggered from the students list
   useEffect(() => {
-    if (autoOpenChat && autoOpenChat === student?.id && !showChat) {
-      handleMessageClick("student");
+    if (autoOpenChat && autoOpenChat === student?.id && !activeChat) {
+      openChat("student");
     }
   }, [autoOpenChat, student?.id]);
 
-  // Fetch schedule
+  // Fetch student schedule
   useEffect(() => {
-    const fetchSchedule = async () => {
-      if (!student) return;
-
-      setLoadingSchedule(true);
-      try {
-        const res = await fetch(
-        `/api/admin/students`
-        );
-        if (!res.ok) throw new Error("Failed to load schedule");
-
-        const data = await res.json();
-        setSessions(data.sessions || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingSchedule(false);
-      }
-    };
-
-    fetchSchedule();
+    if (!student) return;
+    setLoadingSchedule(true);
+    fetch(`/api/admin/students`)
+      .then((r) => (r.ok ? r.json() : { sessions: [] }))
+      .then((data) => setSessions(data.sessions || []))
+      .catch(console.error)
+      .finally(() => setLoadingSchedule(false));
   }, [student?.id]);
 
-  const handleMessageClick = async (profileType: String) => {
-    if (showChat) {
-      setShowChat(false);
+  async function openChat(type: "student" | "parent") {
+    // Toggle off if same chat is already open
+    if (activeChat === type) {
+      setActiveChat(null);
       return;
     }
 
-    //based on profile type, we pass different id, i.e. parent or student id
-    
-    let client_id = student?.id;
-    if(profileType === 'parent'){
-      try{
-        console.log("Passed student_id: " + student?.id)
-        const response = await fetch(`/api/parent/students/${student?.id}`)
-
-        if(!response.ok){
-          console.log("Unable to fetch parent id")
-        }
-
-        const response_json = await response.json();
-        client_id = response_json.id;
-      }catch(err){
-        alert("Unable to get parent id")
-      }
-    }
     if (!student) return;
 
     setLoadingChat(true);
     try {
-      const res = await fetch(
-        `/api/coach/conversation?contactId=${client_id}`
-      );
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.log("can not get conversation: " + res.status + " " + errorText)
-        throw new Error("Failed to load conversation");
+      let clientId = student.id;
+
+      if (type === "parent") {
+        const parentRes = await fetch(`/api/parent/students/${student.id}`);
+        if (!parentRes.ok) throw new Error("Could not fetch parent");
+        const { id } = await parentRes.json();
+        clientId = id;
       }
-      const { conversationId } = await res.json();
+
+      const convRes = await fetch(
+        `/api/coach/conversation?contactId=${clientId}`,
+      );
+      if (!convRes.ok) throw new Error("Failed to load conversation");
+      const { conversationId: convId } = await convRes.json();
 
       const msgsRes = await fetch(
-        `/api/coach/conversation/message?conversationId=${conversationId}`
+        `/api/coach/conversation/message?conversationId=${convId}`,
       );
       const msgs = msgsRes.ok ? await msgsRes.json() : [];
 
-      setConversationId(conversationId);
+      setConversationId(convId);
       setMessages(msgs);
-      setShowChat(true);
+      setActiveChat(type);
     } catch (err) {
       console.error(err);
     } finally {
       setLoadingChat(false);
     }
-  };
+  }
 
+  // Empty state — no student selected
   if (!student) {
     return (
-      <div className="bg-white border rounded-xl overflow-hidden shadow-sm p-6 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
-        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="9" cy="7" r="4" />
-          </svg>
+      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm flex items-center justify-center min-h-[480px] p-8">
+        <div className="text-center max-w-xs">
+          <div className="w-16 h-16 bg-[#2B4257]/5 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="#2B4257"
+              strokeWidth="1.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-base font-semibold text-gray-800">
+            No student selected
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Choose a student from the list to view their details.
+          </p>
         </div>
-        <h3 className="text-lg font-medium text-gray-900">Select a student</h3>
-        <p className="mt-1 text-sm text-gray-500 max-w-xs">
-          Click a student in your list to view their coaching details.
-        </p>
       </div>
     );
   }
 
-  const byDay = sessions.reduce((acc: any, s: any) => {
-    acc[s.weekday] = acc[s.weekday] || [];
-    acc[s.weekday].push(s);
-    return acc;
-  }, {});
+  const fullName =
+    `${student.first_name || ""} ${student.last_name || ""}`.trim() ||
+    "Unnamed Student";
 
   return (
-    <div className="bg-white border rounded-xl shadow-sm h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-5 border-b bg-gray-50/50 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">
+    <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm min-h-[480px] flex flex-col overflow-hidden">
+      {/* Panel header */}
+      <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+        <h2 className="text-base font-semibold text-[#2B4257]">
           Student Details
         </h2>
-
-        <button
-          onClick={() => handleMessageClick("student")}
-          disabled={loadingChat}
-          className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          {loadingChat
-            ? "Loading..."
-            : showChat
-            ? "Hide Chat"
-            : "Message Student"}
-        </button>
-
-        <button
-          onClick={() => handleMessageClick("parent")}
-          disabled={loadingChat}
-          className="px-4 py-2 text-sm rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          {loadingChat
-            ? "Loading..."
-            : showChat
-            ? "Hide Chat"
-            : "Message Parent"}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => openChat("student")}
+            disabled={loadingChat}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+              activeChat === "student"
+                ? "bg-[#2B4257] text-white"
+                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+            }`}
+          >
+            {activeChat === "student"
+              ? "Hide Chat"
+              : loadingChat
+                ? "Loading..."
+                : "Message Student"}
+          </button>
+          <button
+            onClick={() => openChat("parent")}
+            disabled={loadingChat}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+              activeChat === "parent"
+                ? "bg-[#2B4257] text-white"
+                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+            }`}
+          >
+            {activeChat === "parent"
+              ? "Hide Chat"
+              : loadingChat
+                ? "Loading..."
+                : "Message Parent"}
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {showChat && conversationId ? (
+      {/* Panel body */}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {activeChat && conversationId ? (
           <ConversationClient
             conversation={{ id: conversationId }}
             user={{ id: currentUserId, name: currentUserEmail }}
             messages={messages}
           />
         ) : (
-          <div className="p-8 flex-1 overflow-y-auto">
+          <div className="p-6 flex-1 overflow-y-auto">
             {/* Student header */}
-            <div className="flex items-center space-x-5 mb-8">
-              <div className="h-20 w-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                {(student.first_name || student.last_name || "?").charAt(0).toUpperCase()}
-              </div>
-
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {`${student.first_name || ""} ${student.last_name || ""}`.trim()}
-                </h1>
-              </div>
+            <div className="flex items-center gap-4 mb-6">
+              <StudentAvatar
+                firstName={student.first_name}
+                lastName={student.last_name}
+              />
+              <h3 className="text-xl font-bold text-gray-900">{fullName}</h3>
             </div>
 
-            {/* Schedule */}
-            <div className="bg-gray-50 rounded-lg p-6 border">
-              <h3 className="text-md font-semibold text-gray-900 mb-4">
+            {/* Schedule section */}
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <h4 className="text-sm font-semibold text-[#2B4257] mb-4">
                 Upcoming Schedule
-              </h3>
-
-              {loadingSchedule ? (
-                <p className="text-sm text-gray-400">
-                  Loading schedule...
-                </p>
-              ) : sessions.length === 0 ? (
-                <p className="text-sm text-gray-400">
-                  No sessions scheduled.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {DAYS.map((day, idx) => {
-                    const daySessions = byDay[idx] || [];
-                    if (daySessions.length === 0) return null;
-
-                    return (
-                      <div key={day}>
-                        <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                          {day}
-                        </p>
-
-                        <div className="flex flex-wrap gap-2">
-                          {daySessions.map((s: any) => (
-                            <div
-                              key={s.id}
-                              className="bg-white border rounded-md px-3 py-2 text-xs"
-                            >
-                              <div className="font-medium text-gray-800">
-                                {fmtTime(s.start_time)} –{" "}
-                                {fmtTime(s.end_time)}
-                              </div>
-
-                              <div className="text-gray-500">
-                                {s.coach?.name || "Coach TBD"}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              </h4>
+              <StudentSchedule
+                sessions={sessions}
+                loading={loadingSchedule}
+              />
             </div>
           </div>
         )}

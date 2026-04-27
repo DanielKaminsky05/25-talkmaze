@@ -2,209 +2,129 @@
 
 import { useEffect, useState } from "react";
 import AssignCourseModal from "./AssignCourseModal";
+import StudentListItem from "./students-list/StudentListItem";
 import type { Database } from "@/database";
 
-type Course = Database['public']['Tables']['courses']['Row']
-type Student = Database['public']['Tables']['students']['Row']
+type Course = Database["public"]["Tables"]["courses"]["Row"];
+type Student = Database["public"]["Tables"]["students"]["Row"];
 
 interface MyStudentsProps {
   activeStudentId?: string | null;
   onStudentClick?: (student: Student | null) => void;
-  onMessageClick?: (student: Student | null) => void; // ← new
-  coachId: string
+  onMessageClick?: (student: Student | null) => void;
+  coachId: string;
 }
+
 export default function MyStudents({
   activeStudentId,
   onStudentClick,
   onMessageClick,
-  coachId
+  coachId,
 }: MyStudentsProps) {
   const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAssigningCourse, setIsAssigningCourse] = useState<boolean>(false);
-  const[fetchCourseError, setFetchCourseError] = useState<string | null>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [assigningStudent, setAssigningStudent] = useState<Student | null>(null);
-  const [room, setRoom] = useState<String | null>(null);
+  const [isAssigningCourse, setIsAssigningCourse] = useState(false);
+  const [assigningStudent, setAssigningStudent] = useState<Student | null>(
+    null,
+  );
+
   useEffect(() => {
-    async function fetchStudents() {
-      try {
-        const response = await fetch("/api/coach/students");
-        if (!response.ok) throw new Error("Failed to load students");
-        const data = await response.json();
-        setStudents(data);
-      } catch (err: any) {
-        setError(err.message || "An unexpected error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    async function fetchCourses(){
-      try{
-        const response = await fetch('/api/admin/courses')
-       
-        if(!response.ok){
-          setFetchCourseError("Error fetching available courses")
-        }
-         const response_data = await response.json();
-        console.log("Retrieved Courses: " + JSON.stringify(response_data));
-        setCourses(response_data)
-
-      }catch(err){
-        console.log(err);
-      }
-
-    }
-
-
-    
-    fetchStudents();
-    fetchCourses();
-    
+    Promise.all([
+      fetch("/api/coach/students").then((r) => {
+        if (!r.ok) throw new Error("Failed to load students");
+        return r.json();
+      }),
+      fetch("/api/admin/courses").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ])
+      .then(([studentsData, coursesData]) => {
+        setStudents(studentsData);
+        setCourses(coursesData);
+      })
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : "Failed to load"),
+      )
+      .finally(() => setLoading(false));
   }, []);
 
-
-async function LessonSpaceButtonOnClick(studentId: String){
-  try{
-    const response = await fetch(`/api/coach/lessonspace/${coachId}/${studentId}`)
-
-    if(!response.ok){
-      alert("Error fetching student room")
-      return;
+  async function handleLessonSpace(studentId: string) {
+    try {
+      const res = await fetch(
+        `/api/coach/lessonspace/${coachId}/${studentId}`,
+      );
+      if (!res.ok) {
+        alert("Error fetching lesson room");
+        return;
+      }
+      const { client_url } = await res.json();
+      window.location.href = client_url;
+    } catch {
+      alert("Error fetching lesson room");
     }
-
-    const response_json = await response.json();
-
-    console.log("Setting room " + response_json.lesson_space_teacher_link)
-
-    window.location.href = response_json.client_url;
-    
-  }catch(err){
-    console.log("Error fetching room")
   }
 
-}
-  
-
-  if (loading) {
-    return (
-      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-5 border-b bg-gray-50/50">
-          <h2 className="text-lg font-semibold text-gray-900">My Students</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Students assigned to you for coaching.
-          </p>
+  return (
+    <>
+      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden flex flex-col max-h-[600px] xl:max-h-none">
+        {/* Panel header */}
+        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex items-center justify-between flex-shrink-0">
+          <h2 className="text-base font-semibold text-[#2B4257]">
+            My Students
+          </h2>
+          {!loading && !error && (
+            <span className="bg-[#2B4257]/10 text-[#2B4257] text-xs font-semibold px-2.5 py-1 rounded-full">
+              {students.length}
+            </span>
+          )}
         </div>
-        <div className="p-6">
-          <div className="animate-pulse flex space-x-4">
-            <div className="flex-1 space-y-4 py-1">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              </div>
+
+        {/* Scrollable list */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {loading ? (
+            <div className="p-5 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse h-16 bg-gray-100 rounded-lg"
+                />
+              ))}
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white border border-red-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-5 border-b border-red-100 bg-red-50/50">
-          <h2 className="text-lg font-semibold text-red-800">My Students</h2>
-        </div>
-        <div className="p-6 text-sm text-red-600">
-          Error loading students: {error}
-        </div>
-      </div>
-    );
-  }
-
-  return isAssigningCourse ? (assigningStudent && <AssignCourseModal student={assigningStudent} courses={courses} setIsAssigningCourse={setIsAssigningCourse}/>) : (
-    
-    <div className="bg-white border rounded-xl overflow-hidden shadow-sm h-full max-h-[700px] flex flex-col">
-      <div className="px-6 py-5 border-b bg-gray-50/50 flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">My Students</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Students assigned to you for coaching.
-          </p>
-        </div>
-        <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">
-          {students.length} Total
-        </span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {students.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
-            You currently have no students assigned to you.
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-100">
-            {students.map((student) => {
-              const isActive = student.id === activeStudentId;
-              return (
-                <li
+          ) : error ? (
+            <div className="p-6 text-sm text-red-600 text-center">{error}</div>
+          ) : students.length === 0 ? (
+            <div className="p-10 text-center text-gray-400 text-sm">
+              No students assigned yet.
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {students.map((student) => (
+                <StudentListItem
                   key={student.id}
-                  onClick={() => onStudentClick?.(student)}
-                  className={`p-6 transition-colors cursor-pointer ${isActive ? "bg-blue-50/50" : "hover:bg-gray-50"}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3
-                      className={`text-sm font-semibold ${isActive ? "text-blue-900" : "text-gray-900"}`}
-                    >
-                      {`${student.first_name || ""} ${student.last_name || ""}`.trim()}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {/* Message Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onMessageClick?.(student);
-                        }}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                      >
-                        Message
-                      </button>
-
-                      {/* Lesson Space Button */}
-                      <button
-                        onClick = {() => LessonSpaceButtonOnClick(student.id)}
-                        
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded transition-colors
-                                    text-white bg-green-600 hover:bg-green-700"
-                                        
-                      >
-                        Lesson Space
-                      </button>
-                      {/*Assign Course Buttonn  */}
-                      {/* Assign Course Button */}
-                    <button
-                      onClick={(e) => {
-                      e.stopPropagation();
-
-                      setIsAssigningCourse(true)
-                      setAssigningStudent(student)
-                      // handle assign course here
-                      }}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded text-white bg-purple-600 hover:bg-purple-700 transition-colors"
-                    >
-                        Assign Course
-                    </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  student={student}
+                  isActive={student.id === activeStudentId}
+                  onSelect={(s) => onStudentClick?.(s)}
+                  onMessage={(s) => onMessageClick?.(s)}
+                  onLessonSpace={handleLessonSpace}
+                  onAssignCourse={(s) => {
+                    setAssigningStudent(s);
+                    setIsAssigningCourse(true);
+                  }}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Assign course overlay modal */}
+      {isAssigningCourse && assigningStudent && (
+        <AssignCourseModal
+          student={assigningStudent}
+          courses={courses}
+          setIsAssigningCourse={setIsAssigningCourse}
+        />
+      )}
+    </>
   );
 }
