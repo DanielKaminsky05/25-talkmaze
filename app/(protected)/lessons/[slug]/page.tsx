@@ -9,6 +9,7 @@ import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
 import PageSpinner from "../../components/PageSpinner";
+import FeedbackDisplay from "../../components/ui/text-editor/FeedbackDisplay";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -26,6 +27,8 @@ export default function LessonDetailPage() {
     courseTokens,
     earnedTokenIds,
     isLocked,
+    positiveFeedback,
+    improvementFeedback,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -53,7 +56,16 @@ export default function LessonDetailPage() {
       <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto flex items-center justify-center">
         <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center gap-6 border border-[#B1E7D6]/20 shadow-2xl max-w-md w-full">
           <div className="w-16 h-16 rounded-full bg-[#B1E7D6]/20 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#B1E7D6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#B1E7D6"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-8 h-8"
+            >
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
@@ -124,6 +136,20 @@ export default function LessonDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Only rendered when a coach has saved at least one feedback section for this lesson */}
+        {(positiveFeedback || improvementFeedback) && (
+          <div className="mt-8 flex flex-col gap-4">
+            <FeedbackDisplay
+              title="Positive Feedback"
+              content={positiveFeedback}
+            />
+            <FeedbackDisplay
+              title="Areas of Improvement"
+              content={improvementFeedback}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

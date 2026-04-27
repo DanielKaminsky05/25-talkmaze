@@ -313,7 +313,9 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           id: string
+          improvement_feedback: string | null
           lesson_id: string
+          positive_feedback: string | null
           status: number
           student_id: string
           updated_at: string | null
@@ -323,7 +325,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          improvement_feedback?: string | null
           lesson_id: string
+          positive_feedback?: string | null
           status?: number
           student_id: string
           updated_at?: string | null
@@ -333,7 +337,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          improvement_feedback?: string | null
           lesson_id?: string
+          positive_feedback?: string | null
           status?: number
           student_id?: string
           updated_at?: string | null
