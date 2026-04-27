@@ -10,7 +10,7 @@ type LessonSummary = {
   id: string;
   title: string;
   slug: string | null;
-  order: number | null;
+  next_lesson: string | null;
   slide_show_url: string | null;
 };
 
@@ -89,20 +89,35 @@ export function useHomeData() {
           return;
         }
 
-        const [{ data: lessonsData }, { data: progressData }] =
+        const [{ data: courseHeadData }, { data: lessonsRaw }, { data: progressData }] =
           await Promise.all([
             supabase
+              .from("courses")
+              .select("head_lesson_id")
+              .eq("id", assignment.course_id)
+              .single(),
+            supabase
               .from("lessons")
-              .select("id, title, slug, order, slide_show_url")
-              .eq("course_id", assignment.course_id)
-              .order("order", { ascending: true }),
+              .select("id, title, slug, next_lesson, slide_show_url")
+              .eq("course_id", assignment.course_id),
             supabase
               .from("lesson_progress")
               .select("lesson_id, status")
               .eq("student_id", profile.id),
           ]);
 
-        const lessons: LessonSummary[] = lessonsData ?? [];
+        // Traverse linked list from head to get lessons in display order
+        const lessonMap = new Map((lessonsRaw ?? []).map((l) => [l.id, l]));
+        const orderedLessons: LessonSummary[] = [];
+        let cur: string | null = courseHeadData?.head_lesson_id ?? null;
+        while (cur) {
+          const node = lessonMap.get(cur);
+          if (!node) break;
+          orderedLessons.push(node);
+          cur = node.next_lesson;
+        }
+        // Fallback if head is not set or list is broken
+        const lessons: LessonSummary[] = orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
         const completedIds = new Set(
           (progressData ?? [])
             .filter((r: any) => r.status === 3)

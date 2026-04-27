@@ -71,7 +71,7 @@ export function useLessonDetail(slug: string) {
 
         const courseId = course.course_id!;
 
-        // Lookup lesson by slug (e.g. "intro-to-public-speaking")
+        // Lookup lesson by slug, fall back to id for lessons without a slug
         let { data: lessonData } = await supabase
           .from("lessons")
           .select(LESSON_SELECT)
@@ -79,7 +79,16 @@ export function useLessonDetail(slug: string) {
           .eq("slug", slug)
           .maybeSingle();
 
-        // If lesson doesn't belong to this student's course
+        if (!lessonData) {
+          const { data: byId } = await supabase
+            .from("lessons")
+            .select(LESSON_SELECT)
+            .eq("course_id", courseId)
+            .eq("id", slug)
+            .maybeSingle();
+          lessonData = byId;
+        }
+
         if (!lessonData) {
           router.push("/lessons");
           return;
@@ -98,15 +107,20 @@ export function useLessonDetail(slug: string) {
 
         // Fetch progress, all lessons (for ordering), and earned tokens in parallel
         const [
-          { data: allLessons },
+          { data: courseHeadData },
+          { data: allLessonsRaw },
           { data: progressRows },
           { data: earnedTokensData },
         ] = await Promise.all([
           supabase
+            .from("courses")
+            .select("head_lesson_id")
+            .eq("id", courseId)
+            .single(),
+          supabase
             .from("lessons")
-            .select("id, order")
-            .eq("course_id", courseId)
-            .order("order", { ascending: true, nullsFirst: false }),
+            .select("id, next_lesson")
+            .eq("course_id", courseId),
           supabase
             .from("lesson_progress")
             .select("lesson_id, status")
@@ -117,7 +131,22 @@ export function useLessonDetail(slug: string) {
             .eq("student_id", studentId),
         ]);
 
-        const lessons = allLessons ?? [];
+        // Traverse linked list from head to get lessons in display order
+        const lessonMap = new Map(
+          (allLessonsRaw ?? []).map((l: any) => [l.id, l]),
+        );
+        const lessons: { id: string }[] = [];
+        let cur: string | null = courseHeadData?.head_lesson_id ?? null;
+        while (cur) {
+          const node = lessonMap.get(cur) as any;
+          if (!node) break;
+          lessons.push({ id: node.id });
+          cur = node.next_lesson;
+        }
+        // Fallback if head is not set or list is broken
+        if (lessons.length === 0 && (allLessonsRaw?.length ?? 0) > 0) {
+          lessons.push(...(allLessonsRaw ?? []).map((l: any) => ({ id: l.id })));
+        }
 
         const completedIds = new Set(
           (progressRows ?? [])

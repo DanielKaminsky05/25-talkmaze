@@ -9,6 +9,10 @@ export interface Lesson {
   pre_lesson_tasks: File[] | [];
   post_lesson_tasks: File[] | [];
   slide_show_input: File[] | [];
+  pre_lesson_url: string | null;
+  post_lesson_url: string | null;
+  slide_show_url: string | null;
+  slide_pptx_url: string | null;
 }
 
 export type LessonInput = {
@@ -18,4 +22,5 @@ export type LessonInput = {
   pre_lesson_tasks: File[] | null;
   post_lesson_tasks: File[] | null;
   slide_show_input: File[] | null;
+  slide_pptx_input: File[] | null;
 };
