@@ -8,7 +8,7 @@ import type { LessonDetailRow, TokenRow } from "../types";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
-  "id, course_id, title, description, content_url, pre_lesson_url, post_lesson_url, slide_show_url, slug, created_at";
+  "id, course_id, title, description, content_url, pre_lesson_url, post_lesson_url, slide_show_url, slug, created_at, pre_lesson_description, post_lesson_description";
 
 /**
  * Strips the redundant "course_files/" bucket prefix from stored paths
@@ -43,6 +43,8 @@ export function useLessonDetail(slug: string) {
   const [improvementFeedback, setImprovementFeedback] = useState<string | null>(
     null,
   );
+  const [preLessonDesc, setPreLessonDesc] = useState<string | null>(null);
+  const [postLessonDesc, setPostLessonDesc] = useState<string | null>(null);
 
   // Re-runs every time the [slug] changes
   useEffect(() => {
@@ -99,6 +101,8 @@ export function useLessonDetail(slug: string) {
         }
 
         setLesson(lessonData as LessonDetailRow);
+        setPreLessonDesc(lessonData.pre_lesson_description ?? null);
+        setPostLessonDesc(lessonData.post_lesson_description ?? null);
 
         // Resolve storage URLs only for fields that have a value
         // null means no file was uploaded
@@ -229,5 +233,7 @@ export function useLessonDetail(slug: string) {
     isLocked,
     positiveFeedback,
     improvementFeedback,
+    preLessonDesc,
+    postLessonDesc,
   };
 }
