@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/services/stripe/client";
 import { createServiceRoleClient } from "@/services/supabase/service";
 import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 

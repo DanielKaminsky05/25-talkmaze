@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/services/supabase/server";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/services/stripe/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 /**
