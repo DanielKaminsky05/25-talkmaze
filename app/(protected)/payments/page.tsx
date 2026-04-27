@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import { PackageRenewaloptionsContainer } from "./_components/PackageRenewalOptionsContainer";
 import CurrentSubscription from "./_components/CurrentSubscription";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";

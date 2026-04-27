@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Calendar from "../components/calendar/Calendar";
 import ScheduleSidebar from "../components/schedule-sidebar/ScheduleSidebar";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 type Lesson = {

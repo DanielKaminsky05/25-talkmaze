@@ -1,9 +1,9 @@
 "use client";
-import { Message } from "@/utils/supabase/actions/messages";
+import { Message } from "@/services/supabase/actions/messages";
 import ConversationMessage from "../../components/coach-page/ConversationMessage";
 import ConversationMessageInput from "../../components/coach-page/ConversationMessageInput";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 /**

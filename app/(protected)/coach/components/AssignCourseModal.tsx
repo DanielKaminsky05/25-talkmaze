@@ -1,4 +1,4 @@
-import type { Database } from "@/database";
+import type { Database } from "@/services/supabase/types/database"
 
 type Course = Database["public"]["Tables"]["courses"]["Row"];
 type Student = Database["public"]["Tables"]["students"]["Row"];

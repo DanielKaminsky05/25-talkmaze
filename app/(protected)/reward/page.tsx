@@ -8,7 +8,7 @@ import ClaimedBadge, { ClaimBadgeModal } from "./_components/ClaimedBadge";
 import GlowingBadge from "./_components/GlowingBadge";
 import LockedBadge from "./_components/LockedBadge";
 import PageSpinner from "../components/PageSpinner";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 
 // Display this many tokens when tokens section is not expanded
 const INITIAL_COUNT = 16;

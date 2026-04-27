@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
 import { setProfileCookies } from "./profile-cookies";
 

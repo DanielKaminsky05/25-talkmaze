@@ -6,7 +6,7 @@ import MyStudents from "./components/MyStudents";
 import StudentDetails from "./components/StudentDetails";
 import LessonsTable from "./components/LessonsTable";
 
-import type { Database } from "@/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 

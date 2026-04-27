@@ -1,5 +1,5 @@
-import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/services/supabase/lib/getCurrentUser";
+import { createClient } from "@/services/supabase/server";
 import CoachPageClient from "./CoachPageClient";
 
 export default async function CoachPage() {

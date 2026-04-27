@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import LessonDetailClient from "./LessonDetailClient";
 
 interface PageProps {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 import { CreateTeacherRoom } from "@/app/api/admin/assignments/route";
 export async function GET(
     req: NextRequest,

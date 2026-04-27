@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import ProtectedLayoutShell from "./components/ProtectedLayoutShell";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 
 /**
  * Server-side rendered layout for all protected routes

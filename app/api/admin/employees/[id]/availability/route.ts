@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 
 const DAY_MAP: Record<string, number> = {
   Sunday: 0,

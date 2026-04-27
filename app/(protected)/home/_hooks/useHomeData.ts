@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { Appointment } from "@/app/(protected)/types/lesson";
 
