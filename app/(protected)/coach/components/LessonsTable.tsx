@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import type { Database } from "@/utils/supabase/types/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
 type LessonProgress = Database["public"]["Tables"]["lesson_progress"]["Row"];

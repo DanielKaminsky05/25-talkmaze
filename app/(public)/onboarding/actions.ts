@@ -1,7 +1,7 @@
 "use server";
 import { OnboardingTimeZone } from "./types";
-import { createClient } from "@/utils/supabase/server";
-import { createServiceRoleClient } from "@/utils/supabase/service";
+import { createClient } from "@/services/supabase/server";
+import { createServiceRoleClient } from "@/services/supabase/service";
 import { setProfileCookies } from "@/lib/profile-management/profile-cookies";
 import { revalidatePath } from "next/cache";
 

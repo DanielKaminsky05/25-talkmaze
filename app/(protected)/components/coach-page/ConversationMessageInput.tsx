@@ -1,6 +1,6 @@
 "use client";
 
-import { Message, sendMessage } from "@/utils/supabase/actions/messages";
+import { Message, sendMessage } from "@/services/supabase/actions/messages";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ConversationMessageInput({

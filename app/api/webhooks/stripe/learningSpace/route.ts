@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServiceRoleClient } from "@/utils/supabase/service";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/services/supabase/service";
+import { createClient } from "@/services/supabase/server";
 const base_url = "https://api.thelessonspace.com/v2/organizations/30106/";
 
 export async function GET(req: NextRequest) {

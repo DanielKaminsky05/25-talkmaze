@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
-import type { Database } from "@/utils/supabase/types/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Student = Database['public']['Tables']['students']['Row']
 

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { handleStudentCreation, updateStudentAvatar, setActiveProfile } from "./actions";
 import { OnboardingTimeZone, TIME_ZONES } from "./types";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/services/supabase/client";
 import { useRef } from "react";
 
 const inter = Inter({

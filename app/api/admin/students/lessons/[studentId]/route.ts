@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import type { Database } from "@/utils/supabase/types/database";
+import { createClient } from "@/services/supabase/server";
+import type { Database } from "@/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
 type OrganizedLessons = {

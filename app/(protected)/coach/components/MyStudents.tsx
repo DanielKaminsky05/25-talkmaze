@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AssignCourseModal from "./AssignCourseModal";
-import type { Database } from "@/utils/supabase/types/database";
+import type { Database } from "@/services/supabase/types/database";
 
 type Course = Database['public']['Tables']['courses']['Row']
 type Student = Database['public']['Tables']['students']['Row']

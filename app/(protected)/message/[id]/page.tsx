@@ -1,7 +1,7 @@
-import { getCurrentUser } from "@/utils/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/services/supabase/lib/getCurrentUser";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { ConversationClient } from "./_client";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/services/supabase/server";
 
 /**
  * Renders a conversation page for the given contact.
