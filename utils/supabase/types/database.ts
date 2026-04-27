@@ -73,6 +73,57 @@ export type Database = {
           },
         ]
       }
+      booked_slots: {
+        Row: {
+          coach_id: string
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          student_id: string
+          timezone: string
+          weekday: number
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          status: string
+          student_id: string
+          timezone: string
+          weekday: number
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          student_id?: string
+          timezone?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booked_slots_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booked_slots_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_availabilities: {
         Row: {
           coach_id: string | null

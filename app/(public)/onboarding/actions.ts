@@ -155,6 +155,18 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
   console.log(`[MATCHMAKER] Student requested ${studentSlots.length} available slots.`);
 
+  // Pre-fetch all active booked slots for the student to check for permanent collisions
+  const { data: studentBookedSlots } = await supabase
+    .from("booked_slots")
+    .select("*")
+    .eq("student_id", student_id)
+    .eq("status", "active");
+
+  // Pre-fetch ALL candidate coaches once
+  const { data: coaches } = await supabase
+    .from("coach_availabilities")
+    .select("coach_id, weekday, start_time_new, end_time_new, timezone");
+
   // Outer loop: Try to find a single valid concrete timeslot (anchor date) based on their random slot order
   for (const slot of shuffledStudentSlots) {
     if (!slot.timezone || !slot.start_time_new || !slot.end_time_new) continue;
@@ -169,86 +181,168 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
     // Construct the concrete moment in the student's local timezone
     const dateString = testDate.format('YYYY-MM-DD');
-    const startLocal = dayjs.tz(`${dateString}T${slot.start_time_new}`, slot.timezone);
-    // We will default to 1-hour sessions 
-    const endLocal = startLocal.add(1, 'hour');
+    const blockStartLocal = dayjs.tz(`${dateString}T${slot.start_time_new}`, slot.timezone);
+    const blockEndLocal = dayjs.tz(`${dateString}T${slot.end_time_new}`, slot.timezone);
 
-    const startUTC = startLocal.utc();
-    const endUTC = endLocal.utc();
-
-    console.log(`[MATCHMAKER] Concrete Anchor mapped to: ${startUTC.toISOString()} (UTC)`);
-
-    // Find ALL candidate coaches (we will filter timezone constraints in JS)
-    const { data: coaches } = await supabase
-      .from("coach_availabilities")
-      .select("coach_id, weekday, start_time_new, end_time_new, timezone");
-
-    if (!coaches || coaches.length === 0) {
-      console.log(`[MATCHMAKER] ❌ No active coach availabilities found in the DB.`);
-      continue;
+    // Generate potential 1-hour start times within this block, stepped by 10 minutes
+    const potentialStarts: dayjs.Dayjs[] = [];
+    let currentStart = blockStartLocal;
+    
+    // Ensure we start on a 10-minute boundary to avoid random times
+    const minutes = currentStart.minute();
+    const remainder = minutes % 10;
+    if (remainder !== 0) {
+      currentStart = currentStart.add(10 - remainder, 'minute');
     }
 
-    // Shuffle the array to ensure round-robin assignment instead of first-come-first-serve
-    const shuffledCoaches = coaches.sort(() => 0.5 - Math.random());
+    // A session is 1 hour long. So the latest start time is blockEnd - 1 hour.
+    while (currentStart.add(1, 'hour').valueOf() <= blockEndLocal.valueOf()) {
+       potentialStarts.push(currentStart);
+       currentStart = currentStart.add(10, 'minute');
+    }
 
-    // Loop through candidate coaches and verify there are no discrete calendar collisions
-    for (const coach of shuffledCoaches) {
-      if (!coach.timezone || !coach.start_time_new || !coach.end_time_new) continue;
+    if (potentialStarts.length === 0) {
+       console.log(`[MATCHMAKER] Slot too short for a 1-hour session: ${slot.start_time_new} to ${slot.end_time_new}`);
+       continue;
+    }
 
-      // Calculate exactly what time this UTC class will happen in the coach's living room
-      const coachTargetStart = startUTC.tz(coach.timezone);
-      const coachTargetEnd = endUTC.tz(coach.timezone);
+    let localAnchorFound = false;
 
-      // 1. Is the class on the correct coach's weekday?
-      if (coachTargetStart.day() !== coach.weekday) continue;
+    // Now try each potential 1-hour block within this availability window
+    for (const startLocal of potentialStarts) {
+      const endLocal = startLocal.add(1, 'hour');
+      const startUTC = startLocal.utc();
+      const endUTC = endLocal.utc();
 
-      // 2. Is the class within the coach's start and end times?
-      const coachLocalStartTimeStr = coachTargetStart.format('HH:mm:ss');
-      const coachLocalEndTimeStr = coachTargetEnd.format('HH:mm:ss');
+      console.log(`[MATCHMAKER] Testing Potential Anchor: ${startUTC.toISOString()} (UTC)`);
 
-      if (coachLocalStartTimeStr < coach.start_time_new || coachLocalEndTimeStr > coach.end_time_new) {
-        // console.log(`[MATCHMAKER] ⏭️ Coach ${coach.coach_id} skipped: Class time (${coachLocalStartTimeStr}) falls outside their shift (${coach.start_time_new} - ${coach.end_time_new} ${coach.timezone})`);
+      // Check if this concrete moment conflicts with the student's OWN active booked slots
+      let studentHasPermanentConflict = false;
+      if (studentBookedSlots) {
+        for (const bs of studentBookedSlots) {
+          if (!bs.timezone || !bs.start_time || !bs.end_time) continue;
+          const bsDateLocal = startUTC.tz(bs.timezone).day(bs.weekday);
+          const bsStartLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.start_time}`, bs.timezone);
+          const bsEndLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.end_time}`, bs.timezone);
+          
+          if (startUTC.isBefore(bsEndLocal.utc()) && endUTC.isAfter(bsStartLocal.utc())) {
+            studentHasPermanentConflict = true;
+            break;
+          }
+        }
+      }
+      if (studentHasPermanentConflict) {
+        console.log(`[MATCHMAKER] Student already has a permanent booked slot at this time.`);
         continue;
       }
 
-      console.log(`[MATCHMAKER] 🕒 Coach ${coach.coach_id} is awake and working during this time! Checking calendar collisions...`);
+      if (!coaches || coaches.length === 0) {
+        console.log(`[MATCHMAKER] ❌ No active coach availabilities found in the DB.`);
+        break; // no coaches at all
+      }
 
-      // 3. Calendar collision check (nobody is double booked precisely on this day)
-      const { data: coachCollision } = await supabase
-        .from("sessions")
-        .select("id")
-        .eq("coach_id", coach.coach_id)
-        .lt("start_time", endUTC.toISOString())
-        .gt("end_time", startUTC.toISOString())
-        .maybeSingle();
+      // Shuffle the array to ensure round-robin assignment instead of first-come-first-serve
+      const shuffledCoaches = coaches.sort(() => 0.5 - Math.random());
 
-      if (!coachCollision) {
-        // Now ensure the student is also safe/free
-        const { data: studentCollision } = await supabase
+      // Loop through candidate coaches and verify there are no discrete calendar collisions
+      for (const coach of shuffledCoaches) {
+        if (!coach.timezone || !coach.start_time_new || !coach.end_time_new) continue;
+
+        // Calculate exactly what time this UTC class will happen in the coach's living room
+        const coachTargetStart = startUTC.tz(coach.timezone);
+        const coachTargetEnd = endUTC.tz(coach.timezone);
+
+        // 1. Is the class on the correct coach's weekday?
+        if (coachTargetStart.day() !== coach.weekday) continue;
+
+        // 2. Is the class within the coach's start and end times?
+        const coachLocalStartTimeStr = coachTargetStart.format('HH:mm:ss');
+        const coachLocalEndTimeStr = coachTargetEnd.format('HH:mm:ss');
+
+        if (coachLocalStartTimeStr < coach.start_time_new || coachLocalEndTimeStr > coach.end_time_new) {
+          continue;
+        }
+
+        console.log(`[MATCHMAKER] 🕒 Coach ${coach.coach_id} is awake and working during this time! Checking calendar collisions...`);
+
+        // 3. Calendar collision check
+        // First, check for permanent schedule collisions in booked_slots
+        const { data: coachBookedSlots } = await supabase
+          .from("booked_slots")
+          .select("*")
+          .eq("coach_id", coach.coach_id)
+          .eq("status", "active");
+
+        let coachHasPermanentConflict = false;
+        if (coachBookedSlots) {
+          for (const bs of coachBookedSlots) {
+            if (!bs.timezone || !bs.start_time || !bs.end_time) continue;
+            const bsDateLocal = startUTC.tz(bs.timezone).day(bs.weekday);
+            const bsStartLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.start_time}`, bs.timezone);
+            const bsEndLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.end_time}`, bs.timezone);
+            
+            if (startUTC.isBefore(bsEndLocal.utc()) && endUTC.isAfter(bsStartLocal.utc())) {
+              coachHasPermanentConflict = true;
+              break;
+            }
+          }
+        }
+
+        if (coachHasPermanentConflict) {
+          console.log(`[MATCHMAKER] ❌ Collision: Coach ${coach.coach_id} has a permanent booked slot at this time!`);
+          continue;
+        }
+
+        // We still check for concrete session collisions just in case they have a one-off manually scheduled class here
+        const { data: coachCollision } = await supabase
           .from("sessions")
           .select("id")
-          .eq("student_id", student_id)
+          .eq("coach_id", coach.coach_id)
           .lt("start_time", endUTC.toISOString())
           .gt("end_time", startUTC.toISOString())
           .maybeSingle();
 
-        if (!studentCollision) {
-          console.log(`[MATCHMAKER] ✅ PERFECT MATCH! Coach ${coach.coach_id} assigned.`);
-          matchedCoachId = coach.coach_id;
-          matchingSlot = slot;
-          finalStartTimeUTC = startUTC;
-          anchorFound = true;
-          break;
+        if (!coachCollision) {
+          // Now ensure the student is also safe/free
+          const { data: studentCollision } = await supabase
+            .from("sessions")
+            .select("id")
+            .eq("student_id", student_id)
+            .lt("start_time", endUTC.toISOString())
+            .gt("end_time", startUTC.toISOString())
+            .maybeSingle();
+
+          if (!studentCollision) {
+            console.log(`[MATCHMAKER] ✅ PERFECT MATCH! Coach ${coach.coach_id} assigned.`);
+            matchedCoachId = coach.coach_id;
+            
+            // Re-assign the matchingSlot with the precise 10-minute offset we discovered!
+            matchingSlot = {
+               ...slot,
+               start_time_new: startLocal.format('HH:mm:ss'),
+               end_time_new: endLocal.format('HH:mm:ss')
+            };
+            
+            finalStartTimeUTC = startUTC;
+            localAnchorFound = true;
+            break;
+          } else {
+            console.log(`[MATCHMAKER] ❌ Collision: Student is already booked at this time!`);
+          }
         } else {
-          console.log(`[MATCHMAKER] ❌ Collision: Student is already booked at this time!`);
+          console.log(`[MATCHMAKER] ❌ Collision: Coach ${coach.coach_id} is already booked at this time!`);
         }
-      } else {
-        console.log(`[MATCHMAKER] ❌ Collision: Coach ${coach.coach_id} is already booked at this time!`);
       }
+
+      // Break out of the potential start loop if we booked one!
+      if (localAnchorFound) break;
     }
 
-    // Break out of the slot loop if we successfully booked one of their times!
-    if (anchorFound) break;
+    // Break out of the outer student slot loop if we successfully booked one!
+    if (localAnchorFound) {
+      anchorFound = true;
+      break;
+    }
   }
 
   if (!anchorFound || !matchedCoachId || !finalStartTimeUTC || !matchingSlot) {
@@ -259,14 +353,37 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
   console.log(`MATCH FOUND! Anchor UTC start is ${finalStartTimeUTC.toISOString()} with coach ${matchedCoachId}`);
 
+  // Insert the permanent booked slot
+  const { error: bookedSlotError } = await supabase
+    .from("booked_slots")
+    .insert({
+      coach_id: matchedCoachId,
+      student_id: student_id,
+      weekday: matchingSlot.weekday,
+      start_time: matchingSlot.start_time_new,
+      end_time: matchingSlot.end_time_new,
+      timezone: matchingSlot.timezone,
+      status: "active"
+    });
+
+  if (bookedSlotError) {
+      console.error("Failed to insert into booked_slots:", bookedSlotError);
+      return { success: false, status: 500, error: "Failed to reserve booked slot" };
+  }
+
   // 2. Extrapolate `num_classes` instances matching the safe anchor!
   let successfullyBooked = 0;
   let weekOffset = 0;
 
   while (successfullyBooked < num_classes) {
 
-    // This inherently handles Daylight Saving Time crossings perfectly!
-    const loopStart = finalStartTimeUTC.tz(matchingSlot.timezone).add(weekOffset, 'week');
+    // Re-interpret the wall-clock time in the student's timezone each week so the
+    // local time stays fixed (e.g. always 3 PM) even across DST transitions.
+    const localAnchor = finalStartTimeUTC.tz(matchingSlot.timezone);
+    const anchorDateStr = localAnchor.format('YYYY-MM-DD');
+    const anchorTimeStr = localAnchor.format('HH:mm:ss');
+    const targetDate = dayjs(anchorDateStr).add(weekOffset, 'week').format('YYYY-MM-DD');
+    const loopStart = dayjs.tz(`${targetDate}T${anchorTimeStr}`, matchingSlot.timezone);
     const loopEnd = loopStart.add(1, 'hour');
 
     const loopStartUTC = loopStart.utc().toISOString();

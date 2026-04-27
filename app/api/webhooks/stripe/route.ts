@@ -11,7 +11,7 @@ import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
  *
  * For testing in local env set the STRIPE_WEBHOOK_SECRET key given by STRIPE CLI
  * Then run the command:
- * stripe listen --forward-to localhost:3000/api/webhooks/stripe
+ * stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
  */
 export async function POST(request: Request) {
   try {
