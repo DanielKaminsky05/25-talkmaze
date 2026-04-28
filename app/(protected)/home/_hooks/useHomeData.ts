@@ -39,6 +39,7 @@ export function useHomeData() {
   const [sessions, setSessions] = useState<Appointment[]>([]);
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
+  const [courseBadgeUrl, setCourseBadgeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -89,7 +90,7 @@ export function useHomeData() {
           return;
         }
 
-        const [{ data: courseHeadData }, { data: lessonsRaw }, { data: progressData }] =
+        const [{ data: courseHeadData }, { data: lessonsRaw }, { data: progressData }, { data: badgeData }] =
           await Promise.all([
             supabase
               .from("courses")
@@ -104,7 +105,14 @@ export function useHomeData() {
               .from("lesson_progress")
               .select("lesson_id, status")
               .eq("student_id", profile.id),
+            supabase
+              .from("badges")
+              .select("image_url")
+              .eq("course_id", assignment.course_id)
+              .maybeSingle(),
           ]);
+
+        setCourseBadgeUrl(badgeData?.image_url ?? null);
 
         // Traverse linked list from head to get lessons in display order
         const lessonMap = new Map((lessonsRaw ?? []).map((l) => [l.id, l]));
@@ -212,5 +220,6 @@ export function useHomeData() {
     sessions,
     courseTokens,
     earnedTokenIds,
+    courseBadgeUrl,
   };
 }
