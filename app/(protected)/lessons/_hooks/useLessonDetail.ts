@@ -8,7 +8,7 @@ import type { LessonDetailRow, TokenRow } from "../types";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
-  "id, course_id, title, description, content_url, pre_lesson_url, post_lesson_url, slide_show_url, slug, created_at, pre_lesson_description, post_lesson_description";
+  "id, course_id, title, description, content_url, pre_lesson_url, post_lesson_url, slide_show_url, slide_pptx_url, slug, created_at, pre_lesson_description, post_lesson_description";
 
 /**
  * Strips the redundant "course_files/" bucket prefix from stored paths
@@ -36,6 +36,7 @@ export function useLessonDetail(slug: string) {
   const [preLessonUrl, setPreLessonUrl] = useState<string | null>(null);
   const [postLessonUrl, setPostLessonUrl] = useState<string | null>(null);
   const [slideShowUrl, setSlideShowUrl] = useState<string | null>(null);
+  const [slidePptxUrl, setSlidePptxUrl] = useState<string | null>(null);
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
   const [isLocked, setIsLocked] = useState(false);
@@ -112,6 +113,8 @@ export function useLessonDetail(slug: string) {
           setPostLessonUrl(storageUrl(supabase, lessonData.post_lesson_url));
         if (lessonData.slide_show_url)
           setSlideShowUrl(storageUrl(supabase, lessonData.slide_show_url));
+        if (lessonData.slide_pptx_url)
+          setSlidePptxUrl(storageUrl(supabase, lessonData.slide_pptx_url));
 
         // Fetch progress, all lessons (for ordering), and earned tokens in parallel
         const [
@@ -228,6 +231,7 @@ export function useLessonDetail(slug: string) {
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,
+    slidePptxUrl,
     courseTokens,
     earnedTokenIds,
     isLocked,

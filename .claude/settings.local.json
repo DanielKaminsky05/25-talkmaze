@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs grep *)",
       "Bash(grep -E \"\\\\.\\(tsx?|js\\)$\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "mcp__supabase__execute_sql"
     ]
   },
   "enabledPlugins": {
