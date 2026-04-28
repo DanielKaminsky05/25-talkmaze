@@ -4,7 +4,8 @@
       "Bash(xargs grep *)",
       "Bash(grep -E \"\\\\.\\(tsx?|js\\)$\")",
       "Bash(npm install *)",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration"
     ]
   },
   "enabledPlugins": {

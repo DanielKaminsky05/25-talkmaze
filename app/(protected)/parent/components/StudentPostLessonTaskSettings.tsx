@@ -1,13 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/services/supabase/client";
 
-/**
- * Displays the post-lesson task settings for the selected student.
- */
-export default function StudentPostLessonTaskSettings({ studentId: _ }: { studentId?: string }) {
-  const [, setEnabled] = useState(true);
+export default function StudentPostLessonTaskSettings({ studentId }: { studentId?: string }) {
+  const [enabled, setEnabled] = useState(true);
   const [days, setDays] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!studentId) { setLoading(false); return; }
+    const supabase = createClient();
+    supabase
+      .from("students")
+      .select("post_lesson_tasks_enabled, post_lesson_days")
+      .eq("id", studentId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setEnabled(data.post_lesson_tasks_enabled);
+          setDays(data.post_lesson_days);
+        }
+        setLoading(false);
+      });
+  }, [studentId]);
+
+  async function save(patch: { post_lesson_tasks_enabled?: boolean; post_lesson_days?: number }) {
+    if (!studentId) return;
+    const supabase = createClient();
+    await supabase.from("students").update(patch).eq("id", studentId);
+  }
+
+  function toggleEnabled(value: boolean) {
+    setEnabled(value);
+    save({ post_lesson_tasks_enabled: value });
+  }
+
+  function changeDays(delta: number) {
+    const next = Math.max(0, days + delta);
+    setDays(next);
+    save({ post_lesson_days: next });
+  }
 
   return (
     <div
@@ -20,15 +53,17 @@ export default function StudentPostLessonTaskSettings({ studentId: _ }: { studen
 
       <div className="flex gap-6">
         <button
-          onClick={() => setEnabled(true)}
-          className="h-[39px] rounded-xl font-semibold text-[16px] text-white bg-[#1F2E3B] transition-opacity hover:opacity-80"
+          disabled={loading}
+          onClick={() => toggleEnabled(true)}
+          className={`h-[39px] rounded-xl font-semibold text-[16px] text-white bg-[#1F2E3B] transition-opacity hover:opacity-80 disabled:cursor-not-allowed ${enabled ? "opacity-100" : "opacity-40"}`}
           style={{ width: "147px" }}
         >
           Yes
         </button>
         <button
-          onClick={() => setEnabled(false)}
-          className="h-[39px] rounded-xl font-semibold text-[16px] text-white bg-[#1F2E3B] transition-opacity hover:opacity-80"
+          disabled={loading}
+          onClick={() => toggleEnabled(false)}
+          className={`h-[39px] rounded-xl font-semibold text-[16px] text-white bg-[#1F2E3B] transition-opacity hover:opacity-80 disabled:cursor-not-allowed ${!enabled ? "opacity-100" : "opacity-40"}`}
           style={{ width: "147px" }}
         >
           No
@@ -44,15 +79,17 @@ export default function StudentPostLessonTaskSettings({ studentId: _ }: { studen
           style={{ width: "136px", height: "39px" }}
         >
           <button
-            onClick={() => setDays(Math.max(0, days - 1))}
-            className="flex items-center justify-center w-[38px] h-full hover:bg-white/10 text-xl font-bold"
+            disabled={loading}
+            onClick={() => changeDays(-1)}
+            className="flex items-center justify-center w-[38px] h-full hover:bg-white/10 text-xl font-bold disabled:cursor-not-allowed"
           >
             −
           </button>
           <span className="flex-1 text-center font-semibold text-[16px]">{days}</span>
           <button
-            onClick={() => setDays(days + 1)}
-            className="flex items-center justify-center w-[38px] h-full hover:bg-white/10 text-xl font-bold"
+            disabled={loading}
+            onClick={() => changeDays(1)}
+            className="flex items-center justify-center w-[38px] h-full hover:bg-white/10 text-xl font-bold disabled:cursor-not-allowed"
           >
             +
           </button>

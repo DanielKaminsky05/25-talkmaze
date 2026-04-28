@@ -46,6 +46,7 @@ export function useLessonDetail(slug: string) {
   );
   const [preLessonDesc, setPreLessonDesc] = useState<string | null>(null);
   const [postLessonDesc, setPostLessonDesc] = useState<string | null>(null);
+  const [postLessonTasksEnabled, setPostLessonTasksEnabled] = useState(true);
 
   // Re-runs every time the [slug] changes
   useEffect(() => {
@@ -122,6 +123,7 @@ export function useLessonDetail(slug: string) {
           { data: allLessonsRaw },
           { data: progressRows },
           { data: earnedTokensData },
+          { data: studentSettings },
         ] = await Promise.all([
           supabase
             .from("courses")
@@ -142,7 +144,14 @@ export function useLessonDetail(slug: string) {
             .from("student_tokens")
             .select("token_id")
             .eq("student_id", studentId),
+          supabase
+            .from("students")
+            .select("post_lesson_tasks_enabled")
+            .eq("id", studentId)
+            .single(),
         ]);
+
+        setPostLessonTasksEnabled(studentSettings?.post_lesson_tasks_enabled ?? true);
 
         // Traverse linked list from head to get lessons in display order
         const lessonMap = new Map(
@@ -239,5 +248,6 @@ export function useLessonDetail(slug: string) {
     improvementFeedback,
     preLessonDesc,
     postLessonDesc,
+    postLessonTasksEnabled,
   };
 }

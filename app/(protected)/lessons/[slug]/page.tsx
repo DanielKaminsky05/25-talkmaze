@@ -32,6 +32,7 @@ export default function LessonDetailPage() {
     improvementFeedback,
     preLessonDesc,
     postLessonDesc,
+    postLessonTasksEnabled,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -108,19 +109,12 @@ export default function LessonDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TaskCard
               title="Pre-Lesson Work"
-              instruction={
-                lesson.description ??
-                "Complete the pre-lesson work for this lesson."
-              }
               url={preLessonUrl}
               richDescription={preLessonDesc}
             />
             <TaskCard
               title="Post-Lesson Work"
-              instruction={
-                lesson.description ??
-                "Complete the post-lesson work for this lesson."
-              }
+              optional={!postLessonTasksEnabled}
               url={postLessonUrl}
               richDescription={postLessonDesc}
             />
