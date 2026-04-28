@@ -70,8 +70,22 @@ export async function POST(request: Request) {
       console.log("invoice.paid: stripeSubscriptionId =", stripeSubscriptionId);
 
       if (stripeSubscriptionId) {
-        const subscription =
-          await stripe.subscriptions.retrieve(stripeSubscriptionId);
+        const subscription = await stripe.subscriptions.retrieve(
+          stripeSubscriptionId,
+          { expand: ["default_payment_method"] },
+        );
+
+        const pm =
+          subscription.default_payment_method as Stripe.PaymentMethod | null;
+        if (pm?.billing_details) {
+          const { name, email, phone } = pm.billing_details;
+          await stripe.customers.update(stripeCustomerId, {
+            ...(name && { name }),
+            ...(email && { email }),
+            ...(phone && { phone }),
+          });
+        }
+
         const {
           account_id: accountId,
           student_id: studentId,

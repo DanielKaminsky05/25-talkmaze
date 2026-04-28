@@ -26,7 +26,9 @@ export default async function PaymentPage({
 }) {
   const { studentId: queryStudentId } = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Resolve which student this page is for.
   // If ?studentId= is present, verify the account owns that student.
@@ -67,9 +69,18 @@ export default async function PaymentPage({
     hasSubscription = !!subscription;
   }
 
-  const isParentFlow = !!resolvedStudentId && resolvedStudentId === queryStudentId;
-  const backLink = isParentFlow ? "/parent" : hasSubscription ? "/home" : "/profiles";
-  const backLabel = isParentFlow ? "Return to Dashboard" : hasSubscription ? "Return to Dashboard" : "Return to Profiles";
+  const isParentFlow =
+    !!resolvedStudentId && resolvedStudentId === queryStudentId;
+  const backLink = isParentFlow
+    ? "/parent"
+    : hasSubscription
+      ? "/home"
+      : "/profiles";
+  const backLabel = isParentFlow
+    ? "Return to Dashboard"
+    : hasSubscription
+      ? "Return to Dashboard"
+      : "Return to Profiles";
 
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col ">
@@ -101,7 +112,10 @@ export default async function PaymentPage({
           </span>
         </div>
 
-        <PackageRenewaloptionsContainer renewalOptions={plans ?? []} studentId={resolvedStudentId} />
+        <PackageRenewaloptionsContainer
+          renewalOptions={plans ?? []}
+          studentId={resolvedStudentId}
+        />
       </main>
     </div>
   );
