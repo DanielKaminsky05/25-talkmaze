@@ -1,13 +1,11 @@
-import { TeachworksCourse } from "@/lib/teachworks/types";
+import { Course } from "./types";
 
 interface CourseTableProps {
-  courses: TeachworksCourse[];
-  onCourseClick: (course: TeachworksCourse) => void;
+  courses: Course[];
+  onCourseClick: (course: Course) => void;
 }
 
 export default function CourseTable({ courses, onCourseClick }: CourseTableProps) {
-  
-  
   return (
     <div className="overflow-x-auto shadow rounded">
       <table className="min-w-full border-collapse bg-white">
