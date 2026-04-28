@@ -24,6 +24,7 @@ export function TokenIcon({ iconUrl, title, className }: TokenIconProps) {
       role="img"
       aria-label={title}
       className={`${className ?? ""} inline-flex items-center justify-center leading-none`}
+      style={{ fontSize: "24px" }}
     >
       {iconUrl ?? "🧭"}
     </span>
