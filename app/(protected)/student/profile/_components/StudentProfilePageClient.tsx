@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/services/supabase/client";
 import { updateStudentInfo } from "../actions";
+import { CaretIcon } from "@/app/(protected)/components/ui/icons";
 
 type StudentData = {
   id: string;
@@ -37,7 +38,7 @@ export default function StudentProfilePageClient({
           href="/home"
           className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
         >
-          <CaretRight />
+          <CaretIcon direction="left" />
           Return to Dashboard
         </a>
       </header>
@@ -624,23 +625,6 @@ function LocationIcon() {
     >
       <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
       <circle cx="12" cy="10" r="3" />
-    </svg>
-  );
-}
-
-function CaretRight() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="26"
-      viewBox="0 0 40 46"
-      fill="none"
-    >
-      <path
-        d="M13.4503 24.0408L27.3828 39.3071C27.6152 39.5619 27.9241 39.7041 28.2453 39.7041C28.5664 39.7041 28.8753 39.5619 29.1078 39.3071L29.1228 39.2898C29.2358 39.1663 29.3259 39.0176 29.3874 38.8527C29.449 38.6879 29.4807 38.5104 29.4807 38.331C29.4807 38.1516 29.449 37.9741 29.3874 37.8093C29.3259 37.6445 29.2358 37.4958 29.1228 37.3722L16.0028 22.9972L29.1228 8.62795C29.2358 8.50441 29.3259 8.35569 29.3874 8.19086C29.449 8.02603 29.4807 7.84852 29.4807 7.66914C29.4807 7.48976 29.449 7.31226 29.3874 7.14742C29.3259 6.98259 29.2358 6.83388 29.1228 6.71033L29.1078 6.69308C28.8753 6.43822 28.5664 6.29605 28.2453 6.29605C27.9241 6.29605 27.6152 6.43822 27.3828 6.69308L13.4503 21.9593C13.3277 22.0936 13.2302 22.2551 13.1635 22.434C13.0969 22.6129 13.0625 22.8055 13.0625 23.0001C13.0625 23.1947 13.0969 23.3873 13.1635 23.5662C13.2302 23.7451 13.3277 23.9066 13.4503 24.0408Z"
-        fill="#65CFAD"
-      />
     </svg>
   );
 }
