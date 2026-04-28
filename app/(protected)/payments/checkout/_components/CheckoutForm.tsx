@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   PaymentElement,
@@ -14,10 +14,12 @@ import { CaretIcon } from "@/app/(protected)/components/ui/icons";
 export function CheckoutForm({
   amountDisplay,
   planName,
+  prefill,
   onPaymentElementReady,
 }: {
   amountDisplay: string;
   planName: string;
+  prefill?: { name: string; email: string; phone: string } | null;
   onPaymentElementReady?: () => void;
 }) {
   const stripe = useStripe();
@@ -30,6 +32,15 @@ export function CheckoutForm({
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (!prefill) return;
+    const parts = prefill.name.trim().split(" ");
+    setFirstName(parts[0] ?? "");
+    setLastName(parts.slice(1).join(" "));
+    setEmail(prefill.email);
+    setPhone(prefill.phone.replace(/^\+1/, ""));
+  }, [prefill]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     console.log("Submitting payment!");

@@ -15,6 +15,11 @@ const containerClass = "bg-[#2b4257] min-h-screen flex flex-col ";
 export function CheckoutPageClient() {
   const searchParams = useSearchParams();
   const [clientSecret, setClientSecret] = useState("");
+  const [prefill, setPrefill] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+  } | null>(null);
   const [initError, setInitError] = useState("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
 
@@ -58,7 +63,10 @@ export function CheckoutPageClient() {
           throw new Error(data?.error || "Failed to initialize checkout");
         if (!data?.clientSecret) throw new Error("No client secret returned");
 
-        if (!cancelled) setClientSecret(data.clientSecret);
+        if (!cancelled) {
+          setClientSecret(data.clientSecret);
+          setPrefill(data.prefill ?? null);
+        }
       } catch (e) {
         if (cancelled) return;
 
@@ -106,6 +114,7 @@ export function CheckoutPageClient() {
             <CheckoutForm
               amountDisplay={amountDisplay}
               planName={planName}
+              prefill={prefill}
               onPaymentElementReady={() => setIsPaymentReady(true)}
             />
           </Elements>
