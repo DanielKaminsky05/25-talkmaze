@@ -109,7 +109,13 @@ export function CheckoutForm({
                 );
               }}
               options={{
-                fields: { billingDetails: "never" },
+                fields: {
+                  billingDetails: {
+                    name: "never",
+                    email: "never",
+                    phone: "never",
+                  },
+                },
                 wallets: { link: "never" },
                 layout: {
                   type: "accordion",
