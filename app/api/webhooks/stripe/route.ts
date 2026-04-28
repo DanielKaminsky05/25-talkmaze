@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     // Read the raw body as text. Required by Stripe's signature verification,
     // which breaks if the body is parsed (e.g. via request.json()) first
-    console.log("Webhook hit!")
+    console.log("Webhook hit!");
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");
@@ -112,7 +112,6 @@ export async function POST(request: Request) {
               .select("id")
               .eq("account_id", accountId)
               .eq("student_id", studentId)
-              .eq("plan_id", plan.id)
               .order("current_period_end", { ascending: false })
               .limit(1);
 
@@ -123,6 +122,7 @@ export async function POST(request: Request) {
               const { error } = await supabase
                 .from("student_subscriptions")
                 .update({
+                  plan_id: plan.id,
                   status: "active",
                   current_period_start: currentPeriodStart,
                   current_period_end: currentPeriodEnd,
@@ -138,9 +138,15 @@ export async function POST(request: Request) {
                 console.log("invoice.paid: subscription renewed", existingId);
                 try {
                   await assignCoachToStudent(studentId, plan.classes);
-                  console.log("invoice.paid: sessions bulk-generated for renewed student", studentId);
+                  console.log(
+                    "invoice.paid: sessions bulk-generated for renewed student",
+                    studentId,
+                  );
                 } catch (coachErr) {
-                  console.error("invoice.paid: session generation failed:", coachErr);
+                  console.error(
+                    "invoice.paid: session generation failed:",
+                    coachErr,
+                  );
                 }
               }
             } else {
