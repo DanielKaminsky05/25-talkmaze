@@ -34,6 +34,7 @@ export default function LessonsPage() {
           lesson,
           lessonNumber: index + 1,
           icon: token?.icon_url ?? "🧭",
+          tokenTitle: token?.title ?? null,
           isCompleted: completedLessonIds.has(lesson.id),
           isLocked,
         };
@@ -90,11 +91,12 @@ export default function LessonsPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] pb-12 animate-in fade-in duration-300">
-        {lessonCards.map(({ lesson, lessonNumber, icon, isCompleted, isLocked }) => (
+        {lessonCards.map(({ lesson, lessonNumber, icon, tokenTitle, isCompleted, isLocked }) => (
           <LessonCard
             key={lesson.id}
             lessonNumber={lessonNumber}
             title={lesson.title}
+            tokenTitle={tokenTitle}
             icon={icon}
             isCompleted={isCompleted}
             isLocked={isLocked}

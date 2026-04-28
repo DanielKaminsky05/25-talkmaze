@@ -26,7 +26,7 @@ const TokensCard = memo(function TokensCard({ courseTokens, earnedTokenIds }: To
                 {earned ? token.title : "???"}
               </div>
               <div
-                className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                className={`w-12 h-12 flex items-center justify-center rounded-xl bg-white/40 shadow-sm transition-all duration-200 ${
                   earned ? "hover:scale-110 hover:shadow-md" : "grayscale opacity-40"
                 }`}
               >
