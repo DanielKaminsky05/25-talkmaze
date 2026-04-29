@@ -180,7 +180,7 @@ export default function StudentDetails({
         {activeChat && conversationId ? (
           <ConversationClient
             conversation={{ id: conversationId }}
-            user={{ id: currentUserId, name: currentUserEmail }}
+            user={{ id: currentUserId, name: currentUserEmail, avatar_url: null }}
             messages={messages}
           />
         ) : (

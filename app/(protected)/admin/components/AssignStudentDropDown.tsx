@@ -104,7 +104,7 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
               onClick={() => onStudentClick(student)}
               className="px-3 py-2 text-xs text-gray-800 hover:bg-blue-100 cursor-pointer flex justify-between"
             >
-              <span>{`${student.first_name} ${student.last_name}`}</span>
+              <span>{student.name}</span>
               <span className="text-gray-400">
                 {loadingId === student.id ? "Assigning..." : `#${student.id}`}
               </span>

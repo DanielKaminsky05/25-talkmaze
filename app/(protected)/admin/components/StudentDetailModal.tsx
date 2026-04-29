@@ -10,7 +10,9 @@ interface Props {
 }
 
 const inputClass =
-  "mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "mt-1 block w-full bg-[#2B4257] border border-white/10 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/50 transition-colors";
+
+const labelClass = "block text-[10px] font-semibold text-[#B1E7D6] uppercase tracking-widest mb-0.5";
 
 export default function StudentDetailModal({ student, onClose, onUpdate }: Props) {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,9 +20,7 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
@@ -47,29 +47,33 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[#1F2E3B] rounded-2xl border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-900">
-            {isEditing ? (editForm.name ?? student.name) : student.name}
-          </h2>
+        {/* Header */}
+        <div className="sticky top-0 bg-[#1F2E3B] border-b border-white/10 px-6 py-4 flex justify-between items-center rounded-t-2xl z-10">
+          <div>
+            <h2 className="text-white font-bold text-lg">
+              {isEditing ? (editForm.name ?? student.name) : student.name}
+            </h2>
+            <p className="text-[#B1E7D6] text-xs opacity-60 mt-0.5">Student profile</p>
+          </div>
           <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
                 <button
                   onClick={() => { setEditForm({ ...student }); setIsEditing(true); }}
-                  className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-lg transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-lg leading-none"
                 >
                   ×
                 </button>
@@ -79,13 +83,13 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
                 <button
                   onClick={handleEditSave}
                   disabled={isSaving}
-                  className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
+                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={() => { setEditForm({}); setIsEditing(false); }}
-                  className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  className="px-4 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -94,119 +98,98 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
           </div>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="px-6 py-5 space-y-6">
+          {/* Basic Information */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-gray-500">Student ID:</span>
-                <p className="text-gray-900 font-medium">{student.id}</p>
+                <p className={labelClass}>Student ID</p>
+                <p className="text-white/80 text-sm font-mono">{student.id}</p>
               </div>
               <div>
-                <span className="text-gray-500">Account ID:</span>
-                <p className="text-gray-900 font-medium">{student.account_id}</p>
+                <p className={labelClass}>Account ID</p>
+                <p className="text-white/80 text-sm font-mono">{student.account_id}</p>
               </div>
               <div>
-                <span className="text-gray-500">Name:</span>
+                <p className={labelClass}>Name</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.name ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editForm.name ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} className={inputClass} />
                 ) : (
-                  <p className="text-gray-900 font-medium">{student.name || "N/A"}</p>
+                  <p className="text-white text-sm font-medium">{student.name || "—"}</p>
                 )}
               </div>
               <div>
-                <span className="text-gray-500">Remaining Lessons:</span>
+                <p className={labelClass}>Remaining Lessons</p>
                 {isEditing ? (
                   <input
                     type="number"
                     value={editForm.remaining_lessons ?? ""}
-                    onChange={(e) =>
-                      setEditForm((p) => ({
-                        ...p,
-                        remaining_lessons: e.target.value === "" ? null : Number(e.target.value),
-                      }))
-                    }
+                    onChange={(e) => setEditForm((p) => ({ ...p, remaining_lessons: e.target.value === "" ? null : Number(e.target.value) }))}
                     className={inputClass}
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{student.remaining_lessons ?? "N/A"}</p>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#B1E7D6]/10 text-[#B1E7D6]">
+                    {student.remaining_lessons ?? "—"}
+                  </span>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Lesson Space Information</h3>
-            <div className="grid grid-cols-2 gap-3 text-xs">
+          {/* Lesson Space */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Lesson Space
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-gray-500">Lesson Space ID:</span>
-                <p className="text-gray-900 font-medium break-all">{student.lesson_space_id ?? "N/A"}</p>
+                <p className={labelClass}>Lesson Space ID</p>
+                <p className="text-white/60 text-sm font-mono break-all">{student.lesson_space_id ?? "—"}</p>
               </div>
               <div>
-                <span className="text-gray-500">Profile Access PIN:</span>
+                <p className={labelClass}>Profile Access PIN</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.profile_access_pin ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, profile_access_pin: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editForm.profile_access_pin ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, profile_access_pin: e.target.value }))} className={inputClass} />
                 ) : (
-                  <p className="text-gray-900 font-medium">{student.profile_access_pin ?? "N/A"}</p>
+                  <p className="text-white/80 text-sm font-mono">{student.profile_access_pin ?? "—"}</p>
                 )}
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500">Student Link:</span>
+                <p className={labelClass}>Student Link</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.lesson_space_student_link ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, lesson_space_student_link: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editForm.lesson_space_student_link ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, lesson_space_student_link: e.target.value }))} className={inputClass} />
                 ) : (
-                  <p className="text-gray-900 font-medium break-all">{student.lesson_space_student_link ?? "N/A"}</p>
+                  <p className="text-white/60 text-sm break-all">{student.lesson_space_student_link ?? "—"}</p>
                 )}
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500">Teacher Link:</span>
+                <p className={labelClass}>Teacher Link</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.lesson_space_teacher_link ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, lesson_space_teacher_link: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editForm.lesson_space_teacher_link ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, lesson_space_teacher_link: e.target.value }))} className={inputClass} />
                 ) : (
-                  <p className="text-gray-900 font-medium break-all">{student.lesson_space_teacher_link ?? "N/A"}</p>
+                  <p className="text-white/60 text-sm break-all">{student.lesson_space_teacher_link ?? "—"}</p>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Other Information</h3>
-            <div className="grid grid-cols-1 gap-3 text-xs">
-              <div>
-                <span className="text-gray-500">Teachworks URL:</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.teach_works_url ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, teach_works_url: e.target.value }))}
-                    className={inputClass}
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium break-all">{student.teach_works_url ?? "N/A"}</p>
-                )}
-              </div>
+          {/* Other */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Other
+            </h3>
+            <div>
+              <p className={labelClass}>Teachworks URL</p>
+              {isEditing ? (
+                <input type="text" value={editForm.teach_works_url ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, teach_works_url: e.target.value }))} className={inputClass} />
+              ) : (
+                <p className="text-white/60 text-sm break-all">{student.teach_works_url ?? "—"}</p>
+              )}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

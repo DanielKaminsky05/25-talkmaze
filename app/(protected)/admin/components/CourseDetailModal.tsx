@@ -14,6 +14,11 @@ interface Props {
   onDelete: () => void;
 }
 
+const inputClass =
+  "mt-1 block w-full bg-[#2B4257] border border-white/10 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/50 transition-colors";
+
+const labelClass = "block text-[10px] font-semibold text-[#B1E7D6] uppercase tracking-widest mb-0.5";
+
 export default function CourseDetailModal({ course, students, onClose, onUpdate, onDelete }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Course>>({});
@@ -25,9 +30,7 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
   const badgeInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
@@ -81,13 +84,9 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
 
   const handleBadgeUpload = async (file: File | undefined) => {
     if (!file) return;
-    if (file.type !== "image/png") {
-      alert("PNG only");
-      return;
-    }
+    if (file.type !== "image/png") { alert("PNG only"); return; }
     setUploadingBadge(true);
     const supabase = createClient();
-
     let b = badge;
     if (!b) {
       const { data: newBadge } = await supabase
@@ -97,60 +96,51 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
         .single();
       b = newBadge;
     }
-    if (!b) {
-      setUploadingBadge(false);
-      return;
-    }
-
+    if (!b) { setUploadingBadge(false); return; }
     const path = `${b.id}.png`;
     await supabase.storage.from("badges").upload(path, file, { upsert: true, contentType: "image/png" });
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("badges").getPublicUrl(path);
-    await supabase
-      .from("badges")
-      .update({ image_url: publicUrl, title: badgeTitle || b.title })
-      .eq("id", b.id);
-
+    const { data: { publicUrl } } = supabase.storage.from("badges").getPublicUrl(path);
+    await supabase.from("badges").update({ image_url: publicUrl, title: badgeTitle || b.title }).eq("id", b.id);
     setBadge({ ...b, image_url: publicUrl, title: badgeTitle || b.title });
     setUploadingBadge(false);
   };
 
-  const inputClass =
-    "mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500";
-
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[#1F2E3B] rounded-2xl border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-900">
-            {isEditing ? (editForm.name ?? course.name) : course.name}
-          </h2>
+        {/* Header */}
+        <div className="sticky top-0 bg-[#1F2E3B] border-b border-white/10 px-6 py-4 flex justify-between items-center rounded-t-2xl z-10">
+          <div>
+            <h2 className="text-white font-bold text-lg">
+              {isEditing ? (editForm.name ?? course.name) : course.name}
+            </h2>
+            <p className="text-[#B1E7D6] text-xs opacity-60 mt-0.5">Course #{course.id}</p>
+          </div>
           <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="px-3 py-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors disabled:opacity-50"
+                  className="px-4 py-1.5 text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isDeleting ? "Deleting…" : "Delete"}
                 </button>
                 <button
                   onClick={() => { setEditForm({ ...course }); setIsEditing(true); }}
-                  className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-lg transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-lg"
                 >
                   ×
                 </button>
@@ -160,13 +150,13 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
+                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={() => { setEditForm({}); setIsEditing(false); }}
-                  className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  className="px-4 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -175,87 +165,76 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
           </div>
         </div>
 
-        <div className="px-6 py-4 space-y-6 text-xs">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Course Information</h3>
-            <div className="space-y-3">
+        <div className="px-6 py-5 space-y-6">
+          {/* Course Info */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Course Information
+            </h3>
+            <div className="space-y-4">
               <div>
-                <span className="text-gray-500">Course ID:</span>
-                <p className="text-gray-900 font-medium">{course.id}</p>
-              </div>
-              <div>
-                <span className="text-gray-500">Name:</span>
+                <p className={labelClass}>Name</p>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.name ?? ""}
-                    onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editForm.name ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} className={inputClass} />
                 ) : (
-                  <p className="text-gray-900 font-medium">{course.name}</p>
+                  <p className="text-white font-medium text-sm">{course.name}</p>
                 )}
               </div>
               <div>
-                <span className="text-gray-500">Description:</span>
+                <p className={labelClass}>Description</p>
                 {isEditing ? (
                   <textarea
                     value={editForm.description ?? ""}
                     onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
                     rows={4}
-                    className={inputClass}
+                    className={inputClass + " resize-none"}
                   />
                 ) : (
-                  <p className="text-gray-900">{course.description || "N/A"}</p>
+                  <p className="text-white/60 text-sm">{course.description || "—"}</p>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
-          <hr className="border-gray-100" />
-
-          <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Course Badge</p>
-            <div className="flex items-center gap-3">
+          {/* Badge */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Course Badge
+            </h3>
+            <div className="flex items-center gap-4">
               {badge?.image_url ? (
-                <img
-                  src={badge.image_url}
-                  className="w-16 h-16 object-contain rounded-lg border"
-                  alt="Badge"
-                />
+                <img src={badge.image_url} className="w-16 h-16 object-contain rounded-xl border border-white/10 bg-[#2B4257]" alt="Badge" />
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-gray-100 border flex items-center justify-center text-gray-400 text-xs">
+                <div className="w-16 h-16 rounded-xl bg-[#2B4257] border border-white/10 flex items-center justify-center text-white/20 text-xs">
                   None
                 </div>
               )}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <input
                   value={badgeTitle}
                   onChange={(e) => setBadgeTitle(e.target.value)}
                   placeholder="Badge title"
-                  className="px-2 py-1 text-xs border rounded"
+                  className="bg-[#2B4257] border border-white/10 text-white placeholder:text-white/30 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-[#B1E7D6]/50 transition-colors w-48"
                 />
-                <input
-                  type="file"
-                  accept="image/png"
-                  ref={badgeInputRef}
-                  onChange={(e) => handleBadgeUpload(e.target.files?.[0])}
-                  className="hidden"
-                />
+                <input type="file" accept="image/png" ref={badgeInputRef} onChange={(e) => handleBadgeUpload(e.target.files?.[0])} className="hidden" />
                 <button
                   onClick={() => badgeInputRef.current?.click()}
                   disabled={uploadingBadge}
-                  className="px-3 py-1 text-xs bg-purple-600 text-white rounded disabled:opacity-50 hover:bg-purple-700 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold text-white bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/20 rounded-lg transition-colors disabled:opacity-50 w-fit"
                 >
                   {uploadingBadge ? "Uploading…" : badge ? "Replace image" : "Upload PNG"}
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
-          <hr className="border-gray-100" />
-
-          <CourseLessonsPanel students={students} courseId={String(course.id)} />
+          {/* Lessons */}
+          <section>
+            <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
+              Lessons
+            </h3>
+            <CourseLessonsPanel students={students} courseId={String(course.id)} />
+          </section>
         </div>
       </div>
     </div>
