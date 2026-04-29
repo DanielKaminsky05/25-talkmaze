@@ -3,7 +3,7 @@ import { createClient } from "@/services/supabase/server";
 import ParentSessionsClient, {
   type StudentProp,
   type SessionProp,
-} from "./ParentSessionsClient";
+} from "./_components/ParentSessionsClient";
 
 /**
  * /parent/sessions — Server Component
@@ -38,7 +38,7 @@ export default async function ParentSessionsPage() {
     console.error(
       "[ParentSessions] Failed to fetch students:",
       studentsError.message,
-      { code: studentsError.code, details: studentsError.details }
+      { code: studentsError.code, details: studentsError.details },
     );
   }
 
@@ -60,7 +60,7 @@ export default async function ParentSessionsPage() {
       .select(
         `id, start_time, end_time, student_id,
          students(first_name, last_name),
-         coaches(first_name, last_name)`
+         coaches(first_name, last_name)`,
       )
       .in("student_id", studentIds)
       .gte("start_time", now)
@@ -70,7 +70,7 @@ export default async function ParentSessionsPage() {
       console.error(
         "[ParentSessions] Failed to fetch sessions:",
         sessionsError.message,
-        { code: sessionsError.code, details: sessionsError.details }
+        { code: sessionsError.code, details: sessionsError.details },
       );
     }
 
@@ -81,7 +81,7 @@ export default async function ParentSessionsPage() {
       student_id: s.student_id,
       studentName: s.students
         ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim() ||
-        "Student"
+          "Student"
         : "Student",
       coachName: s.coaches
         ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
