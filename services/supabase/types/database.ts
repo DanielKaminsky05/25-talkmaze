@@ -663,6 +663,7 @@ export type Database = {
           id: string
           notes: string | null
           session_date: string
+          session_id: number | null
           status: string
           student_id: string
           updated_at: string | null
@@ -673,6 +674,7 @@ export type Database = {
           id?: string
           notes?: string | null
           session_date: string
+          session_id?: number | null
           status: string
           student_id: string
           updated_at?: string | null
@@ -683,6 +685,7 @@ export type Database = {
           id?: string
           notes?: string | null
           session_date?: string
+          session_id?: number | null
           status?: string
           student_id?: string
           updated_at?: string | null
@@ -693,6 +696,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
           {
