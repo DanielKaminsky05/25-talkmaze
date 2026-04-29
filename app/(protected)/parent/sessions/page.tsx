@@ -74,19 +74,35 @@ export default async function ParentSessionsPage() {
       );
     }
 
-    sessions = (sessionsRaw ?? []).map((s: any) => ({
-      id: s.id.toString(),
-      start_time: s.start_time,
-      end_time: s.end_time,
-      student_id: s.student_id,
-      studentName: s.students
-        ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim() ||
-          "Student"
-        : "Student",
-      coachName: s.coaches
-        ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
-        : "",
-    }));
+    const sessionIds = (sessionsRaw ?? []).map((s: any) => s.id as number);
+    let markedSessionIds = new Set<number>();
+    if (sessionIds.length > 0) {
+      const { data: attendanceRaw } = await supabase
+        .from("session_attendance")
+        .select("session_id")
+        .in("session_id", sessionIds);
+      markedSessionIds = new Set(
+        (attendanceRaw ?? [])
+          .map((r: any) => r.session_id as number)
+          .filter(Boolean),
+      );
+    }
+
+    sessions = (sessionsRaw ?? [])
+      .filter((s: any) => !markedSessionIds.has(s.id))
+      .map((s: any) => ({
+        id: s.id.toString(),
+        start_time: s.start_time,
+        end_time: s.end_time,
+        student_id: s.student_id,
+        studentName: s.students
+          ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim() ||
+            "Student"
+          : "Student",
+        coachName: s.coaches
+          ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
+          : "",
+      }));
   }
 
   return <ParentSessionsClient students={students} sessions={sessions} />;

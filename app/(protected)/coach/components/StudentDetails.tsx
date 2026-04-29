@@ -117,8 +117,7 @@ export default function StudentDetails({
   const now = new Date().toISOString();
   const upcomingSessions = allSessions.filter((s) => {
     if (!s.start_time || s.start_time < now) return false;
-    const status = attendanceBySessionId[s.id];
-    return status !== "attended" && status !== "missed";
+    return attendanceBySessionId[s.id] == null;
   });
   const attendanceSessions = allSessions
     .filter((s) => {
