@@ -4,9 +4,12 @@ import { useState, useEffect } from "react";
 import { ConversationClient } from "@/app/(protected)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
+import CoachAttendanceSection from "./student-details/CoachAttendanceSection";
 import type { Database } from "@/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
+
+export type AttendanceStatus = "attended" | "missed" | "cancelled";
 
 interface StudentDetailsProps {
   student: Student | null;
@@ -27,15 +30,23 @@ export default function StudentDetails({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
-  const [sessions, setSessions] = useState<any[]>([]);
+
+  const [allSessions, setAllSessions] = useState<any[]>([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const [attendanceBySessionId, setAttendanceBySessionId] = useState<
+    Record<number, AttendanceStatus>
+  >({});
+  const [submittingSessionId, setSubmittingSessionId] = useState<number | null>(
+    null,
+  );
 
   // Reset state when student changes
   useEffect(() => {
     setActiveChat(null);
     setConversationId(null);
     setMessages([]);
-    setSessions([]);
+    setAllSessions([]);
+    setAttendanceBySessionId({});
   }, [student?.id]);
 
   // Auto-open student chat when triggered from the students list
@@ -45,19 +56,78 @@ export default function StudentDetails({
     }
   }, [autoOpenChat, student?.id]);
 
-  // Fetch student schedule
+  // Fetch all sessions + existing attendance records together
   useEffect(() => {
     if (!student) return;
     setLoadingSchedule(true);
-    fetch(`/api/admin/students`)
-      .then((r) => (r.ok ? r.json() : { sessions: [] }))
-      .then((data) => setSessions(data.sessions || []))
+
+    Promise.all([
+      fetch(`/api/coach/sessions?student_id=${student.id}`).then((r) =>
+        r.ok ? r.json() : { sessions: [] },
+      ),
+      fetch(`/api/attendance?student_id=${student.id}`).then((r) =>
+        r.ok ? r.json() : { attendance: [] },
+      ),
+    ])
+      .then(([sessionsData, attendanceData]) => {
+        setAllSessions(sessionsData.sessions || []);
+
+        const map: Record<number, AttendanceStatus> = {};
+        for (const record of attendanceData.attendance || []) {
+          if (record.session_id != null) {
+            map[record.session_id] = record.status as AttendanceStatus;
+          }
+        }
+        setAttendanceBySessionId(map);
+      })
       .catch(console.error)
       .finally(() => setLoadingSchedule(false));
   }, [student?.id]);
 
+  async function handleMarkAttendance(session: any, status: AttendanceStatus) {
+    if (!student || submittingSessionId === session.id) return;
+    setSubmittingSessionId(session.id);
+    setAttendanceBySessionId((prev) => ({ ...prev, [session.id]: status }));
+
+    try {
+      const res = await fetch("/api/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: student.id,
+          session_date: session.start_time,
+          session_id: session.id,
+          status,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save attendance");
+    } catch {
+      setAttendanceBySessionId((prev) => {
+        const next = { ...prev };
+        delete next[session.id];
+        return next;
+      });
+    } finally {
+      setSubmittingSessionId(null);
+    }
+  }
+
+  // upcoming = future sessions not yet confirmed as attended/missed
+  // attendance = past sessions OR any session already marked attended/missed/cancelled
+  const now = new Date().toISOString();
+  const upcomingSessions = allSessions.filter((s) => {
+    if (!s.start_time || s.start_time < now) return false;
+    return attendanceBySessionId[s.id] == null;
+  });
+  const attendanceSessions = allSessions
+    .filter((s) => {
+      if (!s.start_time) return false;
+      return s.start_time < now || attendanceBySessionId[s.id] != null;
+    })
+    .sort((a, b) => (a.start_time < b.start_time ? 1 : -1))
+    .slice(0, 10);
+
   async function openChat(type: "student" | "parent") {
-    // Toggle off if same chat is already open
     if (activeChat === type) {
       setActiveChat(null);
       return;
@@ -137,7 +207,7 @@ export default function StudentDetails({
   return (
     <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm min-h-[480px] flex flex-col overflow-hidden">
       {/* Panel header */}
-      <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+      <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <h2 className="text-base font-semibold text-[#2B4257]">
           Student Details
         </h2>
@@ -180,7 +250,11 @@ export default function StudentDetails({
         {activeChat && conversationId ? (
           <ConversationClient
             conversation={{ id: conversationId }}
-            user={{ id: currentUserId, name: currentUserEmail }}
+            user={{
+              id: currentUserId,
+              name: currentUserEmail,
+              avatar_url: null,
+            }}
             messages={messages}
           />
         ) : (
@@ -195,13 +269,35 @@ export default function StudentDetails({
             </div>
 
             {/* Schedule section */}
-            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-              <h4 className="text-sm font-semibold text-[#2B4257] mb-4">
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-4">
+              <h4 className="text-sm font-semibold text-[#2B4257] mb-1">
                 Upcoming Schedule
               </h4>
-              <StudentSchedule
-                sessions={sessions}
+              <p className="text-xs text-gray-400 mb-4">
+                Click a session to mark attendance.
+              </p>
+              <div className="max-h-52 overflow-y-auto pr-1">
+                <StudentSchedule
+                  sessions={upcomingSessions}
+                  loading={loadingSchedule}
+                  attendanceBySessionId={attendanceBySessionId}
+                  onMarkAttendance={handleMarkAttendance}
+                  submittingSessionId={submittingSessionId}
+                />
+              </div>
+            </div>
+
+            {/* Attendance section */}
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <h4 className="text-sm font-semibold text-[#2B4257] mb-4">
+                Attendance
+              </h4>
+              <CoachAttendanceSection
+                sessions={attendanceSessions}
                 loading={loadingSchedule}
+                attendanceBySessionId={attendanceBySessionId}
+                onMarkAttendance={handleMarkAttendance}
+                submittingSessionId={submittingSessionId}
               />
             </div>
           </div>
