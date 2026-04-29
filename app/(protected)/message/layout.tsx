@@ -28,44 +28,25 @@ export default async function Layout({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Fetch contacts visible to the current user.
- * - Regular users (role=1): only see coaches (role=2) and admins (role=3)
- * - Coaches/admins: non-student accounts as-is; student accounts expanded to
- *   one entry per student profile so each profile gets a distinct conversation.
- * Display name is formatted as "Name (email)" where Name is the coach/profile name.
- */
+/** Fetch all coach accounts (role=2) as contacts. Display name is "Name (email)". */
 async function getContacts(): Promise<Contact[]> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return [];
 
-  // Get current user's role
-  const { data: currentAccount } = await supabase
+  const { data, error } = await supabase
     .from("account")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  let query = supabase
-    .from("account")
-    .select("id, email, role")
+    .select("id, email")
     .neq("id", user.id)
+    .eq("role", 2)
     .order("email");
 
-  // Regular users can only message coaches and admins
-  if (currentAccount?.role === 1) {
-    query = query.in("role", [2, 3]);
-  }
-
-  const { data, error } = await query;
   if (error) {
     console.error("Error fetching contacts:", error);
     return [];
   }
 
-  // Fetch coach names for all coach accounts in one query
-  const coachAccountIds = data.filter((a) => a.role === 2).map((a) => a.id);
+  const coachAccountIds = data.map((a) => a.id);
 
   const { data: coaches } =
     coachAccountIds.length > 0
@@ -81,39 +62,6 @@ async function getContacts(): Promise<Contact[]> {
       `${c.first_name || ""} ${c.last_name || ""}`.trim() || null,
     ]),
   );
-
-  // For coaches/admins: expand student accounts into one contact per profile
-  if (currentAccount?.role !== 1) {
-    const studentAccountIds = data.filter((a) => a.role === 1).map((a) => a.id);
-    const emailMap = new Map(data.map((a) => [a.id, a.email]));
-
-    const { data: studentProfiles } =
-      studentAccountIds.length > 0
-        ? await supabase
-          .from("students")
-          .select("id, first_name, last_name, account_id")
-          .in("account_id", studentAccountIds)
-        : { data: [] as { id: string; first_name: string; last_name: string; account_id: string }[] };
-
-    const nonStudentContacts = data
-      .filter((a) => a.role !== 1)
-      .map((acc) => {
-        const displayName = coachNameMap.get(acc.id) ?? acc.email;
-        return {
-          id: acc.id,
-          name: `${displayName} (${acc.email})`,
-          email: acc.email,
-        };
-      });
-
-    const studentContacts = (studentProfiles ?? []).map((s) => ({
-      id: s.id,
-      name: `${s.first_name} ${s.last_name} (${emailMap.get(s.account_id) ?? ""})`,
-      email: emailMap.get(s.account_id) ?? "",
-    }));
-
-    return [...nonStudentContacts, ...studentContacts];
-  }
 
   return data.map((acc) => {
     const displayName = coachNameMap.get(acc.id) ?? acc.email;

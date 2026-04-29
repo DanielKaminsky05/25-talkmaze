@@ -942,6 +942,8 @@ export type Database = {
           lesson_space_teacher_link: string | null
           location: string | null
           notes: string | null
+          post_lesson_days: number
+          post_lesson_tasks_enabled: boolean
           teach_works_url: string | null
           updated_at: string
           webhook_room_id: string | null
@@ -961,6 +963,8 @@ export type Database = {
           lesson_space_teacher_link?: string | null
           location?: string | null
           notes?: string | null
+          post_lesson_days?: number
+          post_lesson_tasks_enabled?: boolean
           teach_works_url?: string | null
           updated_at?: string
           webhook_room_id?: string | null
@@ -980,6 +984,8 @@ export type Database = {
           lesson_space_teacher_link?: string | null
           location?: string | null
           notes?: string | null
+          post_lesson_days?: number
+          post_lesson_tasks_enabled?: boolean
           teach_works_url?: string | null
           updated_at?: string
           webhook_room_id?: string | null

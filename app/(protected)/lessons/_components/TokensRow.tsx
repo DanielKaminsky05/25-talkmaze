@@ -27,8 +27,11 @@ export default function TokensRow({ courseTokens, earnedTokenIds }: Props) {
           return (
             <div
               key={token.id}
-              className="w-8 h-8 flex items-center justify-center text-2xl leading-none mx-auto"
+              className="relative group w-8 h-8 flex items-center justify-center text-2xl leading-none mx-auto"
             >
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#2B4257] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                {earned ? token.title : "???"}
+              </div>
               {earned ? (
                 <TokenIcon
                   iconUrl={token.icon_url}
