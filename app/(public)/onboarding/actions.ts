@@ -2,6 +2,7 @@
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/services/supabase/server";
 import { createServiceRoleClient } from "@/services/supabase/service";
+import type { TablesInsert } from "@/services/supabase/types/database";
 import { setProfileCookies } from "@/lib/profile-management/profile-cookies";
 import { revalidatePath } from "next/cache";
 
@@ -139,12 +140,10 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
     return { success: false, status: 400, message: "Student has no availability configured" };
   }
 
-  const generatedSessions: any[] = [];
   let matchedCoachId: string | null = null;
 
   // Start searching dates from tomorrow
-  let searchStartDate = dayjs.utc().add(1, 'day');
-  let maxSearchDays = 14;
+  const searchStartDate = dayjs.utc().add(1, 'day');
 
   let anchorFound = false;
   let matchingSlot: any = null;
@@ -353,7 +352,8 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
   console.log(`MATCH FOUND! Anchor UTC start is ${finalStartTimeUTC.toISOString()} with coach ${matchedCoachId}`);
 
-  // Insert the permanent booked slot
+  // Insert a pending booked slot for admin approval. Pending slots are visible
+  // to admins but do not block future matching until approved.
   const { error: bookedSlotError } = await supabase
     .from("booked_slots")
     .insert({
@@ -363,7 +363,8 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
       start_time: matchingSlot.start_time_new,
       end_time: matchingSlot.end_time_new,
       timezone: matchingSlot.timezone,
-      status: "active"
+      status: "pending",
+      num_sessions: num_classes,
     });
 
   if (bookedSlotError) {
@@ -371,19 +372,141 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
       return { success: false, status: 500, error: "Failed to reserve booked slot" };
   }
 
-  // 2. Extrapolate `num_classes` instances matching the safe anchor!
+  revalidatePath("/profiles");
+  revalidatePath("/admin");
+  return { success: true, status: 200, message: "Coach match pending admin approval" };
+}
+
+type BookedSlotForApproval = {
+  id: string;
+  coach_id: string;
+  student_id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  status: string;
+  num_sessions: number | null;
+};
+
+type GeneratedSession = TablesInsert<"sessions">;
+
+function bookedSlotRangeForDate(
+  bookedSlot: Pick<BookedSlotForApproval, "weekday" | "start_time" | "end_time" | "timezone">,
+  candidateStartUTC: dayjs.Dayjs,
+) {
+  const bsDateLocal = candidateStartUTC.tz(bookedSlot.timezone).day(bookedSlot.weekday);
+  const bsStartLocal = dayjs.tz(`${bsDateLocal.format("YYYY-MM-DD")}T${bookedSlot.start_time}`, bookedSlot.timezone);
+  const bsEndLocal = dayjs.tz(`${bsDateLocal.format("YYYY-MM-DD")}T${bookedSlot.end_time}`, bookedSlot.timezone);
+
+  return {
+    startUTC: bsStartLocal.utc(),
+    endUTC: bsEndLocal.utc(),
+  };
+}
+
+function nextMatchingDateForWeekday(weekday: number) {
+  let testDate = dayjs.utc().add(1, "day");
+  while (testDate.day() !== weekday) {
+    testDate = testDate.add(1, "day");
+  }
+  return testDate.format("YYYY-MM-DD");
+}
+
+async function hasActiveBookedSlotConflict(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  bookedSlot: BookedSlotForApproval,
+) {
+  const anchorDate = nextMatchingDateForWeekday(bookedSlot.weekday);
+  const anchorStartUTC = dayjs.tz(`${anchorDate}T${bookedSlot.start_time}`, bookedSlot.timezone).utc();
+  const anchorEndUTC = dayjs.tz(`${anchorDate}T${bookedSlot.end_time}`, bookedSlot.timezone).utc();
+
+  const { data: activeSlots } = await supabase
+    .from("booked_slots")
+    .select("*")
+    .eq("status", "active")
+    .or(`coach_id.eq.${bookedSlot.coach_id},student_id.eq.${bookedSlot.student_id}`);
+
+  for (const activeSlot of activeSlots ?? []) {
+    if (!activeSlot.timezone || !activeSlot.start_time || !activeSlot.end_time) continue;
+    const activeRange = bookedSlotRangeForDate(activeSlot, anchorStartUTC);
+    if (anchorStartUTC.isBefore(activeRange.endUTC) && anchorEndUTC.isAfter(activeRange.startUTC)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function ensureCoachStudentJunction(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  coachId: string,
+  studentId: string,
+) {
+  const { data: existingJunction } = await supabase
+    .from("coach_students")
+    .select("*")
+    .eq("coach_id", coachId)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (existingJunction) return;
+
+  const { error: junctionError } = await supabase
+    .from("coach_students")
+    .insert({ coach_id: coachId, student_id: studentId });
+
+  if (junctionError) {
+    console.error("Failed to insert into coach_students junction:", junctionError);
+  }
+}
+
+export async function approvePendingBookedSlot(bookedSlotId: string) {
+  const supabase = createServiceRoleClient();
+
+  const { data: bookedSlot, error: slotError } = await supabase
+    .from("booked_slots")
+    .select("*")
+    .eq("id", bookedSlotId)
+    .eq("status", "pending")
+    .single();
+
+  if (slotError || !bookedSlot) {
+    return { success: false, status: 404, error: "Pending booked slot not found" };
+  }
+
+  const numSessions = bookedSlot.num_sessions ?? 0;
+  if (numSessions <= 0) {
+    return { success: false, status: 400, error: "Booked slot does not have a valid num_sessions value" };
+  }
+
+  if (!bookedSlot.timezone || !bookedSlot.start_time || !bookedSlot.end_time) {
+    return { success: false, status: 400, error: "Booked slot is missing timing information" };
+  }
+
+  const typedSlot = bookedSlot as BookedSlotForApproval;
+
+  const hasConflict = await hasActiveBookedSlotConflict(supabase, typedSlot);
+  if (hasConflict) {
+    return { success: false, status: 409, error: "This slot now conflicts with an active recurring booking" };
+  }
+
+  const localAnchorDate = nextMatchingDateForWeekday(typedSlot.weekday);
+  const finalStartTimeUTC = dayjs.tz(`${localAnchorDate}T${typedSlot.start_time}`, typedSlot.timezone).utc();
+
+  const generatedSessions: GeneratedSession[] = [];
   let successfullyBooked = 0;
   let weekOffset = 0;
 
-  while (successfullyBooked < num_classes) {
+  while (successfullyBooked < numSessions) {
 
     // Re-interpret the wall-clock time in the student's timezone each week so the
     // local time stays fixed (e.g. always 3 PM) even across DST transitions.
-    const localAnchor = finalStartTimeUTC.tz(matchingSlot.timezone);
+    const localAnchor = finalStartTimeUTC.tz(typedSlot.timezone);
     const anchorDateStr = localAnchor.format('YYYY-MM-DD');
     const anchorTimeStr = localAnchor.format('HH:mm:ss');
     const targetDate = dayjs(anchorDateStr).add(weekOffset, 'week').format('YYYY-MM-DD');
-    const loopStart = dayjs.tz(`${targetDate}T${anchorTimeStr}`, matchingSlot.timezone);
+    const loopStart = dayjs.tz(`${targetDate}T${anchorTimeStr}`, typedSlot.timezone);
     const loopEnd = loopStart.add(1, 'hour');
 
     const loopStartUTC = loopStart.utc().toISOString();
@@ -393,16 +516,24 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
     const { data: collision } = await supabase
       .from("sessions")
       .select("id")
-      .eq("coach_id", matchedCoachId)
+      .eq("coach_id", typedSlot.coach_id)
       .lt("start_time", loopEndUTC)
       .gt("end_time", loopStartUTC)
       .maybeSingle();
 
-    if (!collision) {
+    const { data: studentCollision } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("student_id", typedSlot.student_id)
+      .lt("start_time", loopEndUTC)
+      .gt("end_time", loopStartUTC)
+      .maybeSingle();
+
+    if (!collision && !studentCollision) {
       generatedSessions.push({
-        coach_id: matchedCoachId,
-        student_id: student_id,
-        weekday: matchingSlot.weekday,
+        coach_id: typedSlot.coach_id,
+        student_id: typedSlot.student_id,
+        weekday: typedSlot.weekday,
         start_time: loopStartUTC,
         end_time: loopEndUTC
       });
@@ -411,10 +542,14 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
     weekOffset++;
     // Hard limit failsafe so it doesn't loop forever if their calendar block is entirely clogged
-    if (weekOffset > num_classes * 3) {
+    if (weekOffset > numSessions * 3) {
       console.warn("Exceeded safe loop boundary skipping filled weeks.");
       break;
     }
+  }
+
+  if (generatedSessions.length < numSessions) {
+    return { success: false, status: 409, error: "Could not generate all requested sessions without conflicts" };
   }
 
   // 3. Bulk Insert
@@ -429,24 +564,20 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
     }
   }
 
-  // 4. Bind them in the Coach/Student 
-  const { data: existingJunction } = await supabase
-    .from("coach_students")
-    .select("*")
-    .eq("coach_id", matchedCoachId)
-    .eq("student_id", student_id)
-    .maybeSingle();
+  const { error: activateError } = await supabase
+    .from("booked_slots")
+    .update({ status: "active" })
+    .eq("id", typedSlot.id)
+    .eq("status", "pending");
 
-  if (!existingJunction) {
-    const { error: junctionError } = await supabase
-      .from("coach_students")
-      .insert({ coach_id: matchedCoachId, student_id: student_id });
-
-    if (junctionError) {
-      console.error("Failed to insert into coach_students junction:", junctionError);
-    }
+  if (activateError) {
+    console.error("Failed to activate booked slot:", activateError);
+    return { success: false, status: 500, error: "Sessions were created but booked slot activation failed" };
   }
 
+  await ensureCoachStudentJunction(supabase, typedSlot.coach_id, typedSlot.student_id);
+
   revalidatePath("/profiles");
+  revalidatePath("/admin");
   return { success: true, status: 200, message: `Successfully scheduled ${generatedSessions.length} classes!` };
 }

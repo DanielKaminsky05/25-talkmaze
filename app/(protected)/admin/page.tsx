@@ -22,14 +22,32 @@ import { Course } from "./components/types";
 
 const ITEMS_PER_PAGE = 15;
 
-type TabType = "students" | "coaches" | "courses" | "assignments";
+type TabType = "students" | "coaches" | "courses" | "assignments" | "pending";
 
 const NAV_ITEMS: { key: TabType; label: string }[] = [
   { key: "students", label: "Students" },
   { key: "coaches", label: "Coaches" },
   { key: "courses", label: "Courses" },
   { key: "assignments", label: "Assignments" },
+  { key: "pending", label: "Pending" },
 ];
+
+type PendingBooking = {
+  id: string;
+  coach_id: string;
+  student_id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  status: string;
+  num_sessions: number | null;
+  created_at: string;
+  coaches?: { first_name: string | null; last_name: string | null } | null;
+  students?: { first_name: string | null; last_name: string | null; account_id: string | null } | null;
+};
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // ── List item components (module-level to avoid re-mount on parent render) ──
 
@@ -152,6 +170,11 @@ export default function AdminPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
 
+  // Pending approvals
+  const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([]);
+  const [pendingBookingsLoading, setPendingBookingsLoading] = useState(true);
+  const [approvingBookingId, setApprovingBookingId] = useState<string | null>(null);
+
   // Create modals
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
@@ -246,6 +269,22 @@ export default function AdminPage() {
       .catch(() => setAssignments([]))
       .finally(() => setAssignmentsLoading(false));
   }, []);
+
+  const fetchPendingBookings = async () => {
+    try {
+      setPendingBookingsLoading(true);
+      const res = await fetch("/api/admin/pending-bookings");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setPendingBookings(Array.isArray(data) ? data : []);
+    } catch {
+      setPendingBookings([]);
+    } finally {
+      setPendingBookingsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchPendingBookings(); }, []);
 
   // ── Calendar data ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -401,6 +440,24 @@ export default function AdminPage() {
     }
   };
 
+  const handleApprovePendingBooking = async (bookingId: string) => {
+    setApprovingBookingId(bookingId);
+    const res = await fetch(`/api/admin/pending-bookings/${bookingId}/approve`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setApprovingBookingId(null);
+
+    if (!res.ok) {
+      alert(data.error ?? "Failed to approve booking");
+      return;
+    }
+
+    setPendingBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
+    fetch("/api/admin/assignments")
+      .then((r) => r.json())
+      .then((d) => setAssignments(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  };
+
   // ── Tab switch helper ─────────────────────────────────────────────────────
   const switchTab = (tab: TabType) => {
     setActiveTab(tab);
@@ -491,7 +548,7 @@ export default function AdminPage() {
         <div className="flex flex-1 min-w-0 overflow-hidden">
 
           {/* ── List panel ── */}
-          {activeTab !== "assignments" ? (
+          {activeTab !== "assignments" && activeTab !== "pending" ? (
             <div
               className={`shrink-0 w-full md:w-72 lg:w-80 xl:w-[340px] bg-[#162330] border-r border-white/5 flex flex-col overflow-hidden
                 ${mobileShowDetail ? "hidden md:flex" : "flex"}`}
@@ -586,7 +643,7 @@ export default function AdminPage() {
           {/* ── Detail panel / Assignments ── */}
           <div
             className={`flex-1 min-w-0 overflow-y-auto
-              ${activeTab !== "assignments" && !mobileShowDetail ? "hidden md:flex md:flex-col" : "flex flex-col"}`}
+              ${activeTab !== "assignments" && activeTab !== "pending" && !mobileShowDetail ? "hidden md:flex md:flex-col" : "flex flex-col"}`}
           >
             {/* ── ASSIGNMENTS tab (full-width) ── */}
             {activeTab === "assignments" && (
@@ -606,6 +663,79 @@ export default function AdminPage() {
                     />
                   );
                 })}
+              </div>
+            )}
+
+            {/* ── PENDING tab (full-width) ── */}
+            {activeTab === "pending" && (
+              <div className="p-4 md:p-6 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-white text-xl font-bold">Pending Bookings</h2>
+                    <p className="text-white/35 text-sm mt-1">Approve matched coach slots to create sessions.</p>
+                  </div>
+                  <button
+                    onClick={fetchPendingBookings}
+                    className="shrink-0 px-3.5 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {pendingBookingsLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <div className="w-7 h-7 border-2 border-[#B1E7D6] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : pendingBookings.length === 0 ? (
+                  <div className="bg-[#1F2E3B] rounded-2xl p-8 border border-white/5 text-center">
+                    <p className="text-white/35 text-sm">No pending bookings</p>
+                  </div>
+                ) : (
+                  pendingBookings.map((booking) => {
+                    const coachName = booking.coaches
+                      ? `${booking.coaches.first_name ?? ""} ${booking.coaches.last_name ?? ""}`.trim() || "Coach"
+                      : "Coach";
+                    const studentName = booking.students
+                      ? `${booking.students.first_name ?? ""} ${booking.students.last_name ?? ""}`.trim() || "Student"
+                      : "Student";
+
+                    return (
+                      <div key={booking.id} className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5 flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+                          <div>
+                            <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Student</p>
+                            <p className="text-white text-sm font-semibold truncate">{studentName}</p>
+                          </div>
+                          <div>
+                            <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Coach</p>
+                            <p className="text-white text-sm font-semibold truncate">{coachName}</p>
+                          </div>
+                          <div>
+                            <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Slot</p>
+                            <p className="text-white text-sm font-semibold truncate">
+                              {WEEKDAYS[booking.weekday] ?? "Weekly"} {booking.start_time.slice(0, 5)}-{booking.end_time.slice(0, 5)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Timezone</p>
+                            <p className="text-white text-sm font-semibold truncate">{booking.timezone}</p>
+                          </div>
+                          <div>
+                            <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Sessions</p>
+                            <p className="text-white text-sm font-semibold">{booking.num_sessions ?? 0}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleApprovePendingBooking(booking.id)}
+                          disabled={approvingBookingId === booking.id}
+                          className="shrink-0 px-4 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors"
+                        >
+                          {approvingBookingId === booking.id ? "Approving..." : "Approve"}
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
 
