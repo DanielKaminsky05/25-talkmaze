@@ -64,8 +64,11 @@ export default function TokenBar({
             {visibleTokens.map((token) => (
               <div
                 key={token.id}
-                className="mx-auto w-8 h-8 flex items-center justify-center text-xl leading-none"
+                className="relative group mx-auto w-8 h-8 flex items-center justify-center text-xl leading-none"
               >
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#2B4257] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  {token.title}
+                </div>
                 <TokenIcon
                   iconUrl={token.icon_url}
                   title={token.title}

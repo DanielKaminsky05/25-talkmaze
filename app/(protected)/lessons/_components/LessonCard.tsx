@@ -7,18 +7,17 @@ import { TokenMysteryStar } from "../../components/TokenMysteryStar";
 type Props = {
   lessonNumber: number;
   title: string;
+  tokenTitle?: string | null;
   icon: string | null;
   onClick: () => void;
   isCompleted?: boolean;
   isLocked?: boolean;
 };
 
-/**
- * Clickable card in the lessons grid representing one lesson
- */
 const LessonCard = memo(function LessonCard({
   lessonNumber,
   title,
+  tokenTitle,
   icon,
   onClick,
   isCompleted,
@@ -66,12 +65,17 @@ const LessonCard = memo(function LessonCard({
       </div>
 
       {/* Reward token for the lesson */}
-      <div className="absolute top-4 right-5 w-14 h-14 rounded-xl bg-white text-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-        {isLocked ? (
-          <TokenMysteryStar className="w-9 h-9 block" />
-        ) : (
-          <TokenIcon iconUrl={icon} title={title} className="w-9 h-9 object-contain" />
-        )}
+      <div className="absolute top-4 right-5 group/token">
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#2B4257] text-white text-xs px-2 py-1 rounded opacity-0 group-hover/token:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+          {isLocked ? "???" : (tokenTitle ?? title)}
+        </div>
+        <div className="w-14 h-14 rounded-xl bg-white text-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+          {isLocked ? (
+            <TokenMysteryStar className="w-9 h-9 block" />
+          ) : (
+            <TokenIcon iconUrl={icon} title={title} className="w-9 h-9 object-contain" />
+          )}
+        </div>
       </div>
 
       {/* Lesson title */}

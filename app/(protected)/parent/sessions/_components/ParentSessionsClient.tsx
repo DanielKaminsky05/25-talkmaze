@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Calendar from "../../components/calendar/Calendar";
+import Calendar from "../../../components/calendar/Calendar";
 import { CalendarDays, ChevronDown, User } from "lucide-react";
+import AvailabilityModal from "./AvailabilityModal";
 
 // ─── Types (exported so page.tsx can import them) ─────────────────────────────
 
@@ -79,9 +80,14 @@ function StudentFilter({
 }) {
   const [open, setOpen] = useState(false);
 
+<<<<<<< HEAD:app/(protected)/parent/sessions/ParentSessionsClient.tsx
   const selectedStudent_ = selected ? students.find((s) => s.id === selected) : null;
   const label = selectedStudent_
     ? [selectedStudent_.first_name, selectedStudent_.last_name].filter(Boolean).join(" ") || "Student"
+=======
+  const label = selected
+    ? (students.find((s) => s.id === selected)?.name ?? "Student")
+>>>>>>> 025ace20208c45b683c6688675434e7e409453c9:app/(protected)/parent/sessions/_components/ParentSessionsClient.tsx
     : "All Students";
 
   return (
@@ -101,7 +107,10 @@ function StudentFilter({
       {open && (
         <div className="absolute top-full mt-2 right-0 z-20 bg-[#1F2E3B] border border-[#2B4257] rounded-xl shadow-2xl min-w-[160px] overflow-hidden">
           <button
-            onClick={() => { onChange(null); setOpen(false); }}
+            onClick={() => {
+              onChange(null);
+              setOpen(false);
+            }}
             className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
               selected === null
                 ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
@@ -113,7 +122,10 @@ function StudentFilter({
           {students.map((s) => (
             <button
               key={s.id}
-              onClick={() => { onChange(s.id); setOpen(false); }}
+              onClick={() => {
+                onChange(s.id);
+                setOpen(false);
+              }}
               className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                 selected === s.id
                   ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
@@ -138,6 +150,7 @@ interface Props {
 
 export default function ParentSessionsClient({ students, sessions }: Props) {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [showAvailability, setShowAvailability] = useState(false);
 
   const filteredSessions = useMemo(() => {
     if (!selectedStudent) return sessions;
@@ -147,65 +160,88 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
   // ISO strings for all visible sessions so Calendar can render dots
   const sessionDates = useMemo(
     () => filteredSessions.map((s) => s.start_time),
-    [filteredSessions]
+    [filteredSessions],
   );
 
   return (
-    <div className="flex h-full mr-10 mb-6 bg-[#1F2E3B] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] rounded-xl">
-      <div className="w-full mt-[106px] ml-6 flex justify-evenly">
-        {/* ── Calendar ── */}
-        <div className="w-[668px]">
-          <Calendar sessionDates={sessionDates} />
-        </div>
-
-        {/* ── Sessions panel — matches ScheduleSidebar style ── */}
-        <div className="w-[402px] h-[592px] p-5 rounded-[20px] bg-[#B1E7D6] flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-[#1F2E3B] font-semibold">Upcoming Sessions</h1>
-
-            {students.length > 1 && (
-              <StudentFilter
-                students={students}
-                selected={selectedStudent}
-                onChange={setSelectedStudent}
-              />
-            )}
+    <>
+      <div className="flex h-full mr-10 mb-6 bg-[#1F2E3B] shadow-[inset_0_4px_10px_rgba(0,0,0,0.6)] rounded-xl">
+        <div className="w-full mt-[106px] ml-6 flex justify-evenly">
+          {/* ── Calendar ── */}
+          <div className="w-[668px]">
+            <Calendar sessionDates={sessionDates} />
           </div>
 
-          {/* Session list */}
-          <div className="w-full flex flex-1 flex-col gap-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {filteredSessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center gap-2">
-                <CalendarDays size={32} className="text-[#2B4257]/40" />
-                <p className="text-[#2B4257] text-sm font-medium">
-                  No upcoming sessions
-                </p>
-                {selectedStudent && (
-                  <button
-                    onClick={() => setSelectedStudent(null)}
-                    className="text-[#1F2E3B] text-xs underline cursor-pointer mt-1"
-                  >
-                    Show all students
-                  </button>
+          {/* ── Right column: sessions panel + edit availability ── */}
+          <div className="flex flex-col items-end gap-3">
+            {/* Sessions panel */}
+            <div className="w-[402px] h-[592px] p-5 rounded-[20px] bg-[#B1E7D6] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-5">
+                <h1 className="text-[#1F2E3B] font-semibold">
+                  Upcoming Sessions
+                </h1>
+
+                {students.length > 1 && (
+                  <StudentFilter
+                    students={students}
+                    selected={selectedStudent}
+                    onChange={setSelectedStudent}
+                  />
                 )}
               </div>
-            ) : (
-              filteredSessions.map((session) => (
-                <SessionCard key={session.id} session={session} />
-              ))
-            )}
-          </div>
 
-          {/* Session count */}
-          {filteredSessions.length > 0 && (
-            <p className="text-xs text-[#2B4257] text-right mt-3">
-              {filteredSessions.length} session
-              {filteredSessions.length !== 1 ? "s" : ""} scheduled
-            </p>
-          )}
+              {/* Session list */}
+              <div className="w-full flex flex-1 flex-col gap-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {filteredSessions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center gap-2">
+                    <CalendarDays size={32} className="text-[#2B4257]/40" />
+                    <p className="text-[#2B4257] text-sm font-medium">
+                      No upcoming sessions
+                    </p>
+                    {selectedStudent && (
+                      <button
+                        onClick={() => setSelectedStudent(null)}
+                        className="text-[#1F2E3B] text-xs underline cursor-pointer mt-1"
+                      >
+                        Show all students
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredSessions.map((session) => (
+                    <SessionCard key={session.id} session={session} />
+                  ))
+                )}
+              </div>
+
+              {/* Session count */}
+              {filteredSessions.length > 0 && (
+                <p className="text-xs text-[#2B4257] text-right mt-3">
+                  {filteredSessions.length} session
+                  {filteredSessions.length !== 1 ? "s" : ""} scheduled
+                </p>
+              )}
+            </div>
+
+            {/* Edit Availability — below the panel, right-aligned */}
+            <button
+              onClick={() => setShowAvailability(true)}
+              className="px-5 py-2 rounded-xl bg-[#65CFAD] text-[#1F2E3B] text-sm font-semibold hover:bg-[#4fbfa0] transition-colors cursor-pointer"
+            >
+              Edit Availability
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showAvailability && (
+        <AvailabilityModal
+          students={students}
+          initialStudentId={selectedStudent}
+          onClose={() => setShowAvailability(false)}
+        />
+      )}
+    </>
   );
 }

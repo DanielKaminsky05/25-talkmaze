@@ -71,7 +71,7 @@ export default async function ParentDashboard() {
       console.error(
         "[ParentDashboard] Failed to fetch sessions:",
         sessionsError.message,
-        { code: sessionsError.code, details: sessionsError.details }
+        { code: sessionsError.code, details: sessionsError.details },
       );
     }
     schedule = (sessions ?? []).map((session: any) => ({
@@ -97,11 +97,19 @@ export default async function ParentDashboard() {
     const { data: attendanceRaw } = await supabase
       .from("session_attendance")
       .select(
-        "student_id, session_date, status, coaches(first_name, last_name)",
+        "student_id, session_date, session_id, status, coaches(first_name, last_name)",
       )
       .in("student_id", studentIds)
       .order("session_date", { ascending: false })
       .limit(100);
+
+    // Hide sessions that have already been marked by a coach
+    const markedSessionIds = new Set(
+      (attendanceRaw ?? [])
+        .filter((r: any) => r.session_id != null)
+        .map((r: any) => r.session_id as number),
+    );
+    schedule = schedule.filter((s) => !markedSessionIds.has(Number(s.id)));
 
     for (const student of students) {
       // Get this student's records (newest first), cap at 12

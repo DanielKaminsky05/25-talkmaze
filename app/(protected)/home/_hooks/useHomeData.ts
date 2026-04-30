@@ -39,6 +39,7 @@ export function useHomeData() {
   const [sessions, setSessions] = useState<Appointment[]>([]);
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
+  const [courseBadgeUrl, setCourseBadgeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -61,20 +62,36 @@ export function useHomeData() {
           .gte("start_time", now)
           .order("start_time", { ascending: true });
 
+        const sessionIds = (sessionsRaw ?? []).map((s: any) => s.id as number);
+        let markedSessionIds = new Set<number>();
+        if (sessionIds.length > 0) {
+          const { data: attendanceRaw } = await supabase
+            .from("session_attendance")
+            .select("session_id")
+            .in("session_id", sessionIds);
+          markedSessionIds = new Set(
+            (attendanceRaw ?? [])
+              .map((r: any) => r.session_id as number)
+              .filter(Boolean),
+          );
+        }
+
         setSessions(
-          (sessionsRaw ?? []).map((s: any) => ({
-            id: s.id.toString(),
-            title: "Public Speaking Session",
-            start_date: s.start_time,
-            end_date: s.end_time,
-            studentName: s.students
-              ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim()
-              : "",
-            coachName: s.coaches
-              ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
-              : "",
-            status: "scheduled",
-          })),
+          (sessionsRaw ?? [])
+            .filter((s: any) => !markedSessionIds.has(s.id))
+            .map((s: any) => ({
+              id: s.id.toString(),
+              title: "Public Speaking Session",
+              start_date: s.start_time,
+              end_date: s.end_time,
+              studentName: s.students
+                ? `${s.students.first_name ?? ""} ${s.students.last_name ?? ""}`.trim()
+                : "",
+              coachName: s.coaches
+                ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
+                : "",
+              status: "scheduled",
+            })),
         );
 
         const { data: assignment } = await supabase
@@ -89,22 +106,33 @@ export function useHomeData() {
           return;
         }
 
-        const [{ data: courseHeadData }, { data: lessonsRaw }, { data: progressData }] =
-          await Promise.all([
-            supabase
-              .from("courses")
-              .select("head_lesson_id")
-              .eq("id", assignment.course_id)
-              .single(),
-            supabase
-              .from("lessons")
-              .select("id, title, slug, next_lesson, slide_show_url")
-              .eq("course_id", assignment.course_id),
-            supabase
-              .from("lesson_progress")
-              .select("lesson_id, status")
-              .eq("student_id", profile.id),
-          ]);
+        const [
+          { data: courseHeadData },
+          { data: lessonsRaw },
+          { data: progressData },
+          { data: badgeData },
+        ] = await Promise.all([
+          supabase
+            .from("courses")
+            .select("head_lesson_id")
+            .eq("id", assignment.course_id)
+            .single(),
+          supabase
+            .from("lessons")
+            .select("id, title, slug, next_lesson, slide_show_url")
+            .eq("course_id", assignment.course_id),
+          supabase
+            .from("lesson_progress")
+            .select("lesson_id, status")
+            .eq("student_id", profile.id),
+          supabase
+            .from("badges")
+            .select("image_url")
+            .eq("course_id", assignment.course_id)
+            .maybeSingle(),
+        ]);
+
+        setCourseBadgeUrl(badgeData?.image_url ?? null);
 
         // Traverse linked list from head to get lessons in display order
         const lessonMap = new Map((lessonsRaw ?? []).map((l) => [l.id, l]));
@@ -117,7 +145,8 @@ export function useHomeData() {
           cur = node.next_lesson;
         }
         // Fallback if head is not set or list is broken
-        const lessons: LessonSummary[] = orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
+        const lessons: LessonSummary[] =
+          orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
         const completedIds = new Set(
           (progressData ?? [])
             .filter((r: any) => r.status === 3)
@@ -212,5 +241,6 @@ export function useHomeData() {
     sessions,
     courseTokens,
     earnedTokenIds,
+    courseBadgeUrl,
   };
 }

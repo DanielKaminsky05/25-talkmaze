@@ -24,6 +24,7 @@ export default function LessonDetailPage() {
     preLessonUrl,
     postLessonUrl,
     slideShowUrl,
+    slidePptxUrl,
     courseTokens,
     earnedTokenIds,
     isLocked,
@@ -31,6 +32,7 @@ export default function LessonDetailPage() {
     improvementFeedback,
     preLessonDesc,
     postLessonDesc,
+    postLessonTasksEnabled,
   } = useLessonDetail(slug);
 
   useEffect(() => {
@@ -107,19 +109,12 @@ export default function LessonDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TaskCard
               title="Pre-Lesson Work"
-              instruction={
-                lesson.description ??
-                "Complete the pre-lesson work for this lesson."
-              }
               url={preLessonUrl}
               richDescription={preLessonDesc}
             />
             <TaskCard
               title="Post-Lesson Work"
-              instruction={
-                lesson.description ??
-                "Complete the post-lesson work for this lesson."
-              }
+              optional={!postLessonTasksEnabled}
               url={postLessonUrl}
               richDescription={postLessonDesc}
             />
@@ -127,10 +122,35 @@ export default function LessonDetailPage() {
         </div>
 
         <div className="mt-8 w-full">
-          <div className="bg-linear-to-r from-[#9b72cb] to-[#8659c2] rounded-t-3xl flex items-center px-12 h-[60px]">
+          <div className="bg-linear-to-r from-[#9b72cb] to-[#8659c2] rounded-t-3xl flex items-center justify-between px-12 h-[60px]">
             <span className="text-white font-semibold text-lg">
               Lesson Slideshow
             </span>
+            {(slidePptxUrl || slideShowUrl) && (
+              <a
+                href={`${(slidePptxUrl ?? slideShowUrl)}?download=`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium transition-colors"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 1v9M8 10l-3-3M8 10l3-3M2 12v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {slidePptxUrl ? "Download PPTX" : "Download PDF"}
+              </a>
+            )}
           </div>
           {slideShowUrl ? (
             <SlideshowViewer url={slideShowUrl} />

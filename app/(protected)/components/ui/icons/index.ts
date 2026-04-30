@@ -1,5 +1,6 @@
 export { AttendanceMysteryStarIcon } from "./AttendanceMysteryStarIcon";
 export { AttendedIcon } from "./AttendedIcon";
+export { CaretIcon } from "./CaretIcon";
 export { EditIcon } from "./EditIcon";
 export { HomeIcon } from "./HomeIcon";
 export { LessonsIcon } from "./LessonsIcon";

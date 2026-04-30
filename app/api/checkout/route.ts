@@ -76,6 +76,21 @@ export async function POST(request: Request) {
       studentId = student.id;
     }
 
+    // Block checkout if the student already has an active subscription
+    const { data: existingSub } = await supabase
+      .from("student_subscriptions")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (existingSub) {
+      return NextResponse.json(
+        { error: "Student already has an active subscription" },
+        { status: 409 },
+      );
+    }
+
     // Look up the account's existing Stripe customer ID,
     // or create a new Stripe customer
     const { data: account } = await supabase
@@ -96,16 +111,26 @@ export async function POST(request: Request) {
         .eq("id", user.id);
     }
 
+    // Fetch saved contact info to pre-fill the checkout form for returning customers
+    const customer = (await stripe.customers.retrieve(
+      customerId,
+    )) as Stripe.Customer;
+    const prefill = {
+      name: customer.name ?? "",
+      email: customer.email ?? "",
+      phone: customer.phone ?? "",
+    };
+
     // When a user navigate to the /checkouts page, the /api/checkout is
-    // called, it creates an "incomplete subscription" Stripe client secret to 
-    // be mounted, awaiting to be submitted when to user fills out and submits 
+    // called, it creates an "incomplete subscription" Stripe client secret to
+    // be mounted, awaiting to be submitted when to user fills out and submits
     // the checkout form.
-    // A problem may occur if the user navigates back via the browser back 
+    // A problem may occur if the user navigates back via the browser back
     // button, router.back(). In Next.js App Router, the page can remain in the
     // Router Cache. And when the user returns to the checkout page with and
-    // submits the checkout form, it can cause cached background client  
+    // submits the checkout form, it can cause cached background client
     // components to remount, submitting all danging "incomplete subscriptions".
-    
+
     // This is why the below is added, to clean all previous "incomplete subs."
     const existingIncomplete = await stripe.subscriptions.list({
       customer: customerId,
@@ -157,7 +182,11 @@ export async function POST(request: Request) {
 
     // Return the client secret(for frontend to mount the Stripe PaymentElement)
     // and the subscription ID (used to poll/confirm subscription status)
-    return NextResponse.json({ clientSecret, subscriptionId: subscription.id });
+    return NextResponse.json({
+      clientSecret,
+      subscriptionId: subscription.id,
+      prefill,
+    });
   } catch (err: unknown) {
     console.error("Stripe Error:", err);
     const errorMessage =

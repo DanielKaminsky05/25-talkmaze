@@ -25,6 +25,7 @@ export default function Home() {
     sessions,
     courseTokens,
     earnedTokenIds,
+    courseBadgeUrl,
   } = useHomeData();
 
   if (loading) {
@@ -40,14 +41,17 @@ export default function Home() {
             total={progress.total}
           />
 
-          <CurrentLessonBanner
-            lesson={currentLesson}
-            onClick={
-              currentLesson
-                ? () => router.push(lessonPath(currentLesson))
-                : undefined
-            }
-          />
+          <div className="w-full aspect-16/7">
+            <CurrentLessonBanner
+              lesson={currentLesson}
+              courseBadgeUrl={courseBadgeUrl}
+              onClick={
+                currentLesson
+                  ? () => router.push(lessonPath(currentLesson))
+                  : undefined
+              }
+            />
+          </div>
 
           <div className="grid w-full gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-2">
             {prevLesson && (
