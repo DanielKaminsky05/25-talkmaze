@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     id: `${coach_id}_${student_id}`,
     coach_id: coach_id,
     student_id: student_id,
-    coaches: { name: coachData ? `${coachData.first_name || ""} ${coachData.last_name || ""}`.trim() : null },
-    students: { name: studentData ? `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim() : null }
+    coaches: { first_name: coachData?.first_name ?? null, last_name: coachData?.last_name ?? null },
+    students: { first_name: studentData?.first_name ?? null, last_name: studentData?.last_name ?? null }
   }
 
 

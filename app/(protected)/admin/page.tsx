@@ -49,15 +49,15 @@ function StudentListItem({ student, isSelected, onClick }: { student: Student; i
         isSelected ? "bg-[#B1E7D6]/10 border-l-[#B1E7D6]" : "border-l-transparent hover:bg-white/5"
       }`}
     >
-      <Avatar letter={student.name.charAt(0) || "?"} />
+      <Avatar letter={(student.first_name ?? student.last_name ?? "?").charAt(0)} />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium truncate ${isSelected ? "text-[#B1E7D6]" : "text-white"}`}>
-          {student.name || "Unknown"}
+          {[student.first_name, student.last_name].filter(Boolean).join(" ") || "Unknown"}
         </p>
         <p className="text-white/35 text-xs truncate font-mono">#{student.id.slice(0, 14)}</p>
       </div>
-      {student.remaining_lessons != null && (
-        <span className="text-xs font-semibold text-[#B1E7D6]/60 shrink-0">{student.remaining_lessons}</span>
+      {student.grade && (
+        <span className="text-xs font-medium text-[#B1E7D6]/50 shrink-0">{student.grade}</span>
       )}
     </button>
   );
@@ -189,15 +189,22 @@ export default function AdminPage() {
             ? data.map((s: any) => ({
                 id: String(s.id),
                 account_id: String(s.account_id),
-                name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
+                first_name: s.first_name ?? null,
+                last_name: s.last_name ?? null,
+                avatar_url: s.avatar_url ?? null,
+                bio: s.bio ?? null,
                 created_at: s.created_at ?? "",
                 updated_at: s.updated_at ?? "",
+                date_of_birth: s.date_of_birth ?? null,
+                grade: s.grade ?? null,
                 lesson_space_id: s.lesson_space_id ?? null,
-                profile_access_pin: s.profile_access_pin ?? null,
-                teach_works_url: s.teach_works_url ?? null,
-                lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
                 lesson_space_student_link: s.lesson_space_student_link ?? null,
-                remaining_lessons: s.remaining_lessons ?? null,
+                lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
+                location: s.location ?? null,
+                notes: s.notes ?? null,
+                post_lesson_days: s.post_lesson_days ?? null,
+                post_lesson_tasks_enabled: s.post_lesson_tasks_enabled ?? null,
+                webhook_room_id: s.webhook_room_id ?? null,
               }))
             : [],
         );
@@ -341,10 +348,12 @@ export default function AdminPage() {
     const q = studentSearch.toLowerCase();
     return students.filter(
       (s) =>
-        s.name.toLowerCase().includes(q) ||
+        (s.first_name ?? "").toLowerCase().includes(q) ||
+        (s.last_name ?? "").toLowerCase().includes(q) ||
         s.id.toLowerCase().includes(q) ||
         s.account_id.toLowerCase().includes(q) ||
-        (s.profile_access_pin ?? "").toLowerCase().includes(q),
+        (s.grade ?? "").toLowerCase().includes(q) ||
+        (s.location ?? "").toLowerCase().includes(q),
     );
   }, [students, studentSearch]);
 
@@ -614,11 +623,13 @@ export default function AdminPage() {
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#B1E7D6]/20 flex items-center justify-center shrink-0">
                       <span className="text-[#B1E7D6] text-2xl font-bold">
-                        {selectedStudent.name.charAt(0).toUpperCase()}
+                        {(selectedStudent.first_name ?? selectedStudent.last_name ?? "#").charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <h2 className="text-white text-xl font-bold leading-tight">{selectedStudent.name}</h2>
+                      <h2 className="text-white text-xl font-bold leading-tight">
+                        {[selectedStudent.first_name, selectedStudent.last_name].filter(Boolean).join(" ") || "Unknown"}
+                      </h2>
                       <p className="text-white/35 text-xs mt-0.5 font-mono">#{selectedStudent.id}</p>
                     </div>
                   </div>
@@ -633,13 +644,13 @@ export default function AdminPage() {
                 {/* Info chips */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
-                    { label: "Remaining Lessons", value: selectedStudent.remaining_lessons ?? "—", accent: "text-[#B1E7D6]" },
-                    { label: "Account ID", value: selectedStudent.account_id.slice(0, 12) + "…", accent: "text-white/70" },
-                    { label: "PIN", value: selectedStudent.profile_access_pin ?? "—", accent: "text-white/70" },
-                  ].map(({ label, value, accent }) => (
+                    { label: "Grade", value: selectedStudent.grade ?? "—" },
+                    { label: "Location", value: selectedStudent.location ?? "—" },
+                    { label: "Date of Birth", value: selectedStudent.date_of_birth ?? "—" },
+                  ].map(({ label, value }) => (
                     <div key={label} className="bg-[#1F2E3B] rounded-xl p-3 border border-white/5">
                       <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">{label}</p>
-                      <p className={`${accent} text-sm font-semibold truncate`}>{String(value)}</p>
+                      <p className="text-white/70 text-sm font-semibold truncate">{value}</p>
                     </div>
                   ))}
                 </div>

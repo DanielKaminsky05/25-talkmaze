@@ -44,14 +44,16 @@ export default function CoachAssignmentCard({
     }
   }, [isDropdownOpen]);
 
+  const studentDisplayName = (s: Student) =>
+    [s.first_name, s.last_name].filter(Boolean).join(" ") || `#${s.id}`;
+
   const filteredAvailable = availableStudents.filter((s) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      s.name.toLowerCase().includes(q) ||
+      studentDisplayName(s).toLowerCase().includes(q) ||
       s.id.toLowerCase().includes(q) ||
-      s.account_id.toLowerCase().includes(q) ||
-      (s.profile_access_pin ?? "").toLowerCase().includes(q)
+      s.account_id.toLowerCase().includes(q)
     );
   });
 
@@ -114,10 +116,9 @@ export default function CoachAssignmentCard({
             <ul className="space-y-1">
               {assignedStudents.map((assignment) => {
                 const isRemoving = removingAssignmentId === assignment.id;
-                const studentName =
-                  assignment.students?.name
-                    ? assignment.students.name
-                    : `Student #${assignment.student_id}`;
+                const studentName = assignment.students
+                  ? [assignment.students.first_name, assignment.students.last_name].filter(Boolean).join(" ") || `Student #${assignment.student_id}`
+                  : `Student #${assignment.student_id}`;
                 return (
                   <li
                     key={assignment.id}
@@ -187,7 +188,7 @@ export default function CoachAssignmentCard({
                             disabled={isAdding}
                             className="w-full text-left px-3 py-2 text-xs text-white/80 hover:bg-[#B1E7D6]/10 hover:text-[#B1E7D6] transition-colors disabled:opacity-50 flex items-center justify-between gap-2"
                           >
-                            <span className="truncate">{student.name}</span>
+                            <span className="truncate">{studentDisplayName(student)}</span>
                             {isAdding && (
                               <svg className="animate-spin w-3 h-3 flex-shrink-0 text-[#B1E7D6]" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

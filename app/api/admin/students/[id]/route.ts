@@ -8,38 +8,54 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await req.json();
-    const studentData = body.student;
+    const s = body.student;
+
+    if (!s || typeof s !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const EDITABLE_FIELDS = [
+      "first_name",
+      "last_name",
+      "date_of_birth",
+      "grade",
+      "location",
+      "bio",
+      "avatar_url",
+      "lesson_space_id",
+      "lesson_space_student_link",
+      "lesson_space_teacher_link",
+      "post_lesson_days",
+      "post_lesson_tasks_enabled",
+      "notes",
+    ] as const;
+
+    const payload: Record<string, unknown> = {};
+    for (const field of EDITABLE_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(s, field)) {
+        payload[field] = s[field] ?? null;
+      }
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
+    }
 
     const supabase = await createClient();
 
-    const supabasePayload: Record<string, unknown> = {};
+    const { data: updated, error } = await supabase
+      .from("students")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
 
-    if (studentData.first_name !== undefined)
-      supabasePayload.first_name = studentData.first_name;
-    if (studentData.last_name !== undefined)
-      supabasePayload.last_name = studentData.last_name;
-    if (studentData.grade !== undefined)
-      supabasePayload.grade = String(studentData.grade);
-    if (studentData.avatar_url !== undefined)
-        supabasePayload.avatar_url = studentData.avatar_url;
-
-    if (Object.keys(supabasePayload).length > 0) {
-      const { data: updated, error: supabaseError } = await supabase
-        .from("students")
-        .update(supabasePayload)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (supabaseError) {
-        console.error("Supabase update failed:", supabaseError.message);
-        return NextResponse.json({ error: supabaseError.message }, { status: 500 });
-      }
-
-      return NextResponse.json(updated);
+    if (error) {
+      console.error("Supabase update failed:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ message: "No changes provided" });
+    return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Update failed" },

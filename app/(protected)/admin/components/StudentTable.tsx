@@ -3,15 +3,22 @@
 export type Student = {
   id: string;
   account_id: string;
-  name: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
   created_at: string;
   updated_at: string;
+  date_of_birth: string | null;
+  grade: string | null;
   lesson_space_id: string | null;
-  profile_access_pin: string | null;
-  teach_works_url: string | null;
-  lesson_space_teacher_link: string | null;
   lesson_space_student_link: string | null;
-  remaining_lessons: number | null;
+  lesson_space_teacher_link: string | null;
+  location: string | null;
+  notes: string | null;
+  post_lesson_days: number | null;
+  post_lesson_tasks_enabled: boolean | null;
+  webhook_room_id: string | null;
 };
 
 interface StudentTableProps {
@@ -32,10 +39,10 @@ export default function StudentTable({ students = [], onStudentClick }: StudentT
               Student ID
             </th>
             <th className="px-4 py-3 text-left text-[10px] font-semibold text-[#B1E7D6] uppercase tracking-widest">
-              Account ID
+              Grade
             </th>
             <th className="px-4 py-3 text-left text-[10px] font-semibold text-[#B1E7D6] uppercase tracking-widest">
-              Remaining Lessons
+              Location
             </th>
           </tr>
         </thead>
@@ -48,19 +55,11 @@ export default function StudentTable({ students = [], onStudentClick }: StudentT
                 className="hover:bg-[#2B4257]/60 transition-colors cursor-pointer group"
               >
                 <td className="px-4 py-3 text-sm text-white font-medium group-hover:text-[#B1E7D6] transition-colors">
-                  {student.name}
+                  {[student.first_name, student.last_name].filter(Boolean).join(" ") || "—"}
                 </td>
                 <td className="px-4 py-3 text-sm text-white/60 font-mono">{student.id}</td>
-                <td className="px-4 py-3 text-sm text-white/60 font-mono">{student.account_id}</td>
-                <td className="px-4 py-3">
-                  {student.remaining_lessons != null ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#B1E7D6]/10 text-[#B1E7D6]">
-                      {student.remaining_lessons}
-                    </span>
-                  ) : (
-                    <span className="text-white/25 text-sm">—</span>
-                  )}
-                </td>
+                <td className="px-4 py-3 text-sm text-white/60">{student.grade ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-white/60">{student.location ?? "—"}</td>
               </tr>
             ))
           ) : (
