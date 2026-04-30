@@ -249,21 +249,30 @@ export default function AdminPage() {
     setStudentEventsLoading(true);
     const supabase = createClient();
     supabase
-      .from("booked_slots")
-      .select("*")
+      .from("sessions")
+      .select("id, start_time, end_time, coaches(first_name, last_name)")
       .eq("student_id", selectedStudent.id)
-      .then(({ data }) => {
-        setStudentEvents(
-          (data ?? []).map((s) => ({
-            id: s.id,
-            title: "Lesson",
-            start: s.start_time,
-            end: s.end_time,
-            backgroundColor: "#B1E7D6",
-            borderColor: "transparent",
-            textColor: "#1F2E3B",
-          })),
-        );
+      .order("start_time", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error("Student sessions fetch error:", error);
+        const events: EventInput[] = (data ?? [])
+          .filter((s: any) => s.start_time)
+          .map((s: any) => {
+            const coach = s.coaches;
+            const title = coach
+              ? `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Session"
+              : "Session";
+            return {
+              id: String(s.id),
+              title,
+              start: s.start_time,
+              end: s.end_time ?? undefined,
+              backgroundColor: "#B1E7D6",
+              borderColor: "transparent",
+              textColor: "#1F2E3B",
+            };
+          });
+        setStudentEvents(events);
         setStudentEventsLoading(false);
       });
   }, [selectedStudent?.id]);

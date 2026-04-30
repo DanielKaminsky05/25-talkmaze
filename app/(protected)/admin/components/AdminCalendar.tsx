@@ -46,8 +46,8 @@ export default function AdminCalendar({
         height={calHeight}
         eventDisplay="block"
         eventTimeFormat={{ hour: "2-digit", minute: "2-digit", meridiem: "short" }}
-        slotMinTime={isTimeGrid ? "07:00:00" : undefined}
-        slotMaxTime={isTimeGrid ? "21:00:00" : undefined}
+        slotMinTime="07:00:00"
+        slotMaxTime="21:00:00"
         allDaySlot={false}
         nowIndicator
       />
