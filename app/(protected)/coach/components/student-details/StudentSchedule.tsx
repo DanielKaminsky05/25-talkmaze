@@ -22,7 +22,7 @@ interface Session {
   weekday: number;
   start_time: string;
   end_time: string;
-  coach?: { name?: string } | null;
+  coach?: { first_name?: string | null; last_name?: string | null } | null;
 }
 
 interface StudentScheduleProps {
@@ -80,7 +80,7 @@ export default function StudentSchedule({
                     {fmtTime(s.start_time)} – {fmtTime(s.end_time)}
                   </div>
                   <div className="text-gray-500 mt-0.5">
-                    {s.coach?.name || "Coach TBD"}
+                    {[s.coach?.first_name, s.coach?.last_name].filter(Boolean).join(" ") || "Coach TBD"}
                   </div>
                 </div>
               ))}

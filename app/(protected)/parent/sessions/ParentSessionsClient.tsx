@@ -8,7 +8,8 @@ import { CalendarDays, ChevronDown, User } from "lucide-react";
 
 export interface StudentProp {
   id: string;
-  name: string;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url: string | null;
 }
 
@@ -78,10 +79,10 @@ function StudentFilter({
 }) {
   const [open, setOpen] = useState(false);
 
-  const label =
-    selected
-      ? students.find((s) => s.id === selected)?.name ?? "Student"
-      : "All Students";
+  const selectedStudent_ = selected ? students.find((s) => s.id === selected) : null;
+  const label = selectedStudent_
+    ? [selectedStudent_.first_name, selectedStudent_.last_name].filter(Boolean).join(" ") || "Student"
+    : "All Students";
 
   return (
     <div className="relative">
@@ -119,7 +120,7 @@ function StudentFilter({
                   : "text-white hover:bg-[#142535]"
               }`}
             >
-              {s.name}
+              {[s.first_name, s.last_name].filter(Boolean).join(" ") || "Student"}
             </button>
           ))}
         </div>

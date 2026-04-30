@@ -10,5 +10,6 @@ export interface Assignment {
   students?: {
     first_name: string | null;
     last_name: string | null;
+    account_id: string | null;
   };
 }

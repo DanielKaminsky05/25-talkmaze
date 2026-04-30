@@ -126,7 +126,12 @@ export default function CoachAssignmentCard({
                       isRemoving ? "opacity-40" : "bg-[#1F2E3B]/40 hover:bg-[#1F2E3B]/60"
                     }`}
                   >
-                    <span className="text-sm text-white/80 truncate">{studentName}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-white/80 truncate">{studentName}</p>
+                      {assignment.students?.account_id && (
+                        <p className="text-xs text-white/35 font-mono truncate">{assignment.students.account_id}</p>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleRemove(assignment.id)}
                       disabled={isRemoving}

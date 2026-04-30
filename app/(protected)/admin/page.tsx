@@ -56,9 +56,6 @@ function StudentListItem({ student, isSelected, onClick }: { student: Student; i
         </p>
         <p className="text-white/35 text-xs truncate font-mono">#{student.id.slice(0, 14)}</p>
       </div>
-      {student.grade && (
-        <span className="text-xs font-medium text-[#B1E7D6]/50 shrink-0">{student.grade}</span>
-      )}
     </button>
   );
 }
