@@ -8,22 +8,22 @@ const STATUS_BUTTONS: {
   label: string;
   activeClass: string;
 }[] = [
-  {
-    status: "attended",
-    label: "Attended",
-    activeClass: "bg-emerald-600 text-white border-emerald-600",
-  },
-  {
-    status: "missed",
-    label: "Missed",
-    activeClass: "bg-red-500 text-white border-red-500",
-  },
-  {
-    status: "cancelled",
-    label: "Cancelled",
-    activeClass: "bg-gray-400 text-white border-gray-400",
-  },
-];
+    {
+      status: "attended",
+      label: "Attended",
+      activeClass: "bg-emerald-600 text-white border-emerald-600",
+    },
+    {
+      status: "missed",
+      label: "Missed",
+      activeClass: "bg-red-500 text-white border-red-500",
+    },
+    {
+      status: "cancelled",
+      label: "Cancelled",
+      activeClass: "bg-gray-400 text-white border-gray-400",
+    },
+  ];
 
 const STATUS_DOT: Record<AttendanceStatus, string> = {
   attended: "bg-emerald-500",
@@ -54,10 +54,6 @@ interface Session {
   weekday: number;
   start_time: string;
   end_time: string;
-<<<<<<< HEAD
-  coach?: { first_name?: string | null; last_name?: string | null } | null;
-=======
->>>>>>> 025ace20208c45b683c6688675434e7e409453c9
 }
 
 interface StudentScheduleProps {
@@ -101,34 +97,13 @@ export default function StudentSchedule({
         const isSubmitting = submittingSessionId === s.id;
 
         return (
-<<<<<<< HEAD
-          <div key={day}>
-            <p className="text-xs font-semibold text-[#2B4257]/60 uppercase tracking-wider mb-2">
-              {day}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {daySessions.map((s) => (
-                <div
-                  key={s.id}
-                  className="bg-white border border-[#2B4257]/10 rounded-lg px-3 py-2 text-xs shadow-sm"
-                >
-                  <div className="font-medium text-gray-800">
-                    {fmtTime(s.start_time)} – {fmtTime(s.end_time)}
-                  </div>
-                  <div className="text-gray-500 mt-0.5">
-                    {[s.coach?.first_name, s.coach?.last_name].filter(Boolean).join(" ") || "Coach TBD"}
-                  </div>
-                </div>
-              ))}
-=======
           <div
             key={s.id}
             onClick={() => setExpandedId(isExpanded ? null : s.id)}
-            className={`bg-white border rounded-lg px-3 py-2.5 text-xs shadow-sm cursor-pointer transition-all select-none ${
-              isExpanded
-                ? "border-[#2B4257]/30 ring-1 ring-[#2B4257]/10"
-                : "border-[#2B4257]/10 hover:border-[#2B4257]/25"
-            }`}
+            className={`bg-white border rounded-lg px-3 py-2.5 text-xs shadow-sm cursor-pointer transition-all select-none ${isExpanded
+              ? "border-[#2B4257]/30 ring-1 ring-[#2B4257]/10"
+              : "border-[#2B4257]/10 hover:border-[#2B4257]/25"
+              }`}
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -144,7 +119,6 @@ export default function StudentSchedule({
                   className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[currentStatus]}`}
                 />
               )}
->>>>>>> 025ace20208c45b683c6688675434e7e409453c9
             </div>
 
             {isExpanded && onMarkAttendance && (
@@ -157,11 +131,10 @@ export default function StudentSchedule({
                     key={status}
                     disabled={isSubmitting}
                     onClick={() => onMarkAttendance(s, status)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
-                      currentStatus === status
-                        ? activeClass
-                        : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
-                    }`}
+                    className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${currentStatus === status
+                      ? activeClass
+                      : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
+                      }`}
                   >
                     {label}
                   </button>
