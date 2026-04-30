@@ -27,6 +27,104 @@ function timeStringToMinutes(time: string) {
   return hours * 60 + minutes;
 }
 
+function minutesToTimeString(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+type AvailabilityInterval = {
+  weekday: number;
+  start: number;
+  end: number;
+};
+
+function toAvailabilityIntervals(
+  rows: {
+    weekday: number | null;
+    start_time: string | null;
+    end_time: string | null;
+    start_time_new: string | null;
+    end_time_new: string | null;
+  }[] | null,
+) {
+  return (rows ?? [])
+    .map((slot) => {
+      const start = normalizeAvailabilityTime(slot.start_time_new ?? slot.start_time);
+      const end = normalizeAvailabilityTime(slot.end_time_new ?? slot.end_time);
+      if (slot.weekday == null || !start || !end) return null;
+      return {
+        weekday: slot.weekday,
+        start: timeStringToMinutes(start),
+        end: timeStringToMinutes(end),
+      };
+    })
+    .filter((slot): slot is AvailabilityInterval => !!slot && slot.start < slot.end);
+}
+
+function intervalContains(intervals: AvailabilityInterval[], weekday: number, start: number, end: number) {
+  return intervals.some((interval) => (
+    interval.weekday === weekday &&
+    interval.start <= start &&
+    interval.end >= end
+  ));
+}
+
+function buildAvailabilityEvents(
+  coachAvailability: AvailabilityInterval[],
+  studentAvailability: AvailabilityInterval[],
+) {
+  const events = [];
+
+  for (let weekday = 0; weekday <= 6; weekday++) {
+    const dayCoach = coachAvailability.filter((slot) => slot.weekday === weekday);
+    const dayStudent = studentAvailability.filter((slot) => slot.weekday === weekday);
+    const boundaries = Array.from(
+      new Set([...dayCoach, ...dayStudent].flatMap((slot) => [slot.start, slot.end])),
+    ).sort((a, b) => a - b);
+
+    for (let i = 0; i < boundaries.length - 1; i++) {
+      const start = boundaries[i];
+      const end = boundaries[i + 1];
+      if (start === end) continue;
+
+      const coachCan = intervalContains(dayCoach, weekday, start, end);
+      const studentCan = intervalContains(dayStudent, weekday, start, end);
+      if (!coachCan && !studentCan) continue;
+
+      const variant = coachCan && studentCan
+        ? {
+            title: "Both available",
+            backgroundColor: "#2F8F83",
+            borderColor: "#8CF0DF",
+            textColor: "#F2FFFC",
+          }
+        : studentCan
+          ? {
+              title: "Student available",
+              backgroundColor: "#315F9E",
+              borderColor: "#8DBDFF",
+              textColor: "#F4F8FF",
+            }
+          : {
+              title: "Coach available",
+              backgroundColor: "#1e4535",
+              borderColor: "#65CFAD",
+              textColor: "#65CFAD",
+            };
+
+      events.push({
+        daysOfWeek: [weekday],
+        startTime: minutesToTimeString(start),
+        endTime: minutesToTimeString(end),
+        ...variant,
+      });
+    }
+  }
+
+  return events;
+}
+
 function nextMatchingDateForWeekday(weekday: number) {
   let testDate = dayjs.utc().add(1, "day");
   while (testDate.day() !== weekday) {
@@ -88,11 +186,15 @@ export async function POST(
     return NextResponse.json({ error: "Pending booked slot not found" }, { status: 404 });
   }
 
-  const [{ data: availability }, { data: sessions }, { data: activeSlots }, { data: student }] = await Promise.all([
+  const [{ data: availability }, { data: studentAvailability }, { data: sessions }, { data: activeSlots }, { data: student }] = await Promise.all([
     supabase
       .from("coach_availabilities")
       .select("weekday, start_time, end_time, start_time_new, end_time_new")
       .eq("coach_id", coachId),
+    supabase
+      .from("student_availabilities")
+      .select("weekday, start_time, end_time, start_time_new, end_time_new")
+      .eq("student_id", pendingSlot.student_id),
     supabase
       .from("sessions")
       .select("id, start_time, end_time, student_id, students(first_name, last_name)")
@@ -109,22 +211,10 @@ export async function POST(
       .maybeSingle(),
   ]);
 
-  const availabilityEvents = (availability ?? [])
-    .map((slot) => {
-      const start = normalizeAvailabilityTime(slot.start_time_new ?? slot.start_time);
-      const end = normalizeAvailabilityTime(slot.end_time_new ?? slot.end_time);
-      if (!start || !end) return null;
-      return {
-        daysOfWeek: [slot.weekday ?? 0],
-        startTime: start.slice(0, 5),
-        endTime: end.slice(0, 5),
-        title: "Available",
-        backgroundColor: "#1e4535",
-        borderColor: "#65CFAD",
-        textColor: "#65CFAD",
-      };
-    })
-    .filter(Boolean);
+  const availabilityEvents = buildAvailabilityEvents(
+    toAvailabilityIntervals(availability ?? null),
+    toAvailabilityIntervals(studentAvailability ?? null),
+  );
 
   const existingSessionEvents = (sessions ?? []).map((session: any) => {
     const sessionStudent = session.students;

@@ -989,7 +989,9 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 px-1">
-                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#1e4535] border border-[#65CFAD]" /><span className="text-white/40 text-xs">Available</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#1e4535] border border-[#65CFAD]" /><span className="text-white/40 text-xs">Coach only</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#315F9E] border border-[#8DBDFF]" /><span className="text-white/40 text-xs">Student only</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#2F8F83] border border-[#8CF0DF]" /><span className="text-white/40 text-xs">Both available</span></div>
                           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#B1E7D6]" /><span className="text-white/40 text-xs">Existing</span></div>
                           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#294b63]/60" /><span className="text-white/40 text-xs">Recurring block</span></div>
                           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#F2C14E]" /><span className="text-white/40 text-xs">Proposed</span></div>
