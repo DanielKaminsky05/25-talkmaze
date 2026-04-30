@@ -12,6 +12,7 @@ export async function GET() {
       student_id,
       weekday,
       start_time,
+      start_date,
       end_time,
       timezone,
       status,

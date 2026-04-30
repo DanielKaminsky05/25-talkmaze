@@ -42,6 +42,7 @@ type PendingBooking = {
   timezone: string;
   status: string;
   num_sessions: number | null;
+  start_date: string | null;
   created_at: string;
   coaches?: { first_name: string | null; last_name: string | null } | null;
   students?: { first_name: string | null; last_name: string | null; account_id: string | null } | null;
@@ -52,6 +53,7 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 type PendingBookingForm = {
   coach_id: string;
   weekday: number;
+  start_date: string;
   start_time: string;
   end_time: string;
   timezone: string;
@@ -74,10 +76,16 @@ function timeInputValue(value: string) {
   return value.slice(0, 5);
 }
 
+function weekdayFromDateInput(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  return new Date(`${value}T12:00:00Z`).getUTCDay();
+}
+
 function formFromPendingBooking(booking: PendingBooking): PendingBookingForm {
   return {
     coach_id: booking.coach_id,
     weekday: booking.weekday,
+    start_date: booking.start_date ?? "",
     start_time: timeInputValue(booking.start_time),
     end_time: timeInputValue(booking.end_time),
     timezone: booking.timezone,
@@ -476,6 +484,17 @@ export default function AdminPage() {
         : null,
     [editingBookingForm, editingBookingId, selectedPendingBooking],
   );
+  const pendingPreviewInitialDate = useMemo(() => {
+    const datedEvents = [
+      ...(pendingPreview?.proposedEvents ?? []),
+      ...(pendingPreview?.conflictEvents ?? []),
+    ]
+      .map((event) => (typeof event.start === "string" ? event.start : null))
+      .filter((start): start is string => !!start)
+      .sort();
+
+    return datedEvents[0];
+  }, [pendingPreview]);
 
   useEffect(() => {
     if (activeTab !== "pending" || !selectedPendingBooking || !selectedPendingBookingForm) {
@@ -865,7 +884,7 @@ export default function AdminPage() {
                       <div className="space-y-4">
                         <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
                           <div className="flex flex-col lg:flex-row lg:items-end gap-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 flex-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3 flex-1">
                               <div>
                                 <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Coach</p>
                                 <select
@@ -897,6 +916,20 @@ export default function AdminPage() {
                                     <option key={day} value={index}>{day}</option>
                                   ))}
                                 </select>
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Start date</p>
+                                <input
+                                  type="date"
+                                  value={selectedPendingBookingForm.start_date}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("start_date", e.target.value);
+                                    const weekday = weekdayFromDateInput(e.target.value);
+                                    if (weekday != null) updateEditingBookingForm("weekday", weekday);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
                               </div>
                               <div>
                                 <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Start</p>
@@ -1008,6 +1041,7 @@ export default function AdminPage() {
                               ...(pendingPreview?.conflictEvents ?? []),
                             ]}
                             initialView="timeGridWeek"
+                            initialDate={pendingPreviewInitialDate}
                             loading={pendingPreviewLoading}
                             offsetPx={420}
                           />

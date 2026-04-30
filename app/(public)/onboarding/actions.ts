@@ -365,6 +365,7 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
       timezone: matchingSlot.timezone,
       status: "pending",
       num_sessions: num_classes,
+      start_date: finalStartTimeUTC.tz(matchingSlot.timezone).format("YYYY-MM-DD"),
     });
 
   if (bookedSlotError) {
@@ -387,6 +388,7 @@ type BookedSlotForApproval = {
   timezone: string;
   status: string;
   num_sessions: number | null;
+  start_date: string | null;
 };
 
 type GeneratedSession = TablesInsert<"sessions">;
@@ -413,6 +415,10 @@ function nextMatchingDateForWeekday(weekday: number) {
   return testDate.format("YYYY-MM-DD");
 }
 
+function startDateForBookedSlot(bookedSlot: Pick<BookedSlotForApproval, "weekday" | "start_date">) {
+  return bookedSlot.start_date || nextMatchingDateForWeekday(bookedSlot.weekday);
+}
+
 function timeStringToMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
@@ -426,7 +432,7 @@ async function hasActiveBookedSlotConflict(
   supabase: ReturnType<typeof createServiceRoleClient>,
   bookedSlot: BookedSlotForApproval,
 ) {
-  const anchorDate = nextMatchingDateForWeekday(bookedSlot.weekday);
+  const anchorDate = startDateForBookedSlot(bookedSlot);
   const anchorStartUTC = dayjs.tz(`${anchorDate}T${bookedSlot.start_time}`, bookedSlot.timezone).utc();
   const anchorEndUTC = dayjs.tz(`${anchorDate}T${bookedSlot.end_time}`, bookedSlot.timezone).utc();
 
@@ -500,7 +506,7 @@ export async function approvePendingBookedSlot(bookedSlotId: string) {
     return { success: false, status: 409, error: "This slot now conflicts with an active recurring booking" };
   }
 
-  const localAnchorDate = nextMatchingDateForWeekday(typedSlot.weekday);
+  const localAnchorDate = startDateForBookedSlot(typedSlot);
   const finalStartTimeUTC = dayjs.tz(`${localAnchorDate}T${typedSlot.start_time}`, typedSlot.timezone).utc();
   const durationMinutes = bookedSlotDurationMinutes(typedSlot);
 

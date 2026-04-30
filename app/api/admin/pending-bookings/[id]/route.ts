@@ -21,6 +21,7 @@ export async function PATCH(
   const timezone = typeof body.timezone === "string" ? body.timezone.trim() : "";
   const numSessions = Number(body.num_sessions);
   const coachId = typeof body.coach_id === "string" ? body.coach_id.trim() : "";
+  const startDate = typeof body.start_date === "string" ? body.start_date.trim() : "";
 
   if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
     return NextResponse.json({ error: "Weekday must be between 0 and 6" }, { status: 400 });
@@ -42,6 +43,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Coach is required" }, { status: 400 });
   }
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    return NextResponse.json({ error: "Start date must be a valid date" }, { status: 400 });
+  }
+
+  const startDateWeekday = new Date(`${startDate}T12:00:00Z`).getUTCDay();
+  if (startDateWeekday !== weekday) {
+    return NextResponse.json({ error: "Start date must match the selected weekday" }, { status: 400 });
+  }
+
   const supabase = createServiceRoleClient();
 
   const { data: coach } = await supabase
@@ -59,6 +69,7 @@ export async function PATCH(
     .update({
       coach_id: coachId,
       weekday,
+      start_date: startDate,
       start_time: startTime,
       end_time: endTime,
       timezone,
@@ -72,6 +83,7 @@ export async function PATCH(
       student_id,
       weekday,
       start_time,
+      start_date,
       end_time,
       timezone,
       status,

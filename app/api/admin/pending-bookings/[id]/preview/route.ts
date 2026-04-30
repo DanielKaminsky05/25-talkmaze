@@ -133,6 +133,10 @@ function nextMatchingDateForWeekday(weekday: number) {
   return testDate.format("YYYY-MM-DD");
 }
 
+function startDateForPreview(startDate: string, weekday: number) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(startDate) ? startDate : nextMatchingDateForWeekday(weekday);
+}
+
 function recurringSlotRangeForOccurrence(
   slot: { weekday: number; start_time: string; end_time: string; timezone: string },
   occurrenceStartUTC: dayjs.Dayjs,
@@ -160,6 +164,7 @@ export async function POST(
   const endTime = normalizeTime(body.end_time);
   const timezone = typeof body.timezone === "string" ? body.timezone.trim() : "";
   const numSessions = Number(body.num_sessions);
+  const startDate = typeof body.start_date === "string" ? body.start_date.trim() : "";
 
   if (!coachId) return NextResponse.json({ error: "Coach is required" }, { status: 400 });
   if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
@@ -171,6 +176,9 @@ export async function POST(
   if (!timezone) return NextResponse.json({ error: "Timezone is required" }, { status: 400 });
   if (!Number.isInteger(numSessions) || numSessions <= 0) {
     return NextResponse.json({ error: "Number of sessions must be a positive integer" }, { status: 400 });
+  }
+  if (startDate && new Date(`${startDate}T12:00:00Z`).getUTCDay() !== weekday) {
+    return NextResponse.json({ error: "Start date must match the selected weekday" }, { status: 400 });
   }
 
   const supabase = createServiceRoleClient();
@@ -257,7 +265,7 @@ export async function POST(
     ? `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() || "Proposed"
     : "Proposed";
   const durationMinutes = Math.max(1, timeStringToMinutes(endTime) - timeStringToMinutes(startTime));
-  const anchorDate = nextMatchingDateForWeekday(weekday);
+  const anchorDate = startDateForPreview(startDate, weekday);
   const anchorStart = dayjs.tz(`${anchorDate}T${startTime}`, timezone);
 
   const proposedEvents = [];

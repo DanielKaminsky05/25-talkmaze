@@ -68,6 +68,7 @@ The first candidate that satisfies all checks becomes the matched slot. A `booke
 
 - `status = "pending"`
 - `num_sessions = num_classes`
+- `start_date = first matched occurrence date`
 
 No `sessions` rows are created at this point.
 
@@ -75,7 +76,7 @@ No `sessions` rows are created at this point.
 
 ## Phase 2: Admin Approval
 
-Pending bookings appear in the admin dashboard's Pending tab. Admins can edit the assigned coach, recurring weekday, start time, end time, timezone, and number of sessions while the booking is still pending. The selected pending booking also shows a coach calendar preview with existing availability, existing sessions, proposed sessions, and conflicts.
+Pending bookings appear in the admin dashboard's Pending tab. Admins can edit the assigned coach, start date, recurring weekday, start time, end time, timezone, and number of sessions while the booking is still pending. The selected pending booking also shows a coach calendar preview with existing availability, existing sessions, proposed sessions, and conflicts.
 
 Saving edits does not create sessions or reserve the slot permanently; it only updates the pending `booked_slots` row. Unsaved edits can be previewed, but they must be saved before approval so the approval endpoint finalizes the same values that were previewed.
 
@@ -83,7 +84,7 @@ Admins can also approve a pending booking. There is intentionally no reject flow
 
 On approval:
 
-1. Fetch the pending `booked_slots` row.
+1. Fetch the pending `booked_slots` row, including `start_date`.
 2. Re-check conflicts against active `booked_slots`.
 3. Re-check concrete `sessions` conflicts while generating future weekly sessions.
 4. Insert `num_sessions` session rows.
@@ -92,7 +93,7 @@ On approval:
 
 If the slot now conflicts with an active booking or cannot generate all requested sessions, approval fails and the booking stays pending.
 
-**DST handling:** Rather than adding weeks directly to a UTC timestamp, the algorithm re-interprets the wall-clock time in the booked slot's timezone for each target date. This means a student booked at 3 PM stays at 3 PM locally, regardless of DST transitions.
+**DST handling:** Rather than adding weeks directly to a UTC timestamp, the algorithm starts from `start_date` and re-interprets the wall-clock time in the booked slot's timezone for each target date. This means a student booked at 3 PM stays at 3 PM locally, regardless of DST transitions.
 
 ---
 
