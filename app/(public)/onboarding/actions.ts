@@ -413,6 +413,15 @@ function nextMatchingDateForWeekday(weekday: number) {
   return testDate.format("YYYY-MM-DD");
 }
 
+function timeStringToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function bookedSlotDurationMinutes(bookedSlot: Pick<BookedSlotForApproval, "start_time" | "end_time">) {
+  return Math.max(1, timeStringToMinutes(bookedSlot.end_time) - timeStringToMinutes(bookedSlot.start_time));
+}
+
 async function hasActiveBookedSlotConflict(
   supabase: ReturnType<typeof createServiceRoleClient>,
   bookedSlot: BookedSlotForApproval,
@@ -493,6 +502,7 @@ export async function approvePendingBookedSlot(bookedSlotId: string) {
 
   const localAnchorDate = nextMatchingDateForWeekday(typedSlot.weekday);
   const finalStartTimeUTC = dayjs.tz(`${localAnchorDate}T${typedSlot.start_time}`, typedSlot.timezone).utc();
+  const durationMinutes = bookedSlotDurationMinutes(typedSlot);
 
   const generatedSessions: GeneratedSession[] = [];
   let successfullyBooked = 0;
@@ -507,7 +517,7 @@ export async function approvePendingBookedSlot(bookedSlotId: string) {
     const anchorTimeStr = localAnchor.format('HH:mm:ss');
     const targetDate = dayjs(anchorDateStr).add(weekOffset, 'week').format('YYYY-MM-DD');
     const loopStart = dayjs.tz(`${targetDate}T${anchorTimeStr}`, typedSlot.timezone);
-    const loopEnd = loopStart.add(1, 'hour');
+    const loopEnd = loopStart.add(durationMinutes, 'minute');
 
     const loopStartUTC = loopStart.utc().toISOString();
     const loopEndUTC = loopEnd.utc().toISOString();

@@ -75,7 +75,11 @@ No `sessions` rows are created at this point.
 
 ## Phase 2: Admin Approval
 
-Pending bookings appear in the admin dashboard's Pending tab. Admins can approve a pending booking. There is intentionally no reject flow; unwanted pending rows can remain pending.
+Pending bookings appear in the admin dashboard's Pending tab. Admins can edit the assigned coach, recurring weekday, start time, end time, timezone, and number of sessions while the booking is still pending. The selected pending booking also shows a coach calendar preview with existing availability, existing sessions, proposed sessions, and conflicts.
+
+Saving edits does not create sessions or reserve the slot permanently; it only updates the pending `booked_slots` row. Unsaved edits can be previewed, but they must be saved before approval so the approval endpoint finalizes the same values that were previewed.
+
+Admins can also approve a pending booking. There is intentionally no reject flow; unwanted pending rows can remain pending.
 
 On approval:
 
@@ -117,6 +121,7 @@ If the slot now conflicts with an active booking or cannot generate all requeste
 | No coaches in the database | Returns 200 with `success: false` |
 | No free coach/time found | Returns 200 with `success: false` |
 | Pending `booked_slots` insert fails | Returns 500 |
+| Pending booking edit has invalid time fields | Returns 400 and leaves booking unchanged |
 | Approval conflicts with active recurring booking | Returns 409 and leaves booking pending |
 | Approval cannot generate all requested sessions | Returns 409 and leaves booking pending |
 | Session bulk insert fails | Returns 500 |
