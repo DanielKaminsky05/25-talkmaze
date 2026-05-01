@@ -4,6 +4,7 @@ import ProfileCard from "../components/profiles/ProfileCard";
 import ManageProfilesButton from "../components/profiles/ManageProfilesButton";
 import { selectProfile } from "../../../lib/profile-management/selectProfile";
 import { getCurrentUser } from "@/services/supabase/lib/getCurrentUser";
+import { id } from "zod/locales";
 
 // Profile to select as the "active profile"
 type Profile = {
@@ -26,8 +27,21 @@ async function getProfiles(): Promise<Profile[]> {
     data: { user },
   } = await supabase.auth.getUser();
 
+  
   if (!user) redirect("/login"); // Redirect to login if not authenticated
 
+  const {data: isNew, error: isNewError} = await supabase.from('account').select('new').eq('id',user.id).single();
+
+  if(!isNew || isNewError){
+    redirect("/login")
+  }
+
+  console.log("Inside get all profiles trying to see if isNew")
+  if(isNew.new == true){
+    //redirect to onboarding form
+    console.log("redirecting to onboarding because new account")
+    redirect('/profiles/onboarding')
+  }
   // Fetch parent and student profiles in parallel
   const [{ data: parents }, { data: students }] = await Promise.all([
     supabase

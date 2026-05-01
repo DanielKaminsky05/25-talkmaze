@@ -134,7 +134,7 @@ export default function LoginPage() {
               </button>
 
               <Link
-                href="/signup"
+                href="/signup/minimalSignup"
                 className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity flex items-center justify-center"
               >
                 Create an Account

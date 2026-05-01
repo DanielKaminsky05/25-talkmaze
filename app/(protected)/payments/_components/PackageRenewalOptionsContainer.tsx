@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CaretIcon } from "@/app/(protected)/components/ui/icons";
-
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 interface Plan {
   id: string;
   name: string;
@@ -23,13 +24,26 @@ interface Plan {
 export const PackageRenewaloptionsContainer = ({
   renewalOptions,
   studentId,
+
 }: {
   renewalOptions: Plan[];
   studentId?: string;
+
 }) => {
+
+
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [signUpData, setSignUpData] = useState<any>(null);
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem("signup");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      console.log("Loaded signup:", parsed);
+      setSignUpData(parsed);
+    }
+  }, [])
   // We want to display the plans from lowest cost to highest cost
   const sortedRenewalOptions = renewalOptions.sort(
     (firstPlan, secondPlan) => firstPlan.cents - secondPlan.cents,
@@ -45,9 +59,26 @@ export const PackageRenewaloptionsContainer = ({
       alert("Please select a plan first.");
       return;
     }
-    const studentParam = studentId ? `&studentId=${studentId}` : "";
+    const studentParam = studentId ? `&studentId=${encodeURIComponent(studentId)}` : "";
+
+    let newUserParam = "";
+
+    console.log("package renewable password: " + signUpData.password)
+   console.log("Sending to api checkout:", {
+  priceId: selectedPlan?.stripe_price_id,
+  studentId,
+  pFName: signUpData?.parentFirstName,
+  pLName: signUpData?.parentLastName,
+  sFName: signUpData?.studentFirstName,
+  sLName: signUpData?.studentLastName,
+  email: signUpData?.email,
+  passwordExists: !!signUpData?.password,
+});
+    if (studentId === "new") {
+      newUserParam = `&pFName=${encodeURIComponent(signUpData.parentFirstName)}&pLName=${encodeURIComponent(signUpData.parentLastName)}&sFName=${encodeURIComponent(signUpData.studentFirstName)}&sLName=${encodeURIComponent(signUpData.studentLastName)}&email=${encodeURIComponent(signUpData.email)}&password=${encodeURIComponent(signUpData.password)}`
+    }
     router.push(
-      `/payments/checkout?price_id=${selectedPlan.stripe_price_id}&name=${encodeURIComponent(selectedPlan.name)}&amount=${selectedPlan.cents}${studentParam}`,
+      `/payments/checkout?price_id=${encodeURIComponent(selectedPlan.stripe_price_id)}&name=${encodeURIComponent(selectedPlan.name)}&amount=${encodeURIComponent(selectedPlan.cents)}${studentParam}${newUserParam}`,
     );
   };
 
@@ -101,7 +132,7 @@ export const PackageRenewaloptionsContainer = ({
               <button
                 className="rounded-full py-3 w-full text-base font-bold shadow-md transition-[filter] hover:brightness-95 border-0 cursor-pointer"
                 onClick={() => setSelectedPlan(plan)}
-                style={ 
+                style={
                   isSelected
                     ? { backgroundColor: "#4db89a", color: "white" }
                     : { backgroundColor: "#65cfad", color: "#1f2e3b" }

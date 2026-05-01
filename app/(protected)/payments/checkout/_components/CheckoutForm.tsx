@@ -15,11 +15,13 @@ export function CheckoutForm({
   amountDisplay,
   planName,
   prefill,
+  studentId,
   onPaymentElementReady,
 }: {
   amountDisplay: string;
   planName: string;
   prefill?: { name: string; email: string; phone: string } | null;
+  studentId: string | null;
   onPaymentElementReady?: () => void;
 }) {
   const stripe = useStripe();
@@ -104,7 +106,9 @@ export function CheckoutForm({
             lastName={lastName}
             setLastName={setLastName}
           />
+          {
 
+          }
           <hr className="border-0 border-t border-[#9CA3AF] my-[30px]" />
 
           <h3 className="text-2xl font-bold text-[#2b4257] mt-0 mb-[15px]">
