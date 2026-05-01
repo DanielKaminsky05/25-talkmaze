@@ -327,7 +327,7 @@ export default function CourseLessonsPanel({
     }
   };
 
-  const startEdit = (lesson: Lesson) => {
+  const startEdit = async (lesson: Lesson) => {
     setEditingId(lesson.id);
     setEditForm({
       title: lesson.title,
@@ -338,13 +338,29 @@ export default function CourseLessonsPanel({
       slide_show_input: lesson.slide_show_input ?? null,
       slide_pptx_input: null,
     });
-    setEditPreDesc(lesson.pre_lesson_description ?? "");
-    setEditPostDesc(lesson.post_lesson_description ?? "");
     setEditNewPreTask(null);
     setEditNewPostTask(null);
     setEditNewSlidePdf(null);
     setEditNewSlidePptx(null);
     setEditError(null);
+
+    // Fetch admin-default task descriptions from lesson_tasks
+    try {
+      const supabase = await createClient();
+      const { data: tasks } = await supabase
+        .from("lesson_tasks")
+        .select("type, description")
+        .eq("lesson_id", lesson.id)
+        .is("student_id", null);
+
+      const preTask = (tasks ?? []).find((t: any) => t.type === "pre");
+      const postTask = (tasks ?? []).find((t: any) => t.type === "post");
+      setEditPreDesc(preTask?.description ?? "");
+      setEditPostDesc(postTask?.description ?? "");
+    } catch {
+      setEditPreDesc("");
+      setEditPostDesc("");
+    }
   };
 
   const handleSave = async (lessonId: string) => {
@@ -443,10 +459,9 @@ export default function CourseLessonsPanel({
 
       setLessons((prev) => prev.map((l) => (l.id === lessonId ? data : l)));
 
-      // Delete old storage files for any fields that were replaced
+      // Delete old slide storage files for any that were replaced
+      // (pre/post task file cleanup is handled server-side by the PUT route)
       const staleStoragePaths: string[] = [
-        preFileNameWithExt && currentLesson?.pre_lesson_url,
-        postFileNameWithExt && currentLesson?.post_lesson_url,
         slidePdfNameWithExt && currentLesson?.slide_show_url,
         slidePptxNameWithExt && currentLesson?.slide_pptx_url,
       ]
@@ -1110,37 +1125,6 @@ export default function CourseLessonsPanel({
                       </a>
                     )}
 
-                    {(lesson.pre_lesson_tasks?.length ?? 0) > 0 && (
-                      <div className="mt-2">
-                        <p className="text-[11px] font-medium text-gray-700">
-                          Pre-lesson tasks
-                        </p>
-                        <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
-                          {lesson.pre_lesson_tasks &&
-                            lesson.pre_lesson_tasks.map((task, i) => (
-                              <li key={i} className="text-[11px] text-gray-500">
-                                {task.name}
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {(lesson.post_lesson_tasks?.length ?? 0) > 0 && (
-                      <div className="mt-2">
-                        <p className="text-[11px] font-medium text-gray-700">
-                          Post-lesson tasks
-                        </p>
-                        <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
-                          {lesson.post_lesson_tasks &&
-                            lesson.post_lesson_tasks.map((task, i) => (
-                              <li key={i} className="text-[11px] text-gray-500">
-                                {task.name}
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    )}
 
                     {(lesson.slide_show_url || lesson.slide_pptx_url) && (
                       <div className="mt-2 flex gap-1">
