@@ -15,7 +15,15 @@ export async function POST(request: Request) {
   try {
     // Retrieve the Stripe (product) price_id from the request body.
     // studentId is optional — provided when a parent is checking out on behalf of a child.
-    const { priceId, studentId: studentIdOverride } = await request.json();
+    const { priceId, studentId: studentIdOverride, pFName, pLName, sFName, sLName, email, password} = await request.json();
+    
+    console.log("Inside checkout api: " + pFName)
+    console.log(pLName);
+    console.log(sFName);
+    console.log(sLName);
+    console.log(email);
+    console.log(password);
+    
     if (!priceId) {
       return NextResponse.json(
         { error: "Price ID is required" },
@@ -24,92 +32,117 @@ export async function POST(request: Request) {
     }
 
     // Authenticate the current user via Supabase session
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    //if its the first payment user account not created yet
+
+    const supabase = await createClient();
+    let customerId: string = "";
+
+
+    //if(studentIdOverride != 'new') aka existing user
+    let user_id: string = 'new';
+    let user_email: string | undefined = email;
+    if (studentIdOverride != 'new') {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      user_id = user.id;
+      user_email = user.email;
     }
 
     // Resolve which student this checkout is for.
     // If studentId was passed (parent flow), verify the account owns that student.
     // Otherwise fall back to the active student profile cookie.
-    let studentId: string;
+    let studentId: string = 'new';
 
-    if (studentIdOverride) {
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", studentIdOverride)
-        .eq("account_id", user.id)
-        .single();
+    if (studentIdOverride != "new") {
+      if (studentIdOverride) {
+        const { data: student, error: studentError } = await supabase
+          .from("students")
+          .select("id")
+          .eq("id", studentIdOverride)
+          .eq("account_id", user_id)
+          .single();
 
-      if (studentError || !student) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        if (studentError || !student) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        }
+        studentId = student.id;
+      } else {
+        const activeProfile = await getActiveProfile();
+        if (!activeProfile || activeProfile.type !== "student") {
+          return NextResponse.json(
+            { error: "Select a student profile before checkout" },
+            { status: 400 },
+          );
+        }
+
+        const { data: student, error: studentError } = await supabase
+          .from("students")
+          .select("id")
+          .eq("id", activeProfile.id)
+          .eq("account_id", user_id)
+          .single();
+
+        if (studentError || !student) {
+          return NextResponse.json(
+            { error: "Active student profile is invalid" },
+            { status: 403 },
+          );
+        }
+        studentId = student.id;
       }
-      studentId = student.id;
-    } else {
-      const activeProfile = await getActiveProfile();
-      if (!activeProfile || activeProfile.type !== "student") {
+
+
+      // Block checkout if the student already has an active subscription
+      const { data: existingSub } = await supabase
+        .from("student_subscriptions")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (existingSub) {
         return NextResponse.json(
-          { error: "Select a student profile before checkout" },
-          { status: 400 },
+          { error: "Student already has an active subscription" },
+          { status: 409 },
         );
       }
 
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", activeProfile.id)
-        .eq("account_id", user.id)
-        .single();
+      // Look up the account's existing Stripe customer ID,
+      // or create a new Stripe customer
 
-      if (studentError || !student) {
-        return NextResponse.json(
-          { error: "Active student profile is invalid" },
-          { status: 403 },
-        );
-      }
-      studentId = student.id;
-    }
 
-    // Block checkout if the student already has an active subscription
-    const { data: existingSub } = await supabase
-      .from("student_subscriptions")
-      .select("id")
-      .eq("student_id", studentId)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (existingSub) {
-      return NextResponse.json(
-        { error: "Student already has an active subscription" },
-        { status: 409 },
-      );
-    }
-
-    // Look up the account's existing Stripe customer ID,
-    // or create a new Stripe customer
-    const { data: account } = await supabase
-      .from("account")
-      .select("stripe_customer_id")
-      .eq("id", user.id)
-      .single();
-
-    const customerId =
-      account?.stripe_customer_id ||
-      (await stripe.customers.create({ email: user.email ?? undefined })).id;
-
-    // Persist the newly created Stripe customer ID so future checkouts reuse it
-    if (!account?.stripe_customer_id) {
-      await supabase
+      const { data: account } = await supabase
         .from("account")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
+        .select("stripe_customer_id")
+        .eq("id", user_id)
+        .single();
+
+
+
+      customerId =
+        account?.stripe_customer_id ||
+        (await stripe.customers.create({ email: user_email ?? undefined })).id;
+
+      // Persist the newly created Stripe customer ID so future checkouts reuse it
+      if (!account?.stripe_customer_id) {
+        await supabase
+          .from("account")
+          .update({ stripe_customer_id: customerId })
+          .eq("id", user_id);
+      }
+    } else {
+      customerId = (await stripe.customers.create({ email: user_email ?? undefined })).id
     }
+
+
 
     // Fetch saved contact info to pre-fill the checkout form for returning customers
     const customer = (await stripe.customers.retrieve(
@@ -143,15 +176,25 @@ export async function POST(request: Request) {
     // Create the subscription in an incomplete state so we can collect payment
     // details before confirming. Metadata links the subscription back to our
     // internal account and student records (used by the Stripe webhook handler)
+
+
+    
+    const id = studentIdOverride === 'new' ? 'new' : user_id;
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
       payment_settings: { save_default_payment_method: "on_subscription" },
       metadata: {
-        account_id: user.id,
+        account_id: user_id,
         student_id: studentId,
         price_id: priceId,
+        parent_first_name: pFName ?? "",
+        parent_last_name: pLName ?? "",
+        student_first_name: sFName ?? "",
+        student_last_name: sLName ?? "",
+        email: email ?? "",
+        password: password ?? ""
       },
       // Expand nested objects so we can extract the client secret in one call
       expand: [

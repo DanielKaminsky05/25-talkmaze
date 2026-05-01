@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { handleStudentCreation, updateStudentAvatar, setActiveProfile } from "./actions";
 import { OnboardingTimeZone, TIME_ZONES } from "./types";
 import { createClient } from "@/services/supabase/client";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { getStudentOnboardingProgress, handleUpdateStudent} from "./actions";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ const onBoardSchema = z.object({
   }),
 });
 
+
 export default function Onboarding() {
   const router = useRouter();
 
@@ -59,8 +61,28 @@ export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isFirst, setIsFirst] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+
+  //before anything need to check if student was the first one created from initial onboarding
+
+  useEffect(() => {
+    async function getOnboardingProgress() {
+      console.log("Getting onboarding progress")
+      const response = await getStudentOnboardingProgress();
+
+
+      if (response != null) {
+        console.log("response is not null")
+        setFirstName(response.first_name)
+        setLastName(response.last_name);
+        setIsFirst(true);
+      }
+    }
+
+    getOnboardingProgress();
+  }, [])
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -213,7 +235,18 @@ export default function Onboarding() {
                 priority
               />
             </div>
+            {
+              isFirst && (
+                <div className="mt-6 text-center">
+                  <h1 className="text-2xl md:text-3xl font-bold text-[#2b4257]">
+                    Finish setting up {firstName} {lastName}'s account!
+                  </h1>
 
+
+                  <div className="mt-3 w-16 h-1 bg-[#65CFAD] mx-auto rounded-full" />
+                </div>
+              )
+            }
             {pageNum == 1 && (
               <form
                 className="flex flex-col gap-[14px]"
@@ -521,54 +554,56 @@ export default function Onboarding() {
                   e.preventDefault();
                   if (isSubmitting) return;
                   setIsSubmitting(true);
-                  try {
-                    const res = await handleStudentCreation(
-                      firstName,
-                      lastName,
-                      grade,
-                      notes,
-                      timeZone,
-                      weeklyAvailability
-                    );
+                    try {
+                      const res = await handleStudentCreation(
+                        firstName,
+                        lastName,
+                        grade,
+                        notes,
+                        timeZone,
+                        weeklyAvailability,
+                        isFirst
+                      );
 
-                    if (res.success) {
-                      if (avatarFile && res.student_id) {
-                        try {
-                          const supabase = createClient();
-                          const fileExt = avatarFile.name.split(".").pop();
-                          const filePath = `students/${res.student_id}/avatar-${Date.now()}.${fileExt}`;
+                      if (res.success) {
+                        if (avatarFile && res.student_id) {
+                          try {
+                            const supabase = createClient();
+                            const fileExt = avatarFile.name.split(".").pop();
+                            const filePath = `students/${res.student_id}/avatar-${Date.now()}.${fileExt}`;
 
-                          const { error: uploadError } = await supabase.storage
-                            .from("avatars")
-                            .upload(filePath, avatarFile);
-
-                          if (!uploadError) {
-                            const { data: { publicUrl } } = supabase.storage
+                            const { error: uploadError } = await supabase.storage
                               .from("avatars")
-                              .getPublicUrl(filePath);
+                              .upload(filePath, avatarFile);
 
-                            await updateStudentAvatar(res.student_id, publicUrl);
-                          } else {
-                            console.error("Avatar upload failed:", uploadError);
-                            alert("Profile created, but avatar upload failed. You can update it later in settings.");
+                            if (!uploadError) {
+                              const { data: { publicUrl } } = supabase.storage
+                                .from("avatars")
+                                .getPublicUrl(filePath);
+
+                              await updateStudentAvatar(res.student_id, publicUrl);
+                            } else {
+                              console.error("Avatar upload failed:", uploadError);
+                              alert("Profile created, but avatar upload failed. You can update it later in settings.");
+                            }
+                          } catch (err) {
+                            console.error("Storage error:", err);
                           }
-                        } catch (err) {
-                          console.error("Storage error:", err);
                         }
-                      }
 
-                      // Set active profile to the new student
-                      await setActiveProfile(res.student_id, "student");
-                      
-                      router.push("/payments");
-                    } else {
-                      alert(res.error || "Failed to create student profile");
+                        // Set active profile to the new student
+                        await setActiveProfile(res.student_id, "student");
+
+                        router.push("/payments");
+                      } else {
+                        alert(res.error || "Failed to create student profile");
+                        setIsSubmitting(false);
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert("An unexpected error occurred");
                       setIsSubmitting(false);
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("An unexpected error occurred");
-                    setIsSubmitting(false);
+                    
                   }
                 }}
               >

@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { stripe } from "@/services/stripe/client";
 import { createServiceRoleClient } from "@/services/supabase/service";
 import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
-
+import { setActiveProfile } from "@/app/(public)/onboarding/actions";
 /**
  * POST /api/webhooks/stripe
  * Receives and processes Stripe webhook events.
@@ -21,6 +21,11 @@ export async function POST(request: Request) {
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get("stripe-signature");
+
+    /////////////////////////////////// Delete this after development
+
+
+    /////////////////////////////////
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
@@ -45,6 +50,7 @@ export async function POST(request: Request) {
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as Stripe.Invoice;
 
+      console.log("Invoice: " + JSON.stringify(invoice));
       const stripeCustomerId =
         typeof invoice.customer === "string"
           ? invoice.customer
@@ -86,12 +92,21 @@ export async function POST(request: Request) {
           });
         }
 
-        const {
-          account_id: accountId,
-          student_id: studentId,
+        
+        const{
+          account_id: dummyAccountId,
+          student_id: dummyStudentId,
           price_id: priceId,
+          parent_first_name: parent_first_name,
+          parent_last_name: paraent_last_name,
+          student_first_name: student_first_name,
+          student_last_name: student_last_name,
+          email: email,
+          password: password
         } = subscription.metadata ?? {};
 
+        let studentId = dummyStudentId;
+        let accountId = dummyAccountId;
         if (!accountId || !studentId || !priceId) {
           console.error(
             "invoice.paid: missing metadata on subscription",
@@ -99,6 +114,52 @@ export async function POST(request: Request) {
             subscription.metadata,
           );
         } else {
+
+          //otherwise we insert the user into the database
+          if (accountId === "new" || studentId === "new") {
+            console.log("signing up new user")
+            console.log("User password: " + password)
+            //create account in table
+            const { data: signUpData, error: signUpDataError } = await supabase
+              .auth.signUp({ email, password })
+
+            if (signUpDataError || !signUpData.user) {
+              console.log("Error signing up new user: " + signUpDataError)
+              return NextResponse.json({ status: 500, message: "Unable to sign-up new user, please contact admin" })
+            }
+
+            //create student in student table
+            //note customer is 1, coach is 2, and admin is 3
+            const insertIntoAccountTable = await supabase.from('account').insert({
+              id: signUpData.user.id,
+              email: email,
+              role: 1,
+              stripe_customer_id: stripeCustomerId,
+              new: true
+            } 
+            ).select().single();
+            console.log("Insert into account: " + JSON.stringify(insertIntoAccountTable.data))
+            accountId = signUpData.user.id;
+            //insert new student into students table
+
+            const { data: insertIntoStudents, error: insertIntoStudentsError } = await supabase.from('students').insert({ account_id: insertIntoAccountTable.data.id, first_name: student_first_name, last_name: student_last_name }).select().single()
+
+            if(insertIntoStudentsError || !insertIntoStudents){
+              return NextResponse.json({status:500, message: "Error inserting student for new account, please contact admin"})
+            }
+
+            //indicate this is now current student
+            studentId = insertIntoStudents.id;
+            //insert new parent into parents table
+            const {data: insertIntoParents, error: insertIntoParentsError} = await supabase.from('parents').insert({account_id: insertIntoAccountTable.data.id, billing_email: email, first_name: parent_first_name, last_name: paraent_last_name}).select().single();
+            if(insertIntoParentsError){
+                return NextResponse.json({status:500, message: "Error inserting parent for new account, please contact admin"})
+            }
+           
+            setActiveProfile(insertIntoParents.id, 'parent');
+            
+
+          }
           const { data: plan, error: planError } = await supabase
             .from("plans")
             .select("id, classes, name")
@@ -235,6 +296,8 @@ export async function POST(request: Request) {
         );
       }
     }
+
+
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: unknown) {

@@ -34,6 +34,6 @@ export const logInUser = async (email: string, password: string) => {
     sameSite: "lax",
   });
 
-  // Redirect AFTER success
+  // Redirect AFTER success (need to redirect to /profiles for middleware to redirect)
   redirect("/profiles");
 };

@@ -16,6 +16,87 @@ export async function setActiveProfile(profileId: string, profileType: "student"
   return await setProfileCookies(profileId, profileType);
 }
 
+//function to check current status of student onboarding
+
+export async function getStudentOnboardingProgress() {
+  const supabase = await createClient();
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      success: false,
+      message: "Can't identify account"
+    }
+  }
+
+  const { data: isNew, error: isNewError } = await supabase.from('account').select('new').eq('id', user.id);
+
+  if (!isNew || isNewError) {
+    return {
+      success: false,
+      message: "Can't find account onboarding status"
+    }
+  }
+
+  //if new account created from onboarding, need to retrieve existing data of the student
+  if (isNew) {
+    const { data: studentData, error: studentDataError } = await supabase.from('students').select('*').eq('account_id', user.id).single();
+
+    //make sure student actually exists 
+    if (studentDataError || !studentData) {
+      return {
+        success: false,
+        message: "Unable to find student belonging to account"
+      }
+    }
+
+    return studentData;
+  }
+
+  return null;
+}
+
+export async function handleUpdateStudent(notes: string, grade: number) {
+  const supabase = await createClient();
+
+  //get logged in user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (!user || userError) {
+    return {
+      success: false,
+      message: "Unauthorized",
+    };
+  }
+
+  //  update student row
+  const { data, error } = await supabase
+    .from("students")
+    .update({
+      notes: notes,
+      grade: JSON.stringify(grade)
+    })
+    .eq("id", user.id) // ⚠️ change if your FK is different
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Update error:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+
+  return {
+    success: true,
+    student: data,
+  };
+}
 export async function handleStudentCreation(
   firstName: string,
   lastName: string,
@@ -23,6 +104,7 @@ export async function handleStudentCreation(
   additional_notes: string,
   time_zone: OnboardingTimeZone,
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
+  isFirst: boolean
 ) {
   const supabase = (await createClient()) as any;
 
@@ -35,25 +117,45 @@ export async function handleStudentCreation(
 
   console.log("Inside handle student creation");
 
+  let student_id = "";
+  if (isFirst) {
+    const { data: studentUpdate, error: studentUpdateError} = await supabase
+      .from('students')
+      .update({
+        account_id: account_id,
+        first_name: firstName,
+        last_name: lastName,
+        grade: String(grade),
+        notes: additional_notes
+      }).eq('account_id', account_id).select().single();
 
-  const { data: studentInsert, error: studentError } = await supabase
-    .from("students")
-    .insert({
-      account_id: account_id,
-      first_name: firstName,
-      last_name: lastName,
-      grade: String(grade),
-      notes: additional_notes,
-    })
-    .select()
-    .single();
+      if(!studentUpdate || studentUpdateError){
+        console.error("Student info update error:", studentUpdateError);
+        return { status: 500, message: "Error updating student for new account" };
+      }
 
-  if (studentError || !studentInsert) {
-    console.error("Student insert error:", studentError);
-    return { status: 500, message: "Error inserting student" };
+      student_id = studentUpdate.id;
+  } else {
+    const { data: studentInsert, error: studentError } = await supabase
+      .from("students")
+      .insert({
+        account_id: account_id,
+        first_name: firstName,
+        last_name: lastName,
+        grade: String(grade),
+        notes: additional_notes,
+      })
+      .select()
+      .single();
+
+    if (studentError || !studentInsert) {
+      console.error("Student insert error:", studentError);
+      return { status: 500, message: "Error inserting student" };
+    }
+
+    student_id = studentInsert.id;
   }
-
-  const student_id = studentInsert.id;
+  
 
   const availabilityRows = Object.entries(weeklyAvailability).flatMap(
     ([day, slots]) =>
@@ -86,6 +188,16 @@ export async function handleStudentCreation(
       };
     }
   }
+
+  //after everything, indicate that onboarding for the account is done by setting the new col to false
+
+  const {data: updateNew, error: updateNewError} = await supabase
+    .from('account')
+    .update({new: false})
+    .eq('id', account_id )
+    .select()
+    .single();
+
 
   revalidatePath("/profiles");
   // We no longer match or create a session here. That happens purely at checkout via Stripe!
@@ -187,7 +299,7 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
     // Generate potential 1-hour start times within this block, stepped by 10 minutes
     const potentialStarts: dayjs.Dayjs[] = [];
     let currentStart = blockStartLocal;
-    
+
     // Ensure we start on a 10-minute boundary to avoid random times
     const minutes = currentStart.minute();
     const remainder = minutes % 10;
@@ -197,13 +309,13 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
 
     // A session is 1 hour long. So the latest start time is blockEnd - 1 hour.
     while (currentStart.add(1, 'hour').valueOf() <= blockEndLocal.valueOf()) {
-       potentialStarts.push(currentStart);
-       currentStart = currentStart.add(10, 'minute');
+      potentialStarts.push(currentStart);
+      currentStart = currentStart.add(10, 'minute');
     }
 
     if (potentialStarts.length === 0) {
-       console.log(`[MATCHMAKER] Slot too short for a 1-hour session: ${slot.start_time_new} to ${slot.end_time_new}`);
-       continue;
+      console.log(`[MATCHMAKER] Slot too short for a 1-hour session: ${slot.start_time_new} to ${slot.end_time_new}`);
+      continue;
     }
 
     let localAnchorFound = false;
@@ -224,7 +336,7 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
           const bsDateLocal = startUTC.tz(bs.timezone).day(bs.weekday);
           const bsStartLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.start_time}`, bs.timezone);
           const bsEndLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.end_time}`, bs.timezone);
-          
+
           if (startUTC.isBefore(bsEndLocal.utc()) && endUTC.isAfter(bsStartLocal.utc())) {
             studentHasPermanentConflict = true;
             break;
@@ -280,7 +392,7 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
             const bsDateLocal = startUTC.tz(bs.timezone).day(bs.weekday);
             const bsStartLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.start_time}`, bs.timezone);
             const bsEndLocal = dayjs.tz(`${bsDateLocal.format('YYYY-MM-DD')}T${bs.end_time}`, bs.timezone);
-            
+
             if (startUTC.isBefore(bsEndLocal.utc()) && endUTC.isAfter(bsStartLocal.utc())) {
               coachHasPermanentConflict = true;
               break;
@@ -315,14 +427,14 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
           if (!studentCollision) {
             console.log(`[MATCHMAKER] ✅ PERFECT MATCH! Coach ${coach.coach_id} assigned.`);
             matchedCoachId = coach.coach_id;
-            
+
             // Re-assign the matchingSlot with the precise 10-minute offset we discovered!
             matchingSlot = {
-               ...slot,
-               start_time_new: startLocal.format('HH:mm:ss'),
-               end_time_new: endLocal.format('HH:mm:ss')
+              ...slot,
+              start_time_new: startLocal.format('HH:mm:ss'),
+              end_time_new: endLocal.format('HH:mm:ss')
             };
-            
+
             finalStartTimeUTC = startUTC;
             localAnchorFound = true;
             break;
@@ -367,8 +479,8 @@ export async function assignCoachToStudent(student_id: string, num_classes: numb
     });
 
   if (bookedSlotError) {
-      console.error("Failed to insert into booked_slots:", bookedSlotError);
-      return { success: false, status: 500, error: "Failed to reserve booked slot" };
+    console.error("Failed to insert into booked_slots:", bookedSlotError);
+    return { success: false, status: 500, error: "Failed to reserve booked slot" };
   }
 
   // 2. Extrapolate `num_classes` instances matching the safe anchor!

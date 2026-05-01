@@ -13,6 +13,7 @@ const stripePromise = loadStripe(
 const containerClass = "bg-[#2b4257] min-h-screen flex flex-col ";
 
 export function CheckoutPageClient() {
+
   const searchParams = useSearchParams();
   const [clientSecret, setClientSecret] = useState("");
   const [prefill, setPrefill] = useState<{
@@ -28,6 +29,22 @@ export function CheckoutPageClient() {
   const priceId = searchParams.get("price_id");
   const studentId = searchParams.get("studentId");
 
+  let pFName: string | null, pLName:string | null, sFName:string | null, sLName:string | null, email:string|null, password: string|null = "";
+
+  if(studentId === "new"){
+
+    console.log("New student");
+    pFName = searchParams.get("pFName");
+    pLName = searchParams.get("pLName");
+    sFName = searchParams.get("sFName");
+    sLName = searchParams.get("sLName");
+    email = searchParams.get("email");
+    password = searchParams.get("password");
+
+    console.log(pFName);
+    console.log(password);
+  }
+  
   const amountDisplay = amountCents
     ? `$${(Number.parseInt(amountCents, 10) / 100).toFixed(0)}`
     : "0";
@@ -42,6 +59,7 @@ export function CheckoutPageClient() {
     const abortController = new AbortController();
 
     async function init() {
+      
       if (!priceId) {
         setInitError("Missing price_id");
         return;
@@ -52,7 +70,7 @@ export function CheckoutPageClient() {
         const res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId, studentId }),
+          body: JSON.stringify({ priceId, studentId,pFName, pLName, sFName, sLName, email,password}),
           signal: abortController.signal,
         });
         clearTimeout(timeoutId);
@@ -104,6 +122,7 @@ export function CheckoutPageClient() {
           is still loading. Preventing sudden "pop up" visual bug. */}
       {clientSecret && amountCents && (
         <div className={containerClass}>
+          
           <Elements
             stripe={stripePromise}
             options={{
@@ -116,6 +135,7 @@ export function CheckoutPageClient() {
               planName={planName}
               prefill={prefill}
               onPaymentElementReady={() => setIsPaymentReady(true)}
+              studentId={studentId}
             />
           </Elements>
         </div>
