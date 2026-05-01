@@ -13,6 +13,7 @@ interface AdminCalendarProps {
    *  Defaults work for the admin detail panel layout. */
   offsetPx?: number;
   loading?: boolean;
+  initialDate?: string;
 }
 
 export default function AdminCalendar({
@@ -20,6 +21,7 @@ export default function AdminCalendar({
   initialView = "dayGridMonth",
   offsetPx = 300,
   loading = false,
+  initialDate,
 }: AdminCalendarProps) {
   if (loading) {
     return (
@@ -35,8 +37,10 @@ export default function AdminCalendar({
   return (
     <div className="admin-calendar">
       <FullCalendar
+        key={`${initialView}-${initialDate ?? "default"}`}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView={initialView}
+        initialDate={initialDate}
         events={events}
         headerToolbar={{
           left: "prev,next today",
@@ -46,8 +50,10 @@ export default function AdminCalendar({
         height={calHeight}
         eventDisplay="block"
         eventTimeFormat={{ hour: "2-digit", minute: "2-digit", meridiem: "short" }}
-        slotMinTime="07:00:00"
-        slotMaxTime="21:00:00"
+        slotMinTime="00:00:00"
+        slotMaxTime="24:00:00"
+        scrollTime="07:00:00"
+        scrollTimeReset={false}
         allDaySlot={false}
         nowIndicator
       />

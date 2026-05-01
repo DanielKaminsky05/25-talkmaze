@@ -516,6 +516,10 @@ export type Database = {
           description: string | null
           id: string
           next_lesson: string | null
+          post_lesson_description: string | null
+          post_lesson_url: string | null
+          pre_lesson_description: string | null
+          pre_lesson_url: string | null
           prev_lesson: string | null
           slide_pptx_url: string | null
           slide_show_url: string | null
@@ -530,6 +534,10 @@ export type Database = {
           description?: string | null
           id?: string
           next_lesson?: string | null
+          post_lesson_description?: string | null
+          post_lesson_url?: string | null
+          pre_lesson_description?: string | null
+          pre_lesson_url?: string | null
           prev_lesson?: string | null
           slide_pptx_url?: string | null
           slide_show_url?: string | null
@@ -544,6 +552,10 @@ export type Database = {
           description?: string | null
           id?: string
           next_lesson?: string | null
+          post_lesson_description?: string | null
+          post_lesson_url?: string | null
+          pre_lesson_description?: string | null
+          pre_lesson_url?: string | null
           prev_lesson?: string | null
           slide_pptx_url?: string | null
           slide_show_url?: string | null

@@ -18,15 +18,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-
-   const  [formData, setFormData] = useState({
-      email: "",
-      password: ""
-    })
+  const [loginError, setLoginError] = useState<string | null>(null);
 
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
       e.preventDefault();
+      setLoginError(null);
       const result = await logInUser(email, password);
       //Redirects the user to the home page if successful:
 
@@ -36,6 +33,7 @@ export default function LoginPage() {
           router.push('/profiles')
       }else{
         console.log("Error: login failed", result);
+        setLoginError(result?.message ?? "Login failed. Please try again.");
       }
     }
 
@@ -76,9 +74,12 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e)=>setEmail(e.target.value)}
+                  onChange={(e)=>{
+                    setEmail(e.target.value);
+                    setLoginError(null);
+                  }}
                   placeholder="Email"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${loginError ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
                 />
               </div>
 
@@ -86,9 +87,12 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e)=>setPassword(e.target.value)}
+                  onChange={(e)=>{
+                    setPassword(e.target.value);
+                    setLoginError(null);
+                  }}
                   placeholder="Password"
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
+                  className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${loginError ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
                 />
                 <button
                   type="button"
@@ -107,6 +111,11 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {loginError && (
+                <p role="alert" className="text-red-600 text-sm -mt-3 ml-1 mb-1">
+                  {loginError}
+                </p>
+              )}
 
               <div className="flex justify-end -mt-2">
                 <Link
