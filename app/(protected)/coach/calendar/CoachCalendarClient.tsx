@@ -125,9 +125,11 @@ export default function CoachCalendarClient() {
             }}
             events={events}
             eventClick={handleEventClick}
-            height="auto"
-            slotMinTime="07:00:00"
-            slotMaxTime="22:00:00"
+            height="calc(100vh - 260px)"
+            slotMinTime="00:00:00"
+            slotMaxTime="24:00:00"
+            scrollTime="07:00:00"
+            scrollTimeReset={false}
             allDaySlot={false}
             nowIndicator
           />

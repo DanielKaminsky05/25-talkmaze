@@ -163,7 +163,7 @@ export default function AvailabilityModal({
                   onClick={() => setStudentDropdownOpen((v) => !v)}
                   className="flex items-center gap-1.5 bg-[#142535] border border-[#2B4257] hover:border-[#65CFAD] text-white text-xs px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                 >
-                  <span>{selectedStudent?.name ?? "Student"}</span>
+                  <span>{[selectedStudent?.first_name, selectedStudent?.last_name].filter(Boolean).join(" ") || "Student"}</span>
                   <ChevronDown
                     size={11}
                     className={`text-[#65CFAD] transition-transform ${studentDropdownOpen ? "rotate-180" : ""}`}
@@ -179,13 +179,12 @@ export default function AvailabilityModal({
                           setSelectedStudentId(s.id);
                           setStudentDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-xs transition-colors cursor-pointer ${
-                          selectedStudentId === s.id
+                        className={`w-full text-left px-4 py-2.5 text-xs transition-colors cursor-pointer ${selectedStudentId === s.id
                             ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
                             : "text-white hover:bg-[#142535]"
-                        }`}
+                          }`}
                       >
-                        {s.name}
+                        {[s.first_name, s.last_name].filter(Boolean).join(" ") || "Student"}
                       </button>
                     ))}
                   </div>

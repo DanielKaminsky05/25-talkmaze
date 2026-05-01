@@ -15,7 +15,7 @@ export async function GET() {
       coach_id,
       student_id,
       coaches(first_name, last_name),
-      students(first_name, last_name)
+      students(first_name, last_name, account_id)
     `);
 
   if (error) {
@@ -28,8 +28,8 @@ export async function GET() {
     id: `${row.coach_id}_${row.student_id}`, // Used strictly for the DELETE route decomposition
     coach_id: String(row.coach_id),
     student_id: String(row.student_id),
-    coaches: { name: row.coaches ? `${row.coaches.first_name || ""} ${row.coaches.last_name || ""}`.trim() : null },
-    students: { name: row.students ? `${row.students.first_name || ""} ${row.students.last_name || ""}`.trim() : null }
+    coaches: { first_name: row.coaches?.first_name ?? null, last_name: row.coaches?.last_name ?? null },
+    students: { first_name: row.students?.first_name ?? null, last_name: row.students?.last_name ?? null, account_id: row.students?.account_id ?? null }
   }));
 
   return NextResponse.json(mappedData);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   console.log("Student_id: " + student_id_1)
 
   const { data: coachData } = await supabase.from('coaches').select('id, first_name, last_name').eq('id', String(coach_id_1)).single();
-  const { data: studentData } = await supabase.from('students').select('id, first_name, last_name').eq('id', String(student_id_1)).single();
+  const { data: studentData } = await supabase.from('students').select('id, first_name, last_name, account_id').eq('id', String(student_id_1)).single();
 
   console.log("Coach Data: " + JSON.stringify(coachData));
   console.log("Student Data :" + JSON.stringify(studentData));
@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     id: `${coach_id}_${student_id}`,
     coach_id: coach_id,
     student_id: student_id,
-    coaches: { name: coachData ? `${coachData.first_name || ""} ${coachData.last_name || ""}`.trim() : null },
-    students: { name: studentData ? `${studentData.first_name || ""} ${studentData.last_name || ""}`.trim() : null }
+    coaches: { first_name: coachData?.first_name ?? null, last_name: coachData?.last_name ?? null },
+    students: { first_name: studentData?.first_name ?? null, last_name: studentData?.last_name ?? null, account_id: studentData?.account_id ?? null }
   }
 
 

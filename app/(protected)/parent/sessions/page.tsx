@@ -44,7 +44,8 @@ export default async function ParentSessionsPage() {
 
   const students: StudentProp[] = (studentsRaw ?? []).map((s: any) => ({
     id: s.id,
-    name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || "Student",
+    first_name: s.first_name ?? null,
+    last_name: s.last_name ?? null,
     avatar_url: s.avatar_url ?? null,
   }));
 

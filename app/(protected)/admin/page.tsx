@@ -1,178 +1,311 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/services/supabase/client";
+import type { EventInput } from "@fullcalendar/core";
 
-import StudentTable, { Student } from "./components/StudentTable";
-import EmployeeTable from "./components/EmployeeTable";
+import CoachAssignmentCard from "./components/CoachAssignmentCard";
 import CreateAdminModal from "./components/CreateAdminModal";
 import CreateCoachModal from "./components/CreateCoachModal";
-import CourseTable from "./components/CourseTable";
 import CreateCourseModal from "./components/CreateCourseModal";
+import StudentDetailModal from "./components/StudentDetailModal";
+import EmployeeDetailModal from "./components/EmployeeDetailModal";
+import CourseDetailModal from "./components/CourseDetailModal";
 import CourseLessonsPanel from "./components/CourseLessonPanel";
+import AdminCalendar from "./components/AdminCalendar";
+import Pagination from "./components/Pagination";
 import { Assignment } from "@/lib/types/assignments";
-import CoachAssignmentCard from "./components/CoachAssignmentCard";
-import AssignStudentDropDown, {
-  Coach,
-} from "./components/AssignStudentDropDown";
-const ITEMS_PER_PAGE = 5;
+import { Student } from "./components/StudentTable";
+import { Coach } from "./components/AssignStudentDropDown";
+import { Course } from "./components/types";
 
-type TabType =
-  | "students"
-  | "coaches"
-  | "courses"
-  | "assignments"
-  | "learning_space"
-  | "course_assignment";
+const ITEMS_PER_PAGE = 15;
+
+type TabType = "students" | "coaches" | "courses" | "assignments" | "pending";
+
+const NAV_ITEMS: { key: TabType; label: string }[] = [
+  { key: "students", label: "Students" },
+  { key: "coaches", label: "Coaches" },
+  { key: "courses", label: "Courses" },
+  { key: "assignments", label: "Assignments" },
+  { key: "pending", label: "Pending" },
+];
+
+type PendingBooking = {
+  id: string;
+  coach_id: string;
+  student_id: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  status: string;
+  num_sessions: number | null;
+  start_date: string | null;
+  created_at: string;
+  coaches?: { first_name: string | null; last_name: string | null } | null;
+  students?: { first_name: string | null; last_name: string | null; account_id: string | null } | null;
+};
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+type PendingBookingForm = {
+  coach_id: string;
+  weekday: number;
+  start_date: string;
+  start_time: string;
+  end_time: string;
+  timezone: string;
+  num_sessions: number;
+};
+
+type PendingBookingPreview = {
+  availabilityEvents: EventInput[];
+  existingSessionEvents: EventInput[];
+  activeBookedEvents: EventInput[];
+  proposedEvents: EventInput[];
+  conflictEvents: EventInput[];
+  conflicts: { start: string; end: string; reason: string }[];
+  canApprove: boolean;
+  generatedCount: number;
+  requestedCount: number;
+};
+
+function timeInputValue(value: string) {
+  return value.slice(0, 5);
+}
+
+function weekdayFromDateInput(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  return new Date(`${value}T12:00:00Z`).getUTCDay();
+}
+
+function formFromPendingBooking(booking: PendingBooking): PendingBookingForm {
+  return {
+    coach_id: booking.coach_id,
+    weekday: booking.weekday,
+    start_date: booking.start_date ?? "",
+    start_time: timeInputValue(booking.start_time),
+    end_time: timeInputValue(booking.end_time),
+    timezone: booking.timezone,
+    num_sessions: booking.num_sessions ?? 1,
+  };
+}
+
+// ── List item components (module-level to avoid re-mount on parent render) ──
+
+function Avatar({ letter, color = "text-[#B1E7D6]", bg = "bg-[#B1E7D6]/15" }: { letter: string; color?: string; bg?: string }) {
+  return (
+    <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+      <span className={`${color} text-sm font-bold`}>{letter.toUpperCase()}</span>
+    </div>
+  );
+}
+
+function StudentListItem({ student, isSelected, onClick }: { student: Student; isSelected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2 ${
+        isSelected ? "bg-[#B1E7D6]/10 border-l-[#B1E7D6]" : "border-l-transparent hover:bg-white/5"
+      }`}
+    >
+      <Avatar letter={(student.first_name ?? student.last_name ?? "?").charAt(0)} />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${isSelected ? "text-[#B1E7D6]" : "text-white"}`}>
+          {[student.first_name, student.last_name].filter(Boolean).join(" ") || "Unknown"}
+        </p>
+        <p className="text-white/35 text-xs truncate font-mono">#{student.id.slice(0, 14)}</p>
+      </div>
+    </button>
+  );
+}
+
+function CoachListItem({ coach, isSelected, onClick }: { coach: Coach; isSelected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2 ${
+        isSelected ? "bg-[#65CFAD]/10 border-l-[#65CFAD]" : "border-l-transparent hover:bg-white/5"
+      }`}
+    >
+      <Avatar letter={coach.first_name.charAt(0) || "?"} color="text-[#65CFAD]" bg="bg-[#65CFAD]/15" />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${isSelected ? "text-[#65CFAD]" : "text-white"}`}>
+          {coach.first_name} {coach.last_name}
+        </p>
+        <p className="text-white/35 text-xs truncate font-mono">#{coach.id.slice(0, 14)}</p>
+      </div>
+    </button>
+  );
+}
+
+function CourseListItem({ course, isSelected, onClick }: { course: Course; isSelected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2 ${
+        isSelected ? "bg-blue-300/10 border-l-blue-300" : "border-l-transparent hover:bg-white/5"
+      }`}
+    >
+      <Avatar letter={course.name.charAt(0) || "C"} color="text-blue-300" bg="bg-blue-400/15" />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${isSelected ? "text-blue-300" : "text-white"}`}>{course.name}</p>
+        <p className="text-white/35 text-xs truncate">ID: {course.id}</p>
+      </div>
+    </button>
+  );
+}
+
+function EmptyDetail() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <p className="text-white/20 text-sm">Select an item from the list</p>
+    </div>
+  );
+}
+
+// Handles "HH:MM:SS" (start_time_new) and "1970-01-01THH:MM:SS.000Z" (start_time)
+function parseAvailabilityTime(val: string | null | undefined): string {
+  if (!val) return "";
+  if (/^\d{2}:\d{2}/.test(val)) return val.slice(0, 5); // "HH:MM:SS" → "HH:MM"
+  if (val.length > 10) return val.slice(11, 16);          // ISO datetime → "HH:MM"
+  return "";
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("students");
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
-  // Student state
+  // Students
   const [students, setStudents] = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
-  const [studentsError, setStudentsError] = useState<string | null>(null);
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const [studentCurrentPage, setStudentCurrentPage] = useState(1);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentPage, setStudentPage] = useState(1);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState(false);
+  const [studentEvents, setStudentEvents] = useState<EventInput[]>([]);
+  const [studentEventsLoading, setStudentEventsLoading] = useState(false);
 
-  // editing student
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Student>>({});
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Employee state
+  // Coaches
   const [employees, setEmployees] = useState<Coach[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
-  const [employeesError, setEmployeesError] = useState<string | null>(null);
-  const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
-  const [employeeCurrentPage, setEmployeeCurrentPage] = useState(1);
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const [employeePage, setEmployeePage] = useState(1);
   const [selectedEmployee, setSelectedEmployee] = useState<Coach | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState(false);
+  const [coachEvents, setCoachEvents] = useState<EventInput[]>([]);
+  const [coachEventsLoading, setCoachEventsLoading] = useState(false);
 
-  // editing employee
-  const [isEditingEmployee, setIsEditingEmployee] = useState(false);
-  const [employeeEditForm, setEmployeeEditForm] = useState<Partial<Coach>>({});
-  const [isSavingEmployee, setIsSavingEmployee] = useState(false);
-  const [coachAvailability, setCoachAvailability] = useState<
-    Record<string, { start: string; end: string }[]>
-  >({});
-  const [originalAvailability, setOriginalAvailability] = useState<
-    Record<string, { start: string; end: string }[]>
-  >({});
-  const DAY_MAP: Record<number, string> = {
-    0: "Sunday",
-    1: "Monday",
-    2: "Tuesday",
-    3: "Wednesday",
-    4: "Thursday",
-    5: "Friday",
-    6: "Saturday",
-  };
-  const DAY_MAP_REVERSE: Record<string, number> = {
-    Sunday: 0,
-    Monday: 1,
-    Tuesday: 2,
-    Wednesday: 3,
-    Thursday: 4,
-    Friday: 5,
-    Saturday: 6,
-  };
-
-  // Modal state
-  const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
-  const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
-
-  interface Course {
-    id: number;
-    name: string;
-    description?: string;
-    status?: string;
-  }
-  // Course state
+  // Courses
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [coursesError, setCoursesError] = useState<string | null>(null);
-  const [courseSearchQuery, setCourseSearchQuery] = useState("");
-  const [courseCurrentPage, setCourseCurrentPage] = useState(1);
+  const [courseSearch, setCourseSearch] = useState("");
+  const [coursePage, setCoursePage] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isEditingCourse, setIsEditingCourse] = useState(false);
-  const [courseEditForm, setCourseEditForm] = useState<Partial<Course>>({});
-  const [isSavingCourse, setIsSavingCourse] = useState(false);
-  const [isDeletingCourse, setIsDeletingCourse] = useState(false);
-  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(false);
 
-  // Course badge state
-  const [courseBadge, setCourseBadge] = useState<{
-    id: string;
-    title: string;
-    image_url: string | null;
-  } | null>(null);
-  const [badgeTitle, setBadgeTitle] = useState("");
-  const [uploadingBadge, setUploadingBadge] = useState(false);
-  const badgeInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Assignment state
+  // Assignments
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
 
-  const handleAddAssignment = async (coachId: string, studentId: string) => {
-    const res = await fetch("/api/admin/assignments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ coach_id: coachId, student_id: studentId }),
-    });
-    if (!res.ok) {
-      alert("Failed to add assignment");
-      return;
-    }
-    const newAssignment = await res.json();
-    setAssignments((prev) => [...prev, newAssignment]);
-  };
+  // Pending approvals
+  const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([]);
+  const [pendingBookingsLoading, setPendingBookingsLoading] = useState(true);
+  const [approvingBookingId, setApprovingBookingId] = useState<string | null>(null);
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+  const [editingBookingForm, setEditingBookingForm] = useState<PendingBookingForm | null>(null);
+  const [savingBookingId, setSavingBookingId] = useState<string | null>(null);
+  const [selectedPendingBookingId, setSelectedPendingBookingId] = useState<string | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<PendingBookingPreview | null>(null);
+  const [pendingPreviewLoading, setPendingPreviewLoading] = useState(false);
+  const [pendingPreviewError, setPendingPreviewError] = useState("");
 
-  const handleRemoveAssignment = async (assignmentId: string) => {
-    setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
-    const res = await fetch(`/api/admin/assignments/${assignmentId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) {
-      alert("Failed to remove assignment");
-      fetch("/api/admin/assignments")
-        .then((r) => r.json())
-        .then(setAssignments);
-    }
-  };
+  // Create modals
+  const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
+  const [isCreateCoachModalOpen, setIsCreateCoachModalOpen] = useState(false);
+  const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch("/api/admin/assignments")
-      .then((r) => r.json())
-      .then((data) => setAssignments(Array.isArray(data) ? data : []))
-      .catch(() => setAssignments([]))
-      .finally(() => setAssignmentsLoading(false));
+    async function checkAdminRole() {
+      try {
+        const res = await fetch("/api/user/role");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (data.role !== 3) router.push("/home");
+        else setIsAuthorized(true);
+      } catch {
+        router.push("/home");
+      }
+    }
+    checkAdminRole();
+  }, [router]);
+
+  // ── Data fetching ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
+        setStudentsLoading(true);
+        const res = await fetch("/api/admin/students");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setStudents(
+          Array.isArray(data)
+            ? data.map((s: any) => ({
+                id: String(s.id),
+                account_id: String(s.account_id),
+                first_name: s.first_name ?? null,
+                last_name: s.last_name ?? null,
+                avatar_url: s.avatar_url ?? null,
+                bio: s.bio ?? null,
+                created_at: s.created_at ?? "",
+                updated_at: s.updated_at ?? "",
+                date_of_birth: s.date_of_birth ?? null,
+                grade: s.grade ?? null,
+                lesson_space_id: s.lesson_space_id ?? null,
+                lesson_space_student_link: s.lesson_space_student_link ?? null,
+                lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
+                location: s.location ?? null,
+                notes: s.notes ?? null,
+                post_lesson_days: s.post_lesson_days ?? null,
+                post_lesson_tasks_enabled: s.post_lesson_tasks_enabled ?? null,
+                webhook_room_id: s.webhook_room_id ?? null,
+              }))
+            : [],
+        );
+      } finally {
+        setStudentsLoading(false);
+      }
+    }
+    fetchStudents();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      setEmployeesLoading(true);
+      const res = await fetch("/api/admin/employees");
+      if (!res.ok) throw new Error();
+      setEmployees(await res.json());
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
+  useEffect(() => { fetchEmployees(); }, []);
 
   useEffect(() => {
     async function fetchCourses() {
       try {
         setCoursesLoading(true);
-        const response = await fetch("/api/admin/courses");
-        if (!response.ok) throw new Error("Failed to fetch courses");
-        const data = await response.json();
-
-        console.log("Retrieved Courses: " + JSON.stringify(data));
-        const mapped = data.map((c: any) => ({
-          id: c.id,
-          name: c.title,
-          description: c.description,
-        }));
-
-        setCourses(mapped);
-      } catch (err) {
-        setCoursesError(
-          err instanceof Error ? err.message : "An error occurred",
-        );
+        const res = await fetch("/api/admin/courses");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setCourses(data.map((c: any) => ({ id: c.id, name: c.title, description: c.description })));
       } finally {
         setCoursesLoading(false);
       }
@@ -181,1654 +314,975 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    setCourseCurrentPage(1);
-  }, [courseSearchQuery]);
+    fetch("/api/admin/assignments")
+      .then((r) => r.json())
+      .then((d) => setAssignments(Array.isArray(d) ? d : []))
+      .catch(() => setAssignments([]))
+      .finally(() => setAssignmentsLoading(false));
+  }, []);
 
-  const filteredCourses = useMemo(() => {
-    if (!courseSearchQuery.trim()) return courses;
-    const query = courseSearchQuery.toLowerCase();
-    return courses.filter(
-      (c) =>
-        c.name.toLowerCase().includes(query) || c.id.toString().includes(query),
-    );
-  }, [courses, courseSearchQuery]);
-
-  const courseTotalPages = Math.ceil(filteredCourses.length / ITEMS_PER_PAGE);
-  const paginatedCourses = useMemo(() => {
-    const start = (courseCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredCourses.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredCourses, courseCurrentPage]);
-
-  const handleCloseCourseModal = () => {
-    setSelectedCourse(null);
-    setIsEditingCourse(false);
-    setCourseEditForm({});
-    setCourseBadge(null);
-    setBadgeTitle("");
+  const fetchPendingBookings = async () => {
+    try {
+      setPendingBookingsLoading(true);
+      const res = await fetch("/api/admin/pending-bookings");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const bookings = Array.isArray(data) ? data : [];
+      setPendingBookings(bookings);
+      setSelectedPendingBookingId((current) => current ?? bookings[0]?.id ?? null);
+    } catch {
+      setPendingBookings([]);
+    } finally {
+      setPendingBookingsLoading(false);
+    }
   };
 
+  useEffect(() => { fetchPendingBookings(); }, []);
+
+  // ── Calendar data ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedCourse) return;
+    if (!selectedStudent) { setStudentEvents([]); return; }
+    setStudentEventsLoading(true);
     const supabase = createClient();
     supabase
-      .from("badges")
-      .select("id, title, image_url")
-      .eq("course_id", String(selectedCourse.id))
-      .maybeSingle()
-      .then(({ data }) => {
-        setCourseBadge(data ?? null);
-        setBadgeTitle(data?.title ?? "");
+      .from("sessions")
+      .select("id, start_time, end_time, coaches(first_name, last_name)")
+      .eq("student_id", selectedStudent.id)
+      .order("start_time", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error("Student sessions fetch error:", error);
+        const events: EventInput[] = (data ?? [])
+          .filter((s: any) => s.start_time)
+          .map((s: any) => {
+            const coach = s.coaches;
+            const title = coach
+              ? `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Session"
+              : "Session";
+            return {
+              id: String(s.id),
+              title,
+              start: s.start_time,
+              end: s.end_time ?? undefined,
+              backgroundColor: "#B1E7D6",
+              borderColor: "transparent",
+              textColor: "#1F2E3B",
+            };
+          });
+        setStudentEvents(events);
+        setStudentEventsLoading(false);
       });
-  }, [selectedCourse?.id]);
+  }, [selectedStudent?.id]);
 
-  async function handleBadgeUpload(file: File | undefined) {
-    if (!file || !selectedCourse) return;
-    if (file.type !== "image/png") {
-      alert("PNG only");
-      return;
-    }
-    setUploadingBadge(true);
+  useEffect(() => {
+    if (!selectedEmployee) { setCoachEvents([]); return; }
+    setCoachEventsLoading(true);
     const supabase = createClient();
 
-    let badge = courseBadge;
-    if (!badge) {
-      const { data: newBadge } = await supabase
-        .from("badges")
-        .insert({
-          course_id: String(selectedCourse.id),
-          title: badgeTitle || selectedCourse.name,
+    Promise.all([
+      supabase
+        .from("coach_availabilities")
+        .select("weekday, start_time, end_time, start_time_new, end_time_new")
+        .eq("coach_id", selectedEmployee.id),
+      supabase
+        .from("sessions")
+        .select("id, start_time, end_time, student_id, students(first_name, last_name)")
+        .eq("coach_id", selectedEmployee.id),
+    ]).then(([{ data: availability }, { data: sessions }]) => {
+      const availabilityEvents: EventInput[] = (availability ?? [])
+        .map((s) => {
+          const start = parseAvailabilityTime(s.start_time_new ?? s.start_time);
+          const end = parseAvailabilityTime(s.end_time_new ?? s.end_time);
+          if (!start || !end) return null;
+          return {
+            daysOfWeek: [s.weekday ?? 0],
+            startTime: start,
+            endTime: end,
+            title: `${start} – ${end}`,
+            backgroundColor: "#1e4535",
+            borderColor: "#65CFAD",
+            textColor: "#65CFAD",
+          };
         })
-        .select("id, title, image_url")
-        .single();
-      badge = newBadge;
-    }
+        .filter(Boolean) as EventInput[];
 
-    if (!badge) {
-      setUploadingBadge(false);
-      return;
-    }
+      const sessionEvents: EventInput[] = (sessions ?? []).map((s: any) => {
+        const student = s.students;
+        const name = student
+          ? `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() || "Session"
+          : "Session";
+        return {
+          id: String(s.id),
+          title: name,
+          start: s.start_time,
+          end: s.end_time ?? undefined,
+          backgroundColor: "#B1E7D6",
+          borderColor: "transparent",
+          textColor: "#1F2E3B",
+        };
+      });
 
-    const path = `${badge.id}.png`;
-    await supabase.storage
-      .from("badges")
-      .upload(path, file, { upsert: true, contentType: "image/png" });
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("badges").getPublicUrl(path);
-    await supabase
-      .from("badges")
-      .update({ image_url: publicUrl, title: badgeTitle || badge.title })
-      .eq("id", badge.id);
-
-    setCourseBadge({
-      ...badge,
-      image_url: publicUrl,
-      title: badgeTitle || badge.title,
+      setCoachEvents([...availabilityEvents, ...sessionEvents]);
+      setCoachEventsLoading(false);
     });
-    setUploadingBadge(false);
-  }
-  const handleEditCourseStart = () => {
-    setCourseEditForm({ ...selectedCourse });
-    setIsEditingCourse(true);
-  };
-  const handleEditCourseCancel = () => {
-    setCourseEditForm({});
-    setIsEditingCourse(false);
-  };
-  const handleEditCourseSave = async () => {
-    if (!selectedCourse) return;
-    setIsSavingCourse(true);
-    try {
-      const response = await fetch(`/api/admin/courses/${selectedCourse.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ course: courseEditForm }),
-      });
-      if (!response.ok) throw new Error("Failed to update course");
-      const updated = await response.json();
-      setCourses((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c)),
-      );
-      setSelectedCourse(updated);
-      setIsEditingCourse(false);
-      setCourseEditForm({});
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setIsSavingCourse(false);
-    }
-  };
-  const handleDeleteCourse = async () => {
-    if (
-      !selectedCourse ||
-      !confirm(`Delete "${selectedCourse.name}"? This cannot be undone.`)
-    )
-      return;
-    setIsDeletingCourse(true);
-    try {
-      console.log("Trying to delete");
-      const response = await fetch(`/api/admin/courses/${selectedCourse.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete course");
-      setCourses((prev) => prev.filter((c) => c.id !== selectedCourse.id));
-      handleCloseCourseModal();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed");
-    } finally {
-      setIsDeletingCourse(false);
-    }
-  };
+  }, [selectedEmployee?.id]);
 
-  // Check admin role
-  useEffect(() => {
-    async function checkAdminRole() {
-      try {
-        const response = await fetch("/api/user/role");
-        if (!response.ok) throw new Error("Failed to fetch user role");
-        const data = await response.json();
-        if (data.role !== 3) {
-          router.push("/home");
-        } else {
-          setIsAuthorized(true);
-        }
-      } catch (error) {
-        console.error("Error checking admin role:", error);
-        router.push("/home");
-      }
-    }
-    checkAdminRole();
-  }, [router]);
+  // ── Reset page on search change ───────────────────────────────────────────
+  useEffect(() => { setStudentPage(1); }, [studentSearch]);
+  useEffect(() => { setEmployeePage(1); }, [employeeSearch]);
+  useEffect(() => { setCoursePage(1); }, [courseSearch]);
 
-  // Fetch students
-  useEffect(() => {
-    async function fetchStudents() {
-      try {
-        setStudentsLoading(true);
-        const response = await fetch("/api/admin/students");
-        if (!response.ok) throw new Error("Failed to fetch students");
-
-        const data = await response.json();
-
-        const mapped: Student[] = Array.isArray(data)
-          ? data.map((s: any) => ({
-              id: String(s.id),
-              account_id: String(s.account_id),
-              name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
-              created_at: s.created_at ?? "",
-              updated_at: s.updated_at ?? "",
-              lesson_space_id: s.lesson_space_id ?? null,
-              profile_access_pin: s.profile_access_pin ?? null,
-              teach_works_url: s.teach_works_url ?? null,
-              lesson_space_teacher_link: s.lesson_space_teacher_link ?? null,
-              lesson_space_student_link: s.lesson_space_student_link ?? null,
-              remaining_lessons: s.remaining_lessons ?? null,
-            }))
-          : [];
-
-        setStudents(mapped);
-      } catch (err) {
-        setStudentsError(
-          err instanceof Error ? err.message : "An error occurred",
-        );
-      } finally {
-        setStudentsLoading(false);
-      }
-    }
-
-    fetchStudents();
-  }, []);
-
-  // Fetch employees
-  const fetchEmployees = async () => {
-    try {
-      setEmployeesLoading(true);
-      const response = await fetch("/api/admin/employees");
-      if (!response.ok) throw new Error("Failed to fetch employees");
-      const data = await response.json();
-      setEmployees(data);
-      console.log("Fetched employees: " + JSON.stringify(data));
-    } catch (err) {
-      setEmployeesError(
-        err instanceof Error ? err.message : "An error occurred",
-      );
-    } finally {
-      setEmployeesLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
+  // ── Filtered + paginated ──────────────────────────────────────────────────
   const filteredStudents = useMemo(() => {
-    if (!studentSearchQuery.trim()) return students;
-
-    const query = studentSearchQuery.toLowerCase();
-
-    return students.filter((student) => {
-      return (
-        student.name.toLowerCase().includes(query) ||
-        student.id.toLowerCase().includes(query) ||
-        student.account_id.toLowerCase().includes(query) ||
-        (student.profile_access_pin ?? "").toLowerCase().includes(query)
-      );
-    });
-  }, [students, studentSearchQuery]);
-
-  const handleEditStart = () => {
-    setEditForm({ ...selectedStudent });
-    setIsEditing(true);
-  };
-  const handleEditCancel = () => {
-    setEditForm({});
-    setIsEditing(false);
-  };
-  const handleEditSave = async () => {
-    if (!selectedStudent) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch(
-        `/api/admin/students/${selectedStudent.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ student: editForm }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to update student");
-      const updated = await response.json();
-      setStudents((prev) =>
-        prev.map((s) => (s.id === updated.id ? updated : s)),
-      );
-      setSelectedStudent(updated);
-      setIsEditing(false);
-      setEditForm({});
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    if (!studentSearch.trim()) return students;
+    const q = studentSearch.toLowerCase();
+    return students.filter(
+      (s) =>
+        (s.first_name ?? "").toLowerCase().includes(q) ||
+        (s.last_name ?? "").toLowerCase().includes(q) ||
+        s.id.toLowerCase().includes(q) ||
+        s.account_id.toLowerCase().includes(q) ||
+        (s.grade ?? "").toLowerCase().includes(q) ||
+        (s.location ?? "").toLowerCase().includes(q),
+    );
+  }, [students, studentSearch]);
 
   const filteredEmployees = useMemo(() => {
-    if (!employeeSearchQuery.trim()) return employees;
-
-    const query = employeeSearchQuery.toLowerCase();
-
-    return employees.filter((coach) => {
-      return (
-        coach.first_name.toLowerCase().includes(query) ||
-        coach.last_name.toLowerCase().includes(query) ||
-        coach.id.toLowerCase().includes(query) ||
-        coach.account_id.toLowerCase().includes(query)
-      );
-    });
-  }, [employees, employeeSearchQuery]);
-
-  useEffect(() => {
-    setStudentCurrentPage(1);
-  }, [studentSearchQuery]);
-  useEffect(() => {
-    setEmployeeCurrentPage(1);
-  }, [employeeSearchQuery]);
-
-  const handleCloseStudentModal = () => {
-    setSelectedStudent(null);
-    setIsEditing(false);
-    setEditForm({});
-  };
-  const handleCloseEmployeeModal = () => {
-    setSelectedEmployee(null);
-    setIsEditingEmployee(false);
-    setEmployeeEditForm({});
-  };
-  const handleEditEmployeeStart = () => {
-    setEmployeeEditForm({ ...selectedEmployee });
-    setIsEditingEmployee(true);
-  };
-  const handleEditEmployeeCancel = () => {
-    setEmployeeEditForm({});
-    setIsEditingEmployee(false);
-  };
-  const handleEditEmployeeSave = async () => {
-    if (!selectedEmployee) return;
-    setIsSavingEmployee(true);
-    try {
-      const response = await fetch(
-        `/api/admin/employees/${selectedEmployee.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ employee: employeeEditForm }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to update employee");
-      const updated = await response.json();
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e)),
-      );
-      setSelectedEmployee(updated);
-      setIsEditingEmployee(false);
-      setEmployeeEditForm({});
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setIsSavingEmployee(false);
-    }
-  };
-  useEffect(() => {
-    if (!selectedEmployee) {
-      setCoachAvailability({});
-      setOriginalAvailability({});
-      return;
-    }
-    async function fetchCoachAvailability() {
-      const res = await fetch(
-        `/api/admin/employees/${selectedEmployee!.id}/availability`,
-      );
-      if (!res.ok) return;
-      const rows: { weekday: number; start_time: string; end_time: string }[] =
-        await res.json();
-      const mapped: Record<string, { start: string; end: string }[]> = {};
-      rows.forEach(({ weekday, start_time, end_time }) => {
-        const day = DAY_MAP[weekday];
-        const start = start_time.slice(11, 16);
-        const end = end_time.slice(11, 16);
-        if (!mapped[day]) mapped[day] = [];
-        mapped[day].push({ start, end });
-      });
-      setCoachAvailability(mapped);
-      setOriginalAvailability(mapped);
-    }
-    fetchCoachAvailability();
-  }, [selectedEmployee]);
-
-  const handleSaveCoachAvailability = async () => {
-    if (!selectedEmployee) return;
-    const res = await fetch(
-      `/api/admin/employees/${selectedEmployee.id}/availability`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availability: coachAvailability }),
-      },
+    if (!employeeSearch.trim()) return employees;
+    const q = employeeSearch.toLowerCase();
+    return employees.filter(
+      (e) =>
+        e.first_name.toLowerCase().includes(q) ||
+        e.last_name.toLowerCase().includes(q) ||
+        e.id.toLowerCase().includes(q) ||
+        e.account_id.toLowerCase().includes(q),
     );
-    if (!res.ok) {
-      alert("Failed to save availability");
-      return;
-    }
-    setOriginalAvailability(coachAvailability);
-    alert("Availability saved!");
-  };
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (selectedStudent) handleCloseStudentModal();
-        if (selectedEmployee) handleCloseEmployeeModal();
-        if (selectedCourse) handleCloseCourseModal();
-      }
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [selectedStudent, selectedEmployee, selectedCourse]);
+  }, [employees, employeeSearch]);
+
+  const filteredCourses = useMemo(() => {
+    if (!courseSearch.trim()) return courses;
+    const q = courseSearch.toLowerCase();
+    return courses.filter((c) => c.name.toLowerCase().includes(q) || c.id.toString().includes(q));
+  }, [courses, courseSearch]);
 
   const studentTotalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
-  const paginatedStudents = useMemo(() => {
-    const startIndex = (studentCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredStudents, studentCurrentPage]);
+  const employeeTotalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);
+  const courseTotalPages = Math.ceil(filteredCourses.length / ITEMS_PER_PAGE);
 
-  const employeeTotalPages = Math.ceil(
-    filteredEmployees.length / ITEMS_PER_PAGE,
+  const paginatedStudents = useMemo(() => filteredStudents.slice((studentPage - 1) * ITEMS_PER_PAGE, studentPage * ITEMS_PER_PAGE), [filteredStudents, studentPage]);
+  const paginatedEmployees = useMemo(() => filteredEmployees.slice((employeePage - 1) * ITEMS_PER_PAGE, employeePage * ITEMS_PER_PAGE), [filteredEmployees, employeePage]);
+  const paginatedCourses = useMemo(() => filteredCourses.slice((coursePage - 1) * ITEMS_PER_PAGE, coursePage * ITEMS_PER_PAGE), [filteredCourses, coursePage]);
+  const selectedPendingBooking = useMemo(
+    () => pendingBookings.find((booking) => booking.id === selectedPendingBookingId) ?? pendingBookings[0] ?? null,
+    [pendingBookings, selectedPendingBookingId],
   );
-  const paginatedEmployees = useMemo(() => {
-    const startIndex = (employeeCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredEmployees.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredEmployees, employeeCurrentPage]);
+  const selectedPendingBookingForm = useMemo(
+    () =>
+      selectedPendingBooking
+        ? editingBookingId === selectedPendingBooking.id && editingBookingForm
+          ? editingBookingForm
+          : formFromPendingBooking(selectedPendingBooking)
+        : null,
+    [editingBookingForm, editingBookingId, selectedPendingBooking],
+  );
+  const pendingPreviewInitialDate = useMemo(() => {
+    const datedEvents = [
+      ...(pendingPreview?.proposedEvents ?? []),
+      ...(pendingPreview?.conflictEvents ?? []),
+    ]
+      .map((event) => (typeof event.start === "string" ? event.start : null))
+      .filter((start): start is string => !!start)
+      .sort();
 
-  const loading =
-    activeTab === "students"
-      ? studentsLoading
-      : activeTab === "coaches"
-        ? employeesLoading
-        : coursesLoading;
-  const error =
-    activeTab === "students"
-      ? studentsError
-      : activeTab === "coaches"
-        ? employeesError
-        : coursesError;
+    return datedEvents[0];
+  }, [pendingPreview]);
 
-  if (isAuthorized === null) {
+  useEffect(() => {
+    if (activeTab !== "pending" || !selectedPendingBooking || !selectedPendingBookingForm) {
+      setPendingPreview(null);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadPreview() {
+      setPendingPreviewLoading(true);
+      setPendingPreviewError("");
+      try {
+        const res = await fetch(`/api/admin/pending-bookings/${selectedPendingBooking.id}/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(selectedPendingBookingForm),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to load preview");
+        if (!cancelled) setPendingPreview(data);
+      } catch (error) {
+        if (!cancelled) {
+          setPendingPreview(null);
+          setPendingPreviewError(error instanceof Error ? error.message : "Failed to load preview");
+        }
+      } finally {
+        if (!cancelled) setPendingPreviewLoading(false);
+      }
+    }
+
+    loadPreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, selectedPendingBooking?.id, selectedPendingBookingForm]);
+
+  // ── Assignment handlers ───────────────────────────────────────────────────
+  const handleAddAssignment = async (coachId: string, studentId: string) => {
+    const res = await fetch("/api/admin/assignments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coach_id: coachId, student_id: studentId }),
+    });
+    if (!res.ok) { alert("Failed to add assignment"); return; }
+    const newAssignment = await res.json();
+    setAssignments((prev) => [...prev, newAssignment]);
+  };
+
+  const handleRemoveAssignment = async (assignmentId: string) => {
+    setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+    const res = await fetch(`/api/admin/assignments/${assignmentId}`, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Failed to remove assignment");
+      fetch("/api/admin/assignments").then((r) => r.json()).then(setAssignments);
+    }
+  };
+
+  const handleApprovePendingBooking = async (bookingId: string) => {
+    setApprovingBookingId(bookingId);
+    const res = await fetch(`/api/admin/pending-bookings/${bookingId}/approve`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setApprovingBookingId(null);
+
+    if (!res.ok) {
+      alert(data.error ?? "Failed to approve booking");
+      return;
+    }
+
+    setPendingBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
+    setSelectedPendingBookingId((current) => (current === bookingId ? null : current));
+    fetch("/api/admin/assignments")
+      .then((r) => r.json())
+      .then((d) => setAssignments(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  };
+
+  const startEditingPendingBooking = (booking: PendingBooking) => {
+    setSelectedPendingBookingId(booking.id);
+    setEditingBookingId(booking.id);
+    setEditingBookingForm(formFromPendingBooking(booking));
+  };
+
+  const cancelEditingPendingBooking = () => {
+    setEditingBookingId(null);
+    setEditingBookingForm(null);
+  };
+
+  const updateEditingBookingForm = <K extends keyof PendingBookingForm>(
+    key: K,
+    value: PendingBookingForm[K],
+  ) => {
+    setEditingBookingForm((prev) => {
+      const base = prev ?? (selectedPendingBooking ? formFromPendingBooking(selectedPendingBooking) : null);
+      return base ? { ...base, [key]: value } : base;
+    });
+  };
+
+  const handleSavePendingBooking = async (bookingId: string) => {
+    if (!editingBookingForm) return;
+
+    setSavingBookingId(bookingId);
+    const res = await fetch(`/api/admin/pending-bookings/${bookingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingBookingForm),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSavingBookingId(null);
+
+    if (!res.ok) {
+      alert(data.error ?? "Failed to update booking");
+      return;
+    }
+
+    setPendingBookings((prev) => prev.map((booking) => (booking.id === bookingId ? data : booking)));
+    cancelEditingPendingBooking();
+  };
+
+  // ── Tab switch helper ─────────────────────────────────────────────────────
+  const switchTab = (tab: TabType) => {
+    setActiveTab(tab);
+    setSelectedStudent(null);
+    setSelectedEmployee(null);
+    setSelectedCourse(null);
+    setMobileShowDetail(false);
+  };
+
+  const selectStudent = (s: Student) => { setSelectedStudent(s); setMobileShowDetail(true); };
+  const selectEmployee = (e: Coach) => { setSelectedEmployee(e); setMobileShowDetail(true); };
+  const selectCourse = (c: Course) => { setSelectedCourse(c); setMobileShowDetail(true); };
+
+  // ── Loading / auth gates ──────────────────────────────────────────────────
+  if (isAuthorized === null || studentsLoading || employeesLoading || coursesLoading) {
     return (
-      <div className="p-4 max-w-md">
-        <h1 className="text-base font-bold mb-2 text-gray-900">Admin</h1>
-        <p className="text-sm text-gray-700">Verifying access...</p>
+      <div className="min-h-screen bg-[#2B4257] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-[#B1E7D6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/40 text-sm">{isAuthorized === null ? "Verifying access…" : "Loading…"}</p>
+        </div>
       </div>
     );
   }
   if (!isAuthorized) return null;
-  if (loading) {
-    return (
-      <div className="p-4 max-w-md">
-        <h1 className="text-base font-bold mb-2 text-gray-900">Admin</h1>
-        <p className="text-sm text-gray-700">Loading...</p>
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="p-4 max-w-md">
-        <h1 className="text-base font-bold mb-2 text-gray-900">Admin</h1>
-        <p className="text-sm text-red-600">Error: {error}</p>
-      </div>
-    );
-  }
 
-  const handleGetLessonSpaces = async () => {
-    try {
-      console.log("Inside handleGetLessonSpaces");
-      const response = await fetch("/api/learningSpace");
+  const inputClass =
+    "w-full bg-[#1F2E3B] border border-white/8 text-white placeholder:text-white/25 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#B1E7D6]/40 transition-colors";
 
-      if (!response.ok) {
-        console.log("Error with response");
-      }
-
-      await response.json();
-      console.log("Response: " + JSON.stringify(response));
-    } catch (err) {
-      console.log("Error fetching lesson spaces");
-    }
-  };
+  // ── Derived selection state ───────────────────────────────────────────────
+  const hasDetail =
+    (activeTab === "students" && !!selectedStudent) ||
+    (activeTab === "coaches" && !!selectedEmployee) ||
+    (activeTab === "courses" && !!selectedCourse);
 
   return (
-    <div className="p-4 max-w-md">
-      <div className="flex justify-between items-center mb-3">
-        <h1 className="text-base font-bold text-gray-900">Admin</h1>
-        <button
-          onClick={() => setIsCreateAdminModalOpen(true)}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-        >
-          + Create Admin
-        </button>
-      </div>
+    <div className="h-screen bg-[#2B4257] flex flex-col overflow-hidden">
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 mb-3 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab("students")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "students"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Students
-        </button>
-        <button
-          onClick={() => setActiveTab("coaches")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "coaches"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Coaches
-        </button>
-        <button
-          onClick={() => setActiveTab("courses")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "courses"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Courses
-        </button>
-        <button
-          onClick={() => setActiveTab("assignments")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "assignments"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Assignments
-        </button>
-
-        <button
-          onClick={() => setActiveTab("learning_space")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "learning_space"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Learning Spaces
-        </button>
-
-        <button
-          onClick={() => setActiveTab("course_assignment")}
-          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-            activeTab === "course_assignment"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Course Assignment
-        </button>
-      </div>
-
-      {/* ── Students Tab ── */}
-      {activeTab === "students" && (
-        <>
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Search by name, student ID, or customer ID..."
-              value={studentSearchQuery}
-              onChange={(e) => setStudentSearchQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            />
-          </div>
-          <StudentTable
-            students={paginatedStudents}
-            onStudentClick={setSelectedStudent}
-          />
-          {studentTotalPages > 1 && (
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-xs text-gray-600">
-                Showing {(studentCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                {Math.min(
-                  studentCurrentPage * ITEMS_PER_PAGE,
-                  filteredStudents.length,
-                )}{" "}
-                of {filteredStudents.length}
-              </p>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() =>
-                    setStudentCurrentPage((p) => Math.max(p - 1, 1))
-                  }
-                  disabled={studentCurrentPage === 1}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Prev
-                </button>
-                <span className="px-2 py-1 text-xs text-gray-700">
-                  {studentCurrentPage} / {studentTotalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    setStudentCurrentPage((p) =>
-                      Math.min(p + 1, studentTotalPages),
-                    )
-                  }
-                  disabled={studentCurrentPage === studentTotalPages}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+      {/* ── Header ── */}
+      <header className="shrink-0 bg-[#1F2E3B] border-b border-white/8 shadow-[0_2px_12px_rgba(0,0,0,0.3)] z-10">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3.5">
+          <div className="flex items-center gap-3">
+            {/* Mobile back button (when in detail view) */}
+            {mobileShowDetail && hasDetail && (
+              <button
+                onClick={() => setMobileShowDetail(false)}
+                className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <div>
+              <h1 className="text-white font-bold text-base leading-none">Admin Dashboard</h1>
             </div>
-          )}
-          {studentTotalPages <= 1 && filteredStudents.length > 0 && (
-            <p className="mt-3 text-xs text-gray-600">
-              Total: {filteredStudents.length}
-            </p>
-          )}
-        </>
-      )}
-
-      {/* ── Coaches Tab ── */}
-      {activeTab === "coaches" && (
-        <>
-          <div className="flex justify-between items-center mb-3">
-            <input
-              type="text"
-              placeholder="Search by name, employee ID, or position..."
-              value={employeeSearchQuery}
-              onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900 mr-3"
-            />
-            <button
-              onClick={() => setIsCreateCoachModalOpen(true)}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors whitespace-nowrap"
-            >
-              + Create Coach
-            </button>
           </div>
-          <EmployeeTable
-            employees={paginatedEmployees}
-            onEmployeeClick={setSelectedEmployee}
-          />
-          {employeeTotalPages > 1 && (
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-xs text-gray-600">
-                Showing {(employeeCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                {Math.min(
-                  employeeCurrentPage * ITEMS_PER_PAGE,
-                  filteredEmployees.length,
-                )}{" "}
-                of {filteredEmployees.length}
-              </p>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() =>
-                    setEmployeeCurrentPage((p) => Math.max(p - 1, 1))
-                  }
-                  disabled={employeeCurrentPage === 1}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Prev
-                </button>
-                <span className="px-2 py-1 text-xs text-gray-700">
-                  {employeeCurrentPage} / {employeeTotalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    setEmployeeCurrentPage((p) =>
-                      Math.min(p + 1, employeeTotalPages),
-                    )
-                  }
-                  disabled={employeeCurrentPage === employeeTotalPages}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-          {employeeTotalPages <= 1 && filteredEmployees.length > 0 && (
-            <p className="mt-3 text-xs text-gray-600">
-              Total: {filteredEmployees.length}
-            </p>
-          )}
-        </>
-      )}
-
-      {/* ── Student Detail Modal ── */}
-      {selectedStudent && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={handleCloseStudentModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={() => setIsCreateAdminModalOpen(true)}
+            className="bg-[#B1E7D6] text-[#1F2E3B] font-semibold text-xs px-3.5 py-2 rounded-xl hover:bg-[#9ed4c1] transition-colors shadow-[0_4px_12px_rgba(177,231,214,0.2)]"
           >
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">
-                {isEditing
-                  ? `${editForm.name ?? selectedStudent.name}`
-                  : `${selectedStudent.name} `}
-              </h2>
-              <div className="flex items-center gap-2">
-                {!isEditing ? (
-                  <>
-                    <button
-                      onClick={handleEditStart}
-                      className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={handleCloseStudentModal}
-                      className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                    >
-                      ×
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleEditSave}
-                      disabled={isSaving}
-                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isSaving ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                      onClick={handleEditCancel}
-                      className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="px-6 py-4 space-y-4">
-              {(() => {
-                const Field = ({
-                  label,
-                  fieldKey,
-                  type = "text",
-                }: {
-                  label: string;
-                  fieldKey: keyof Student;
-                  type?: string;
-                }) => (
-                  <div>
-                    <span className="text-gray-500">{label}:</span>
-                    {isEditing ? (
-                      <input
-                        type={type}
-                        value={(editForm[fieldKey] as string) ?? ""}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            [fieldKey]: e.target.value,
-                          }))
-                        }
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900 font-medium">
-                        {(selectedStudent[fieldKey] as string) || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                );
-
-                const SelectField = ({
-                  label,
-                  fieldKey,
-                  options,
-                }: {
-                  label: string;
-                  fieldKey: keyof Student;
-                  options: string[];
-                }) => (
-                  <div>
-                    <span className="text-gray-500">{label}:</span>
-                    {isEditing ? (
-                      <select
-                        value={(editForm[fieldKey] as string) ?? ""}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            [fieldKey]: e.target.value,
-                          }))
-                        }
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {options.map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p className="text-green-600">
-                        {(selectedStudent[fieldKey] as string) || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                );
-
-                return (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Basic Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Student ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedStudent.id}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">Account ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedStudent.account_id}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">Name:</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.name ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  name: e.target.value,
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium">
-                              {selectedStudent.name || "N/A"}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Remaining Lessons:
-                          </span>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              value={editForm.remaining_lessons ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  remaining_lessons:
-                                    e.target.value === ""
-                                      ? null
-                                      : Number(e.target.value),
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium">
-                              {selectedStudent.remaining_lessons ?? "N/A"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Lesson Space Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">
-                            Lesson Space ID:
-                          </span>
-                          <p className="text-gray-900 font-medium break-all">
-                            {selectedStudent.lesson_space_id ?? "N/A"}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">
-                            Profile Access PIN:
-                          </span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.profile_access_pin ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  profile_access_pin: e.target.value,
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium">
-                              {selectedStudent.profile_access_pin ?? "N/A"}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="col-span-2">
-                          <span className="text-gray-500">Student Link:</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.lesson_space_student_link ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  lesson_space_student_link: e.target.value,
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium break-all">
-                              {selectedStudent.lesson_space_student_link ??
-                                "N/A"}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="col-span-2">
-                          <span className="text-gray-500">Teacher Link:</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.lesson_space_teacher_link ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  lesson_space_teacher_link: e.target.value,
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium break-all">
-                              {selectedStudent.lesson_space_teacher_link ??
-                                "N/A"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Other Information
-                      </h3>
-                      <div className="grid grid-cols-1 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Teachworks URL:</span>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.teach_works_url ?? ""}
-                              onChange={(e) =>
-                                setEditForm((prev) => ({
-                                  ...prev,
-                                  teach_works_url: e.target.value,
-                                }))
-                              }
-                              className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          ) : (
-                            <p className="text-gray-900 font-medium break-all">
-                              {selectedStudent.teach_works_url ?? "N/A"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
+            + Admin
+          </button>
         </div>
-      )}
+      </header>
 
-      {/* ── Employee Detail Modal ── */}
-      {selectedEmployee && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={handleCloseEmployeeModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">
-                {isEditingEmployee
-                  ? `${(employeeEditForm as any).first_name ?? selectedEmployee.first_name} ${(employeeEditForm as any).last_name ?? selectedEmployee.last_name}`
-                  : `${selectedEmployee.first_name} ${selectedEmployee.last_name}`}
-              </h2>
-              <div className="flex items-center gap-2">
-                {!isEditingEmployee ? (
+      {/* ── Body ── */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ── Desktop sidebar ── */}
+        <nav className="hidden md:flex flex-col shrink-0 w-16 lg:w-56 bg-[#1F2E3B] border-r border-white/5 py-3 px-2 gap-0.5">
+          {NAV_ITEMS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => switchTab(key)}
+              className={`px-3 py-2.5 rounded-xl transition-all text-left text-sm font-semibold ${
+                activeTab === key
+                  ? "bg-[#B1E7D6] text-[#1F2E3B]"
+                  : "text-white/45 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {/* ── Content area ── */}
+        <div className="flex flex-1 min-w-0 overflow-hidden">
+
+          {/* ── List panel ── */}
+          {activeTab !== "assignments" && activeTab !== "pending" ? (
+            <div
+              className={`shrink-0 w-full md:w-72 lg:w-80 xl:w-[340px] bg-[#162330] border-r border-white/5 flex flex-col overflow-hidden
+                ${mobileShowDetail ? "hidden md:flex" : "flex"}`}
+            >
+              {/* Search + action */}
+              <div className="p-3 border-b border-white/5 flex gap-2 shrink-0">
+                <input
+                  type="text"
+                  placeholder={
+                    activeTab === "students" ? "Search students…" :
+                    activeTab === "coaches" ? "Search coaches…" : "Search courses…"
+                  }
+                  value={
+                    activeTab === "students" ? studentSearch :
+                    activeTab === "coaches" ? employeeSearch : courseSearch
+                  }
+                  onChange={(e) => {
+                    if (activeTab === "students") setStudentSearch(e.target.value);
+                    else if (activeTab === "coaches") setEmployeeSearch(e.target.value);
+                    else setCourseSearch(e.target.value);
+                  }}
+                  className={inputClass}
+                />
+                {activeTab === "coaches" && (
+                  <button
+                    onClick={() => setIsCreateCoachModalOpen(true)}
+                    title="New Coach"
+                    className="shrink-0 w-10 h-10 bg-[#65CFAD] text-[#1F2E3B] rounded-xl flex items-center justify-center font-bold text-lg hover:bg-[#50bfa0] transition-colors"
+                  >+</button>
+                )}
+                {activeTab === "courses" && (
+                  <button
+                    onClick={() => setIsCreateCourseModalOpen(true)}
+                    title="New Course"
+                    className="shrink-0 w-10 h-10 bg-[#B1E7D6] text-[#1F2E3B] rounded-xl flex items-center justify-center font-bold text-lg hover:bg-[#9ed4c1] transition-colors"
+                  >+</button>
+                )}
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto">
+                {activeTab === "students" && (
                   <>
-                    <button
-                      onClick={handleEditEmployeeStart}
-                      className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={handleCloseEmployeeModal}
-                      className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                    >
-                      x
-                    </button>
+                    {paginatedStudents.length === 0 ? (
+                      <p className="text-white/25 text-sm text-center py-12">No students found</p>
+                    ) : (
+                      paginatedStudents.map((s) => (
+                        <StudentListItem key={s.id} student={s} isSelected={selectedStudent?.id === s.id} onClick={() => selectStudent(s)} />
+                      ))
+                    )}
                   </>
-                ) : (
+                )}
+                {activeTab === "coaches" && (
                   <>
-                    <button
-                      onClick={handleEditEmployeeSave}
-                      disabled={isSavingEmployee}
-                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isSavingEmployee ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                      onClick={handleEditEmployeeCancel}
-                      className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
+                    {paginatedEmployees.length === 0 ? (
+                      <p className="text-white/25 text-sm text-center py-12">No coaches found</p>
+                    ) : (
+                      paginatedEmployees.map((e) => (
+                        <CoachListItem key={e.id} coach={e} isSelected={selectedEmployee?.id === e.id} onClick={() => selectEmployee(e)} />
+                      ))
+                    )}
+                  </>
+                )}
+                {activeTab === "courses" && (
+                  <>
+                    {paginatedCourses.length === 0 ? (
+                      <p className="text-white/25 text-sm text-center py-12">No courses found</p>
+                    ) : (
+                      paginatedCourses.map((c) => (
+                        <CourseListItem key={c.id} course={c} isSelected={selectedCourse?.id === c.id} onClick={() => selectCourse(c)} />
+                      ))
+                    )}
                   </>
                 )}
               </div>
+
+              {/* Pagination */}
+              <div className="shrink-0 border-t border-white/5 px-3 py-2">
+                {activeTab === "students" && (
+                  <Pagination currentPage={studentPage} totalPages={studentTotalPages} totalItems={filteredStudents.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setStudentPage} />
+                )}
+                {activeTab === "coaches" && (
+                  <Pagination currentPage={employeePage} totalPages={employeeTotalPages} totalItems={filteredEmployees.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setEmployeePage} />
+                )}
+                {activeTab === "courses" && (
+                  <Pagination currentPage={coursePage} totalPages={courseTotalPages} totalItems={filteredCourses.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCoursePage} />
+                )}
+              </div>
             </div>
+          ) : null}
 
-            <div className="px-6 py-4 space-y-4">
-              {(() => {
-                const Field = ({
-                  label,
-                  fieldKey,
-                  type = "text",
-                  colSpan = "",
-                }: {
-                  label: string;
-                  fieldKey: keyof Coach;
-                  type?: string;
-                  colSpan?: string;
-                }) => (
-                  <div className={colSpan}>
-                    <span className="text-gray-500">{label}:</span>
-                    {isEditingEmployee ? (
-                      <input
-                        type={type}
-                        value={(employeeEditForm[fieldKey] as string) ?? ""}
-                        onChange={(e) =>
-                          setEmployeeEditForm((prev) => ({
-                            ...prev,
-                            [fieldKey]: e.target.value,
-                          }))
-                        }
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900 font-medium">
-                        {(selectedEmployee[fieldKey] as string) || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                );
-
-                const SelectField = ({
-                  label,
-                  fieldKey,
-                  options,
-                  colorFn,
-                }: {
-                  label: string;
-                  fieldKey: keyof Coach;
-                  options: string[];
-                  colorFn?: (val: string) => string;
-                }) => (
-                  <div>
-                    <span className="text-gray-500">{label}:</span>
-                    {isEditingEmployee ? (
-                      <select
-                        value={(employeeEditForm[fieldKey] as string) ?? ""}
-                        onChange={(e) =>
-                          setEmployeeEditForm((prev) => ({
-                            ...prev,
-                            [fieldKey]: e.target.value,
-                          }))
-                        }
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {options.map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p
-                        className={`font-medium capitalize ${
-                          colorFn
-                            ? colorFn(selectedEmployee[fieldKey] as string)
-                            : "text-gray-900"
-                        }`}
-                      >
-                        {(selectedEmployee[fieldKey] as string) || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                );
-
-                const TextArea = ({
-                  label,
-                  fieldKey,
-                }: {
-                  label: string;
-                  fieldKey: keyof Coach;
-                }) => (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                      {label}
-                    </h3>
-                    {isEditingEmployee ? (
-                      <textarea
-                        value={(employeeEditForm[fieldKey] as string) ?? ""}
-                        onChange={(e) =>
-                          setEmployeeEditForm((prev) => ({
-                            ...prev,
-                            [fieldKey]: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        className="block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-xs text-gray-900">
-                        {(selectedEmployee[fieldKey] as string) || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                );
-
-                return (
-                  <>
-                    {/* BASIC INFO */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Basic Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Coach ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedEmployee.id}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">Account ID:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedEmployee.account_id}
-                          </p>
-                        </div>
-
-                        <Field
-                          label="First Name"
-                          fieldKey="first_name"
-                          colSpan="col-span-1"
-                        />
-                        <Field
-                          label="Last Name"
-                          fieldKey="last_name"
-                          colSpan="col-span-1"
-                        />
-                      </div>
-                    </div>
-
-                    {/* TIMESTAMPS */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                        Timestamps
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Created At:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedEmployee.created_at || "N/A"}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-500">Updated At:</span>
-                          <p className="text-gray-900 font-medium">
-                            {selectedEmployee.updated_at || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* OPTIONAL EXTRA FIELDS EXAMPLE */}
-                    {/* <SelectField label="Status" fieldKey="status" options={["active", "inactive"]} /> */}
-                    {/* <TextArea label="Notes" fieldKey="notes" /> */}
-                  </>
-                );
-              })()}
-
-              {/* AVAILABILITY SECTION (unchanged) */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-sm font-semibold text-gray-700">
-                    Weekly Availability
-                  </h3>
-                  <button
-                    onClick={handleSaveCoachAvailability}
-                    className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
-                  >
-                    Save Availability
-                  </button>
-                </div>
-
-                {[
-                  "Monday",
-                  "Tuesday",
-                  "Wednesday",
-                  "Thursday",
-                  "Friday",
-                  "Saturday",
-                  "Sunday",
-                ].map((day) => {
-                  const enabled = !!coachAvailability[day];
-                  const slots = coachAvailability[day] || [];
-
+          {/* ── Detail panel / Assignments ── */}
+          <div
+            className={`flex-1 min-w-0 overflow-y-auto
+              ${activeTab !== "assignments" && activeTab !== "pending" && !mobileShowDetail ? "hidden md:flex md:flex-col" : "flex flex-col"}`}
+          >
+            {/* ── ASSIGNMENTS tab (full-width) ── */}
+            {activeTab === "assignments" && (
+              <div className="p-4 md:p-6 space-y-3">
+                {filteredEmployees.map((coach) => {
+                  const coachAssignments = assignments.filter((a) => a.coach_id === coach.id.toString());
+                  const assignedIds = new Set(coachAssignments.map((a) => a.student_id));
+                  const availableStudents = students.filter((s) => !assignedIds.has(s.id.toString()));
                   return (
-                    <div key={day} className="border rounded p-3 mb-2">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-semibold text-gray-700">
-                          {day}
-                        </span>
-
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={enabled}
-                            onChange={() => {
-                              setCoachAvailability((prev) => {
-                                const copy = { ...prev };
-                                if (copy[day]) delete copy[day];
-                                else copy[day] = [{ start: "", end: "" }];
-                                return copy;
-                              });
-                            }}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#B1E7D6]" />
-                          <div className="absolute left-1 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
-                        </label>
-                      </div>
-
-                      {enabled && (
-                        <div className="flex flex-col gap-1 mt-1">
-                          {slots.map((slot, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <input
-                                type="time"
-                                value={slot.start}
-                                onChange={(e) =>
-                                  setCoachAvailability((prev) => {
-                                    const updated = [...prev[day]];
-                                    updated[idx] = {
-                                      ...updated[idx],
-                                      start: e.target.value,
-                                    };
-                                    return { ...prev, [day]: updated };
-                                  })
-                                }
-                                className="border rounded px-1 py-0.5 text-xs"
-                              />
-
-                              <span className="text-xs">–</span>
-
-                              <input
-                                type="time"
-                                value={slot.end}
-                                onChange={(e) =>
-                                  setCoachAvailability((prev) => {
-                                    const updated = [...prev[day]];
-                                    updated[idx] = {
-                                      ...updated[idx],
-                                      end: e.target.value,
-                                    };
-                                    return { ...prev, [day]: updated };
-                                  })
-                                }
-                                className="border rounded px-1 py-0.5 text-xs"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCoachAvailability((prev) => {
-                                    const filtered = prev[day].filter(
-                                      (_, i) => i !== idx,
-                                    );
-                                    const copy = { ...prev };
-                                    if (filtered.length === 0) delete copy[day];
-                                    else copy[day] = filtered;
-                                    return copy;
-                                  })
-                                }
-                                className="text-red-500 text-xs"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCoachAvailability((prev) => ({
-                                ...prev,
-                                [day]: [...prev[day], { start: "", end: "" }],
-                              }))
-                            }
-                            className="text-xs text-green-600 mt-1"
-                          >
-                            + Add time
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <CoachAssignmentCard
+                      key={coach.id}
+                      coach={coach}
+                      assignedStudents={coachAssignments}
+                      availableStudents={availableStudents}
+                      onAdd={(sId) => handleAddAssignment(coach.id.toString(), sId)}
+                      onRemove={handleRemoveAssignment}
+                    />
                   );
                 })}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* ── Courses Tab ── */}
-      {activeTab === "courses" && (
-        <>
-          <div className="mb-3 flex gap-2">
-            <input
-              type="text"
-              placeholder="Search by name or ID..."
-              value={courseSearchQuery}
-              onChange={(e) => setCourseSearchQuery(e.target.value)}
-              className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            />
-            <button
-              onClick={() => setIsCreateCourseModalOpen(true)}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors whitespace-nowrap"
-            >
-              + New Course
-            </button>
-          </div>
+            {/* ── PENDING tab (full-width) ── */}
+            {activeTab === "pending" && (
+              <div className="p-4 md:p-6 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-white text-xl font-bold">Pending Bookings</h2>
+                    <p className="text-white/35 text-sm mt-1">Edit a pending match and preview how approval will affect the coach calendar.</p>
+                  </div>
+                  <button
+                    onClick={fetchPendingBookings}
+                    className="shrink-0 px-3.5 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
 
-          <CourseTable
-            courses={paginatedCourses}
-            onCourseClick={setSelectedCourse}
-          />
-
-          {courseTotalPages > 1 && (
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-xs text-gray-600">
-                Showing {(courseCurrentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                {Math.min(
-                  courseCurrentPage * ITEMS_PER_PAGE,
-                  filteredCourses.length,
-                )}{" "}
-                of {filteredCourses.length}
-              </p>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() =>
-                    setCourseCurrentPage((p) => Math.max(p - 1, 1))
-                  }
-                  disabled={courseCurrentPage === 1}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Prev
-                </button>
-                <span className="px-2 py-1 text-xs text-gray-700">
-                  {courseCurrentPage} / {courseTotalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    setCourseCurrentPage((p) =>
-                      Math.min(p + 1, courseTotalPages),
-                    )
-                  }
-                  disabled={courseCurrentPage === courseTotalPages}
-                  className="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-          {courseTotalPages <= 1 && filteredCourses.length > 0 && (
-            <p className="mt-3 text-xs text-gray-600">
-              Total: {filteredCourses.length}
-            </p>
-          )}
-        </>
-      )}
-
-      {/* ── Assignments Tab ── */}
-      {activeTab === "assignments" && (
-        <div className="space-y-3">
-          {filteredEmployees.map((coach) => {
-            const coachAssignments = assignments.filter(
-              (a) => a.coach_id === coach.id.toString(),
-            );
-            const assignedStudentIds = new Set(
-              coachAssignments.map((a) => a.student_id),
-            );
-            const availableStudents = students.filter(
-              (s) => !assignedStudentIds.has(s.id.toString()),
-            );
-            return (
-              <CoachAssignmentCard
-                key={coach.id}
-                coach={coach}
-                assignedStudents={coachAssignments}
-                availableStudents={availableStudents}
-                onAdd={(studentId) =>
-                  handleAddAssignment(coach.id.toString(), studentId)
-                }
-                onRemove={(assignmentId) =>
-                  handleRemoveAssignment(assignmentId)
-                }
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {activeTab == "learning_space" && (
-        <div>
-          <button onClick={handleGetLessonSpaces}>Get Learning Spaces</button>
-        </div>
-      )}
-
-      {activeTab == "course_assignment" && <div></div>}
-      {/* Course Detail Modal */}
-      {selectedCourse && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={handleCloseCourseModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">
-                {isEditingCourse
-                  ? (courseEditForm.name ?? selectedCourse.name)
-                  : selectedCourse.name}
-              </h2>
-              <div className="flex items-center gap-2">
-                {!isEditingCourse ? (
-                  <>
-                    <button
-                      onClick={handleDeleteCourse}
-                      disabled={isDeletingCourse}
-                      className="px-3 py-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isDeletingCourse ? "Deleting..." : "Delete"}
-                    </button>
-
-                    <button
-                      onClick={handleEditCourseStart}
-                      className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={handleCloseCourseModal}
-                      className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                    >
-                      ×
-                    </button>
-                  </>
+                {pendingBookingsLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <div className="w-7 h-7 border-2 border-[#B1E7D6] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : pendingBookings.length === 0 ? (
+                  <div className="bg-[#1F2E3B] rounded-2xl p-8 border border-white/5 text-center">
+                    <p className="text-white/35 text-sm">No pending bookings</p>
+                  </div>
                 ) : (
-                  <>
-                    <button
-                      onClick={handleEditCourseSave}
-                      disabled={isSavingCourse}
-                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isSavingCourse ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                      onClick={handleEditCourseCancel}
-                      className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </>
+                  <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4">
+                    <div className="space-y-2">
+                      {pendingBookings.map((booking) => {
+                        const coachName = booking.coaches
+                          ? `${booking.coaches.first_name ?? ""} ${booking.coaches.last_name ?? ""}`.trim() || "Coach"
+                          : "Coach";
+                        const studentName = booking.students
+                          ? `${booking.students.first_name ?? ""} ${booking.students.last_name ?? ""}`.trim() || "Student"
+                          : "Student";
+                        const isSelected = selectedPendingBooking?.id === booking.id;
+
+                        return (
+                          <button
+                            key={booking.id}
+                            onClick={() => {
+                              setSelectedPendingBookingId(booking.id);
+                              if (editingBookingId !== booking.id) cancelEditingPendingBooking();
+                            }}
+                            className={`w-full text-left bg-[#1F2E3B] rounded-2xl p-4 border transition-colors ${
+                              isSelected ? "border-[#B1E7D6]/70" : "border-white/5 hover:border-white/15"
+                            }`}
+                          >
+                            <p className="text-white text-sm font-semibold truncate">{studentName}</p>
+                            <p className="text-white/45 text-xs mt-1 truncate">{coachName}</p>
+                            <p className="text-white/35 text-xs mt-2">
+                              {WEEKDAYS[booking.weekday] ?? "Weekly"} {booking.start_time.slice(0, 5)}-{booking.end_time.slice(0, 5)}
+                            </p>
+                            <p className="text-white/30 text-xs mt-1">{booking.num_sessions ?? 0} sessions</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedPendingBooking && selectedPendingBookingForm && (
+                      <div className="space-y-4">
+                        <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+                          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3 flex-1">
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Coach</p>
+                                <select
+                                  value={selectedPendingBookingForm.coach_id}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("coach_id", e.target.value);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                >
+                                  {employees.map((coach) => (
+                                    <option key={coach.id} value={coach.id}>
+                                      {`${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Coach"}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Day</p>
+                                <select
+                                  value={selectedPendingBookingForm.weekday}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("weekday", Number(e.target.value));
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                >
+                                  {WEEKDAYS.map((day, index) => (
+                                    <option key={day} value={index}>{day}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Start date</p>
+                                <input
+                                  type="date"
+                                  value={selectedPendingBookingForm.start_date}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("start_date", e.target.value);
+                                    const weekday = weekdayFromDateInput(e.target.value);
+                                    if (weekday != null) updateEditingBookingForm("weekday", weekday);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Start</p>
+                                <input
+                                  type="time"
+                                  value={selectedPendingBookingForm.start_time}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("start_time", e.target.value);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">End</p>
+                                <input
+                                  type="time"
+                                  value={selectedPendingBookingForm.end_time}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("end_time", e.target.value);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Timezone</p>
+                                <input
+                                  type="text"
+                                  value={selectedPendingBookingForm.timezone}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("timezone", e.target.value);
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">Sessions</p>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  step={1}
+                                  value={selectedPendingBookingForm.num_sessions}
+                                  onChange={(e) => {
+                                    if (editingBookingId !== selectedPendingBooking.id) startEditingPendingBooking(selectedPendingBooking);
+                                    updateEditingBookingForm("num_sessions", Number(e.target.value));
+                                  }}
+                                  className="w-full bg-[#162330] border border-white/10 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#B1E7D6]/40"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleSavePendingBooking(selectedPendingBooking.id)}
+                                disabled={savingBookingId === selectedPendingBooking.id || editingBookingId !== selectedPendingBooking.id}
+                                className="px-4 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors"
+                              >
+                                {savingBookingId === selectedPendingBooking.id ? "Saving..." : "Save"}
+                              </button>
+                              <button
+                                onClick={() => handleApprovePendingBooking(selectedPendingBooking.id)}
+                                disabled={
+                                  approvingBookingId === selectedPendingBooking.id ||
+                                  pendingPreviewLoading ||
+                                  !pendingPreview?.canApprove ||
+                                  editingBookingId === selectedPendingBooking.id
+                                }
+                                className="px-4 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors"
+                              >
+                                {approvingBookingId === selectedPendingBooking.id ? "Approving..." : "Approve"}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                            <span className="text-white/45">
+                              {editingBookingId === selectedPendingBooking.id
+                                ? "Save changes before approving"
+                                : pendingPreviewLoading
+                                ? "Checking schedule..."
+                                : pendingPreviewError
+                                  ? pendingPreviewError
+                                  : pendingPreview?.canApprove
+                                    ? `Ready: ${pendingPreview.generatedCount}/${pendingPreview.requestedCount} sessions can be created`
+                                    : `Blocked: ${pendingPreview?.generatedCount ?? 0}/${pendingPreview?.requestedCount ?? selectedPendingBookingForm.num_sessions} sessions can be created`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4 px-1">
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#1e4535] border border-[#65CFAD]" /><span className="text-white/40 text-xs">Coach only</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#315F9E] border border-[#8DBDFF]" /><span className="text-white/40 text-xs">Student only</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#2F8F83] border border-[#8CF0DF]" /><span className="text-white/40 text-xs">Both available</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#B1E7D6]" /><span className="text-white/40 text-xs">Existing</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#294b63]/60" /><span className="text-white/40 text-xs">Recurring block</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#F2C14E]" /><span className="text-white/40 text-xs">Proposed</span></div>
+                          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#B94A48]" /><span className="text-white/40 text-xs">Conflict</span></div>
+                        </div>
+
+                        <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+                          <AdminCalendar
+                            events={[
+                              ...(pendingPreview?.availabilityEvents ?? []),
+                              ...(pendingPreview?.activeBookedEvents ?? []),
+                              ...(pendingPreview?.existingSessionEvents ?? []),
+                              ...(pendingPreview?.proposedEvents ?? []),
+                              ...(pendingPreview?.conflictEvents ?? []),
+                            ]}
+                            initialView="timeGridWeek"
+                            initialDate={pendingPreviewInitialDate}
+                            loading={pendingPreviewLoading}
+                            offsetPx={420}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
+            )}
 
-            <div className="px-6 py-4 space-y-6 text-xs">
-              {/* Course Info */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Course Information
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-gray-500">Course ID:</span>
-                    <p className="text-gray-900 font-medium">
-                      {selectedCourse.id}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Name:</span>
-                    {isEditingCourse ? (
-                      <input
-                        type="text"
-                        value={courseEditForm.name ?? ""}
-                        onChange={(e) =>
-                          setCourseEditForm((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900 font-medium">
-                        {selectedCourse.name}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Description:</span>
-                    {isEditingCourse ? (
-                      <textarea
-                        value={courseEditForm.description ?? ""}
-                        onChange={(e) =>
-                          setCourseEditForm((prev) => ({
-                            ...prev,
-                            description: e.target.value,
-                          }))
-                        }
-                        rows={4}
-                        className="mt-0.5 block w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">
-                        {selectedCourse.description || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <hr className="border-gray-100" />
-
-              {/* --------- Upload Course Badge ------------ */}
-              <div>
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Course Badge
-                </p>
-                <div className="flex items-center gap-3">
-                  {courseBadge?.image_url ? (
-                    <img
-                      src={courseBadge.image_url}
-                      className="w-16 h-16 object-contain rounded-lg border"
-                      alt="Badge"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-100 border flex items-center justify-center text-gray-400 text-xs">
-                      None
+            {/* ── STUDENT detail ── */}
+            {activeTab === "students" && !selectedStudent && (
+              <EmptyDetail />
+            )}
+            {activeTab === "students" && selectedStudent && (
+              <div className="p-4 md:p-6 space-y-5">
+                {/* Header card */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#B1E7D6]/20 flex items-center justify-center shrink-0">
+                      <span className="text-[#B1E7D6] text-2xl font-bold">
+                        {(selectedStudent.first_name ?? selectedStudent.last_name ?? "#").charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex flex-col gap-1.5">
-                    <input
-                      value={badgeTitle}
-                      onChange={(e) => setBadgeTitle(e.target.value)}
-                      placeholder="Badge title"
-                      className="px-2 py-1 text-xs border rounded"
-                    />
-                    <input
-                      type="file"
-                      accept="image/png"
-                      ref={badgeInputRef}
-                      onChange={(e) => handleBadgeUpload(e.target.files?.[0])}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => badgeInputRef.current?.click()}
-                      disabled={uploadingBadge}
-                      className="px-3 py-1 text-xs bg-purple-600 text-white rounded disabled:opacity-50 hover:bg-purple-700 transition-colors"
-                    >
-                      {uploadingBadge
-                        ? "Uploading…"
-                        : courseBadge
-                          ? "Replace image"
-                          : "Upload PNG"}
-                    </button>
+                    <div>
+                      <h2 className="text-white text-xl font-bold leading-tight">
+                        {[selectedStudent.first_name, selectedStudent.last_name].filter(Boolean).join(" ") || "Unknown"}
+                      </h2>
+                      <p className="text-white/35 text-xs mt-0.5 font-mono">#{selectedStudent.id}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setEditingStudent(true)}
+                    className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {/* Info chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: "Grade", value: selectedStudent.grade ?? "—" },
+                    { label: "Location", value: selectedStudent.location ?? "—" },
+                    { label: "Date of Birth", value: selectedStudent.date_of_birth ?? "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-[#1F2E3B] rounded-xl p-3 border border-white/5">
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">{label}</p>
+                      <p className="text-white/70 text-sm font-semibold truncate">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar */}
+                <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+                  <AdminCalendar
+                    events={studentEvents}
+                    initialView="dayGridMonth"
+                    loading={studentEventsLoading}
+                    offsetPx={340}
+                  />
                 </div>
               </div>
+            )}
 
-              {/* Divider */}
-              <hr className="border-gray-100" />
+            {/* ── COACH detail ── */}
+            {activeTab === "coaches" && !selectedEmployee && (
+              <EmptyDetail />
+            )}
+            {activeTab === "coaches" && selectedEmployee && (
+              <div className="p-4 md:p-6 space-y-5">
+                {/* Header card */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#65CFAD]/20 flex items-center justify-center shrink-0">
+                      <span className="text-[#65CFAD] text-2xl font-bold">
+                        {selectedEmployee.first_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h2 className="text-white text-xl font-bold leading-tight">
+                        {selectedEmployee.first_name} {selectedEmployee.last_name}
+                      </h2>
+                      <p className="text-white/35 text-xs mt-0.5 font-mono">#{selectedEmployee.id}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEditingEmployee(true)}
+                    className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-xl transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
 
-              {/* ── Lessons Panel ── */}
-              <CourseLessonsPanel
-                students={students}
-                courseId={String(selectedCourse.id)}
-              />
-            </div>
+                {/* Info chips */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Account ID", value: selectedEmployee.account_id.slice(0, 16) + "…" },
+                    { label: "Joined", value: selectedEmployee.created_at ? new Date(selectedEmployee.created_at).toLocaleDateString() : "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-[#1F2E3B] rounded-xl p-3 border border-white/5">
+                      <p className="text-white/35 text-[10px] uppercase tracking-wider mb-1">{label}</p>
+                      <p className="text-white/70 text-sm font-semibold truncate">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar legend */}
+                <div className="flex items-center gap-4 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#1e4535] border border-[#65CFAD]" />
+                    <span className="text-white/40 text-xs">Available</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-[#B1E7D6]" />
+                    <span className="text-white/40 text-xs">Booked</span>
+                  </div>
+                </div>
+
+                {/* Calendar */}
+                <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+                  <AdminCalendar
+                    events={coachEvents}
+                    initialView="timeGridWeek"
+                    loading={coachEventsLoading}
+                    offsetPx={360}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── COURSE detail ── */}
+            {activeTab === "courses" && !selectedCourse && (
+              <EmptyDetail />
+            )}
+            {activeTab === "courses" && selectedCourse && (
+              <div className="p-4 md:p-6 space-y-5">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar letter={selectedCourse.name.charAt(0) || "C"} color="text-blue-300" bg="bg-blue-400/15" />
+                    <div>
+                      <h2 className="text-white text-xl font-bold leading-tight">{selectedCourse.name}</h2>
+                      <p className="text-white/35 text-xs mt-0.5">Course #{selectedCourse.id}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEditingCourse(true)}
+                    className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {selectedCourse.description && (
+                  <div className="bg-[#1F2E3B] rounded-xl p-4 border border-white/5">
+                    <p className="text-white/50 text-sm leading-relaxed">{selectedCourse.description}</p>
+                  </div>
+                )}
+
+                {/* Lessons */}
+                <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+                  <CourseLessonsPanel courseId={String(selectedCourse.id)} students={students} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* ── Mobile bottom nav ── */}
+      <nav className="md:hidden shrink-0 bg-[#1F2E3B] border-t border-white/10 flex safe-bottom">
+        {NAV_ITEMS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => switchTab(key)}
+            className={`flex-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+              activeTab === key ? "text-[#B1E7D6]" : "text-white/35 hover:text-white/60"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {/* ── Edit modals ── */}
+      {editingStudent && selectedStudent && (
+        <StudentDetailModal
+          student={selectedStudent}
+          onClose={() => setEditingStudent(false)}
+          onUpdate={(updated) => {
+            setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+            setSelectedStudent(updated);
+            setEditingStudent(false);
+          }}
+        />
+      )}
+      {editingEmployee && selectedEmployee && (
+        <EmployeeDetailModal
+          employee={selectedEmployee}
+          onClose={() => setEditingEmployee(false)}
+          onUpdate={(updated) => {
+            setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setSelectedEmployee(updated);
+            setEditingEmployee(false);
+          }}
+        />
+      )}
+      {editingCourse && selectedCourse && (
+        <CourseDetailModal
+          course={selectedCourse}
+          students={students}
+          onClose={() => setEditingCourse(false)}
+          onUpdate={(updated) => {
+            setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            setSelectedCourse(updated);
+            setEditingCourse(false);
+          }}
+          onDelete={() => {
+            setCourses((prev) => prev.filter((c) => c.id !== selectedCourse.id));
+            setSelectedCourse(null);
+            setEditingCourse(false);
+          }}
+        />
       )}
 
-      {/* Create Course Modal */}
-      <CreateCourseModal
-        isOpen={isCreateCourseModalOpen}
-        onClose={() => setIsCreateCourseModalOpen(false)}
-        onSuccess={
-          () => {} //(created) =>
-          //setCourses((prev) => [...prev, created as TeachworksCourse])
-        }
-      />
-
-      {/* Create Admin Modal */}
       <CreateAdminModal
         isOpen={isCreateAdminModalOpen}
         onClose={() => setIsCreateAdminModalOpen(false)}
-        onSuccess={() => {
-          alert("Admin account created successfully!");
-        }}
+        onSuccess={() => alert("Admin account created successfully!")}
       />
-
-      {/* Create Coach Modal */}
       <CreateCoachModal
         isOpen={isCreateCoachModalOpen}
         onClose={() => setIsCreateCoachModalOpen(false)}
-        onSuccess={() => {
-          alert("Coach created successfully");
-          fetchEmployees();
-        }}
+        onSuccess={() => { alert("Coach created successfully"); fetchEmployees(); }}
+      />
+      <CreateCourseModal
+        isOpen={isCreateCourseModalOpen}
+        onClose={() => setIsCreateCourseModalOpen(false)}
+        onSuccess={() => {}}
       />
     </div>
   );

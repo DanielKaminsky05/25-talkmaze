@@ -8,22 +8,22 @@ const STATUS_BUTTONS: {
   label: string;
   activeClass: string;
 }[] = [
-  {
-    status: "attended",
-    label: "Attended",
-    activeClass: "bg-emerald-600 text-white border-emerald-600",
-  },
-  {
-    status: "missed",
-    label: "Missed",
-    activeClass: "bg-red-500 text-white border-red-500",
-  },
-  {
-    status: "cancelled",
-    label: "Cancelled",
-    activeClass: "bg-gray-400 text-white border-gray-400",
-  },
-];
+    {
+      status: "attended",
+      label: "Attended",
+      activeClass: "bg-emerald-600 text-white border-emerald-600",
+    },
+    {
+      status: "missed",
+      label: "Missed",
+      activeClass: "bg-red-500 text-white border-red-500",
+    },
+    {
+      status: "cancelled",
+      label: "Cancelled",
+      activeClass: "bg-gray-400 text-white border-gray-400",
+    },
+  ];
 
 const STATUS_DOT: Record<AttendanceStatus, string> = {
   attended: "bg-emerald-500",
@@ -100,11 +100,10 @@ export default function StudentSchedule({
           <div
             key={s.id}
             onClick={() => setExpandedId(isExpanded ? null : s.id)}
-            className={`bg-white border rounded-lg px-3 py-2.5 text-xs shadow-sm cursor-pointer transition-all select-none ${
-              isExpanded
-                ? "border-[#2B4257]/30 ring-1 ring-[#2B4257]/10"
-                : "border-[#2B4257]/10 hover:border-[#2B4257]/25"
-            }`}
+            className={`bg-white border rounded-lg px-3 py-2.5 text-xs shadow-sm cursor-pointer transition-all select-none ${isExpanded
+              ? "border-[#2B4257]/30 ring-1 ring-[#2B4257]/10"
+              : "border-[#2B4257]/10 hover:border-[#2B4257]/25"
+              }`}
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -132,11 +131,10 @@ export default function StudentSchedule({
                     key={status}
                     disabled={isSubmitting}
                     onClick={() => onMarkAttendance(s, status)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
-                      currentStatus === status
-                        ? activeClass
-                        : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
-                    }`}
+                    className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${currentStatus === status
+                      ? activeClass
+                      : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
+                      }`}
                   >
                     {label}
                   </button>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Assignment } from "@/lib/types/assignments";
-import { Student,Coach } from "./AssignStudentDropDown";
+import { Student, Coach } from "./AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {
   coach: Coach;
@@ -28,9 +28,6 @@ export default function CoachAssignmentCard({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log("Coach: " + JSON.stringify(coach));
-  },[])
-  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
@@ -47,17 +44,18 @@ export default function CoachAssignmentCard({
     }
   }, [isDropdownOpen]);
 
-const filteredAvailable = availableStudents.filter((s) => {
-  if (!searchQuery.trim()) return true;
-  const q = searchQuery.toLowerCase();
+  const studentDisplayName = (s: Student) =>
+    [s.first_name, s.last_name].filter(Boolean).join(" ") || `#${s.id}`;
 
-  return (
-    s.name.toLowerCase().includes(q) ||
-    s.id.toLowerCase().includes(q) ||
-    s.account_id.toLowerCase().includes(q) ||
-    (s.profile_access_pin ?? "").toLowerCase().includes(q)
-  );
-});
+  const filteredAvailable = availableStudents.filter((s) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      studentDisplayName(s).toLowerCase().includes(q) ||
+      s.id.toLowerCase().includes(q) ||
+      s.account_id.toLowerCase().includes(q)
+    );
+  });
 
   const handleAdd = async (studentId: string) => {
     setLoadingStudentId(studentId);
@@ -80,83 +78,70 @@ const filteredAvailable = availableStudents.filter((s) => {
   };
 
   return (
-    <div className="border border-gray-200 rounded bg-white shadow-sm">
+    <div className={`rounded-xl border transition-colors ${isExpanded ? "bg-[#2B4257]/40 border-[#B1E7D6]/20" : "bg-[#2B4257]/20 border-white/5 hover:border-white/10"}`}>
+      {/* Header row */}
       <button
         onClick={() => setIsExpanded((prev) => !prev)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <svg
-            className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-150 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
+            className={`w-3.5 h-3.5 text-[#B1E7D6]/50 flex-shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
-
-          <span className="text-xs font-semibold text-gray-900 truncate">
-            {`${coach.first_name}  ${coach.last_name}`}
+          <span className="text-sm font-semibold text-white truncate">
+            {coach.first_name} {coach.last_name}
           </span>
         </div>
-
-        {/* Student count badge */}
         <span
-          className={`flex-shrink-0 ml-2 px-1.5 py-0.5 rounded-full text-xs font-medium ${
+          className={`flex-shrink-0 ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium ${
             assignedStudents.length > 0
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-500"
+              ? "bg-[#B1E7D6]/10 text-[#B1E7D6]"
+              : "bg-white/5 text-white/30"
           }`}
         >
-          {assignedStudents.length} student{assignedStudents.length !== 1 ? "s" : ""}
+          {assignedStudents.length} {assignedStudents.length === 1 ? "student" : "students"}
         </span>
       </button>
 
       {/* Expanded body */}
       {isExpanded && (
-        <div className="border-t border-gray-100 px-3 py-2 space-y-1.5">
+        <div className="border-t border-white/5 px-4 py-3 space-y-3">
           {/* Assigned students list */}
           {assignedStudents.length === 0 ? (
-            <p className="text-xs text-gray-400 italic py-1">No students assigned</p>
+            <p className="text-xs text-white/30 italic py-1">No students assigned yet.</p>
           ) : (
             <ul className="space-y-1">
               {assignedStudents.map((assignment) => {
                 const isRemoving = removingAssignmentId === assignment.id;
-                // Derive student name: prefer joined data, fall back to student_id
-                const studentName =
-                  assignment.students && assignment.students.name
-                    ? assignment.students.name
-                    : `Student #${assignment.student_id}`;
-
+                const studentName = assignment.students
+                  ? [assignment.students.first_name, assignment.students.last_name].filter(Boolean).join(" ") || `Student #${assignment.student_id}`
+                  : `Student #${assignment.student_id}`;
                 return (
                   <li
                     key={assignment.id}
-                    className={`flex items-center justify-between gap-2 py-1 px-2 rounded transition-colors ${
-                      isRemoving ? "opacity-40" : "hover:bg-gray-50"
+                    className={`flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg transition-colors ${
+                      isRemoving ? "opacity-40" : "bg-[#1F2E3B]/40 hover:bg-[#1F2E3B]/60"
                     }`}
                   >
-                    <span className="text-xs text-gray-800 truncate">{studentName}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-white/80 truncate">{studentName}</p>
+                      {assignment.students?.account_id && (
+                        <p className="text-xs text-white/35 font-mono truncate">{assignment.students.account_id}</p>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleRemove(assignment.id)}
                       disabled={isRemoving}
                       title="Remove student"
-                      className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:cursor-not-allowed"
+                      className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:cursor-not-allowed"
                     >
                       {isRemoving ? (
                         <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-                          <circle
-                            className="opacity-25"
-                            cx="12" cy="12" r="10"
-                            stroke="currentColor" strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8H4z"
-                          />
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
                       ) : (
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -171,11 +156,11 @@ const filteredAvailable = availableStudents.filter((s) => {
           )}
 
           {/* Add student dropdown */}
-          <div className="relative pt-1" ref={dropdownRef}>
+          <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               disabled={availableStudents.length === 0}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-[#B1E7D6]/70 hover:text-[#B1E7D6] disabled:text-white/20 disabled:cursor-not-allowed transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -184,22 +169,20 @@ const filteredAvailable = availableStudents.filter((s) => {
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded shadow-lg z-20">
-                {/* Search inside dropdown */}
-                <div className="p-1.5 border-b border-gray-100">
+              <div className="absolute left-0 top-full mt-1.5 w-60 bg-[#1F2E3B] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-20 overflow-hidden">
+                <div className="p-2 border-b border-white/5">
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Search students..."
+                    placeholder="Search students…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full bg-[#2B4257] border border-white/10 text-white placeholder:text-white/30 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-[#B1E7D6]/50 transition-colors"
                   />
                 </div>
-
-                <ul className="max-h-40 overflow-y-auto py-1">
+                <ul className="max-h-44 overflow-y-auto py-1">
                   {filteredAvailable.length === 0 ? (
-                    <li className="px-3 py-1.5 text-xs text-gray-400 italic">No matches</li>
+                    <li className="px-3 py-2 text-xs text-white/30 italic">No matches</li>
                   ) : (
                     filteredAvailable.map((student) => {
                       const isAdding = loadingStudentId === student.id.toString();
@@ -208,13 +191,11 @@ const filteredAvailable = availableStudents.filter((s) => {
                           <button
                             onClick={() => handleAdd(student.id.toString())}
                             disabled={isAdding}
-                            className="w-full text-left px-3 py-1.5 text-xs text-gray-800 hover:bg-blue-50 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between gap-2"
+                            className="w-full text-left px-3 py-2 text-xs text-white/80 hover:bg-[#B1E7D6]/10 hover:text-[#B1E7D6] transition-colors disabled:opacity-50 flex items-center justify-between gap-2"
                           >
-                            <span className="truncate">
-                              {student.name}
-                            </span>
+                            <span className="truncate">{studentDisplayName(student)}</span>
                             {isAdding && (
-                              <svg className="animate-spin w-3 h-3 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24">
+                              <svg className="animate-spin w-3 h-3 flex-shrink-0 text-[#B1E7D6]" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                               </svg>

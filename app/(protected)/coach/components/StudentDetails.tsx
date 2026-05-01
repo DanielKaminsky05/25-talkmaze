@@ -215,11 +215,10 @@ export default function StudentDetails({
           <button
             onClick={() => openChat("student")}
             disabled={loadingChat}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
-              activeChat === "student"
-                ? "bg-[#2B4257] text-white"
-                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${activeChat === "student"
+              ? "bg-[#2B4257] text-white"
+              : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+              }`}
           >
             {activeChat === "student"
               ? "Hide Chat"
@@ -230,11 +229,10 @@ export default function StudentDetails({
           <button
             onClick={() => openChat("parent")}
             disabled={loadingChat}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
-              activeChat === "parent"
-                ? "bg-[#2B4257] text-white"
-                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
-            }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${activeChat === "parent"
+              ? "bg-[#2B4257] text-white"
+              : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+              }`}
           >
             {activeChat === "parent"
               ? "Hide Chat"
