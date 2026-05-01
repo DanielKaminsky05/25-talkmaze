@@ -2,13 +2,11 @@ import { updateSession } from "@/services/supabase/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-
 /**
  * Middleware function to handle incoming requests
  */
 
 export async function middleware(request: NextRequest) {
-  
   //remember to uncomment updateSession
   const response = await updateSession(request);
 
@@ -17,13 +15,22 @@ export async function middleware(request: NextRequest) {
   // Determine if the current route is a "profile locked" route
   // Profile locked routes require the user to have an active profile
 
-
-  //allow user to 
-  if(pathname.startsWith("/onboarding")){
+  if (pathname.startsWith("/onboarding")) {
     return NextResponse.next();
   }
 
-  if(pathname.startsWith("/api/webhooks/stripe") || pathname.startsWith("/api/webhooks/lessonspace")){
+  // Allow unauthenticated access to the payments flow for new users (studentId=new)
+  if (
+    pathname.startsWith("/payments") ||
+    pathname.startsWith("/api/checkout")
+  ) {
+    return NextResponse.next();
+  }
+
+  if (
+    pathname.startsWith("/api/webhooks/stripe") ||
+    pathname.startsWith("/api/webhooks/lessonspace")
+  ) {
     return NextResponse.next();
   }
   const isProfileLockedRoute =
@@ -67,28 +74,24 @@ export async function middleware(request: NextRequest) {
       const isCoach = account?.role === 2;
       const isAdmin = account?.role === 3;
 
-      
-      
-      if(pathname.startsWith('/profiles') && (isCoach || isAdmin)){
+      if (pathname.startsWith("/profiles") && (isCoach || isAdmin)) {
         const url = request.nextUrl.clone();
-        if(isCoach){
-          url.pathname = "/coach"
+        if (isCoach) {
+          url.pathname = "/coach";
           return NextResponse.redirect(url);
         }
-        if(isAdmin){
-          url.pathname = "/admin"
+        if (isAdmin) {
+          url.pathname = "/admin";
           return NextResponse.redirect(url);
         }
-      }
-      
-      // Coach Route Protection
-      if (pathname.startsWith("/coach") && !isCoach) {
-           const url = request.nextUrl.clone();
-           url.pathname = "/home";
-           return NextResponse.redirect(url);
       }
 
-    
+      // Coach Route Protection
+      if (pathname.startsWith("/coach") && !isCoach) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/home";
+        return NextResponse.redirect(url);
+      }
 
       // Admin Route Protection
       if (pathname.startsWith("/admin") && !isAdmin) {
@@ -100,18 +103,20 @@ export async function middleware(request: NextRequest) {
       // If they are a regular user, check if they have an active profile
       if (isRegularUser) {
         const activeProfileId = request.cookies.get("active_profile_id")?.value;
-        const activeProfileType = request.cookies.get("active_profile_type")?.value;
+        const activeProfileType = request.cookies.get(
+          "active_profile_type",
+        )?.value;
 
         // If no active profile, redirect them to select a profile
-        if (!activeProfileId && !pathname.startsWith('/profiles')) {
+        if (!activeProfileId && !pathname.startsWith("/profiles")) {
           const url = request.nextUrl.clone();
           url.pathname = "/profiles";
           return NextResponse.redirect(url);
         }
         // Student Subscription Gate
         if (
-          activeProfileId && 
-          activeProfileType === "student" && 
+          activeProfileId &&
+          activeProfileType === "student" &&
           pathname.startsWith("/home")
         ) {
           const { data: subscriptions } = await supabase
@@ -132,9 +137,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
-  
 }
-
 
 export const config = {
   /*
