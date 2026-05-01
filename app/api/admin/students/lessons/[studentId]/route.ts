@@ -3,15 +3,18 @@ import { createClient } from "@/services/supabase/server";
 import type { Database } from "@/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
+type LessonTask = Database["public"]["Tables"]["lesson_tasks"]["Row"];
+
 type OrganizedLessons = {
   course_id: string;
   course_name: string;
   lessons: Lesson[];
   status: number[];
-  pre_lesson_urls: (String | null)[];
-  post_lesson_urls: (String | null)[];
-  slide_show_inputs: (String | null)[];
+  pre_lesson_urls: (string | null)[];
+  post_lesson_urls: (string | null)[];
+  slide_show_inputs: (string | null)[];
 };
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string }> },
@@ -38,7 +41,6 @@ export async function GET(
   console.log(
     "Retrieved assigned courses: " + JSON.stringify(assigned_courses),
   );
-  //for each course we need to get the associated lessons for them
 
   let response = [];
   for (let i = 0; i < assigned_courses.length; i++) {
@@ -46,15 +48,11 @@ export async function GET(
 
     if (!course_id) continue;
 
-    //Get head lesson of the course
     const { data: courseHeadData, error: courseHeadError } = await supabase
       .from("courses")
       .select("head_lesson_id,title")
       .eq("id", course_id)
       .single();
-
-    console.log("Retrieved Head: " + courseHeadData?.head_lesson_id);
-    //Get all the lessons of the course
 
     const { data: allLessonsData, error: allLessonsError } = await supabase
       .from("lessons")
@@ -67,7 +65,6 @@ export async function GET(
       );
     }
 
-    //get the statuses of the lessons
     const { data: statusData, error: statusDataError } = await supabase
       .from("lesson_progress")
       .select("*")
@@ -80,7 +77,24 @@ export async function GET(
       });
     }
 
-    //get the slide_shows of the lessons
+    // Fetch all lesson_tasks for this student (their overrides + admin defaults)
+    const lessonIds = (allLessonsData ?? []).map((l) => l.id);
+    let tasksByLesson: Map<string, LessonTask[]> = new Map();
+
+    if (lessonIds.length > 0) {
+      const { data: tasksData } = await supabase
+        .from("lesson_tasks")
+        .select("*")
+        .in("lesson_id", lessonIds)
+        .or(`student_id.eq.${studentId},student_id.is.null`);
+
+      for (const task of tasksData ?? []) {
+        const existing = tasksByLesson.get(task.lesson_id) ?? [];
+        existing.push(task);
+        tasksByLesson.set(task.lesson_id, existing);
+      }
+    }
+
     let lesson_ordered: OrganizedLessons = {
       course_id: course_id,
       course_name: courseHeadData?.title ? courseHeadData.title : "",
@@ -95,7 +109,6 @@ export async function GET(
       (lesson) => lesson.id === courseHeadData?.head_lesson_id,
     );
 
-    // If no linked-list head is set, fall back to creation order
     const orderedLessons = head_lesson
       ? null
       : [...(allLessonsData ?? [])].sort(
@@ -110,16 +123,16 @@ export async function GET(
       const status = statusData.find(
         (statusObj) => statusObj.lesson_id === current_lesson?.id,
       )?.status;
-      console.log("Pushing current lesson: " + current_lesson.pre_lesson_url);
+
       lesson_ordered.lessons.push(current_lesson);
-      console.log("*************status ", status);
+
       if (status) {
         lesson_ordered.status.push(status);
       } else {
         lesson_ordered.status.push(1);
       }
 
-      //set current lesson slide_show_url
+      // Resolve slide show URL
       if (current_lesson.slide_show_url) {
         const file = await getFileFromCloud(current_lesson.slide_show_url);
         lesson_ordered.slide_show_inputs.push(file);
@@ -127,17 +140,26 @@ export async function GET(
         lesson_ordered.slide_show_inputs.push(null);
       }
 
-      //set current lesson pre lesson tasks
-      if (current_lesson.pre_lesson_url) {
-        const file = await getFileFromCloud(current_lesson.pre_lesson_url);
+      // Resolve effective pre/post task URLs using student override → admin default priority
+      const lessonTasks = tasksByLesson.get(current_lesson.id) ?? [];
+
+      const effectivePre =
+        lessonTasks.find((t) => t.type === "pre" && t.student_id === studentId) ??
+        lessonTasks.find((t) => t.type === "pre" && t.student_id === null);
+
+      const effectivePost =
+        lessonTasks.find((t) => t.type === "post" && t.student_id === studentId) ??
+        lessonTasks.find((t) => t.type === "post" && t.student_id === null);
+
+      if (effectivePre?.file_url) {
+        const file = await getFileFromCloud(effectivePre.file_url);
         lesson_ordered.pre_lesson_urls.push(file);
       } else {
         lesson_ordered.pre_lesson_urls.push(null);
       }
 
-      //set current lesson post lesson tasks
-      if (current_lesson.post_lesson_url) {
-        const file = await getFileFromCloud(current_lesson.post_lesson_url);
+      if (effectivePost?.file_url) {
+        const file = await getFileFromCloud(effectivePost.file_url);
         lesson_ordered.post_lesson_urls.push(file);
       } else {
         lesson_ordered.post_lesson_urls.push(null);

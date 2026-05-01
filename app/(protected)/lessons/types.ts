@@ -9,11 +9,7 @@ export type LessonRow = {
 
 export type LessonDetailRow = LessonRow & {
   content_url: string | null;
-  pre_lesson_url: string | null;
-  post_lesson_url: string | null;
   slide_show_url: string | null;
-  pre_lesson_description: string | null;
-  post_lesson_description: string | null;
 };
 
 export type TokenRow = {

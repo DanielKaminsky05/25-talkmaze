@@ -8,7 +8,7 @@ import type { LessonDetailRow, TokenRow } from "../types";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
-  "id, course_id, title, description, content_url, pre_lesson_url, post_lesson_url, slide_show_url, slide_pptx_url, slug, created_at, pre_lesson_description, post_lesson_description";
+  "id, course_id, title, description, content_url, slide_show_url, slug, created_at";
 
 /**
  * Strips the redundant "course_files/" bucket prefix from stored paths
@@ -103,27 +103,19 @@ export function useLessonDetail(slug: string) {
         }
 
         setLesson(lessonData as LessonDetailRow);
-        setPreLessonDesc(lessonData.pre_lesson_description ?? null);
-        setPostLessonDesc(lessonData.post_lesson_description ?? null);
 
-        // Resolve storage URLs only for fields that have a value
-        // null means no file was uploaded
-        if (lessonData.pre_lesson_url)
-          setPreLessonUrl(storageUrl(supabase, lessonData.pre_lesson_url));
-        if (lessonData.post_lesson_url)
-          setPostLessonUrl(storageUrl(supabase, lessonData.post_lesson_url));
+        // Resolve slideshow URL
         if (lessonData.slide_show_url)
           setSlideShowUrl(storageUrl(supabase, lessonData.slide_show_url));
-        if (lessonData.slide_pptx_url)
-          setSlidePptxUrl(storageUrl(supabase, lessonData.slide_pptx_url));
 
-        // Fetch progress, all lessons (for ordering), and earned tokens in parallel
+        // Fetch progress, all lessons (for ordering), earned tokens, and lesson_tasks in parallel
         const [
           { data: courseHeadData },
           { data: allLessonsRaw },
           { data: progressRows },
           { data: earnedTokensData },
           { data: studentSettings },
+          { data: tasksData },
         ] = await Promise.all([
           supabase
             .from("courses")
@@ -132,7 +124,7 @@ export function useLessonDetail(slug: string) {
             .single(),
           supabase
             .from("lessons")
-            .select("id, next_lesson")
+            .select("id, next_lesson, slide_pptx_url")
             .eq("course_id", courseId),
           supabase
             .from("lesson_progress")
@@ -149,9 +141,47 @@ export function useLessonDetail(slug: string) {
             .select("post_lesson_tasks_enabled")
             .eq("id", studentId)
             .single(),
+          (supabase as any)
+            .from("lesson_tasks")
+            .select("id, type, file_url, description, student_id")
+            .eq("lesson_id", lessonData.id)
+            .or(`student_id.eq.${studentId},student_id.is.null`),
         ]);
 
-        setPostLessonTasksEnabled(studentSettings?.post_lesson_tasks_enabled ?? true);
+        setPostLessonTasksEnabled(
+          studentSettings?.post_lesson_tasks_enabled ?? true,
+        );
+
+        // Resolve effective pre/post task using student override → admin default priority
+        const tasks: {
+          type: string;
+          file_url: string | null;
+          description: string | null;
+          student_id: string | null;
+        }[] = tasksData ?? [];
+
+        const effectivePre =
+          tasks.find((t) => t.type === "pre" && t.student_id === studentId) ??
+          tasks.find((t) => t.type === "pre" && t.student_id === null);
+
+        const effectivePost =
+          tasks.find((t) => t.type === "post" && t.student_id === studentId) ??
+          tasks.find((t) => t.type === "post" && t.student_id === null);
+
+        if (effectivePre?.file_url)
+          setPreLessonUrl(storageUrl(supabase, effectivePre.file_url));
+        if (effectivePost?.file_url)
+          setPostLessonUrl(storageUrl(supabase, effectivePost.file_url));
+
+        setPreLessonDesc(effectivePre?.description ?? null);
+        setPostLessonDesc(effectivePost?.description ?? null);
+
+        // Resolve slide_pptx_url from the lesson list query
+        const thisLessonMeta = (allLessonsRaw ?? []).find(
+          (l: any) => l.id === lessonData.id,
+        ) as any;
+        if (thisLessonMeta?.slide_pptx_url)
+          setSlidePptxUrl(storageUrl(supabase, thisLessonMeta.slide_pptx_url));
 
         // Traverse linked list from head to get lessons in display order
         const lessonMap = new Map(

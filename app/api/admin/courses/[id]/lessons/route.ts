@@ -76,12 +76,6 @@ export async function POST(
       "-" +
       lesson_id.slice(0, 8);
 
-    const pre_lesson_url = pre_file_name
-      ? `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`
-      : null;
-    const post_lesson_url = post_file_name
-      ? `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`
-      : null;
     const slide_show_url = slide_pdf_name
       ? `course_files/${id}/${lesson_id}/lessons/${slide_pdf_name}`
       : null;
@@ -98,17 +92,41 @@ export async function POST(
         slug,
         description: description?.trim() || null,
         content_url: content_url?.trim() || null,
-        pre_lesson_url,
-        post_lesson_url,
         slide_show_url,
         slide_pptx_url,
-        pre_lesson_description: pre_lesson_description || null,
-        post_lesson_description: post_lesson_description || null,
       })
       .select()
       .single();
 
     if (error) throw new Error(error.message);
+
+    // Insert lesson_tasks rows for admin defaults (student_id = null)
+    const preFileUrl = pre_file_name
+      ? `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`
+      : null;
+    const postFileUrl = post_file_name
+      ? `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`
+      : null;
+
+    if (preFileUrl || pre_lesson_description) {
+      await supabase.from("lesson_tasks").insert({
+        lesson_id,
+        student_id: null,
+        type: "pre",
+        file_url: preFileUrl,
+        description: pre_lesson_description || null,
+      });
+    }
+
+    if (postFileUrl || post_lesson_description) {
+      await supabase.from("lesson_tasks").insert({
+        lesson_id,
+        student_id: null,
+        type: "post",
+        file_url: postFileUrl,
+        description: post_lesson_description || null,
+      });
+    }
 
     // Create a token row for this lesson so the admin can upload an icon immediately
     await supabase.from("tokens").insert({
