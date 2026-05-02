@@ -1,6 +1,9 @@
 "use client";
 
-import { EditIcon, LocationPinFilledIcon } from "@/app/(protected)/components/ui/icons";
+import {
+  EditIcon,
+  LocationPinFilledIcon,
+} from "@/app/(protected)/components/ui/icons";
 
 interface StudentProfileCardProps {
   name: string;
@@ -24,7 +27,7 @@ export default function StudentProfileCard({
   dob = "April 11, 2016",
   grade = "3",
   description = "Sweet and outgoing personality",
-  imageUrl = "https://placehold.co/120x120",
+  imageUrl,
   onNext,
   onPrev,
   currentIndex = 0,
@@ -85,11 +88,24 @@ export default function StudentProfileCard({
         style={{ top: "74px" }}
       >
         <div className="w-[153px] h-[153px] overflow-hidden rounded-full">
-          <img
-            src={imageUrl}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#2B4257] flex items-center justify-center">
+              <span className="text-white text-5xl font-bold select-none">
+                {name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+            </div>
+          )}
         </div>
         <p
           className="text-[#2E2E2E] font-semibold text-[20px] mt-1 whitespace-nowrap"
