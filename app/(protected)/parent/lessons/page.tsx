@@ -14,7 +14,7 @@ export default async function ParentLessons() {
   // Fetch all students for this account
   const { data: studentsRaw } = await supabase
     .from("students")
-    .select("id, first_name, last_name, avatar_url")
+    .select("id, first_name, last_name, avatar_url, is_setup_complete")
     .eq("account_id", user.id);
 
   const students = studentsRaw ?? [];
@@ -131,6 +131,7 @@ export default async function ParentLessons() {
         `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() ||
         "Student",
       avatarUrl: student.avatar_url,
+      isSetupComplete: (student as any).is_setup_complete as boolean | null,
       courseName,
       completedLessons,
       totalLessons,
@@ -149,6 +150,7 @@ export default async function ParentLessons() {
             studentId={card.id}
             name={card.name}
             avatarUrl={card.avatarUrl}
+            isSetupComplete={card.isSetupComplete}
             courseName={card.courseName}
             completedLessons={card.completedLessons}
             totalLessons={card.totalLessons}

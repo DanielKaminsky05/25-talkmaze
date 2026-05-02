@@ -18,6 +18,7 @@ export default function Home() {
   const router = useRouter();
   const {
     loading,
+    isSetupComplete,
     progress,
     currentLesson,
     prevLesson,
@@ -45,6 +46,7 @@ export default function Home() {
             <CurrentLessonBanner
               lesson={currentLesson}
               courseBadgeUrl={courseBadgeUrl}
+              isSetupComplete={isSetupComplete}
               onClick={
                 currentLesson
                   ? () => router.push(lessonPath(currentLesson))

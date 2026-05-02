@@ -215,6 +215,11 @@ export async function handleStudentCreation(
     .select()
     .single();
 
+  await supabase
+    .from("students")
+    .update({ is_setup_complete: true })
+    .eq("id", student_id);
+
   revalidatePath("/profiles");
   // We no longer match or create a session here. That happens purely at checkout via Stripe!
   return {

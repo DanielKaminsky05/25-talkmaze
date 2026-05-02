@@ -991,6 +991,7 @@ export type Database = {
           first_name: string | null
           grade: string | null
           id: string
+          is_setup_complete: boolean | null
           last_name: string | null
           lesson_space_id: string | null
           lesson_space_student_link: string | null
@@ -1012,6 +1013,7 @@ export type Database = {
           first_name?: string | null
           grade?: string | null
           id?: string
+          is_setup_complete?: boolean | null
           last_name?: string | null
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
@@ -1033,6 +1035,7 @@ export type Database = {
           first_name?: string | null
           grade?: string | null
           id?: string
+          is_setup_complete?: boolean | null
           last_name?: string | null
           lesson_space_id?: string | null
           lesson_space_student_link?: string | null
