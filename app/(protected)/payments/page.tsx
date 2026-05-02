@@ -22,57 +22,31 @@ interface Plan {
  */
 export default async function PaymentPage({
   searchParams,
-
 }: {
-  searchParams: Promise<{ studentId?: string, pFName: string, pLName: string, sFName: string, sLName: string, email: string, password: string }>;
-
+  searchParams: Promise<{
+    studentId?: string;
+    pFName: string;
+    pLName: string;
+    sFName: string;
+    sLName: string;
+    email: string;
+    password: string;
+  }>;
 }) {
-
-
   const { studentId: queryStudentId } = await searchParams;
-
 
   let backLink = "";
   let backLabel = "";
   let resolvedStudentId: string | undefined;
 
-  //if new account now student id resolved so we continue the payment process with no id
-  let pFName: string, pLName: string, sFName: string, sLName: string, email: string, password: string = ""
   if (queryStudentId === "new") {
-    const saved =
-      typeof window !== "undefined"
-        ? sessionStorage.getItem("signup")
-        : null;
-    const signupData = saved ? JSON.parse(saved) : null;
     resolvedStudentId = "new";
-
-    pFName = signupData?.parentFirstName;
-    pLName = signupData?.parentLastName;
-    sFName = signupData?.studentFirstName;
-    sLName = signupData?.studentLastName;
-    email = signupData?.email;
-    password = signupData?.password;
-
-    console.log("Inside payment page ")
-    console.log(pFName);
-    console.log("Signup Data:", {
-      pFName,
-      pLName,
-      sFName,
-      sLName,
-      email,
-      passwordExists: !!password,
-      passwordLength: password?.length,
-    });
-
   }
   const supabase = await createClient();
   const { data: plans } = (await supabase.from("plans").select("*")) as {
     data: Plan[] | null;
   };
   if (queryStudentId != "new") {
-
-
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -80,8 +54,6 @@ export default async function PaymentPage({
     // Resolve which student this page is for.
     // If ?studentId= is present, verify the account owns that student.
     // Otherwise fall back to the active profile cookie.
-
-
 
     if (queryStudentId && user) {
       const { data: student } = await supabase
@@ -101,7 +73,6 @@ export default async function PaymentPage({
 
     // Fetch all Subscription plans from the database so that it can be displayed
     // in renewal options
-
 
     // Check if student has an active subscription to determine back link
     let hasSubscription = false;
@@ -128,9 +99,9 @@ export default async function PaymentPage({
         ? "Return to Dashboard"
         : "Return to Profiles";
   } else {
-
+    backLink = "/signup/minimalSignup";
+    backLabel = "Return to Signup";
   }
-
 
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col ">
@@ -150,13 +121,14 @@ export default async function PaymentPage({
         {/* Section 1 Heading - Current Subscription */}
         <div className="flex justify-center my-4">
           <span className="bg-white text-[#1f2e3b] text-[32px] font-bold px-20 py-0.5 rounded-[9px] border border-black/10 shadow-md">
-            {queryStudentId === "new" ? "Make your first subscription!" : "Current subscription in progress"}
+            {queryStudentId === "new"
+              ? "Make your first subscription!"
+              : "Current subscription in progress"}
           </span>
         </div>
-        {
-          queryStudentId != "new" &&
+        {queryStudentId != "new" && (
           <CurrentSubscription studentId={resolvedStudentId} />
-        }
+        )}
 
         {/* Section 2 Heading - Renewal Options*/}
         <div className="flex justify-center my-4">
@@ -168,12 +140,6 @@ export default async function PaymentPage({
         <PackageRenewaloptionsContainer
           renewalOptions={plans ?? []}
           studentId={resolvedStudentId}
-          pFName={pFName}
-          pLName={pLName}
-          sFName={sLName}
-          sLName={sLName}
-          email={email}
-          password={password}
         />
       </main>
     </div>
