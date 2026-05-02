@@ -24,6 +24,7 @@ export function useLessons() {
   );
   // hasCourse is false when the student exists but has no assigned course
   const [hasCourse, setHasCourse] = useState(true);
+  const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
 
   // Load the student's lessons and tokens on page mount
   useEffect(() => {
@@ -40,7 +41,7 @@ export function useLessons() {
 
         const { data: student, error: studentError } = await supabase
           .from("students")
-          .select("id")
+          .select("id, is_setup_complete")
           .eq("id", profile.id)
           .single();
 
@@ -49,6 +50,8 @@ export function useLessons() {
             "Cannot identify student: " + JSON.stringify(studentError),
           );
         }
+
+        setIsSetupComplete(student.is_setup_complete);
 
         // course_assignment links a student to their enrolled course
         const { data: course } = await supabase
@@ -64,23 +67,29 @@ export function useLessons() {
           return;
         }
 
-        const [{ data: courseHeadData }, { data: lessonsRaw, error: lessonsError }] =
-          await Promise.all([
-            supabase
-              .from("courses")
-              .select("head_lesson_id")
-              .eq("id", course.course_id as string)
-              .single(),
-            supabase
-              .from("lessons")
-              .select("id, course_id, created_at, description, title, slug, next_lesson")
-              .eq("course_id", course.course_id as string),
-          ]);
+        const [
+          { data: courseHeadData },
+          { data: lessonsRaw, error: lessonsError },
+        ] = await Promise.all([
+          supabase
+            .from("courses")
+            .select("head_lesson_id")
+            .eq("id", course.course_id as string)
+            .single(),
+          supabase
+            .from("lessons")
+            .select(
+              "id, course_id, created_at, description, title, slug, next_lesson",
+            )
+            .eq("course_id", course.course_id as string),
+        ]);
 
         if (lessonsError) console.error("Lessons fetch error:", lessonsError);
 
         // Traverse linked list from head to get lessons in display order
-        const lessonMap = new Map((lessonsRaw ?? []).map((l: any) => [l.id, l]));
+        const lessonMap = new Map(
+          (lessonsRaw ?? []).map((l: any) => [l.id, l]),
+        );
         const orderedLessons: typeof lessonsRaw = [];
         let cur: string | null = courseHeadData?.head_lesson_id ?? null;
         while (cur) {
@@ -90,7 +99,8 @@ export function useLessons() {
           cur = node.next_lesson;
         }
         // Fallback if head is not set or list is broken
-        const lessonsData = orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
+        const lessonsData =
+          orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
 
         const lessonIds = (lessonsData ?? []).map((l: any) => l.id);
 
@@ -182,6 +192,7 @@ export function useLessons() {
     earnedTokenIds,
     completedLessonIds,
     hasCourse,
+    isSetupComplete,
     navigateToLesson,
   };
 }

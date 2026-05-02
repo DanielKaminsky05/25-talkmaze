@@ -26,7 +26,7 @@ export default async function ParentDashboard() {
   const { data: studentsRaw } = await supabase
     .from("students")
     .select(
-      `id, first_name, last_name, grade, avatar_url, location, date_of_birth, bio,
+      `id, first_name, last_name, grade, avatar_url, location, date_of_birth, bio, is_setup_complete,
        student_subscriptions(sessions_remaining, status, plans(classes))`,
     )
     .eq("account_id", user.id);
@@ -46,6 +46,7 @@ export default async function ParentDashboard() {
       remaining_lessons: subscription?.sessions_remaining ?? 0,
       total_lessons: subscription?.plans?.classes ?? 0,
       status: subscription?.status ?? "inactive",
+      is_setup_complete: s.is_setup_complete,
     };
   });
 

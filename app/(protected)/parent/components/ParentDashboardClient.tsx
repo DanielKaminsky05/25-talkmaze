@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import StudentProfileCard from "./StudentProfileCard";
 import StudentPostLessonTaskSettings from "./StudentPostLessonTaskSettings";
-import StudentAttendanceDetails, { AttendanceItem } from "./StudentAttendanceDetails";
+import StudentAttendanceDetails, {
+  AttendanceItem,
+} from "./StudentAttendanceDetails";
 import SelectedStudentSubscriptionStatus from "./SelectedStudentSubscriptionStatus";
 import ScheduleList from "../../components/ScheduleList";
 import { Appointment } from "../../types/lesson";
@@ -21,6 +24,7 @@ export interface Student {
   remaining_lessons: number;
   total_lessons: number;
   status: string;
+  is_setup_complete: boolean | null;
 }
 
 interface Props {
@@ -31,12 +35,17 @@ interface Props {
 }
 
 /**
- * Parent Dashboard client component. 
- * 
+ * Parent Dashboard client component.
+ *
  * Passes data down to the sub-components (attendance, schedule, etc).
  * Renders all the sub components of the page in the correct layout.
  */
-export default function ParentDashboardClient({ students, schedule, attendanceByStudent, streakByStudent }: Props) {
+export default function ParentDashboardClient({
+  students,
+  schedule,
+  attendanceByStudent,
+  streakByStudent,
+}: Props) {
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
 
   const onNextStudent = () => {
@@ -54,9 +63,37 @@ export default function ParentDashboardClient({ students, schedule, attendanceBy
   };
 
   const currentStudent = students[currentStudentIndex] ?? ({} as Student);
+  const incompleteStudents = students.filter(
+    (s) => s.is_setup_complete === false,
+  );
 
   return (
     <div className="w-full h-full p-8 overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {incompleteStudents.length > 0 && (
+        <div className="mb-5 flex flex-col gap-2">
+          {incompleteStudents.map((s) => (
+            <div
+              key={s.id}
+              className="flex items-center justify-between gap-4 rounded-xl px-5 py-4 bg-[#FFF8E6] border border-[#F5A623]/30"
+            >
+              <div>
+                <p className="font-semibold text-[#2B4257] text-sm">
+                  {s.first_name} {s.last_name}&apos;s profile is incomplete.
+                </p>
+                <p className="text-xs text-[#2B4257]/60 mt-0.5">
+                  Set up their availability so we can match them with a coach.
+                </p>
+              </div>
+              <Link
+                href={`/parent/students/${s.id}/setup`}
+                className="shrink-0 px-4 py-2 bg-[#B1E7D6] rounded-lg text-sm font-semibold text-[#2B4257] hover:opacity-90 transition-opacity whitespace-nowrap"
+              >
+                Complete Setup
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-[1fr_1.3fr] gap-6 h-full min-h-0">
         {/* Left column */}
         <div className="flex flex-col gap-[22px] h-full min-h-0">
@@ -85,9 +122,14 @@ export default function ParentDashboardClient({ students, schedule, attendanceBy
 
           <div className="flex-2 min-h-0">
             <StudentAttendanceDetails
-                streak={streakByStudent[currentStudent.id] ?? 0}
-                attendance={attendanceByStudent[currentStudent.id] ?? Array.from({ length: 12 }, () => ({ status: "future" as const }))}
-              />
+              streak={streakByStudent[currentStudent.id] ?? 0}
+              attendance={
+                attendanceByStudent[currentStudent.id] ??
+                Array.from({ length: 12 }, () => ({
+                  status: "future" as const,
+                }))
+              }
+            />
           </div>
         </div>
 
@@ -102,7 +144,9 @@ export default function ParentDashboardClient({ students, schedule, attendanceBy
 
           <div className="flex-1 min-h-0">
             <ScheduleList
-              schedule={schedule.filter((s) => s.student_id === currentStudent.id)}
+              schedule={schedule.filter(
+                (s) => s.student_id === currentStudent.id,
+              )}
             />
           </div>
         </div>

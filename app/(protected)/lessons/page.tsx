@@ -17,6 +17,7 @@ export default function LessonsPage() {
     earnedTokenIds,
     completedLessonIds,
     hasCourse,
+    isSetupComplete,
     navigateToLesson,
   } = useLessons();
 
@@ -57,6 +58,23 @@ export default function LessonsPage() {
   }
 
   if (!hasCourse) {
+    if (isSetupComplete === false) {
+      return (
+        <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white mt-10">
+          <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center gap-6 border border-[#B1E7D6]/20 shadow-2xl">
+            <h2 className="text-4xl font-bold text-white tracking-tight">
+              Setup Required
+            </h2>
+            <p className="text-[#B1E7D6] text-lg max-w-md mx-auto opacity-80">
+              Your profile hasn&apos;t been set up yet. Ask your parent to enter
+              the parent dashboard and complete your profile setup so we can
+              match you with a coach.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white mt-10">
         <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center gap-6 border border-[#B1E7D6]/20 shadow-2xl">
@@ -91,18 +109,27 @@ export default function LessonsPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] pb-12 animate-in fade-in duration-300">
-        {lessonCards.map(({ lesson, lessonNumber, icon, tokenTitle, isCompleted, isLocked }) => (
-          <LessonCard
-            key={lesson.id}
-            lessonNumber={lessonNumber}
-            title={lesson.title}
-            tokenTitle={tokenTitle}
-            icon={icon}
-            isCompleted={isCompleted}
-            isLocked={isLocked}
-            onClick={() => navigateToLesson(lesson)}
-          />
-        ))}
+        {lessonCards.map(
+          ({
+            lesson,
+            lessonNumber,
+            icon,
+            tokenTitle,
+            isCompleted,
+            isLocked,
+          }) => (
+            <LessonCard
+              key={lesson.id}
+              lessonNumber={lessonNumber}
+              title={lesson.title}
+              tokenTitle={tokenTitle}
+              icon={icon}
+              isCompleted={isCompleted}
+              isLocked={isLocked}
+              onClick={() => navigateToLesson(lesson)}
+            />
+          ),
+        )}
       </div>
     </div>
   );

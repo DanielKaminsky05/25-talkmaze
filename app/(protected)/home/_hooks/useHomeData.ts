@@ -32,6 +32,7 @@ export type TokenRow = {
 export function useHomeData() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [currentLesson, setCurrentLesson] = useState<HomeLesson | null>(null);
   const [prevLesson, setPrevLesson] = useState<HomeLesson | null>(null);
@@ -51,6 +52,14 @@ export function useHomeData() {
           router.push("/profiles");
           return;
         }
+
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("is_setup_complete")
+          .eq("id", profile.id)
+          .single();
+
+        setIsSetupComplete(studentData?.is_setup_complete ?? null);
 
         const now = new Date().toISOString();
         const { data: sessionsRaw } = await supabase
@@ -234,6 +243,7 @@ export function useHomeData() {
 
   return {
     loading,
+    isSetupComplete,
     progress,
     currentLesson,
     prevLesson,

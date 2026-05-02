@@ -119,6 +119,7 @@ export async function POST(request: Request) {
         // Overwrite these with the real IDs once the account is created below
         let studentId = dummyStudentId;
         let accountId = dummyAccountId;
+        const isNewSignup = accountId === "new" || studentId === "new";
 
         if (!accountId || !studentId || !priceId) {
           console.error(
@@ -175,6 +176,7 @@ export async function POST(request: Request) {
                   account_id: insertIntoAccountTable.data.id,
                   first_name: student_first_name,
                   last_name: student_last_name,
+                  is_setup_complete: false,
                 })
                 .select()
                 .single();
@@ -324,17 +326,27 @@ export async function POST(request: Request) {
                   "invoice.paid: subscription created for student",
                   studentId,
                 );
-                try {
-                  await assignCoachToStudent(studentId, plan.classes);
+                if (isNewSignup) {
+                  // Minimal signup students have no availability yet.
+                  // Coach assignment runs after the parent completes the
+                  // student setup form in the parent portal.
                   console.log(
-                    "invoice.paid: coach assigned & sessions bulk-generated for student",
+                    "invoice.paid: skipping coach assignment for new signup student (no availability yet)",
                     studentId,
                   );
-                } catch (coachErr) {
-                  console.error(
-                    "invoice.paid: coach assignment failed:",
-                    coachErr,
-                  );
+                } else {
+                  try {
+                    await assignCoachToStudent(studentId, plan.classes);
+                    console.log(
+                      "invoice.paid: coach assigned & sessions bulk-generated for student",
+                      studentId,
+                    );
+                  } catch (coachErr) {
+                    console.error(
+                      "invoice.paid: coach assignment failed:",
+                      coachErr,
+                    );
+                  }
                 }
               }
             }
