@@ -38,6 +38,9 @@ export default async function PaymentPage({
   let backLink = "";
   let backLabel = "";
   let resolvedStudentId: string | undefined;
+  let hasSubscription = false;
+  let currentPlanStripeId: string | null = null;
+  let pendingPlanId: string | null = null;
 
   if (queryStudentId === "new") {
     resolvedStudentId = "new";
@@ -50,10 +53,6 @@ export default async function PaymentPage({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    // Resolve which student this page is for.
-    // If ?studentId= is present, verify the account owns that student.
-    // Otherwise fall back to the active profile cookie.
 
     if (queryStudentId && user) {
       const { data: student } = await supabase
@@ -71,19 +70,33 @@ export default async function PaymentPage({
       resolvedStudentId = activeProfile.id;
     }
 
-    // Fetch all Subscription plans from the database so that it can be displayed
-    // in renewal options
-
-    // Check if student has an active subscription to determine back link
-    let hasSubscription = false;
+    // Fetch active subscription to determine back link and pending state
     if (resolvedStudentId) {
       const { data: subscription } = await supabase
         .from("student_subscriptions")
-        .select("id")
+        .select(
+          `
+          id,
+          pending_plan_id,
+          plans!student_plans_plan_id_fkey (
+            stripe_price_id
+          )
+        `,
+        )
         .eq("student_id", resolvedStudentId)
         .eq("status", "active")
+        .order("current_period_end", { ascending: false })
+        .limit(1)
         .maybeSingle();
+
       hasSubscription = !!subscription;
+      if (subscription) {
+        const currentPlan = Array.isArray(subscription.plans)
+          ? subscription.plans[0]
+          : subscription.plans;
+        currentPlanStripeId = currentPlan?.stripe_price_id ?? null;
+        pendingPlanId = subscription.pending_plan_id;
+      }
     }
 
     const isParentFlow =
@@ -130,17 +143,22 @@ export default async function PaymentPage({
           <CurrentSubscription studentId={resolvedStudentId} />
         )}
 
-        {/* Section 2 Heading - Renewal Options*/}
+        {/* Section 2 Heading - Renewal / Upgrade Options */}
         <div className="flex justify-center my-4">
           <span className="bg-white text-[#1f2e3b] text-[32px] font-bold px-9 py-0.5 rounded-[9px] border border-black/10 shadow-md">
             TalkMaze Package Renewal Options
           </span>
         </div>
 
-        <PackageRenewaloptionsContainer
-          renewalOptions={plans ?? []}
-          studentId={resolvedStudentId}
-        />
+        <div id="renewal-options" className="w-full">
+          <PackageRenewaloptionsContainer
+            renewalOptions={plans ?? []}
+            studentId={resolvedStudentId}
+            hasActiveSubscription={hasSubscription}
+            currentPlanStripeId={currentPlanStripeId}
+            pendingPlanId={pendingPlanId}
+          />
+        </div>
       </main>
     </div>
   );

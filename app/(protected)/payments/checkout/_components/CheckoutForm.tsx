@@ -16,12 +16,16 @@ export function CheckoutForm({
   planName,
   prefill,
   studentId,
+  mode = "purchase",
+  effectiveDate,
   onPaymentElementReady,
 }: {
   amountDisplay: string;
   planName: string;
   prefill?: { name: string; email: string; phone: string } | null;
   studentId: string | null;
+  mode?: "purchase" | "schedule";
+  effectiveDate?: string | null;
   onPaymentElementReady?: () => void;
 }) {
   const stripe = useStripe();
@@ -35,6 +39,16 @@ export function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const isSchedule = mode === "schedule";
+
+  const formattedEffectiveDate = effectiveDate
+    ? new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date(effectiveDate))
+    : null;
+
   useEffect(() => {
     if (!prefill) return;
     const parts = prefill.name.trim().split(" ");
@@ -45,34 +59,42 @@ export function CheckoutForm({
   }, [prefill]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("Submitting payment!");
-    console.log("Amount: " + amountDisplay);
-    console.log("Plan Name: " + planName);
     e.preventDefault();
     if (!stripe || !elements) return;
 
     setLoading(true);
     setErrorMessage("");
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/payments/success`,
-        receipt_email: email,
-        payment_method_data: {
-          billing_details: {
-            name: `${firstName} ${lastName}`.trim(),
-            email,
-            phone,
+    const billingDetails = {
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+    };
+
+    const returnUrl = isSchedule
+      ? `${window.location.origin}/payments/success?mode=schedule`
+      : `${window.location.origin}/payments/success`;
+
+    const { error } = isSchedule
+      ? await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: returnUrl,
+            payment_method_data: { billing_details: billingDetails },
           },
-        },
-      },
-    });
+        })
+      : await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: returnUrl,
+            receipt_email: email,
+            payment_method_data: { billing_details: billingDetails },
+          },
+        });
 
     if (error) {
       setErrorMessage(error.message ?? "Payment failed");
       setLoading(false);
-      return;
     }
   };
 
@@ -90,7 +112,12 @@ export function CheckoutForm({
       </header>
 
       <div className="mx-8 mb-10 px-4 flex-1 grid grid-cols-1 lg:grid-cols-[5fr_5fr] gap-6">
-        <OverviewPanel planName={planName} amountDisplay={amountDisplay} />
+        <OverviewPanel
+          planName={planName}
+          amountDisplay={amountDisplay}
+          mode={mode}
+          effectiveDate={formattedEffectiveDate}
+        />
 
         <form
           onSubmit={handleSubmit}
@@ -106,14 +133,18 @@ export function CheckoutForm({
             lastName={lastName}
             setLastName={setLastName}
           />
-          {
 
-          }
           <hr className="border-0 border-t border-[#9CA3AF] my-[30px]" />
 
           <h3 className="text-2xl font-bold text-[#2b4257] mt-0 mb-[15px]">
             Payment
           </h3>
+
+          {isSchedule && formattedEffectiveDate && (
+            <div className="mb-4 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#2b4257]">
+              No charge today. Your new plan starts on {formattedEffectiveDate}.
+            </div>
+          )}
 
           <div className="mb-5">
             <PaymentElement
@@ -154,7 +185,11 @@ export function CheckoutForm({
             disabled={!stripe || loading}
             className="w-full bg-white text-black font-bold text-2xl py-[15px] rounded-[36px] border-0 cursor-pointer mt-[10px] shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-transform duration-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Processing..." : `Purchase (${amountDisplay})`}
+            {loading
+              ? "Processing..."
+              : isSchedule
+                ? `Confirm plan change (${amountDisplay}/mo)`
+                : `Purchase (${amountDisplay})`}
           </button>
         </form>
       </div>
