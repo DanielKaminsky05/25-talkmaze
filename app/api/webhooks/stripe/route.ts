@@ -686,6 +686,36 @@ export async function POST(request: Request) {
       }
     }
 
+    /*
+     STRIPE EVENT: customer.subscription.deleted
+     Fires when a subscription is cancelled - both when a subscription period
+     ends and when a subscription is ended early by manually cancelling through
+     Stripe dashboard
+    */
+    if (event.type === "customer.subscription.deleted") {
+      const deletedSub = event.data.object as Stripe.Subscription;
+      const studentId = deletedSub.metadata?.student_id;
+      if (studentId) {
+        const supabase = createServiceRoleClient();
+        const { data: subRecord } = await supabase
+          .from("student_subscriptions")
+          .select("id")
+          .eq("student_id", studentId)
+          .eq("status", "active")
+          .maybeSingle();
+        if (subRecord) {
+          await supabase
+            .from("student_subscriptions")
+            .update({ status: "cancelled" })
+            .eq("id", subRecord.id);
+          console.log(
+            "customer.subscription.deleted: subscription cancelled for student",
+            studentId,
+          );
+        }
+      }
+    }
+
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: unknown) {
     const errorMessage =

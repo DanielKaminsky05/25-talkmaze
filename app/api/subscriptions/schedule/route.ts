@@ -123,6 +123,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (targetPlan.stripe_price_id === currentPlan.stripe_price_id) {
+      return NextResponse.json(
+        { error: "You are already on this plan. It will auto-renew." },
+        { status: 409 },
+      );
+    }
+
     if (currentSubscription.pending_plan_id === targetPlan.id) {
       return NextResponse.json(
         { error: "This plan change is already scheduled" },

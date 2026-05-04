@@ -148,19 +148,36 @@ export const PackageRenewaloptionsContainer = ({
               </p>
 
               <button
-                className="rounded-full py-3 w-full text-base font-bold shadow-md transition-[filter] hover:brightness-95 border-0 cursor-pointer"
-                onClick={() => setSelectedPlan(plan)}
+                className="rounded-full py-3 w-full text-base font-bold shadow-md transition-[filter] border-0"
+                onClick={() => !isCurrent && setSelectedPlan(plan)}
+                disabled={isCurrent}
                 style={
-                  isSelected
-                    ? { backgroundColor: "#4db89a", color: "white" }
-                    : { backgroundColor: "#65cfad", color: "#1f2e3b" }
+                  isCurrent
+                    ? {
+                        backgroundColor: "#9ca3af",
+                        color: "white",
+                        cursor: "default",
+                      }
+                    : isSelected
+                      ? {
+                          backgroundColor: "#4db89a",
+                          color: "white",
+                          cursor: "pointer",
+                        }
+                      : {
+                          backgroundColor: "#65cfad",
+                          color: "#1f2e3b",
+                          cursor: "pointer",
+                        }
                 }
               >
-                {isSelected
-                  ? "Selected"
-                  : isScheduleMode
-                    ? "Select plan"
-                    : "Select"}
+                {isCurrent
+                  ? "Current plan"
+                  : isSelected
+                    ? "Selected"
+                    : isScheduleMode
+                      ? "Select plan"
+                      : "Select"}
               </button>
             </div>
           );

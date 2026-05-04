@@ -3,6 +3,7 @@ import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import DonutChart from "./SessionsRemainingDonutChart";
 import CancelSubscriptionButton from "./CancelSubscriptionButton";
 import CancelScheduleButton from "./CancelScheduleButton";
+import ResumeSubscriptionButton from "./ResumeSubscriptionButton";
 
 export default async function CurrentSubscription({
   studentId,
@@ -67,9 +68,11 @@ export default async function CurrentSubscription({
       <div className="flex-2 flex flex-col items-center gap-4">
         {/* 28-day policy banner */}
         <div className="w-full text-center bg-white rounded-[9px] px-6 py-2 text-sm font-medium text-[#2b4257] shadow-[inset_0_2px_6px_rgba(0,0,0,0.12)]">
-          {subscription.pending_plan_id && currentPeriodEnd
-            ? `Current plan cancels on ${currentPeriodEnd}`
-            : "You have 28 days after purchase to cancel your package"}
+          {subscription.cancelled_at && currentPeriodEnd
+            ? `Plan ends ${currentPeriodEnd} and will not renew`
+            : subscription.pending_plan_id && currentPeriodEnd
+              ? `Current plan cancels on ${currentPeriodEnd}`
+              : "You have 28 days after purchase to cancel your package"}
         </div>
 
         {/* Billing box: donut + sessions text */}
@@ -112,8 +115,14 @@ export default async function CurrentSubscription({
           </div>
         )}
 
-        {/* Cancel plan */}
-        <CancelSubscriptionButton studentId={studentId} />
+        {/* Cancel / resume plan */}
+        {subscription.cancelled_at ? (
+          <div className="flex flex-col items-center gap-2">
+            <ResumeSubscriptionButton studentId={studentId} />
+          </div>
+        ) : (
+          <CancelSubscriptionButton studentId={studentId} />
+        )}
       </div>
     </div>
   );

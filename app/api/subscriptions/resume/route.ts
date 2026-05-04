@@ -4,8 +4,8 @@ import { stripe } from "@/services/stripe/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
 /**
- * POST /api/subscriptions/cancel
- * Cancels the active student subscription both in Stripe and in Supabase.
+ * POST /api/subscriptions/resume
+ * Resumes auto-renewal for a subscription that was scheduled to cancel at period end.
  */
 export async function POST(req: Request) {
   try {
@@ -19,14 +19,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Prefer studentId from request body (parent flow); fall back to active profile cookie (student flow)
     const body = await req.json().catch(() => ({}));
     const bodyStudentId: string | undefined = body?.studentId;
 
     let studentId: string | undefined;
 
     if (bodyStudentId) {
-      // Verify the authenticated user owns this student
       const { data: student } = await supabase
         .from("students")
         .select("id")
@@ -51,24 +49,23 @@ export async function POST(req: Request) {
       studentId = activeProfile.id;
     }
 
-    // Find the active subscription record in Supabase
     const { data: subscription } = await supabase
       .from("student_subscriptions")
-      .select("id, pending_stripe_schedule_id")
+      .select("id")
       .eq("student_id", studentId)
       .eq("status", "active")
+      .not("cancelled_at", "is", null)
       .order("current_period_end", { ascending: false })
       .limit(1)
       .single();
 
     if (!subscription) {
       return NextResponse.json(
-        { error: "No active subscription found" },
+        { error: "No cancellation scheduled for this subscription" },
         { status: 404 },
       );
     }
 
-    // Get the Stripe customer ID from the account table
     const { data: account } = await supabase
       .from("account")
       .select("stripe_customer_id")
@@ -82,7 +79,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find the matching active Stripe subscription via student_id in metadata
     const stripeSubscriptions = await stripe.subscriptions.list({
       customer: account.stripe_customer_id,
       status: "active",
@@ -99,40 +95,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // If there's a pending schedule, release it before cancelling
-    if (subscription.pending_stripe_schedule_id) {
-      await stripe.subscriptionSchedules.release(
-        subscription.pending_stripe_schedule_id,
-      );
-    }
-
-    // Schedule cancellation at period end instead of cancelling immediately
     await stripe.subscriptions.update(stripeSubscription.id, {
-      cancel_at_period_end: true,
+      cancel_at_period_end: false,
     });
 
-    // Mark scheduled cancellation in DB — status stays "active" so access is preserved
     const { error: updateError } = await supabase
       .from("student_subscriptions")
-      .update({
-        cancelled_at: new Date().toISOString(),
-        pending_plan_id: null,
-        pending_stripe_schedule_id: null,
-        pending_effective_date: null,
-        pending_created_at: null,
-      })
+      .update({ cancelled_at: null })
       .eq("id", subscription.id);
 
     if (updateError) {
       console.error(
-        "cancel: error updating student_subscriptions:",
+        "resume: error updating student_subscriptions:",
         updateError,
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    console.error("Cancel subscription error:", err);
+    console.error("Resume subscription error:", err);
     const message =
       err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });
