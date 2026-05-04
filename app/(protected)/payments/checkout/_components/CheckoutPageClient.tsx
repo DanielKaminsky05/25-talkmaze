@@ -13,7 +13,6 @@ const stripePromise = loadStripe(
 const containerClass = "bg-[#2b4257] min-h-screen flex flex-col ";
 
 export function CheckoutPageClient() {
-
   const searchParams = useSearchParams();
   const [clientSecret, setClientSecret] = useState("");
   const [prefill, setPrefill] = useState<{
@@ -21,6 +20,7 @@ export function CheckoutPageClient() {
     email: string;
     phone: string;
   } | null>(null);
+  const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
   const [initError, setInitError] = useState("");
   const [isPaymentReady, setIsPaymentReady] = useState(false);
 
@@ -28,38 +28,25 @@ export function CheckoutPageClient() {
   const amountCents = searchParams.get("amount");
   const priceId = searchParams.get("price_id");
   const studentId = searchParams.get("studentId");
+  const mode = searchParams.get("mode") === "schedule" ? "schedule" : "purchase";
 
-  let pFName: string | null, pLName:string | null, sFName:string | null, sLName:string | null, email:string|null, password: string|null = "";
+  // New-user signup params (only present when studentId === "new")
+  const pFName = searchParams.get("pFName");
+  const pLName = searchParams.get("pLName");
+  const sFName = searchParams.get("sFName");
+  const sLName = searchParams.get("sLName");
+  const email = searchParams.get("email");
+  const password = searchParams.get("password");
 
-  if(studentId === "new"){
-
-    console.log("New student");
-    pFName = searchParams.get("pFName");
-    pLName = searchParams.get("pLName");
-    sFName = searchParams.get("sFName");
-    sLName = searchParams.get("sLName");
-    email = searchParams.get("email");
-    password = searchParams.get("password");
-
-    console.log(pFName);
-    console.log(password);
-  }
-  
   const amountDisplay = amountCents
     ? `$${(Number.parseInt(amountCents, 10) / 100).toFixed(0)}`
     : "0";
 
-  // Hit /api/checkout to create a Stripe subscription and get a clientSecret
-  // The clientSecret contains the configuration of the Stripe subscription
-  // Pass clientSecret to <Elements>, to payment form for that subscription.
-  // The cancelled flag and AbortController prevent state updates after unmount,
-  // e.g. if the user navigates away before the /api/checkout request completes
   useEffect(() => {
     let cancelled = false;
     const abortController = new AbortController();
 
     async function init() {
-      
       if (!priceId) {
         setInitError("Missing price_id");
         return;
@@ -67,10 +54,21 @@ export function CheckoutPageClient() {
 
       try {
         const timeoutId = setTimeout(() => abortController.abort(), 15000);
-        const res = await fetch("/api/checkout", {
+        const endpoint =
+          mode === "schedule" ? "/api/subscriptions/schedule" : "/api/checkout";
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId, studentId,pFName, pLName, sFName, sLName, email,password}),
+          body: JSON.stringify({
+            priceId,
+            studentId,
+            pFName,
+            pLName,
+            sFName,
+            sLName,
+            email,
+            password,
+          }),
           signal: abortController.signal,
         });
         clearTimeout(timeoutId);
@@ -84,6 +82,7 @@ export function CheckoutPageClient() {
         if (!cancelled) {
           setClientSecret(data.clientSecret);
           setPrefill(data.prefill ?? null);
+          setEffectiveDate(data.effectiveDate ?? null);
         }
       } catch (e) {
         if (cancelled) return;
@@ -104,12 +103,14 @@ export function CheckoutPageClient() {
       cancelled = true;
       abortController.abort();
     };
-  }, [priceId]);
+  }, [priceId, mode]);
 
   if (initError) {
     return (
       <div className={containerClass}>
-        <div className="text-[#ff6b6b] font-bold text-base">{initError}</div>
+        <div className="text-[#ff6b6b] font-bold text-base p-8">
+          {initError}
+        </div>
       </div>
     );
   }
@@ -118,11 +119,8 @@ export function CheckoutPageClient() {
 
   return (
     <>
-      {/* Form renders in background so Stripe can initialize while page
-          is still loading. Preventing sudden "pop up" visual bug. */}
       {clientSecret && amountCents && (
         <div className={containerClass}>
-          
           <Elements
             stripe={stripePromise}
             options={{
@@ -134,6 +132,8 @@ export function CheckoutPageClient() {
               amountDisplay={amountDisplay}
               planName={planName}
               prefill={prefill}
+              mode={mode}
+              effectiveDate={effectiveDate}
               onPaymentElementReady={() => setIsPaymentReady(true)}
               studentId={studentId}
             />
@@ -141,7 +141,6 @@ export function CheckoutPageClient() {
         </div>
       )}
 
-      {/* Overlay covers the form until PaymentElement fires onReady */}
       {showSpinner && (
         <div className="fixed inset-0 bg-[#2b4257] flex flex-col items-center justify-center gap-4 z-50">
           <div className="w-12 h-12 border-4 border-[#B1E7D6] border-t-[#65CFAD] rounded-full animate-spin" />

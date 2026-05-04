@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CaretIcon } from "@/app/(protected)/components/ui/icons";
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+
 interface Plan {
   id: string;
   name: string;
@@ -17,76 +16,88 @@ interface Plan {
   type: string | null;
 }
 
-/**
- * Component displaying all the renewal options as cards that user can select.
- * @param renewalOptions array containing all the plans to display
- */
 export const PackageRenewaloptionsContainer = ({
   renewalOptions,
   studentId,
-
+  hasActiveSubscription = false,
+  currentPlanStripeId,
+  pendingPlanId,
 }: {
   renewalOptions: Plan[];
   studentId?: string;
-
+  hasActiveSubscription?: boolean;
+  currentPlanStripeId?: string | null;
+  pendingPlanId?: string | null;
 }) => {
-
-
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [signUpData, setSignUpData] = useState<any>(null);
+  const [signUpData, setSignUpData] = useState<Record<string, string> | null>(
+    null,
+  );
 
   useEffect(() => {
     const saved = sessionStorage.getItem("signup");
     if (saved) {
-      const parsed = JSON.parse(saved);
-      console.log("Loaded signup:", parsed);
-      setSignUpData(parsed);
+      try {
+        setSignUpData(JSON.parse(saved));
+      } catch {
+        // ignore malformed signup data
+      }
     }
-  }, [])
-  // We want to display the plans from lowest cost to highest cost
-  const sortedRenewalOptions = renewalOptions.sort(
-    (firstPlan, secondPlan) => firstPlan.cents - secondPlan.cents,
+  }, []);
+
+  const sortedRenewalOptions = [...renewalOptions].sort(
+    (a, b) => a.cents - b.cents,
   );
 
-  /**
-   * Handle the user confirming they want to continue to payment for their
-   * selected plan.
-   * Navigate to checkout page, passing query parameters: stripe_price_id
-   */
+  const isScheduleMode = hasActiveSubscription;
+
   const handleContinue = () => {
     if (!selectedPlan) {
       alert("Please select a plan first.");
       return;
     }
-    const studentParam = studentId ? `&studentId=${encodeURIComponent(studentId)}` : "";
+    const studentParam = studentId
+      ? `&studentId=${encodeURIComponent(studentId)}`
+      : "";
+    const modeParam = isScheduleMode ? "&mode=schedule" : "";
 
     let newUserParam = "";
-
-    console.log("package renewable password: " + signUpData.password)
-   console.log("Sending to api checkout:", {
-  priceId: selectedPlan?.stripe_price_id,
-  studentId,
-  pFName: signUpData?.parentFirstName,
-  pLName: signUpData?.parentLastName,
-  sFName: signUpData?.studentFirstName,
-  sLName: signUpData?.studentLastName,
-  email: signUpData?.email,
-  passwordExists: !!signUpData?.password,
-});
-    if (studentId === "new") {
-      newUserParam = `&pFName=${encodeURIComponent(signUpData.parentFirstName)}&pLName=${encodeURIComponent(signUpData.parentLastName)}&sFName=${encodeURIComponent(signUpData.studentFirstName)}&sLName=${encodeURIComponent(signUpData.studentLastName)}&email=${encodeURIComponent(signUpData.email)}&password=${encodeURIComponent(signUpData.password)}`
+    if (studentId === "new" && signUpData) {
+      newUserParam =
+        `&pFName=${encodeURIComponent(signUpData.parentFirstName ?? "")}` +
+        `&pLName=${encodeURIComponent(signUpData.parentLastName ?? "")}` +
+        `&sFName=${encodeURIComponent(signUpData.studentFirstName ?? "")}` +
+        `&sLName=${encodeURIComponent(signUpData.studentLastName ?? "")}` +
+        `&email=${encodeURIComponent(signUpData.email ?? "")}` +
+        `&password=${encodeURIComponent(signUpData.password ?? "")}`;
     }
+
     router.push(
-      `/payments/checkout?price_id=${encodeURIComponent(selectedPlan.stripe_price_id)}&name=${encodeURIComponent(selectedPlan.name)}&amount=${encodeURIComponent(selectedPlan.cents)}${studentParam}${newUserParam}`,
+      `/payments/checkout?price_id=${encodeURIComponent(selectedPlan.stripe_price_id)}&name=${encodeURIComponent(selectedPlan.name)}&amount=${encodeURIComponent(selectedPlan.cents)}${studentParam}${modeParam}${newUserParam}`,
     );
   };
 
   return (
     <div className="flex flex-col gap-0 font-bold">
+      {isScheduleMode && (
+        <div className="mb-4 rounded-2xl border border-black/10 bg-white px-6 py-3 text-sm font-semibold text-center text-[#2b4257] shadow-md">
+          Plan changes start when your current plan ends. You will not be
+          charged today.
+        </div>
+      )}
+      {isScheduleMode && !!pendingPlanId && (
+        <div className="mb-4 rounded-2xl border border-black/10 bg-[#fef3c7] px-6 py-3 text-sm font-semibold text-center text-[#7a4b0f] shadow-md">
+          You already have a plan change scheduled. Selecting a new plan will
+          replace it.
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-6 mb-7 max-[960px]:grid-cols-1">
         {sortedRenewalOptions.map((plan) => {
           const isSelected = selectedPlan?.id === plan.id;
+          const isPending = pendingPlanId === plan.id;
+          const isCurrent =
+            isScheduleMode && plan.stripe_price_id === currentPlanStripeId;
           const dollars = Math.floor(plan.cents / 100);
           const currencyTag = plan.currency === "CAD" ? "CA" : plan.currency;
 
@@ -100,35 +111,42 @@ export const PackageRenewaloptionsContainer = ({
                   : { outline: "2px solid transparent" }
               }
             >
-              {/* Bold plan name */}
               <h4 className="text-xl font-black text-[#1f2e3b] m-0 text-center">
                 {plan.name}
               </h4>
 
-              {/* White inner price box */}
+              {isCurrent && (
+                <span className="rounded-full bg-[#2b4257] px-3 py-1 text-xs font-bold text-white">
+                  Current plan
+                </span>
+              )}
+              {isPending && !isCurrent && (
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2b4257]">
+                  Plan change scheduled
+                </span>
+              )}
+
               <div className="bg-white rounded-xl px-5 py-4 flex flex-col items-center gap-0.5 w-full shadow-[inset_0_0_4px_2px_rgba(0,0,0,0.10)]">
-                <span className="text-[1rem]font-semibold text-[#4a6070] self-start">
+                <span className="text-[1rem] font-semibold text-[#4a6070] self-start">
                   {plan.type}
                 </span>
                 <div className="flex items-start leading-none w-full">
                   <span className="text-[56px] font-black text-[#1f2e3b] leading-none">
                     ${dollars}
                   </span>
-                  <sup className="text-[1rem]font-semibold text-[#4a6070] mt-2.5 ml-0.5">
+                  <sup className="text-[1rem] font-semibold text-[#4a6070] mt-2.5 ml-0.5">
                     ({currencyTag})
                   </sup>
                 </div>
-                <span className=" text-[#4a6070] font-medium self-end">
+                <span className="text-[#4a6070] font-medium self-end">
                   {plan.renewal}
                 </span>
               </div>
 
-              {/* Description */}
-              <p className="text-[1rem]text-[#2b4257] leading-relaxed text-center flex-1 m-0">
+              <p className="text-[1rem] text-[#2b4257] leading-relaxed text-center flex-1 m-0">
                 {plan.description}
               </p>
 
-              {/* Select button */}
               <button
                 className="rounded-full py-3 w-full text-base font-bold shadow-md transition-[filter] hover:brightness-95 border-0 cursor-pointer"
                 onClick={() => setSelectedPlan(plan)}
@@ -138,14 +156,17 @@ export const PackageRenewaloptionsContainer = ({
                     : { backgroundColor: "#65cfad", color: "#1f2e3b" }
                 }
               >
-                {isSelected ? "Selected" : "Select"}
+                {isSelected
+                  ? "Selected"
+                  : isScheduleMode
+                    ? "Select plan"
+                    : "Select"}
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* Continue to payment — bottom right */}
       <div className="flex justify-end mt-1">
         <button
           className="bg-[#2b4257] text-white rounded-full px-9 py-3.5 text-base font-bold shadow-md hover:bg-[#1f2e3b] transition-colors border-0 cursor-pointer inline-flex items-center gap-2.5 disabled:cursor-not-allowed"
@@ -153,7 +174,7 @@ export const PackageRenewaloptionsContainer = ({
           disabled={!selectedPlan}
           style={{ opacity: !selectedPlan ? 0.5 : 1 }}
         >
-          Continue to payment
+          {isScheduleMode ? "Schedule next plan" : "Continue to payment"}
           <CaretIcon direction="right" />
         </button>
       </div>

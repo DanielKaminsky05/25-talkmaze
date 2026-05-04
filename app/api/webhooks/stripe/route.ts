@@ -6,6 +6,18 @@ import { createServiceRoleClient } from "@/services/supabase/service";
 import { assignCoachToStudent } from "@/app/(public)/onboarding/actions";
 import { setActiveProfile } from "@/app/(public)/onboarding/actions";
 
+type SubscriptionWithPeriod = Stripe.Subscription & {
+  current_period_start: number;
+  current_period_end: number;
+};
+
+type SubscriptionItemWithPeriod = {
+  price?: Stripe.Price | null;
+  quantity?: number;
+  current_period_start: number;
+  current_period_end: number;
+};
+
 /**
  * POST /api/webhooks/stripe
  * Receives and processes Stripe webhook events.
@@ -39,8 +51,279 @@ export async function POST(request: Request) {
     );
 
     /*
+     STRIPE EVENT: setup_intent.succeeded
+     Fires after the user confirms their payment method on the upgrade flow.
+     Creates a Stripe Subscription Schedule with two phases so the new plan
+     activates automatically at the end of the current billing period.
+    */
+    if (event.type === "setup_intent.succeeded") {
+      const setupIntent = event.data.object as Stripe.SetupIntent;
+      const {
+        account_id: accountId,
+        student_id: studentId,
+        target_price_id: targetPriceId,
+        stripe_subscription_id: stripeSubscriptionId,
+        replace_schedule_id: replaceScheduleId,
+      } = setupIntent.metadata ?? {};
+
+      if (!accountId || !studentId || !targetPriceId || !stripeSubscriptionId) {
+        console.error("setup_intent.succeeded: missing metadata", {
+          accountId,
+          studentId,
+          targetPriceId,
+          stripeSubscriptionId,
+        });
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const stripeCustomerId =
+        typeof setupIntent.customer === "string"
+          ? setupIntent.customer
+          : setupIntent.customer?.id;
+
+      const paymentMethodId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method?.id;
+
+      if (stripeCustomerId && paymentMethodId) {
+        await stripe.customers.update(stripeCustomerId, {
+          invoice_settings: { default_payment_method: paymentMethodId },
+        });
+        await stripe.subscriptions.update(stripeSubscriptionId, {
+          default_payment_method: paymentMethodId,
+        });
+      }
+
+      const subscription =
+        await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      const subscriptionItem = subscription.items
+        .data[0] as unknown as SubscriptionItemWithPeriod;
+      const currentPriceId = subscriptionItem?.price?.id ?? null;
+
+      if (!currentPriceId) {
+        console.error(
+          "setup_intent.succeeded: missing current price",
+          stripeSubscriptionId,
+        );
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const supabase = createServiceRoleClient();
+      const { data: existingSub } = await supabase
+        .from("student_subscriptions")
+        .select("id, pending_stripe_schedule_id")
+        .eq("student_id", studentId)
+        .eq("status", "active")
+        .order("current_period_end", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingSub) {
+        console.error("setup_intent.succeeded: no active subscription", {
+          studentId,
+        });
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      // Release any previously scheduled plan before creating the new one
+      const scheduleToRelease =
+        replaceScheduleId || existingSub.pending_stripe_schedule_id || "";
+      if (scheduleToRelease) {
+        try {
+          await stripe.subscriptionSchedules.release(scheduleToRelease);
+        } catch (releaseError) {
+          console.error(
+            "setup_intent.succeeded: schedule release failed",
+            releaseError,
+          );
+        }
+      }
+
+      // Create a two-phase schedule:
+      // Phase 1 = current plan for the rest of the billing period
+      // Phase 2 = new plan from period end onwards
+      const schedule = await stripe.subscriptionSchedules.create({
+        from_subscription: stripeSubscriptionId,
+      });
+
+      await stripe.subscriptionSchedules.update(schedule.id, {
+        end_behavior: "release",
+        phases: [
+          {
+            items: [
+              {
+                price: currentPriceId,
+                quantity: subscriptionItem?.quantity ?? 1,
+              },
+            ],
+            start_date: subscriptionItem.current_period_start,
+            end_date: subscriptionItem.current_period_end,
+            proration_behavior: "none",
+          },
+          {
+            items: [
+              {
+                price: targetPriceId,
+                quantity: subscriptionItem?.quantity ?? 1,
+              },
+            ],
+            start_date: subscriptionItem.current_period_end,
+            proration_behavior: "none",
+          },
+        ],
+      });
+
+      const { data: plan, error: planError } = await supabase
+        .from("plans")
+        .select("id")
+        .eq("stripe_price_id", targetPriceId)
+        .single();
+
+      if (planError || !plan) {
+        console.error(
+          "setup_intent.succeeded: plan lookup failed",
+          targetPriceId,
+          planError,
+        );
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const effectiveDate = new Date(
+        subscriptionItem.current_period_end * 1000,
+      ).toISOString();
+
+      const { error: updateError } = await supabase
+        .from("student_subscriptions")
+        .update({
+          pending_plan_id: plan.id,
+          pending_effective_date: effectiveDate,
+          pending_stripe_schedule_id: schedule.id,
+          pending_created_at: new Date().toISOString(),
+        })
+        .eq("id", existingSub.id);
+
+      if (updateError) {
+        console.error(
+          "setup_intent.succeeded: pending upgrade update failed",
+          updateError,
+        );
+      } else {
+        console.log(
+          "setup_intent.succeeded: plan change scheduled",
+          existingSub.id,
+          "→",
+          targetPriceId,
+          "effective",
+          effectiveDate,
+        );
+      }
+    }
+
+    /*
+     STRIPE EVENT: invoice_payment.paid
+     Fires when a subscription schedule phase transitions to the next plan.
+     Regular renewals and new signups fire invoice.paid instead.
+     This handler only activates a pending queued plan - all other cases bail early.
+    */
+    if (event.type === "invoice_payment.paid") {
+      const invoicePayment = event.data.object as {
+        invoice: string | { id: string };
+      };
+      const invoiceId =
+        typeof invoicePayment.invoice === "string"
+          ? invoicePayment.invoice
+          : invoicePayment.invoice?.id;
+
+      if (!invoiceId) {
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const invoice = await stripe.invoices.retrieve(invoiceId);
+      const invoiceAny = invoice as unknown as {
+        subscription?: string;
+        parent?: { subscription_details?: { subscription?: string } };
+      };
+      const subscriptionId =
+        typeof invoiceAny.subscription === "string"
+          ? invoiceAny.subscription
+          : invoiceAny.parent?.subscription_details?.subscription;
+
+      if (!subscriptionId) {
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const studentId = subscription.metadata?.student_id;
+
+      if (!studentId) {
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const supabase = createServiceRoleClient();
+      const { data: subRecord } = await supabase
+        .from("student_subscriptions")
+        .select("id, pending_plan_id")
+        .eq("student_id", studentId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!subRecord?.pending_plan_id) {
+        // No pending plan — regular renewal handled by invoice.paid
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const newPriceId = subscription.items.data[0].price.id;
+      const { data: plan } = await supabase
+        .from("plans")
+        .select("id, name, classes")
+        .eq("stripe_price_id", newPriceId)
+        .single();
+
+      if (!plan || plan.id !== subRecord.pending_plan_id) {
+        console.error("invoice_payment.paid: price/plan mismatch", {
+          newPriceId,
+          pendingPlanId: subRecord.pending_plan_id,
+        });
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      const item = subscription.items
+        .data[0] as unknown as SubscriptionItemWithPeriod;
+      const currentPeriodStart = new Date(
+        item.current_period_start * 1000,
+      ).toISOString();
+      const currentPeriodEnd = new Date(
+        item.current_period_end * 1000,
+      ).toISOString();
+
+      await supabase
+        .from("student_subscriptions")
+        .update({
+          plan_id: plan.id,
+          sessions_remaining: plan.classes,
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd,
+          pending_plan_id: null,
+          pending_effective_date: null,
+          pending_stripe_schedule_id: null,
+          pending_created_at: null,
+        })
+        .eq("id", subRecord.id);
+
+      await assignCoachToStudent(studentId, plan.classes);
+
+      console.log(
+        "invoice_payment.paid: pending plan activated",
+        studentId,
+        "→",
+        plan.name,
+      );
+    }
+
+    /*
      STRIPE EVENT: invoice.paid
-     Fires when a payment succeeds — both for the very first subscription payment
+     Fires when a payment succeeds - both for the very first subscription payment
      and for every automatic monthly renewal.
      This is the main entry point for provisioning a student's access.
     */
@@ -259,17 +542,32 @@ export async function POST(request: Request) {
             // their first payment
             const { data: existing } = await supabase
               .from("student_subscriptions")
-              .select("id")
+              .select("id, pending_plan_id, pending_stripe_schedule_id")
               .eq("account_id", accountId)
               .eq("student_id", studentId)
               .order("current_period_end", { ascending: false })
               .limit(1);
 
-            const existingId = existing?.[0]?.id;
+            const existingRecord = existing?.[0];
+            const existingId = existingRecord?.id;
 
             if (existingId) {
               // RENEWAL: update the existing subscription record with the new
               // billing period and reset the session count for the new cycle.
+              //
+              // If the incoming plan matches the pending plan, this means the
+              // Subscription Schedule just activated Phase 2 - clear pending_*.
+              const isScheduledPlanActivating =
+                existingRecord?.pending_plan_id === plan.id;
+              const pendingReset = isScheduledPlanActivating
+                ? {
+                    pending_plan_id: null,
+                    pending_effective_date: null,
+                    pending_stripe_schedule_id: null,
+                    pending_created_at: null,
+                  }
+                : {};
+
               const { error } = await supabase
                 .from("student_subscriptions")
                 .update({
@@ -278,6 +576,7 @@ export async function POST(request: Request) {
                   current_period_start: currentPeriodStart,
                   current_period_end: currentPeriodEnd,
                   sessions_remaining: plan.classes,
+                  ...pendingReset,
                 })
                 .eq("id", existingId);
               if (error) {

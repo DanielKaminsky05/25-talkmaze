@@ -892,6 +892,10 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id: string
+          pending_created_at: string | null
+          pending_effective_date: string | null
+          pending_plan_id: string | null
+          pending_stripe_schedule_id: string | null
           plan_id: string
           sessions_remaining: number | null
           status: string
@@ -904,6 +908,10 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id?: string
+          pending_created_at?: string | null
+          pending_effective_date?: string | null
+          pending_plan_id?: string | null
+          pending_stripe_schedule_id?: string | null
           plan_id?: string
           sessions_remaining?: number | null
           status: string
@@ -916,6 +924,10 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          pending_created_at?: string | null
+          pending_effective_date?: string | null
+          pending_plan_id?: string | null
+          pending_stripe_schedule_id?: string | null
           plan_id?: string
           sessions_remaining?: number | null
           status?: string
@@ -941,6 +953,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_subscriptions_pending_plan_id_fkey"
+            columns: ["pending_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
