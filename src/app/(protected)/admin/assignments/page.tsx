@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 
 import CoachAssignmentCard from "./CoachAssignmentCard";
-import { Coach } from "../_components/AssignStudentDropDown";
-import { Student } from "../_components/StudentTable";
-import { Assignment } from "@/src/lib/types/assignments";
+import type { Assignment, Coach, Student } from "../_types";
 
 export default function AssignmentsPage() {
   const [employees, setEmployees] = useState<Coach[]>([]);

@@ -10,7 +10,7 @@ import EmptyDetail from "../_components/EmptyDetail";
 import AdminCalendar from "../_components/AdminCalendar";
 import Pagination from "../_components/Pagination";
 import StudentDetailModal from "./_components/StudentDetailModal";
-import { Student } from "../_components/StudentTable";
+import type { Student } from "../_types";
 import { useAdminMobileDetail } from "../_context/AdminMobileDetailContext";
 
 const ITEMS_PER_PAGE = 15;

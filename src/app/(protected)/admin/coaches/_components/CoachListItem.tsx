@@ -1,7 +1,7 @@
 "use client";
 
 import Avatar from "../../_components/Avatar";
-import { Coach } from "../../_components/AssignStudentDropDown";
+import type { Coach } from "../../_types";
 
 export default function CoachListItem({
   coach,

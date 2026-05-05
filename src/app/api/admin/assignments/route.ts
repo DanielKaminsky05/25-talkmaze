@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
 import type { Database } from "@/src/services/supabase/types/database";
-import type { Assignment } from "@/src/lib/types/assignments";
+import type { Assignment } from "@/src/app/(protected)/admin/_types";
 import { Josefin_Slab } from "next/font/google";
 //fetch all assignments joined with coach/student names 
 

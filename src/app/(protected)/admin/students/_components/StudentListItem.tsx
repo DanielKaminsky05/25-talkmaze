@@ -1,7 +1,7 @@
 "use client";
 
 import Avatar from "../../_components/Avatar";
-import { Student } from "../../_components/StudentTable";
+import type { Student } from "../../_types";
 
 export default function StudentListItem({
   student,

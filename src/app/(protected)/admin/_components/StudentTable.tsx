@@ -1,25 +1,6 @@
 "use client";
 
-export type Student = {
-  id: string;
-  account_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  created_at: string;
-  updated_at: string;
-  date_of_birth: string | null;
-  grade: string | null;
-  lesson_space_id: string | null;
-  lesson_space_student_link: string | null;
-  lesson_space_teacher_link: string | null;
-  location: string | null;
-  notes: string | null;
-  post_lesson_days: number | null;
-  post_lesson_tasks_enabled: boolean | null;
-  webhook_room_id: string | null;
-};
+import type { Student } from "../_types";
 
 interface StudentTableProps {
   students?: Student[];

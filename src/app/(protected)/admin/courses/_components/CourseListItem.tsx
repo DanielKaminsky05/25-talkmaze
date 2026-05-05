@@ -1,7 +1,7 @@
 "use client";
 
 import Avatar from "../../_components/Avatar";
-import { Course } from "../../_components/types";
+import type { Course } from "../../_types";
 
 export default function CourseListItem({
   course,

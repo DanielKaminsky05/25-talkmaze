@@ -11,7 +11,7 @@ import AdminCalendar from "../_components/AdminCalendar";
 import Pagination from "../_components/Pagination";
 import EmployeeDetailModal from "./_components/EmployeeDetailModal";
 import CreateCoachModal from "./_components/CreateCoachModal";
-import { Coach } from "../_components/AssignStudentDropDown";
+import type { Coach } from "../_types";
 import { useAdminMobileDetail } from "../_context/AdminMobileDetailContext";
 
 const ITEMS_PER_PAGE = 15;

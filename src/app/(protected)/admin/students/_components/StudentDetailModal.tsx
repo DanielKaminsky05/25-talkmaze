@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Student } from "../../_components/StudentTable";
+import type { Student } from "../../_types";
 
 interface Props {
   student: Student;

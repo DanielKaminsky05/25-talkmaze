@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Assignment } from "@/src/lib/types/assignments";
-import { Student, Coach } from "../_components/AssignStudentDropDown";
+import type { Assignment, Coach, Student } from "../_types";
 
 interface CoachAssignmentCardProps {
   coach: Coach;

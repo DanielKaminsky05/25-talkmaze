@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/src/services/supabase/client";
 import CourseLessonsPanel from "./CourseLessonPanel";
-import { Student } from "../../_components/AssignStudentDropDown";
-import { Course } from "../../_components/types";
+import type { Course, Student } from "../../_types";
 
 interface Props {
   course: Course;

@@ -1,18 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Student } from "./StudentTable";
-
-export type { Student };
-
-export type Coach = {
-  id: string;
-  account_id: string;
-  first_name: string;
-  last_name: string;
-  created_at: string;
-  updated_at: string;
-};
+import type { Coach, Student } from "../_types";
 
 interface StudentProps {
   courseId: string;

@@ -3,12 +3,12 @@
 import { useEffect, useState, useMemo } from "react";
 
 import AdminCalendar from "../_components/AdminCalendar";
-import { Coach } from "../_components/AssignStudentDropDown";
-import {
+import type {
+  Coach,
   PendingBooking,
   PendingBookingForm,
   PendingBookingPreview,
-} from "../_components/types";
+} from "../_types";
 
 const WEEKDAYS = [
   "Sunday",

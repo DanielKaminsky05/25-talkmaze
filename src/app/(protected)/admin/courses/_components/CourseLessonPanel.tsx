@@ -5,7 +5,7 @@ import { Lesson, LessonInput } from "@/src/lib/types/lesson";
 import { createClient } from "@/src/services/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "../../_components/AssignStudentDropDown";
-import { Student } from "../../_components/AssignStudentDropDown";
+import type { Student } from "../../_types";
 import FeedbackEditor from "@/src/components/common/FeedbackEditor";
 interface CourseLessonsPanelProps {
   courseId: string;
