@@ -14,15 +14,24 @@ The codebase uses route-level collocation for UI and route-only logic, with shar
 	- `_types/` or `types.ts` for route-only types
 	- `actions.ts` for route-scoped server actions
 
+### API Routes
+
+- `src/app/api/` 
+- Organized by role/domain: `admin/`, `coach/`, `parent/`, `user/`, `profiles/`.
+- `webhooks/` contains handlers for external provider callbacks 
+
 ### Shared Code
 
 - `src/components/` holds reusable UI used across multiple routes.
 - `src/lib/` holds shared, app-specific domain logic grouped by feature.
 	- Example domains: `lessons/`, `messaging/`, `scheduling/`, `profiles/`, `users/`, `payments/`, `rewards/`, `auth/`.
-	- A domain folder can include files like `actions.ts`, `queries.ts`, `schemas.ts`, `types.ts` as needed.
+	- A domain folder is organized into subfolders:
+		- `actions/` - named server action files (e.g. `signOut.ts`, `sendMessage.ts`)
+		- `server/` - server-only helpers that aren't actions (e.g. `getActiveProfile.ts`, `availability.ts`)
+		- `types.ts`, `schemas.ts` - top-level files for shared types and validation
 - `src/services/` is for third-party SDK clients and adapters (Supabase, Stripe, etc). Keep app logic out of this layer.
-- `src/utils/` is for cross-domain helpers that are not tied to a single feature.
-- `src/types/` is only for cross-domain primitives shared widely; keep domain types with their domain.
+- `src/utils/` is for cross-domain helpers that are not tied to a single feature
+- `src/types/` is only for cross-domain primitives shared widely; keep domain types with their domain
 
 ### Validation (Zod)
 
