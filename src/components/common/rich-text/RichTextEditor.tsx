@@ -4,24 +4,24 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 
-interface FeedbackEditorProps {
+interface RichTextEditorProps {
   title: string;
   content: string;
   onChange: (html: string) => void;
 }
 
 /**
- * FeedbackEditor - Tiptap WYSIWYG editor used by coaches to write
+ * RichTextEditor - Tiptap WYSIWYG editor used by coaches to write
  * per-lesson feedback.
  *
  * Stores output as HTML (bold + bullet lists supported).
  * Students see the saved HTML read-only via FeedbackDisplay.
  */
-export default function FeedbackEditor({
+export default function RichTextEditor({
   title,
   content,
   onChange,
-}: FeedbackEditorProps) {
+}: RichTextEditorProps) {
   const editor = useEditor({
     // Tiptap defaults to true, which causes SSR hydration mismatches
     immediatelyRender: false,

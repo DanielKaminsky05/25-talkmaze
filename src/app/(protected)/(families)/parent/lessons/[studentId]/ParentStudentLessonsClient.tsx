@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import LessonCard from "@/src/app/(protected)/(families)/lessons/_components/LessonCard";
 import ProgressCard from "@/src/app/(protected)/(families)/lessons/_components/ProgressCard";
-import FeedbackDisplay from "@/src/components/common/FeedbackDisplay";
+import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
 
 export interface LessonProp {
   id: string;
@@ -150,11 +150,11 @@ export default function ParentStudentLessonsClient({
             <div className="p-6 flex flex-col gap-4">
               {selectedLesson.status === 3 ? (
                 <>
-                  <FeedbackDisplay
+                  <RichTextDisplay
                     title="Highlights"
                     content={selectedLesson.positiveFeedback}
                   />
-                  <FeedbackDisplay
+                  <RichTextDisplay
                     title="Areas to Improve"
                     content={selectedLesson.improvementFeedback}
                   />

@@ -6,7 +6,7 @@ import { createClient } from "@/src/services/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "../../_components/AssignStudentDropDown";
 import type { Student } from "../../_types";
-import FeedbackEditor from "@/src/components/common/FeedbackEditor";
+import RichTextEditor from "@/src/components/common/rich-text/RichTextEditor";
 interface CourseLessonsPanelProps {
   courseId: string;
   students: Student[];
@@ -807,13 +807,13 @@ export default function CourseLessonsPanel({
             )}
           </div>
 
-          <FeedbackEditor
+          <RichTextEditor
             title="Pre-Lesson Task Description"
             content={addPreDesc}
             onChange={setAddPreDesc}
           />
 
-          <FeedbackEditor
+          <RichTextEditor
             title="Post-Lesson Task Description"
             content={addPostDesc}
             onChange={setAddPostDesc}
@@ -1063,13 +1063,13 @@ export default function CourseLessonsPanel({
                     )}
                   </div>
 
-                  <FeedbackEditor
+                  <RichTextEditor
                     title="Pre-Lesson Task Description"
                     content={editPreDesc}
                     onChange={setEditPreDesc}
                   />
 
-                  <FeedbackEditor
+                  <RichTextEditor
                     title="Post-Lesson Task Description"
                     content={editPostDesc}
                     onChange={setEditPostDesc}

@@ -2,21 +2,21 @@
 
 import DOMPurify from "dompurify";
 
-interface FeedbackDisplayProps {
+interface RichTextDisplayProps {
   title: string;
   content: string | null;
 }
 
 /**
- * FeedbackDisplay - Read-only renderer for coach feedback
+ * RichTextDisplay - Read-only renderer for coach feedback
  *
  * Security against XSS attacks by sanitizing stored HTML with DOMPurify
  * Renders nothing if the coach hasn't written any feedback yet.
  */
-export default function FeedbackDisplay({
+export default function RichTextDisplay({
   title,
   content,
-}: FeedbackDisplayProps) {
+}: RichTextDisplayProps) {
   // Tiptap serializes an empty editor as "<p></p>", not an empty string
   if (!content || content === "<p></p>") return null;
 

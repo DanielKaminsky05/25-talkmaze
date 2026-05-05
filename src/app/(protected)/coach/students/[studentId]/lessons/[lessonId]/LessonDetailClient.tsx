@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import FeedbackEditor from "@/src/components/common/FeedbackEditor";
-import FeedbackDisplay from "@/src/components/common/FeedbackDisplay";
+import RichTextEditor from "@/src/components/common/rich-text/RichTextEditor";
+import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
 
 const STATUS_LABELS: Record<number, string> = {
   1: "Not Started",
@@ -365,7 +365,7 @@ export default function LessonDetailClient({
                 )}
                 {defaultPreTask?.description &&
                 defaultPreTask.description !== "<p></p>" ? (
-                  <FeedbackDisplay
+                  <RichTextDisplay
                     title=""
                     content={defaultPreTask.description}
                   />
@@ -448,7 +448,7 @@ export default function LessonDetailClient({
                 )}
               </div>
 
-              <FeedbackEditor
+              <RichTextEditor
                 title="Override Description"
                 content={preOverrideDesc}
                 onChange={setPreOverrideDesc}
@@ -506,7 +506,7 @@ export default function LessonDetailClient({
                 )}
                 {defaultPostTask?.description &&
                 defaultPostTask.description !== "<p></p>" ? (
-                  <FeedbackDisplay
+                  <RichTextDisplay
                     title=""
                     content={defaultPostTask.description}
                   />
@@ -587,7 +587,7 @@ export default function LessonDetailClient({
                 )}
               </div>
 
-              <FeedbackEditor
+              <RichTextEditor
                 title="Override Description"
                 content={postOverrideDesc}
                 onChange={setPostOverrideDesc}
@@ -650,12 +650,12 @@ export default function LessonDetailClient({
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
             Coach Feedback
           </h2>
-          <FeedbackEditor
+          <RichTextEditor
             title="Positive Feedback"
             content={positiveFeedback}
             onChange={setPositiveFeedback}
           />
-          <FeedbackEditor
+          <RichTextEditor
             title="Areas of Improvement"
             content={improvementFeedback}
             onChange={setImprovementFeedback}

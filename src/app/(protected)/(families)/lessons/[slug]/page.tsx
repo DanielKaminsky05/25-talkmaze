@@ -9,7 +9,7 @@ import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
 import PageSpinner from "@/src/components/ui/PageSpinner";
-import FeedbackDisplay from "@/src/components/common/FeedbackDisplay";
+import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -164,11 +164,11 @@ export default function LessonDetailPage() {
         {/* Only rendered when a coach has saved at least one feedback section for this lesson */}
         {(positiveFeedback || improvementFeedback) && (
           <div className="mt-8 flex flex-col gap-4">
-            <FeedbackDisplay
+            <RichTextDisplay
               title="Positive Feedback"
               content={positiveFeedback}
             />
-            <FeedbackDisplay
+            <RichTextDisplay
               title="Areas of Improvement"
               content={improvementFeedback}
             />
