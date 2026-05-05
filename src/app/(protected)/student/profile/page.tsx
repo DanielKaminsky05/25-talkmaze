@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import StudentProfilePageClient from "./_components/StudentProfilePageClient";
 
 /**
@@ -9,10 +10,7 @@ import StudentProfilePageClient from "./_components/StudentProfilePageClient";
 export default async function StudentProfilePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Fetch the account's login email (read-only on this page)

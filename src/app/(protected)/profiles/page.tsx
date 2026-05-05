@@ -4,7 +4,7 @@ import ProfileCard from "./_components/ProfileCard";
 import ManageProfilesButton from "./_components/ManageProfilesButton";
 import AddProfileCard from "./_components/AddProfileCard";
 import { selectProfile } from "@/src/lib/profiles/actions/selectProfile";
-import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { id } from "zod/locales";
 
 // Profile to select as the "active profile"

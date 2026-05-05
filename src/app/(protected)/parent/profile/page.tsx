@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import ParentProfilePageClient from "./_components/ParentProfilePageClient";
 
 /**
@@ -9,10 +10,7 @@ import ParentProfilePageClient from "./_components/ParentProfilePageClient";
 export default async function ParentProfilePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Fetch the account's login email (read-only on this page)

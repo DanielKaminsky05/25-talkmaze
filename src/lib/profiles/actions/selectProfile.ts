@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 import { setProfileCookies } from "@/src/lib/profiles/server/profileCookies";
 
@@ -21,11 +22,7 @@ export async function selectProfile(formData: FormData) {
 
 	// Get current user
 	const supabase = await createClient();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-
-	// Redirect to login if user is not authenticated
+	const user = await getCurrentUser();
 	if (!user) redirect("/login");
 
 	// Validate profile and PIN for parent

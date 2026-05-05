@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import ParentSessionsClient, {
   type StudentProp,
   type SessionProp,
@@ -14,19 +15,8 @@ import ParentSessionsClient, {
 export default async function ParentSessionsPage() {
   const supabase = await createClient();
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) {
-    console.error("[ParentSessions] Auth error:", authError.message);
-  }
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
   // ── Students ────────────────────────────────────────────────────────────────
   const { data: studentsRaw, error: studentsError } = await supabase

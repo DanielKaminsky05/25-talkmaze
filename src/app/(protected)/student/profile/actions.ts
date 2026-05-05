@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { revalidatePath } from "next/cache";
 
 type StudentInfoUpdate = {
@@ -22,10 +23,7 @@ export async function updateStudentInfo(
   data: StudentInfoUpdate,
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
   const payload: Record<string, string | null> = {};

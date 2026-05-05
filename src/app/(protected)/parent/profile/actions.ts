@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { revalidatePath } from "next/cache";
 
 type ParentInfoUpdate = {
@@ -22,10 +23,7 @@ export async function updateParentInfo(
   data: ParentInfoUpdate,
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
   // Only include defined fields in the update payload
@@ -65,10 +63,7 @@ export async function updateParentPin(
   newPin: string,
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
   const { error } = await supabase

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
@@ -15,10 +16,7 @@ export async function completeStudentSetup(
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
 ) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Verify the student belongs to this account

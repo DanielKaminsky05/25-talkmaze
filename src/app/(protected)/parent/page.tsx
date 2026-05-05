@@ -6,6 +6,7 @@ import ParentDashboardClient, {
 import { AttendanceItem } from "./_components/StudentAttendanceDetails";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 import { fullName } from "@/src/utils/formatName";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 
 /**
  * Top-level page component for Parent Dashboard Home
@@ -14,14 +15,8 @@ import { fullName } from "@/src/utils/formatName";
 export default async function ParentDashboard() {
   const supabase = await createClient();
 
-  // Check if user is authenticated
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
   // Fetch students for this account
   const { data: studentsRaw } = await supabase

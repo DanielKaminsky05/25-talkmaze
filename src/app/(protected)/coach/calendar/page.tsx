@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import CoachCalendarClient from "./CoachCalendarClient";
 
 export default async function CoachCalendarPage() {

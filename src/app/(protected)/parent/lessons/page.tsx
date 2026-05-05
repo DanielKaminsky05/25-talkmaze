@@ -1,14 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import StudentProgressCard from "./_components/StudentProgressCard";
 
 export default async function ParentLessons() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Fetch all students for this account

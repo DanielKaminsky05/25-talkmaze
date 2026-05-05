@@ -1,6 +1,7 @@
 "use server";
 import { OnboardingTimeZone } from "./types";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { setProfileCookies } from "@/src/lib/profiles/server/profileCookies";
 import { buildAvailabilityRows } from "@/src/lib/scheduling/server/availability";
 import { revalidatePath } from "next/cache";
@@ -16,11 +17,7 @@ export async function setActiveProfile(
 
 export async function getStudentOnboardingProgress() {
   const supabase = await createClient();
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return {
@@ -67,13 +64,9 @@ export async function getStudentOnboardingProgress() {
 export async function handleUpdateStudent(notes: string, grade: number) {
   const supabase = await createClient();
 
-  //get logged in user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
-  if (!user || userError) {
+  if (!user) {
     return {
       success: false,
       message: "Unauthorized",
@@ -115,8 +108,7 @@ export async function handleStudentCreation(
 ) {
   const supabase = (await createClient()) as any;
 
-  const auth = await supabase.auth.getUser();
-  const account_id = auth?.data?.user?.id;
+  const account_id = (await getCurrentUser())?.id;
 
   if (!account_id) {
     return { success: false, error: "Account ID is missing" };

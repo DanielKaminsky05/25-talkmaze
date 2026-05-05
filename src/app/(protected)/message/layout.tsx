@@ -4,7 +4,7 @@ import Bookmarks from "./_components/Bookmarks";
 import Contacts from "./_components/Contacts";
 import { createClient } from "@/src/services/supabase/server";
 import { Contact } from "@/src/lib/messaging/types";
-import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 
 // Layout of Coach Page both for /coach and /coach/[conversation]
 export default async function Layout({ children }: { children: ReactNode }) {

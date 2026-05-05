@@ -1,4 +1,5 @@
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 type Props = {
     phone_number: string,
@@ -7,10 +8,9 @@ type Props = {
 export async function FinishSetup(phoneNumber: string, pin: string){
 
     const supabase = await createClient();
+    const user = await getCurrentUser();
 
-    const {data: {user}, error} = await supabase.auth.getUser();
-
-    if(!user || error){
+    if (!user) {
         return {
             success: false,
             message: "Error finding current user"

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import StudentSetupForm from "./_components/StudentSetupForm";
 
 interface Props {
@@ -10,10 +11,7 @@ export default async function StudentSetupPage({ params }: Props) {
   const { studentId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const { data: student } = await supabase

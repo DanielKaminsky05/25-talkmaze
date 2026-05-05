@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { createClient } from "@/src/services/supabase/server";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import type { Message } from "../types";

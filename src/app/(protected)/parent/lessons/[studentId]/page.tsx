@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import ParentStudentLessonsClient, {
   LessonProp,
 } from "./ParentStudentLessonsClient";
@@ -12,10 +13,7 @@ export default async function ParentStudentLessonsPage({ params }: PageProps) {
   const { studentId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Verify the student belongs to this parent's account

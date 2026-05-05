@@ -1,5 +1,5 @@
 import { createClient } from "@/src/services/supabase/server";
-import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
