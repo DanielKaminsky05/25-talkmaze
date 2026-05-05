@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { fullName } from "@/src/utils/formatName";
-import { ConversationClient } from "@/src/app/(protected)/message/[id]/_client";
+import { ConversationClient } from "@/src/app/(protected)/(families)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
 import CoachAttendanceSection from "./student-details/CoachAttendanceSection";

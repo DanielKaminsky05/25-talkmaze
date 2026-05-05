@@ -73,7 +73,11 @@ const LessonCard = memo(function LessonCard({
           {isLocked ? (
             <TokenMysteryStar className="w-9 h-9 block" />
           ) : (
-            <TokenIcon iconUrl={icon} title={title} className="w-9 h-9 object-contain" />
+            <TokenIcon
+              iconUrl={icon}
+              title={title}
+              className="w-9 h-9 object-contain"
+            />
           )}
         </div>
       </div>
