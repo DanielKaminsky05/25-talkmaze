@@ -1,5 +1,5 @@
 "use client";
-import { Message } from "@/src/services/supabase/actions/messages";
+import { Message } from "@/src/lib/messaging/types";
 import ConversationMessage from "../_components/ConversationMessage";
 import ConversationMessageInput from "../_components/ConversationMessageInput";
 import { useEffect, useState } from "react";

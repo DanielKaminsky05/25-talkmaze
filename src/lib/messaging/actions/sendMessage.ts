@@ -1,34 +1,21 @@
 "use server";
 
-import { getCurrentUser } from "../lib/getCurrentUser";
-import { createClient } from "../server";
+import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
+import { createClient } from "@/src/services/supabase/server";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
-
-export type Message = {
-  id: string;
-  text: string;
-  created_at: string;
-  sender_id: string;
-  sender: {
-    name: string;
-    avatar_url: string | null;
-  };
-};
+import type { Message } from "../types";
 
 export async function sendMessage(data: {
   id?: string;
   text: string;
   conversationId: string;
-}): Promise<
-  { error: false; message: Message } | { error: true; message: string }
-> {
+}): Promise<{ error: false; message: Message } | { error: true; message: string }> {
   const user = await getCurrentUser();
 
   if (user == null) {
     return { error: true, message: "User not authenticated." };
   }
 
-  // Error reject when trimmed text is empty
   if (!data.text.trim()) {
     return { error: true, message: "Message cannot be empty" };
   }
@@ -63,8 +50,7 @@ export async function sendMessage(data: {
         .eq("id", profile.id)
         .maybeSingle();
       if (student) {
-        senderName =
-          `${student.first_name || ""} ${student.last_name || ""}`.trim();
+        senderName = `${student.first_name || ""} ${student.last_name || ""}`.trim();
         avatarUrl = student.avatar_url ?? null;
       }
     } else {
@@ -74,22 +60,18 @@ export async function sendMessage(data: {
         .eq("id", profile.id)
         .maybeSingle();
       if (parent) {
-        senderName =
-          `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
+        senderName = `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
         avatarUrl = parent.avatar_url ?? null;
       }
     }
   } else {
-    // Coach or admin - resolve name from coaches table (uses "name" column)
     const { data: coach } = await supabase
       .from("coaches")
       .select("first_name, last_name, avatar_url")
       .eq("account_id", user.id)
       .maybeSingle();
     if (coach)
-      senderName =
-        `${coach.first_name || ""} ${coach.last_name || ""}`.trim() ||
-        "Unknown";
+      senderName = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
     avatarUrl = coach?.avatar_url ?? null;
   }
 

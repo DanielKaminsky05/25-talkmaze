@@ -1,4 +1,4 @@
-import { Message } from "@/src/services/supabase/actions/messages";
+import { Message } from "@/src/lib/messaging/types";
 import { User2Icon } from "lucide-react";
 import Image from "next/image";
 
