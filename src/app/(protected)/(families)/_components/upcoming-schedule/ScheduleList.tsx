@@ -52,7 +52,8 @@ export default function ScheduleList({
                       {item.studentName}
                       {item.coachName && (
                         <span className="text-[#2B4257]">
-                          {" "}· with {item.coachName}
+                          {" "}
+                          · with {item.coachName}
                         </span>
                       )}
                     </p>

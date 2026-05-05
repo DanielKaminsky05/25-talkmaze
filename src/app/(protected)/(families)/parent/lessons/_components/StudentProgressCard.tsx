@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import LessonProgressBar from "@/src/components/common/LessonProgressBar";
+import LessonProgressBar from "@/src/app/(protected)/(families)/_components/LessonProgressBar";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
-import { TokenMysteryStar } from "@/src/components/common/TokenMysteryStar";
+import { TokenMysteryStar } from "@/src/components/ui/icons";
 
 interface TokenProp {
   id: string;
@@ -170,7 +170,7 @@ export default function StudentProgressCard({
                   className="w-8 h-8"
                 />
               ) : (
-                <TokenMysteryStar key={token.id} className="w-8 h-8" />
+                <TokenMysteryStar key={token.id} size={32} />
               ),
             )}
             {remainingCount > 0 && (

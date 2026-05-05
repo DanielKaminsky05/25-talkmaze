@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
-import { TokenMysteryStar } from "@/src/components/common/TokenMysteryStar";
+import { TokenMysteryStar } from "@/src/components/ui/icons";
 
 type Props = {
   lessonNumber: number;
@@ -71,7 +71,7 @@ const LessonCard = memo(function LessonCard({
         </div>
         <div className="w-14 h-14 rounded-xl bg-white text-3xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
           {isLocked ? (
-            <TokenMysteryStar className="w-9 h-9 block" />
+            <TokenMysteryStar size={36} />
           ) : (
             <TokenIcon
               iconUrl={icon}

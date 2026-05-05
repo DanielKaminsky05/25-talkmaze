@@ -2,8 +2,8 @@
 
 import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
-import NavigationBar from "./NavigationBar";
-import SideBar from "./Sidebar";
+import NavigationBar from "./navigation/NavigationBar";
+import SideBar from "./navigation/Sidebar";
 import { PageTitleProvider } from "../_context/PageTitleContext";
 import { ActiveProfile, ActiveProfileProvider } from "../_context/ActiveProfileContext";
 

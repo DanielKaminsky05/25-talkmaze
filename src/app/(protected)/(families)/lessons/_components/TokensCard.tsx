@@ -3,7 +3,7 @@
 import { memo } from "react";
 import type { TokenRow } from "../types";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
-import { TokenMysteryStar } from "@/src/components/common/TokenMysteryStar";
+import { TokenMysteryStar } from "@/src/components/ui/icons";
 
 interface TokensCardProps {
   courseTokens: TokenRow[];
@@ -38,7 +38,7 @@ const TokensCard = memo(function TokensCard({ courseTokens, earnedTokenIds }: To
                       className="w-8 h-8 object-contain block text-3xl"
                     />
                   ) : (
-                    <TokenMysteryStar className="w-8 h-8 block" />
+                    <TokenMysteryStar size={32} />
                   )}
                 </div>
               </div>

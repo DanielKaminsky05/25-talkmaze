@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { TokenRow } from "../types";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
-import { TokenMysteryStar } from "@/src/components/common/TokenMysteryStar";
+import { TokenMysteryStar } from "@/src/components/ui/icons";
 
 type Props = {
   courseTokens: TokenRow[];
@@ -39,7 +39,7 @@ export default function TokensRow({ courseTokens, earnedTokenIds }: Props) {
                   className="w-8 h-8 object-contain block text-xl"
                 />
               ) : (
-                <TokenMysteryStar className="w-6 h-6 block" />
+                <TokenMysteryStar size={24} />
               )}
             </div>
           );

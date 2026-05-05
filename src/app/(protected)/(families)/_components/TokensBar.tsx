@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TokenIcon } from "./TokenIcon";
+import { TokenIcon } from "@/src/components/common/TokenIcon";
 
 type TokenRow = {
   id: string;

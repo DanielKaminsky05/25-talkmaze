@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import PageSpinner from "@/src/components/ui/PageSpinner";
-import LessonProgressBar from "@/src/components/common/LessonProgressBar";
-import TokenBar from "@/src/components/common/TokensBar";
+import LessonProgressBar from "@/src/app/(protected)/(families)/_components/LessonProgressBar";
+import TokenBar from "@/src/app/(protected)/(families)/_components/TokensBar";
 import ReviewLessonCard from "./_components/ReviewLesson";
 import NextLessonCard from "./_components/UpNextLesson";
-import ScheduleList from "../_components/ScheduleList";
+import ScheduleList from "../_components/upcoming-schedule/ScheduleList";
 import CurrentLessonBanner from "./_components/CurrentLessonBanner";
 import { useHomeData } from "./_hooks/useHomeData";
 

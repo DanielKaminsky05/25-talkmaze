@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRewardData, EarnedBadge } from "./_hooks/useRewardData";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
-import { TokenMysteryStar } from "@/src/components/common/TokenMysteryStar";
+import { TokenMysteryStar } from "@/src/components/ui/icons";
 import ClaimedBadge, { ClaimBadgeModal } from "./_components/ClaimedBadge";
 import GlowingBadge from "./_components/GlowingBadge";
 import LockedBadge from "./_components/LockedBadge";
@@ -124,7 +124,7 @@ export default function RewardPage() {
                         className="w-10 h-10 object-contain"
                       />
                     ) : (
-                      <TokenMysteryStar className="w-9 h-9 block" />
+                      <TokenMysteryStar size={36} />
                     )}
                   </div>
                 </div>
