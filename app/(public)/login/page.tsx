@@ -4,14 +4,14 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-import {logInUser} from "./actions";
+import { EyeIcon } from "@/components/ui/icons";
+import { logInUser } from "./actions";
 import { useRouter } from "next/navigation";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
-
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,32 +20,32 @@ export default function LoginPage() {
   const [password, setPassword] = useState<string>("");
   const [loginError, setLoginError] = useState<string | null>(null);
 
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-      e.preventDefault();
-      setLoginError(null);
-      const result = await logInUser(email, password);
-      //Redirects the user to the home page if successful:
+    e.preventDefault();
+    setLoginError(null);
+    const result = await logInUser(email, password);
+    //Redirects the user to the home page if successful:
 
-      console.log("Inside handle submit")
-      if(result?.success){
-        
-          router.push('/profiles')
-      }else{
-        console.log("Error: login failed", result);
-        setLoginError(result?.message ?? "Login failed. Please try again.");
-      }
+    console.log("Inside handle submit");
+    if (result?.success) {
+      router.push("/profiles");
+    } else {
+      console.log("Error: login failed", result);
+      setLoginError(result?.message ?? "Login failed. Please try again.");
     }
+  }
 
-    const [successMessage] = useState(() => {
-        if (typeof window !== "undefined") {
-            return new URLSearchParams(window.location.search).get("message");
-        }
-        return null;
-    });
+  const [successMessage] = useState(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("message");
+    }
+    return null;
+  });
 
   return (
-    <div className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}>
+    <div
+      className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
+    >
       <div className="flex w-full max-w-[1229px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)] min-h-[661px]">
         <div
           className="w-full lg:w-[568px] bg-white flex flex-col items-center justify-center py-12 px-8 relative z-10"
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e)=>{
+                  onChange={(e) => {
                     setEmail(e.target.value);
                     setLoginError(null);
                   }}
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e)=>{
+                  onChange={(e) => {
                     setPassword(e.target.value);
                     setLoginError(null);
                   }}
@@ -99,20 +99,14 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
                 >
-                  {showPassword ? (
-                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                     <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                     <circle cx="12" cy="12" r="3"/>
-                   </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                       <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
-                    </svg>
-                  )}
+                  <EyeIcon variant={showPassword ? "open" : "closed"} />
                 </button>
               </div>
               {loginError && (
-                <p role="alert" className="text-red-600 text-sm -mt-3 ml-1 mb-1">
+                <p
+                  role="alert"
+                  className="text-red-600 text-sm -mt-3 ml-1 mb-1"
+                >
                   {loginError}
                 </p>
               )}
@@ -143,7 +137,9 @@ export default function LoginPage() {
 
             <div className="relative h-[20px] w-full flex items-center justify-center my-2">
               <div className="absolute left-0 w-[40%] border-t border-[#2B4257]"></div>
-              <span className="text-[20px] font-semibold text-[#1F2E3B] px-2">or</span>
+              <span className="text-[20px] font-semibold text-[#1F2E3B] px-2">
+                or
+              </span>
               <div className="absolute right-0 w-[40%] border-t border-[#2B4257]"></div>
             </div>
 
@@ -151,11 +147,11 @@ export default function LoginPage() {
               type="button"
               className="w-full h-[49px] bg-white flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors border-[0.3px] border-[#1f2e3b] rounded-[10px]"
             >
-              <Image 
-                src="/google_logo.svg" 
-                alt="Google Logo" 
-                width={20} 
-                height={20} 
+              <Image
+                src="/google_logo.svg"
+                alt="Google Logo"
+                width={20}
+                height={20}
                 className="w-5 h-5"
               />
               <span className="text-[20px] font-semibold text-[#1F2E3B]">
