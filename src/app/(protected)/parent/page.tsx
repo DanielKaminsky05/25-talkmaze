@@ -27,7 +27,7 @@ export default async function ParentDashboard() {
     .from("students")
     .select(
       `id, first_name, last_name, grade, avatar_url, location, date_of_birth, bio, is_setup_complete,
-       student_subscriptions(sessions_remaining, status, plans(classes))`,
+       student_subscriptions(sessions_remaining, status, plans!plan_id(classes))`,
     )
     .eq("account_id", user.id);
 
