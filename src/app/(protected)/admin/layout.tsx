@@ -28,10 +28,10 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
         const res = await fetch("/api/user/role");
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (data.role !== 3) router.push("/home");
+        if (data.role !== 3) router.push("/student");
         else setIsAuthorized(true);
       } catch {
-        router.push("/home");
+        router.push("/student");
       }
     }
     checkAdminRole();

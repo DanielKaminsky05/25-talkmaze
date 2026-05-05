@@ -101,7 +101,7 @@ export default function SignupPage() {
         password,
         masterPin,
       );
-      router.push("/home");
+      router.push("/student");
     } else {
       console.log(result.error.flatten().fieldErrors);
 

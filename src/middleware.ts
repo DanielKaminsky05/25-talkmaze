@@ -89,14 +89,14 @@ export async function middleware(request: NextRequest) {
       // Coach Route Protection
       if (pathname.startsWith("/coach") && !isCoach) {
         const url = request.nextUrl.clone();
-        url.pathname = "/home";
+        url.pathname = "/student";
         return NextResponse.redirect(url);
       }
 
       // Admin Route Protection
       if (pathname.startsWith("/admin") && !isAdmin) {
         const url = request.nextUrl.clone();
-        url.pathname = "/home";
+        url.pathname = "/student";
         return NextResponse.redirect(url);
       }
 
@@ -117,7 +117,7 @@ export async function middleware(request: NextRequest) {
         if (
           activeProfileId &&
           activeProfileType === "student" &&
-          pathname.startsWith("/home")
+          pathname.startsWith("/student")
         ) {
           const { data: subscriptions } = await supabase
             .from("student_subscriptions")

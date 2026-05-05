@@ -70,6 +70,6 @@ export async function GET(request: NextRequest) {
   });
 
   // Redirect
-  const destination = profileType === "parent" ? "/parent" : "/home";
+  const destination = profileType === "parent" ? "/parent" : "/student";
   return NextResponse.redirect(new URL(destination, request.url));
 }

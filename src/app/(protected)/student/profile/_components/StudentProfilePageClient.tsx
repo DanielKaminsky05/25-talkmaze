@@ -35,7 +35,7 @@ export default function StudentProfilePageClient({
     <div className="bg-[#2b4257] min-h-screen flex flex-col">
       <header className="top-0 z-10 bg-[#2b4257] px-8 py-5 flex items-center">
         <a
-          href="/home"
+          href="/student"
           className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
         >
           <CaretIcon direction="left" />

@@ -59,6 +59,6 @@ export async function selectProfile(formData: FormData) {
 
 	const destination =
 		(formData.get("destination") as string) ||
-		(profileType === "parent" ? "/parent" : "/home");
+		(profileType === "parent" ? "/parent" : "/student");
 	redirect(destination);
 }

@@ -122,7 +122,7 @@ export default function SuccessClient() {
 
   const handleDashboardReturn = () => {
     setIsNavigating(true);
-    setTimeout(() => router.push("/home"), 800);
+    setTimeout(() => router.push("/student"), 800);
   };
 
   return (

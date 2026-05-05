@@ -104,7 +104,7 @@ export default async function PaymentPage({
     backLink = isParentFlow
       ? "/parent"
       : hasSubscription
-        ? "/home"
+        ? "/student"
         : "/profiles";
     backLabel = isParentFlow
       ? "Return to Dashboard"
