@@ -31,3 +31,10 @@ export type LessonTask = {
 	file_url: string | null;
 	description: string | null;
 };
+
+export interface Course {
+	id: number;
+	name: string;
+	description?: string;
+	status?: string;
+}

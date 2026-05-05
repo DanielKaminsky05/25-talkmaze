@@ -10,7 +10,8 @@ import Pagination from "../_components/Pagination";
 import CourseDetailModal from "./_components/CourseDetailModal";
 import CreateCourseModal from "./_components/CreateCourseModal";
 import CourseLessonsPanel from "./_components/CourseLessonPanel";
-import type { Course, Student } from "../_types";
+import type { Course } from "@/src/lib/lessons/types";
+import type { Student } from "../_types";
 import { useAdminMobileDetail } from "../_context/AdminMobileDetailContext";
 
 const ITEMS_PER_PAGE = 15;

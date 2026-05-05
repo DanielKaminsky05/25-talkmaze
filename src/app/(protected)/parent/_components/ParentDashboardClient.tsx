@@ -9,7 +9,7 @@ import StudentAttendanceDetails, {
 } from "./StudentAttendanceDetails";
 import SelectedStudentSubscriptionStatus from "./SelectedStudentSubscriptionStatus";
 import ScheduleList from "../../_components/ScheduleList";
-import { Appointment } from "../../types/lesson";
+import type { CoachingSession } from "@/src/lib/scheduling/types";
 
 export interface Student {
   id: string;
@@ -29,7 +29,7 @@ export interface Student {
 
 interface Props {
   students: Student[];
-  schedule: Appointment[];
+  schedule: CoachingSession[];
   attendanceByStudent: Record<string, AttendanceItem[]>;
   streakByStudent: Record<string, number>;
 }

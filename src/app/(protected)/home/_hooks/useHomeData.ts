@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { Appointment } from "@/src/app/(protected)/types/lesson";
+import type { CoachingSession } from "@/src/lib/scheduling/types";
 import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
 
 type LessonSummary = {
@@ -38,7 +38,7 @@ export function useHomeData() {
   const [currentLesson, setCurrentLesson] = useState<HomeLesson | null>(null);
   const [prevLesson, setPrevLesson] = useState<HomeLesson | null>(null);
   const [nextLesson, setNextLesson] = useState<HomeLesson | null>(null);
-  const [sessions, setSessions] = useState<Appointment[]>([]);
+  const [sessions, setSessions] = useState<CoachingSession[]>([]);
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
   const [courseBadgeUrl, setCourseBadgeUrl] = useState<string | null>(null);

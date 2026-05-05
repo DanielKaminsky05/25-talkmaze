@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { Appointment } from "../types/lesson";
+import type { CoachingSession } from "@/src/lib/scheduling/types";
 
 interface LessonDetailModalProps {
-    lesson: Appointment;
+    lesson: CoachingSession;
     onClose: () => void;
 }
 

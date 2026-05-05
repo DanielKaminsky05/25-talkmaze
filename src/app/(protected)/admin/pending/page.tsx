@@ -3,12 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 
 import AdminCalendar from "../_components/AdminCalendar";
-import type {
-  Coach,
-  PendingBooking,
-  PendingBookingForm,
-  PendingBookingPreview,
-} from "../_types";
+import type { PendingBooking, PendingBookingForm } from "@/src/lib/scheduling/types";
+import type { Coach, PendingBookingPreview } from "../_types";
 
 const WEEKDAYS = [
   "Sunday",

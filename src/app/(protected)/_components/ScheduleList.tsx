@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Appointment } from "../types/lesson";
+import type { CoachingSession } from "@/src/lib/scheduling/types";
 import LessonDetailModal from "./LessonDetailModal";
 
 export default function ScheduleList({
   schedule,
 }: {
-  schedule: Appointment[];
+  schedule: CoachingSession[];
 }) {
-  const [selectedLesson, setSelectedLesson] = useState<Appointment | null>(
+  const [selectedLesson, setSelectedLesson] = useState<CoachingSession | null>(
     null,
   );
 

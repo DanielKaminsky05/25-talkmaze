@@ -4,7 +4,7 @@ import ParentDashboardClient, {
   Student,
 } from "./_components/ParentDashboardClient";
 import { AttendanceItem } from "./_components/StudentAttendanceDetails";
-import { Appointment } from "../types/lesson";
+import type { CoachingSession } from "@/src/lib/scheduling/types";
 
 /**
  * Top-level page component for Parent Dashboard Home
@@ -52,7 +52,7 @@ export default async function ParentDashboard() {
 
   // Fetch upcoming sessions for these students
   const studentIds = students.map((s) => s.id);
-  let schedule: Appointment[] = [];
+  let schedule: CoachingSession[] = [];
 
   if (studentIds.length > 0) {
     const now = new Date().toISOString();
