@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { LessonRow, TokenRow } from "../types";
-import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 /**
  * Fetches all data needed for the /lessons grid page.

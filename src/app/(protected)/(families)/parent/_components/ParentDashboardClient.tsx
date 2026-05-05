@@ -8,7 +8,7 @@ import StudentAttendanceDetails, {
   AttendanceItem,
 } from "./StudentAttendanceDetails";
 import SelectedStudentSubscriptionStatus from "./SelectedStudentSubscriptionStatus";
-import ScheduleList from "../../../_components/ScheduleList";
+import ScheduleList from "../../_components/ScheduleList";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 
 export interface Student {

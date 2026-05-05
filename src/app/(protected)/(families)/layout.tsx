@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import ProtectedLayoutShell from "@/src/app/(protected)/_components/ProtectedLayoutShell";
+import FamiliesLayoutShell from "./_components/FamiliesLayoutShell";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { createClient } from "@/src/services/supabase/server";
 
@@ -11,7 +11,7 @@ import { createClient } from "@/src/services/supabase/server";
  * before any client component renders. This avoids each child component
  * having to fetch the profile independently
  *
- * profileType and avatarUrl are passed down to ProtectedLayoutShell, which
+ * profileType and avatarUrl are passed down to FamiliesLayoutShell, which
  * forwards them to SideBar and NavigationBar so they can render role-specific UI.
  */
 export default async function Layout({ children }: { children: ReactNode }) {
@@ -34,12 +34,12 @@ export default async function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ProtectedLayoutShell
+    <FamiliesLayoutShell
       profileType={profileType}
       avatarUrl={avatarUrl}
       activeProfile={activeProfile}
     >
       {children}
-    </ProtectedLayoutShell>
+    </FamiliesLayoutShell>
   );
 }

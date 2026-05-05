@@ -26,7 +26,7 @@ type Props = {
  * Routes like /profiles, /admin, and /coach bypass the frame entirely and
  * render their children full-screen (no navbar, sidebar)
  */
-export default function ProtectedLayoutShell({
+export default function FamiliesLayoutShell({
   profileType,
   avatarUrl,
   activeProfile,

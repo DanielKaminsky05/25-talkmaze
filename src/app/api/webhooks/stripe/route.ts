@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/src/services/stripe/client";
 import { createServiceRoleClient } from "@/src/services/supabase/service";
-import { setActiveProfile } from "@/src/app/(protected)/onboarding/actions";
+import { setActiveProfile } from "@/src/app/(protected)/(families)/onboarding/actions";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
 
 type SubscriptionWithPeriod = Stripe.Subscription & {

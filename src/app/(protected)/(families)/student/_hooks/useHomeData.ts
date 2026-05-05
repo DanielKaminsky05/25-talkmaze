@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
-import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 type LessonSummary = {
   id: string;

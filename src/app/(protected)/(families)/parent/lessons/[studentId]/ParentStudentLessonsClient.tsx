@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import LessonCard from "@/src/app/(protected)/lessons/_components/LessonCard";
-import ProgressCard from "@/src/app/(protected)/lessons/_components/ProgressCard";
+import LessonCard from "@/src/app/(protected)/(families)/lessons/_components/LessonCard";
+import ProgressCard from "@/src/app/(protected)/(families)/lessons/_components/ProgressCard";
 import FeedbackDisplay from "@/src/components/common/FeedbackDisplay";
 
 export interface LessonProp {

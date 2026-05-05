@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 type TokenRow = {
   id: string;

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLessonDetail } from "../_hooks/useLessonDetail";
-import { usePageTitle } from "../../../_context/PageTitleContext";
+import { usePageTitle } from "../../_context/PageTitleContext";
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";

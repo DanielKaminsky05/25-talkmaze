@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { LessonDetailRow, TokenRow } from "../types";
-import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
