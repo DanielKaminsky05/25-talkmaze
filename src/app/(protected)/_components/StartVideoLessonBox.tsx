@@ -2,8 +2,7 @@
 "use client"
 import { useEffect, useState } from "react";
 import Link from 'next/link';
-import { getLessonSpace } from "./startVideoLessonBoxActions";
-import { NextResponse } from "next/server";
+import { getLessonSpace } from "@/src/lib/lessonspace/actions/getLessonSpace";
 export default function StartVideoLessonBox() {
   
   
