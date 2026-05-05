@@ -5,20 +5,20 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/services/supabase/client";
 import type { EventInput } from "@fullcalendar/core";
 
-import CoachAssignmentCard from "./components/CoachAssignmentCard";
-import CreateAdminModal from "./components/CreateAdminModal";
-import CreateCoachModal from "./components/CreateCoachModal";
-import CreateCourseModal from "./components/CreateCourseModal";
-import StudentDetailModal from "./components/StudentDetailModal";
-import EmployeeDetailModal from "./components/EmployeeDetailModal";
-import CourseDetailModal from "./components/CourseDetailModal";
-import CourseLessonsPanel from "./components/CourseLessonPanel";
-import AdminCalendar from "./components/AdminCalendar";
-import Pagination from "./components/Pagination";
+import CoachAssignmentCard from "./_components/CoachAssignmentCard";
+import CreateAdminModal from "./_components/CreateAdminModal";
+import CreateCoachModal from "./_components/CreateCoachModal";
+import CreateCourseModal from "./_components/CreateCourseModal";
+import StudentDetailModal from "./_components/StudentDetailModal";
+import EmployeeDetailModal from "./_components/EmployeeDetailModal";
+import CourseDetailModal from "./_components/CourseDetailModal";
+import CourseLessonsPanel from "./_components/CourseLessonPanel";
+import AdminCalendar from "./_components/AdminCalendar";
+import Pagination from "./_components/Pagination";
 import { Assignment } from "@/lib/types/assignments";
-import { Student } from "./components/StudentTable";
-import { Coach } from "./components/AssignStudentDropDown";
-import { Course } from "./components/types";
+import { Student } from "./_components/StudentTable";
+import { Coach } from "./_components/AssignStudentDropDown";
+import { Course } from "./_components/types";
 
 const ITEMS_PER_PAGE = 15;
 

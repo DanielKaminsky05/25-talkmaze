@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/services/supabase/server";
 import ParentDashboardClient, {
   Student,
-} from "./components/ParentDashboardClient";
-import { AttendanceItem } from "./components/StudentAttendanceDetails";
+} from "./_components/ParentDashboardClient";
+import { AttendanceItem } from "./_components/StudentAttendanceDetails";
 import { Appointment } from "../types/lesson";
 
 /**

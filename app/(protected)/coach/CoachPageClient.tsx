@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import MyStudents from "./components/MyStudents";
-import StudentDetails from "./components/StudentDetails";
-import LessonsTable from "./components/LessonsTable";
+import MyStudents from "./_components/MyStudents";
+import StudentDetails from "./_components/StudentDetails";
+import LessonsTable from "./_components/LessonsTable";
 
 import type { Database } from "@/services/supabase/types/database";
 
