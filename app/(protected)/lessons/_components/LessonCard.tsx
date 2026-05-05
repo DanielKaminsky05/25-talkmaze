@@ -1,8 +1,8 @@
 "use client";
 
 import { memo } from "react";
-import { TokenIcon } from "../../components/TokenIcon";
-import { TokenMysteryStar } from "../../components/TokenMysteryStar";
+import { TokenIcon } from "../../_components/TokenIcon";
+import { TokenMysteryStar } from "../../_components/TokenMysteryStar";
 
 type Props = {
   lessonNumber: number;

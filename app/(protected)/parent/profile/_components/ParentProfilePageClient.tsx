@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/services/supabase/client";
 import { updateParentInfo, updateParentPin } from "../actions";
-import { CaretIcon } from "@/app/(protected)/components/ui/icons";
+import { CaretIcon } from "@/app/(protected)/_components/ui/icons";
 
 type ParentData = {
   id: string;

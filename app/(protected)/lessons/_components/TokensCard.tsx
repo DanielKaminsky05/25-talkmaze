@@ -2,8 +2,8 @@
 
 import { memo } from "react";
 import type { TokenRow } from "../types";
-import { TokenIcon } from "../../components/TokenIcon";
-import { TokenMysteryStar } from "../../components/TokenMysteryStar";
+import { TokenIcon } from "../../_components/TokenIcon";
+import { TokenMysteryStar } from "../../_components/TokenMysteryStar";
 
 interface TokensCardProps {
   courseTokens: TokenRow[];

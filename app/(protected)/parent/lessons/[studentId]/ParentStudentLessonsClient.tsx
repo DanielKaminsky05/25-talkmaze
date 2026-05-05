@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import LessonCard from "@/app/(protected)/lessons/_components/LessonCard";
 import ProgressCard from "@/app/(protected)/lessons/_components/ProgressCard";
-import FeedbackDisplay from "@/app/(protected)/components/ui/text-editor/FeedbackDisplay";
+import FeedbackDisplay from "@/app/(protected)/_components/ui/text-editor/FeedbackDisplay";
 
 export interface LessonProp {
   id: string;

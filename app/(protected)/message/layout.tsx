@@ -1,7 +1,7 @@
 "use server";
 import { ReactNode } from "react";
-import Bookmarks from "../components/coach-page/Bookmarks";
-import Contacts from "../components/coach-page/Contacts";
+import Bookmarks from "../_components/coach-page/Bookmarks";
+import Contacts from "../_components/coach-page/Contacts";
 import { createClient } from "@/services/supabase/server";
 import { Contact } from "@/lib/types/contact";
 import { getCurrentUser } from "@/services/supabase/lib/getCurrentUser";

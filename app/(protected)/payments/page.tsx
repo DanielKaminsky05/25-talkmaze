@@ -2,7 +2,7 @@ import { createClient } from "@/services/supabase/server";
 import { PackageRenewaloptionsContainer } from "./_components/PackageRenewalOptionsContainer";
 import CurrentSubscription from "./_components/CurrentSubscription";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
-import { CaretIcon } from "@/app/(protected)/components/ui/icons";
+import { CaretIcon } from "@/app/(protected)/_components/ui/icons";
 
 interface Plan {
   id: string;

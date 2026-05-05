@@ -8,8 +8,8 @@ import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
-import PageSpinner from "../../components/PageSpinner";
-import FeedbackDisplay from "../../components/ui/text-editor/FeedbackDisplay";
+import PageSpinner from "../../_components/PageSpinner";
+import FeedbackDisplay from "../../_components/ui/text-editor/FeedbackDisplay";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();

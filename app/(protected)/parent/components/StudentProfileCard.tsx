@@ -3,7 +3,7 @@
 import {
   EditIcon,
   LocationPinFilledIcon,
-} from "@/app/(protected)/components/ui/icons";
+} from "@/app/(protected)/_components/ui/icons";
 
 interface StudentProfileCardProps {
   name: string;

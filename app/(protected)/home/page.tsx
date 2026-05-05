@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import PageSpinner from "../components/PageSpinner";
-import LessonProgressBar from "../components/LessonProgressBar";
-import TokenBar from "../components/TokensBar";
+import PageSpinner from "../_components/PageSpinner";
+import LessonProgressBar from "../_components/LessonProgressBar";
+import TokenBar from "../_components/TokensBar";
 import ReviewLessonCard from "./_components/ReviewLesson";
 import NextLessonCard from "./_components/UpNextLesson";
-import ScheduleList from "../components/ScheduleList";
+import ScheduleList from "../_components/ScheduleList";
 import CurrentLessonBanner from "./_components/CurrentLessonBanner";
 import { useHomeData } from "./_hooks/useHomeData";
 

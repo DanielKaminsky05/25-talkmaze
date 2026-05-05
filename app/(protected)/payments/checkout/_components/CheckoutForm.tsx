@@ -9,7 +9,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { OverviewPanel } from "./OverviewPanel";
 import { ContactInfoSection } from "./ContactInfoSection";
-import { CaretIcon } from "@/app/(protected)/components/ui/icons";
+import { CaretIcon } from "@/app/(protected)/_components/ui/icons";
 
 export function CheckoutForm({
   amountDisplay,

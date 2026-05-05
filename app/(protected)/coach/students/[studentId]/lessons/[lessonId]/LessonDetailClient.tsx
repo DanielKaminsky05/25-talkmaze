@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import FeedbackEditor from "@/app/(protected)/components/ui/text-editor/FeedbackEditor";
-import FeedbackDisplay from "@/app/(protected)/components/ui/text-editor/FeedbackDisplay";
+import FeedbackEditor from "@/app/(protected)/_components/ui/text-editor/FeedbackEditor";
+import FeedbackDisplay from "@/app/(protected)/_components/ui/text-editor/FeedbackDisplay";
 
 const STATUS_LABELS: Record<number, string> = {
   1: "Not Started",

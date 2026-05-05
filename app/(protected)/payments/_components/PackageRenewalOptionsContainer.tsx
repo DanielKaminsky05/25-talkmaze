@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CaretIcon } from "@/app/(protected)/components/ui/icons";
+import { CaretIcon } from "@/app/(protected)/_components/ui/icons";
 
 interface Plan {
   id: string;

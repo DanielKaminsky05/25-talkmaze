@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import ProtectedLayoutShell from "./components/ProtectedLayoutShell";
+import ProtectedLayoutShell from "./_components/ProtectedLayoutShell";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 import { createClient } from "@/services/supabase/server";
 

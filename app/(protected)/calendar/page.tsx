@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Calendar from "../components/calendar/Calendar";
-import ScheduleSidebar from "../components/schedule-sidebar/ScheduleSidebar";
+import Calendar from "../_components/calendar/Calendar";
+import ScheduleSidebar from "../_components/schedule-sidebar/ScheduleSidebar";
 import { createClient } from "@/services/supabase/client";
 import { getActiveProfile } from "@/lib/profile-management/getActiveProfile";
 
