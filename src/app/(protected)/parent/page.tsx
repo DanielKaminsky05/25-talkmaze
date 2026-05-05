@@ -5,6 +5,7 @@ import ParentDashboardClient, {
 } from "./_components/ParentDashboardClient";
 import { AttendanceItem } from "./_components/StudentAttendanceDetails";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
+import { fullName } from "@/src/utils/formatName";
 
 /**
  * Top-level page component for Parent Dashboard Home
@@ -35,7 +36,7 @@ export default async function ParentDashboard() {
     const subscription = s.student_subscriptions?.[0] ?? null;
     return {
       id: s.id,
-      name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim(),
+      name: fullName(s.first_name, s.last_name),
       first_name: s.first_name,
       last_name: s.last_name,
       grade: s.grade,
@@ -84,7 +85,7 @@ export default async function ParentDashboard() {
       student_id: session.student_id,
       studentName: session.students?.first_name ?? "Student",
       coachName: session.coaches
-        ? `${session.coaches.first_name ?? ""} ${session.coaches.last_name ?? ""}`.trim()
+        ? fullName(session.coaches.first_name, session.coaches.last_name)
         : "",
       status: "scheduled",
     }));
@@ -132,7 +133,7 @@ export default async function ParentDashboard() {
       const pastItems: AttendanceItem[] = [...records].reverse().map((r) => {
         const coach = r.coaches as any;
         const coachName = coach
-          ? `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || null
+          ? fullName(coach.first_name, coach.last_name) || null
           : null;
         return {
           status: r.status as AttendanceItem["status"],

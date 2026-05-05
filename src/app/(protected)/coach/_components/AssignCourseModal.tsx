@@ -1,4 +1,5 @@
-import type { Database } from "@/src/services/supabase/types/database"
+import type { Database } from "@/src/services/supabase/types/database";
+import { fullName } from "@/src/utils/formatName";
 
 type Course = Database["public"]["Tables"]["courses"]["Row"];
 type Student = Database["public"]["Tables"]["students"]["Row"];
@@ -14,9 +15,11 @@ export default function AssignCourseModal({
   courses,
   setIsAssigningCourse,
 }: AssignCourseModalProps) {
-  const studentName =
-    `${student.first_name || ""} ${student.last_name || ""}`.trim() ||
-    "this student";
+  const studentName = fullName(
+    student.first_name,
+    student.last_name,
+    "this student",
+  );
 
   async function assignStudent(course: Course) {
     const res = await fetch("/api/admin/courses/assign", {
@@ -26,9 +29,7 @@ export default function AssignCourseModal({
     });
 
     if (res.ok) {
-      alert(
-        `Successfully assigned "${course.title}" to ${studentName}.`,
-      );
+      alert(`Successfully assigned "${course.title}" to ${studentName}.`);
       setIsAssigningCourse(false);
     } else {
       alert("Failed to assign course. Please try again.");

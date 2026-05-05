@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { fullName } from "@/src/utils/formatName";
 import { ConversationClient } from "@/src/app/(protected)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
@@ -200,9 +201,11 @@ export default function StudentDetails({
     );
   }
 
-  const fullName =
-    `${student.first_name || ""} ${student.last_name || ""}`.trim() ||
-    "Unnamed Student";
+  const studentFullName = fullName(
+    student.first_name,
+    student.last_name,
+    "Unnamed Student",
+  );
 
   return (
     <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm min-h-[480px] flex flex-col overflow-hidden">
@@ -215,10 +218,11 @@ export default function StudentDetails({
           <button
             onClick={() => openChat("student")}
             disabled={loadingChat}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${activeChat === "student"
-              ? "bg-[#2B4257] text-white"
-              : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
-              }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+              activeChat === "student"
+                ? "bg-[#2B4257] text-white"
+                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+            }`}
           >
             {activeChat === "student"
               ? "Hide Chat"
@@ -229,10 +233,11 @@ export default function StudentDetails({
           <button
             onClick={() => openChat("parent")}
             disabled={loadingChat}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${activeChat === "parent"
-              ? "bg-[#2B4257] text-white"
-              : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
-              }`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+              activeChat === "parent"
+                ? "bg-[#2B4257] text-white"
+                : "border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5"
+            }`}
           >
             {activeChat === "parent"
               ? "Hide Chat"
@@ -263,7 +268,9 @@ export default function StudentDetails({
                 firstName={student.first_name}
                 lastName={student.last_name}
               />
-              <h3 className="text-xl font-bold text-gray-900">{fullName}</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                {studentFullName}
+              </h3>
             </div>
 
             {/* Schedule section */}

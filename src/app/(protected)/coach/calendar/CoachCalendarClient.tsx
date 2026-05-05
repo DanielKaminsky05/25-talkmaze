@@ -22,9 +22,10 @@ function toDatetimeLocal(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+import { fullName } from "@/src/utils/formatName";
+
 function studentName(s: Session["students"]) {
-  if (!s) return "Session";
-  return `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || "Session";
+  return fullName(s?.first_name, s?.last_name, "Session");
 }
 
 export default function CoachCalendarClient() {

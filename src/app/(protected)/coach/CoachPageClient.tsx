@@ -7,6 +7,7 @@ import StudentDetails from "./_components/StudentDetails";
 import LessonsTable from "./_components/LessonsTable";
 
 import type { Database } from "@/src/services/supabase/types/database";
+import { fullName } from "@/src/utils/formatName";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 
@@ -65,7 +66,10 @@ export default function CoachPageClient({
         {/* Lessons table */}
         <LessonsTable
           studentId={activeStudent?.id}
-          studentName={`${activeStudent?.first_name || ""} ${activeStudent?.last_name || ""}`.trim()}
+          studentName={fullName(
+            activeStudent?.first_name,
+            activeStudent?.last_name,
+          )}
         />
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Database } from "@/src/services/supabase/types/database";
+import { fullName } from "@/src/utils/formatName";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
 
@@ -21,14 +22,12 @@ export default function StudentListItem({
   onLessonSpace,
   onAssignCourse,
 }: StudentListItemProps) {
-  const fullName =
-    `${student.first_name || ""} ${student.last_name || ""}`.trim() ||
-    "Unnamed Student";
-  const initial = (
-    student.first_name ||
-    student.last_name ||
-    "?"
-  )
+  const studentFullName = fullName(
+    student.first_name,
+    student.last_name,
+    "Unnamed Student",
+  );
+  const initial = (student.first_name || student.last_name || "?")
     .charAt(0)
     .toUpperCase();
 
@@ -56,7 +55,7 @@ export default function StudentListItem({
             isActive ? "text-[#2B4257]" : "text-gray-800"
           }`}
         >
-          {fullName}
+          {studentFullName}
         </span>
       </div>
 

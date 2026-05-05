@@ -1,6 +1,7 @@
 "use client";
 
 import type { AttendanceStatus } from "../StudentDetails";
+import { fmtUtcDate, fmtUtcTime } from "@/src/utils/formatDateTime";
 
 const STATUS_BUTTONS: {
   status: AttendanceStatus;
@@ -28,23 +29,6 @@ interface PastSession {
   id: number;
   start_time: string;
   end_time: string | null;
-}
-
-function fmtSessionDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function fmtSessionTime(iso: string): string {
-  const d = new Date(iso);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes().toString().padStart(2, "0");
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${m} ${period}`;
 }
 
 interface CoachAttendanceSectionProps {
@@ -88,9 +72,9 @@ export default function CoachAttendanceSection({
             className="bg-white border border-[#2B4257]/10 rounded-lg px-3 py-2.5 shadow-sm"
           >
             <p className="text-xs font-medium text-gray-700 mb-2">
-              {fmtSessionDate(session.start_time)}
+              {fmtUtcDate(session.start_time, false)}
               {" · "}
-              {fmtSessionTime(session.start_time)}
+              {fmtUtcTime(session.start_time)}
             </p>
             <div className="flex gap-1.5 flex-wrap">
               {STATUS_BUTTONS.map(({ status, label, activeClass }) => (

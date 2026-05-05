@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { fullName } from "@/src/utils/formatName";
 import Calendar from "./Calendar";
 import { CalendarDays, ChevronDown, User } from "lucide-react";
 import AvailabilityModal from "./AvailabilityModal";
@@ -80,9 +81,15 @@ function StudentFilter({
 }) {
   const [open, setOpen] = useState(false);
 
-  const selectedStudent_ = selected ? students.find((s) => s.id === selected) : null;
+  const selectedStudent_ = selected
+    ? students.find((s) => s.id === selected)
+    : null;
   const label = selectedStudent_
-    ? [selectedStudent_.first_name, selectedStudent_.last_name].filter(Boolean).join(" ") || "Student"
+    ? fullName(
+        selectedStudent_.first_name,
+        selectedStudent_.last_name,
+        "Student",
+      )
     : "All Students";
 
   return (
@@ -106,10 +113,11 @@ function StudentFilter({
               onChange(null);
               setOpen(false);
             }}
-            className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${selected === null
-              ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
-              : "text-white hover:bg-[#142535]"
-              }`}
+            className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+              selected === null
+                ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
+                : "text-white hover:bg-[#142535]"
+            }`}
           >
             All Students
           </button>
@@ -120,12 +128,13 @@ function StudentFilter({
                 onChange(s.id);
                 setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${selected === s.id
-                ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
-                : "text-white hover:bg-[#142535]"
-                }`}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                selected === s.id
+                  ? "bg-[#65CFAD]/20 text-[#65CFAD] font-semibold"
+                  : "text-white hover:bg-[#142535]"
+              }`}
             >
-              {[s.first_name, s.last_name].filter(Boolean).join(" ") || "Student"}
+              {fullName(s.first_name, s.last_name, "Student")}
             </button>
           ))}
         </div>
