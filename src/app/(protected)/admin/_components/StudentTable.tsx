@@ -26,7 +26,10 @@ interface StudentTableProps {
   onStudentClick: (student: Student) => void;
 }
 
-export default function StudentTable({ students = [], onStudentClick }: StudentTableProps) {
+export default function StudentTable({
+  students = [],
+  onStudentClick,
+}: StudentTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/5">
       <table className="min-w-full border-collapse">
@@ -55,16 +58,27 @@ export default function StudentTable({ students = [], onStudentClick }: StudentT
                 className="hover:bg-[#2B4257]/60 transition-colors cursor-pointer group"
               >
                 <td className="px-4 py-3 text-sm text-white font-medium group-hover:text-[#B1E7D6] transition-colors">
-                  {[student.first_name, student.last_name].filter(Boolean).join(" ") || "—"}
+                  {[student.first_name, student.last_name]
+                    .filter(Boolean)
+                    .join(" ") || "—"}
                 </td>
-                <td className="px-4 py-3 text-sm text-white/60 font-mono">{student.id}</td>
-                <td className="px-4 py-3 text-sm text-white/60">{student.grade ?? "—"}</td>
-                <td className="px-4 py-3 text-sm text-white/60">{student.location ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-white/60 font-mono">
+                  {student.id}
+                </td>
+                <td className="px-4 py-3 text-sm text-white/60">
+                  {student.grade ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-sm text-white/60">
+                  {student.location ?? "—"}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={4} className="px-4 py-10 text-center text-sm text-white/30">
+              <td
+                colSpan={4}
+                className="px-4 py-10 text-center text-sm text-white/30"
+              >
                 No students found
               </td>
             </tr>

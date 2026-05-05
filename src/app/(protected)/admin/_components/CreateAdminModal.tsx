@@ -6,7 +6,11 @@ interface CreateAdminModalProps {
   onSuccess: () => void;
 }
 
-export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateAdminModalProps) {
+export default function CreateAdminModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: CreateAdminModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -59,16 +63,18 @@ export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateA
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={handleClose}
     >
-      <div 
+      <div
         className="bg-white rounded-lg shadow-xl max-w-md w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-900">Create Admin Account</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            Create Admin Account
+          </h2>
           <button
             onClick={handleClose}
             disabled={loading}
@@ -77,7 +83,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateA
             ×
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
@@ -86,7 +92,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateA
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Name
             </label>
             <input
@@ -102,7 +111,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateA
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email
             </label>
             <input
@@ -118,7 +130,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateA
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <input

@@ -82,12 +82,16 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
             </div>
           ))
         ) : (
-          <div className="px-3 py-2 text-xs text-gray-500">No students found</div>
+          <div className="px-3 py-2 text-xs text-gray-500">
+            No students found
+          </div>
         )}
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Selected Students</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          Selected Students
+        </h3>
         {selectedStudents.length > 0 ? (
           <div className="space-y-2">
             {selectedStudents.map((student) => (

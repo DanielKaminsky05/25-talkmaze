@@ -27,8 +27,11 @@ export default function Pagination({
   return (
     <div className="mt-4 flex items-center justify-between">
       <p className="text-xs text-white/40">
-        Showing <span className="text-white/70 font-medium">{start}–{end}</span> of{" "}
-        <span className="text-white/70 font-medium">{totalItems}</span>
+        Showing{" "}
+        <span className="text-white/70 font-medium">
+          {start}–{end}
+        </span>{" "}
+        of <span className="text-white/70 font-medium">{totalItems}</span>
       </p>
       <div className="flex items-center gap-1">
         <button
@@ -36,7 +39,7 @@ export default function Pagination({
           disabled={currentPage === 1}
           className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 bg-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          ← Prev
+          Prev
         </button>
         <span className="px-3 py-1.5 text-xs text-white/50">
           {currentPage} / {totalPages}
@@ -46,7 +49,7 @@ export default function Pagination({
           disabled={currentPage === totalPages}
           className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 bg-white/5 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          Next →
+          Next
         </button>
       </div>
     </div>

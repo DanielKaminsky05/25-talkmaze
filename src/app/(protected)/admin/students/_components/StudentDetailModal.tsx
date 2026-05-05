@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Student } from "./StudentTable";
+import { Student } from "../../_components/StudentTable";
 
 interface Props {
   student: Student;
@@ -26,10 +26,20 @@ interface FieldProps {
   isEditing: boolean;
   editForm: Partial<Student>;
   student: Student;
-  onChange: (key: keyof Student) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onChange: (
+    key: keyof Student,
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
-function TextField({ label, k, span, isEditing, editForm, student, onChange }: FieldProps) {
+function TextField({
+  label,
+  k,
+  span,
+  isEditing,
+  editForm,
+  student,
+  onChange,
+}: FieldProps) {
   return (
     <div className={span}>
       <p className={labelClass}>{label}</p>
@@ -47,7 +57,14 @@ function TextField({ label, k, span, isEditing, editForm, student, onChange }: F
   );
 }
 
-function TextAreaField({ label, k, isEditing, editForm, student, onChange }: FieldProps) {
+function TextAreaField({
+  label,
+  k,
+  isEditing,
+  editForm,
+  student,
+  onChange,
+}: FieldProps) {
   return (
     <div>
       <p className={labelClass}>{label}</p>
@@ -65,14 +82,20 @@ function TextAreaField({ label, k, isEditing, editForm, student, onChange }: Fie
   );
 }
 
-export default function StudentDetailModal({ student, onClose, onUpdate }: Props) {
+export default function StudentDetailModal({
+  student,
+  onClose,
+  onUpdate,
+}: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Student>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
@@ -100,13 +123,16 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
     }
   };
 
-  const handleChange = (key: keyof Student) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setEditForm((p) => ({ ...p, [key]: e.target.value || null }));
+  const handleChange =
+    (key: keyof Student) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setEditForm((p) => ({ ...p, [key]: e.target.value || null }));
 
   const fieldProps = { isEditing, editForm, student, onChange: handleChange };
 
   const editingName = isEditing
-    ? [editForm.first_name, editForm.last_name].filter(Boolean).join(" ") || displayName(student)
+    ? [editForm.first_name, editForm.last_name].filter(Boolean).join(" ") ||
+      displayName(student)
     : displayName(student);
 
   return (
@@ -122,13 +148,19 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
         <div className="sticky top-0 bg-[#1F2E3B] border-b border-white/10 px-6 py-4 flex justify-between items-center rounded-t-2xl z-10">
           <div>
             <h2 className="text-white font-bold text-lg">{editingName}</h2>
-            <p className="text-[#B1E7D6] text-xs opacity-60 mt-0.5">Student profile</p>
+            <p className="text-[#B1E7D6] text-xs opacity-60 mt-0.5">
+              Student profile
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
                 <button
-                  onClick={() => { setEditForm({ ...student }); setIsEditing(true); setSaveError(null); }}
+                  onClick={() => {
+                    setEditForm({ ...student });
+                    setIsEditing(true);
+                    setSaveError(null);
+                  }}
                   className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-lg transition-colors"
                 >
                   Edit
@@ -150,7 +182,11 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
                   {isSaving ? "Saving…" : "Save"}
                 </button>
                 <button
-                  onClick={() => { setEditForm({}); setIsEditing(false); setSaveError(null); }}
+                  onClick={() => {
+                    setEditForm({});
+                    setIsEditing(false);
+                    setSaveError(null);
+                  }}
                   className="px-4 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-lg transition-colors"
                 >
                   Cancel
@@ -167,7 +203,6 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
         )}
 
         <div className="px-6 py-5 space-y-6">
-
           {/* IDs — always read-only */}
           <section>
             <h3 className="text-xs font-semibold text-[#B1E7D6] uppercase tracking-widest mb-3 pb-2 border-b border-white/5">
@@ -176,22 +211,30 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <p className={labelClass}>Student ID</p>
-                <p className="text-white/50 font-mono break-all">{student.id}</p>
+                <p className="text-white/50 font-mono break-all">
+                  {student.id}
+                </p>
               </div>
               <div>
                 <p className={labelClass}>Account ID</p>
-                <p className="text-white/50 font-mono break-all">{student.account_id}</p>
+                <p className="text-white/50 font-mono break-all">
+                  {student.account_id}
+                </p>
               </div>
               <div>
                 <p className={labelClass}>Created</p>
                 <p className="text-white/50">
-                  {student.created_at ? new Date(student.created_at).toLocaleDateString() : "—"}
+                  {student.created_at
+                    ? new Date(student.created_at).toLocaleDateString()
+                    : "—"}
                 </p>
               </div>
               <div>
                 <p className={labelClass}>Updated</p>
                 <p className="text-white/50">
-                  {student.updated_at ? new Date(student.updated_at).toLocaleDateString() : "—"}
+                  {student.updated_at
+                    ? new Date(student.updated_at).toLocaleDateString()
+                    : "—"}
                 </p>
               </div>
             </div>
@@ -215,11 +258,18 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
                     className={inputClass}
                   />
                 ) : (
-                  <p className={readonlyClass}>{student.date_of_birth ?? "—"}</p>
+                  <p className={readonlyClass}>
+                    {student.date_of_birth ?? "—"}
+                  </p>
                 )}
               </div>
               <TextField label="Grade" k="grade" {...fieldProps} />
-              <TextField label="Location" k="location" span="col-span-2" {...fieldProps} />
+              <TextField
+                label="Location"
+                k="location"
+                span="col-span-2"
+                {...fieldProps}
+              />
               <div className="col-span-2">
                 <TextAreaField label="Bio" k="bio" {...fieldProps} />
               </div>
@@ -232,9 +282,24 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
               Lesson Space
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <TextField label="Lesson Space ID" k="lesson_space_id" span="col-span-2" {...fieldProps} />
-              <TextField label="Student Link" k="lesson_space_student_link" span="col-span-2" {...fieldProps} />
-              <TextField label="Teacher Link" k="lesson_space_teacher_link" span="col-span-2" {...fieldProps} />
+              <TextField
+                label="Lesson Space ID"
+                k="lesson_space_id"
+                span="col-span-2"
+                {...fieldProps}
+              />
+              <TextField
+                label="Student Link"
+                k="lesson_space_student_link"
+                span="col-span-2"
+                {...fieldProps}
+              />
+              <TextField
+                label="Teacher Link"
+                k="lesson_space_teacher_link"
+                span="col-span-2"
+                {...fieldProps}
+              />
             </div>
           </section>
 
@@ -254,13 +319,16 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
                     onChange={(e) =>
                       setEditForm((p) => ({
                         ...p,
-                        post_lesson_days: e.target.value === "" ? null : Number(e.target.value),
+                        post_lesson_days:
+                          e.target.value === "" ? null : Number(e.target.value),
                       }))
                     }
                     className={inputClass}
                   />
                 ) : (
-                  <p className={readonlyClass}>{student.post_lesson_days ?? "—"}</p>
+                  <p className={readonlyClass}>
+                    {student.post_lesson_days ?? "—"}
+                  </p>
                 )}
               </div>
               <div>
@@ -269,16 +337,23 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
                   <label className="flex items-center gap-2 mt-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={(editForm.post_lesson_tasks_enabled as boolean) ?? false}
+                      checked={
+                        (editForm.post_lesson_tasks_enabled as boolean) ?? false
+                      }
                       onChange={(e) =>
-                        setEditForm((p) => ({ ...p, post_lesson_tasks_enabled: e.target.checked }))
+                        setEditForm((p) => ({
+                          ...p,
+                          post_lesson_tasks_enabled: e.target.checked,
+                        }))
                       }
                       className="w-4 h-4 rounded accent-[#B1E7D6]"
                     />
                     <span className="text-white/70 text-sm">Enabled</span>
                   </label>
                 ) : (
-                  <p className={readonlyClass}>{student.post_lesson_tasks_enabled ? "Enabled" : "Disabled"}</p>
+                  <p className={readonlyClass}>
+                    {student.post_lesson_tasks_enabled ? "Enabled" : "Disabled"}
+                  </p>
                 )}
               </div>
               <div className="col-span-2">
@@ -286,7 +361,6 @@ export default function StudentDetailModal({ student, onClose, onUpdate }: Props
               </div>
             </div>
           </section>
-
         </div>
       </div>
     </div>

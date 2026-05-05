@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Assignment } from "@/src/lib/types/assignments";
-import { Student, Coach } from "./AssignStudentDropDown";
+import { Student, Coach } from "../_components/AssignStudentDropDown";
 
 interface CoachAssignmentCardProps {
   coach: Coach;
@@ -23,13 +23,18 @@ export default function CoachAssignmentCard({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingStudentId, setLoadingStudentId] = useState<string | null>(null);
-  const [removingAssignmentId, setRemovingAssignmentId] = useState<string | null>(null);
+  const [removingAssignmentId, setRemovingAssignmentId] = useState<
+    string | null
+  >(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsDropdownOpen(false);
         setSearchQuery("");
       }
@@ -78,7 +83,9 @@ export default function CoachAssignmentCard({
   };
 
   return (
-    <div className={`rounded-xl border transition-colors ${isExpanded ? "bg-[#2B4257]/40 border-[#B1E7D6]/20" : "bg-[#2B4257]/20 border-white/5 hover:border-white/10"}`}>
+    <div
+      className={`rounded-xl border transition-colors ${isExpanded ? "bg-[#2B4257]/40 border-[#B1E7D6]/20" : "bg-[#2B4257]/20 border-white/5 hover:border-white/10"}`}
+    >
       {/* Header row */}
       <button
         onClick={() => setIsExpanded((prev) => !prev)}
@@ -87,9 +94,16 @@ export default function CoachAssignmentCard({
         <div className="flex items-center gap-3 min-w-0">
           <svg
             className={`w-3.5 h-3.5 text-[#B1E7D6]/50 flex-shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
           <span className="text-sm font-semibold text-white truncate">
             {coach.first_name} {coach.last_name}
@@ -102,7 +116,8 @@ export default function CoachAssignmentCard({
               : "bg-white/5 text-white/30"
           }`}
         >
-          {assignedStudents.length} {assignedStudents.length === 1 ? "student" : "students"}
+          {assignedStudents.length}{" "}
+          {assignedStudents.length === 1 ? "student" : "students"}
         </span>
       </button>
 
@@ -111,25 +126,38 @@ export default function CoachAssignmentCard({
         <div className="border-t border-white/5 px-4 py-3 space-y-3">
           {/* Assigned students list */}
           {assignedStudents.length === 0 ? (
-            <p className="text-xs text-white/30 italic py-1">No students assigned yet.</p>
+            <p className="text-xs text-white/30 italic py-1">
+              No students assigned yet.
+            </p>
           ) : (
             <ul className="space-y-1">
               {assignedStudents.map((assignment) => {
                 const isRemoving = removingAssignmentId === assignment.id;
                 const studentName = assignment.students
-                  ? [assignment.students.first_name, assignment.students.last_name].filter(Boolean).join(" ") || `Student #${assignment.student_id}`
+                  ? [
+                      assignment.students.first_name,
+                      assignment.students.last_name,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || `Student #${assignment.student_id}`
                   : `Student #${assignment.student_id}`;
                 return (
                   <li
                     key={assignment.id}
                     className={`flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg transition-colors ${
-                      isRemoving ? "opacity-40" : "bg-[#1F2E3B]/40 hover:bg-[#1F2E3B]/60"
+                      isRemoving
+                        ? "opacity-40"
+                        : "bg-[#1F2E3B]/40 hover:bg-[#1F2E3B]/60"
                     }`}
                   >
                     <div className="min-w-0">
-                      <p className="text-sm text-white/80 truncate">{studentName}</p>
+                      <p className="text-sm text-white/80 truncate">
+                        {studentName}
+                      </p>
                       {assignment.students?.account_id && (
-                        <p className="text-xs text-white/35 font-mono truncate">{assignment.students.account_id}</p>
+                        <p className="text-xs text-white/35 font-mono truncate">
+                          {assignment.students.account_id}
+                        </p>
                       )}
                     </div>
                     <button
@@ -139,13 +167,38 @@ export default function CoachAssignmentCard({
                       className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:cursor-not-allowed"
                     >
                       {isRemoving ? (
-                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        <svg
+                          className="animate-spin w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8H4z"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       )}
                     </button>
@@ -162,10 +215,22 @@ export default function CoachAssignmentCard({
               disabled={availableStudents.length === 0}
               className="flex items-center gap-1.5 text-xs font-medium text-[#B1E7D6]/70 hover:text-[#B1E7D6] disabled:text-white/20 disabled:cursor-not-allowed transition-colors"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
-              {availableStudents.length === 0 ? "All students assigned" : "Add student"}
+              {availableStudents.length === 0
+                ? "All students assigned"
+                : "Add student"}
             </button>
 
             {isDropdownOpen && (
@@ -182,10 +247,13 @@ export default function CoachAssignmentCard({
                 </div>
                 <ul className="max-h-44 overflow-y-auto py-1">
                   {filteredAvailable.length === 0 ? (
-                    <li className="px-3 py-2 text-xs text-white/30 italic">No matches</li>
+                    <li className="px-3 py-2 text-xs text-white/30 italic">
+                      No matches
+                    </li>
                   ) : (
                     filteredAvailable.map((student) => {
-                      const isAdding = loadingStudentId === student.id.toString();
+                      const isAdding =
+                        loadingStudentId === student.id.toString();
                       return (
                         <li key={student.id}>
                           <button
@@ -193,11 +261,28 @@ export default function CoachAssignmentCard({
                             disabled={isAdding}
                             className="w-full text-left px-3 py-2 text-xs text-white/80 hover:bg-[#B1E7D6]/10 hover:text-[#B1E7D6] transition-colors disabled:opacity-50 flex items-center justify-between gap-2"
                           >
-                            <span className="truncate">{studentDisplayName(student)}</span>
+                            <span className="truncate">
+                              {studentDisplayName(student)}
+                            </span>
                             {isAdding && (
-                              <svg className="animate-spin w-3 h-3 flex-shrink-0 text-[#B1E7D6]" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                              <svg
+                                className="animate-spin w-3 h-3 flex-shrink-0 text-[#B1E7D6]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v8H4z"
+                                />
                               </svg>
                             )}
                           </button>

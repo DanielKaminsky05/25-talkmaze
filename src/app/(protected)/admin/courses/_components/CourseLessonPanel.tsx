@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Lesson, LessonInput } from "@/src/lib/types/lesson";
 import { createClient } from "@/src/services/supabase/clientServer";
 import { useRef } from "react";
-import AssignStudentDropDown from "./AssignStudentDropDown";
-import { Student } from "./AssignStudentDropDown";
+import AssignStudentDropDown from "../../_components/AssignStudentDropDown";
+import { Student } from "../../_components/AssignStudentDropDown";
 import FeedbackEditor from "@/src/components/common/FeedbackEditor";
 interface CourseLessonsPanelProps {
   courseId: string;

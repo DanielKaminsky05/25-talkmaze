@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Coach } from "./AssignStudentDropDown";
+import { Coach } from "../_components/AssignStudentDropDown";
 
 type Availability = Record<string, { start: string; end: string }[]>;
 

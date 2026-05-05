@@ -45,11 +45,17 @@ export default function AdminCalendar({
         headerToolbar={{
           left: "prev,next today",
           center: "title",
-          right: isTimeGrid ? "timeGridWeek,timeGridDay" : "dayGridMonth,timeGridWeek",
+          right: isTimeGrid
+            ? "timeGridWeek,timeGridDay"
+            : "dayGridMonth,timeGridWeek",
         }}
         height={calHeight}
         eventDisplay="block"
-        eventTimeFormat={{ hour: "2-digit", minute: "2-digit", meridiem: "short" }}
+        eventTimeFormat={{
+          hour: "2-digit",
+          minute: "2-digit",
+          meridiem: "short",
+        }}
         slotMinTime="00:00:00"
         slotMaxTime="24:00:00"
         scrollTime="07:00:00"
