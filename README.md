@@ -1,5 +1,35 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Project Structure
+
+The codebase uses route-level collocation for UI and route-only logic, with shared logic organized by domain.
+
+### Route Collocation
+
+- `src/app/...` contains route segments, layouts, and page components.
+- Each route can include:
+	- `_components/` for route-only UI pieces
+	- `_hooks/` for route-only hooks
+	- `_context/` for route-only context
+	- `_types/` or `types.ts` for route-only types
+	- `actions.ts` for route-scoped server actions
+
+### Shared Code
+
+- `src/components/` holds reusable UI used across multiple routes.
+- `src/lib/` holds shared, app-specific domain logic grouped by feature.
+	- Example domains: `lessons/`, `messaging/`, `scheduling/`, `profiles/`, `users/`, `payments/`, `rewards/`, `auth/`.
+	- A domain folder can include files like `actions.ts`, `queries.ts`, `schemas.ts`, `types.ts` as needed.
+- `src/services/` is for third-party SDK clients and adapters (Supabase, Stripe, etc). Keep app logic out of this layer.
+- `src/utils/` is for cross-domain helpers that are not tied to a single feature.
+- `src/types/` is only for cross-domain primitives shared widely; keep domain types with their domain.
+
+### Validation (Zod)
+
+- Collocate schemas with a route when only used there.
+- Move schemas into the domain folder in `src/lib/<domain>/` when reused across routes or APIs.
+- Use a top-level `src/validations/` only if a schema is shared across many domains.
+
 ## Getting Started
 
 First, run the development server:

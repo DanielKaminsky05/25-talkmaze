@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
 import type { LessonDetailRow, TokenRow } from "../types";
+import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
 
 // Columns to fetch for a lesson
 const LESSON_SELECT =
@@ -28,6 +28,7 @@ function storageUrl(
  */
 export function useLessonDetail(slug: string) {
   const router = useRouter();
+  const profile = useActiveProfile();
   const [lesson, setLesson] = useState<LessonDetailRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +54,6 @@ export function useLessonDetail(slug: string) {
     async function load() {
       try {
         const supabase = createClient();
-        const profile = await getActiveProfile();
 
         // Only students can view lesson detail pages
         if (!profile || profile.type !== "student") {
@@ -259,7 +259,7 @@ export function useLessonDetail(slug: string) {
     }
 
     load();
-  }, [slug]);
+  }, [profile, router, slug]);
 
   return {
     lesson,

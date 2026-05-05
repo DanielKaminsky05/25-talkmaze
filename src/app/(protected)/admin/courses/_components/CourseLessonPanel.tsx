@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lesson, LessonInput } from "@/src/lib/types/lesson";
+import { Lesson, LessonInput } from "@/src/lib/lessons/types";
 import { createClient } from "@/src/services/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "../../_components/AssignStudentDropDown";

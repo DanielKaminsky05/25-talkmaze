@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { approvePendingBookedSlot } from "@/src/app/(protected)/onboarding/actions";
+import { approvePendingBookedSlot } from "@/src/lib/scheduling/server/matchmaking";
 
 export async function POST(
   _req: NextRequest,

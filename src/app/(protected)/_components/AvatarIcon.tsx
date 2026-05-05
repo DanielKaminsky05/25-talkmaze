@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signOut } from "../../../lib/auth/signout";
+import { signOut } from "@/src/lib/auth/actions/signOut";
 
 /**
  * Component rendering the Circular profile picture and the dropdown triangle,

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ContactsList from "./contact-list/ContactsList";
 import ContactsFilterInput from "./contact-list/ContactsFilterInput";
-import { Contact } from "@/src/lib/types/contact";
+import { Contact } from "@/src/lib/messaging/types";
 
 /**
  * This component renders the contact filter bar and the contact list

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
 import Stripe from "stripe";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

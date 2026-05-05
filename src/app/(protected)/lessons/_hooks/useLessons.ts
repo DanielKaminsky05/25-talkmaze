@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
 import type { LessonRow, TokenRow } from "../types";
+import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
 
 /**
  * Fetches all data needed for the /lessons grid page.
@@ -13,6 +13,7 @@ import type { LessonRow, TokenRow } from "../types";
  */
 export function useLessons() {
   const router = useRouter();
+  const profile = useActiveProfile();
   const [lessons, setLessons] = useState<LessonRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,6 @@ export function useLessons() {
     async function load() {
       try {
         const supabase = createClient();
-        const profile = await getActiveProfile();
 
         // Only students can view this page
         if (!profile || profile.type !== "student") {
@@ -142,15 +142,13 @@ export function useLessons() {
     }
 
     load();
-  }, []);
+  }, [profile, router]);
 
   // Once lessons are loaded, fetch which ones the student has completed
   useEffect(() => {
     if (lessons.length === 0) return;
 
     async function loadProgress() {
-      const profile = await getActiveProfile();
-
       if (!profile || profile.type !== "student") {
         setProgress({ completed: 0, total: lessons.length });
         return;
@@ -173,7 +171,7 @@ export function useLessons() {
     }
 
     loadProgress();
-  }, [lessons]); // re-runs if the lessons list changes
+  }, [lessons, profile]); // re-runs if the lessons list changes
 
   // Navigate to the detail page using slug if available
   const navigateToLesson = useCallback(

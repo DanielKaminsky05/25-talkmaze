@@ -3,22 +3,9 @@
 import { createClient } from "@/src/services/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { assignCoachToStudent } from "@/src/app/(protected)/onboarding/actions";
+import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
 import { OnboardingTimeZone } from "@/src/app/(protected)/onboarding/types";
-
-function toTimestamp(time: string) {
-  return `1970-01-01T${time}:00Z`;
-}
-
-const dayMap: Record<string, number> = {
-  Monday: 1,
-  Tuesday: 2,
-  Wednesday: 3,
-  Thursday: 4,
-  Friday: 5,
-  Saturday: 6,
-  Sunday: 0,
-};
+import { buildAvailabilityRows } from "@/src/lib/scheduling/server/availability";
 
 export async function completeStudentSetup(
   studentId: string,
@@ -67,20 +54,11 @@ export async function completeStudentSetup(
     .delete()
     .eq("student_id", studentId);
 
-  const availabilityRows = Object.entries(weeklyAvailability).flatMap(
-    ([day, slots]) =>
-      slots
-        .filter((slot) => slot.start && slot.end)
-        .map((slot) => ({
-          student_id: studentId,
-          weekday: dayMap[day],
-          start_time: toTimestamp(slot.start),
-          end_time: toTimestamp(slot.end),
-          start_time_new: `${slot.start}:00`,
-          end_time_new: `${slot.end}:00`,
-          timezone,
-        })),
-  );
+  const availabilityRows = buildAvailabilityRows({
+    studentId,
+    weeklyAvailability,
+    timeZone: timezone,
+  });
 
   if (availabilityRows.length > 0) {
     const { error: availError } = await supabase

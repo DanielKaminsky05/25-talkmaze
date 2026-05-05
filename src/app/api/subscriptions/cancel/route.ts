@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
 import { stripe } from "@/src/services/stripe/client";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 
 /**
  * POST /api/subscriptions/cancel

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import ProfileCard from "./_components/ProfileCard";
 import ManageProfilesButton from "./_components/ManageProfilesButton";
 import AddProfileCard from "./_components/AddProfileCard";
-import { selectProfile } from "../../../lib/profile-management/selectProfile";
+import { selectProfile } from "@/src/lib/profiles/actions/selectProfile";
 import { getCurrentUser } from "@/src/services/supabase/lib/getCurrentUser";
 import { id } from "zod/locales";
 

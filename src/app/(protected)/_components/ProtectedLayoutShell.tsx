@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import NavigationBar from "./NavigationBar";
 import SideBar from "./Sidebar";
 import { PageTitleProvider } from "../_context/PageTitleContext";
+import { ActiveProfile, ActiveProfileProvider } from "../_context/ActiveProfileContext";
 
 type Props = {
   profileType: "student" | "parent";
   avatarUrl: string | null;
+  activeProfile: ActiveProfile | null;
   children: ReactNode;
 };
 
@@ -24,7 +26,12 @@ type Props = {
  * Routes like /profiles, /admin, and /coach bypass the frame entirely and
  * render their children full-screen (no navbar, sidebar)
  */
-export default function ProtectedLayoutShell({ profileType, avatarUrl, children }: Props) {
+export default function ProtectedLayoutShell({
+  profileType,
+  avatarUrl,
+  activeProfile,
+  children,
+}: Props) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -36,24 +43,30 @@ export default function ProtectedLayoutShell({ profileType, avatarUrl, children 
     pathname?.startsWith("/payments") ||
     pathname?.endsWith("/profile") // students, parents: manage profile pages
   ) {
-    return <>{children}</>;
+    return (
+      <ActiveProfileProvider profile={activeProfile}>
+        {children}
+      </ActiveProfileProvider>
+    );
   }
 
   return (
-    <PageTitleProvider>
-      <div className="flex flex-row w-screen h-screen overflow-hidden">
-        <SideBar
-          profileType={profileType}
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen((v) => !v)}
-        />
-        <div className="flex flex-1 flex-col overflow-hidden pr-0 md:px-3 lg:pr-6">
-          <NavigationBar profileType={profileType} avatarUrl={avatarUrl} />
-          <div className="bg-[#1f2e3b] w-full flex-1 min-h-0 min-w-0 rounded-none md:rounded-2xl shadow-none md:shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-0 lg:mb-6 overflow-y-auto">
-            {children}
+    <ActiveProfileProvider profile={activeProfile}>
+      <PageTitleProvider>
+        <div className="flex flex-row w-screen h-screen overflow-hidden">
+          <SideBar
+            profileType={profileType}
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen((v) => !v)}
+          />
+          <div className="flex flex-1 flex-col overflow-hidden pr-0 md:px-3 lg:pr-6">
+            <NavigationBar profileType={profileType} avatarUrl={avatarUrl} />
+            <div className="bg-[#1f2e3b] w-full flex-1 min-h-0 min-w-0 rounded-none md:rounded-2xl shadow-none md:shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-0 lg:mb-6 overflow-y-auto">
+              {children}
+            </div>
           </div>
         </div>
-      </div>
-    </PageTitleProvider>
+      </PageTitleProvider>
+    </ActiveProfileProvider>
   );
 }

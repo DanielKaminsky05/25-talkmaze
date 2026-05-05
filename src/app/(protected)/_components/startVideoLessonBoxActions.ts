@@ -1,6 +1,6 @@
 "use server";
 import { createClient } from "@/src/services/supabase/server";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { CreateRoomParticipant } from "@/src/app/api/webhooks/stripe/learningSpace/route";
 import { NextResponse } from "next/server";
 export async function getLessonSpace(){

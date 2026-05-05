@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
 import { Appointment } from "@/src/app/(protected)/types/lesson";
+import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
 
 type LessonSummary = {
   id: string;
@@ -31,6 +31,7 @@ export type TokenRow = {
 
 export function useHomeData() {
   const router = useRouter();
+  const profile = useActiveProfile();
   const [loading, setLoading] = useState(true);
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
@@ -46,7 +47,6 @@ export function useHomeData() {
     async function load() {
       try {
         const supabase = createClient();
-        const profile = await getActiveProfile();
 
         if (!profile || profile.type !== "student") {
           router.push("/profiles");
@@ -239,7 +239,7 @@ export function useHomeData() {
     }
 
     load();
-  }, []);
+  }, [profile, router]);
 
   return {
     loading,

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import ProtectedLayoutShell from "./_components/ProtectedLayoutShell";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
+import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { createClient } from "@/src/services/supabase/server";
 
 /**
@@ -34,7 +34,11 @@ export default async function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ProtectedLayoutShell profileType={profileType} avatarUrl={avatarUrl}>
+    <ProtectedLayoutShell
+      profileType={profileType}
+      avatarUrl={avatarUrl}
+      activeProfile={activeProfile}
+    >
       {children}
     </ProtectedLayoutShell>
   );

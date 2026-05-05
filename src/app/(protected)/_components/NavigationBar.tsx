@@ -3,7 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import StartVideoLessonBox from "./StartVideoLessonBox";
 import AvatarIcon from "./AvatarIcon";
-import { signOut } from "@/src/lib/auth/signout";
+import { signOut } from "@/src/lib/auth/actions/signOut";
 import { usePageTitle } from "../_context/PageTitleContext";
 
 // Default title shown on dashboard/home pages, keyed by profile type

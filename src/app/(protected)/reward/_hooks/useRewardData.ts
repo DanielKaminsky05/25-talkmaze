@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
-import { getActiveProfile } from "@/src/lib/profile-management/getActiveProfile";
+import { useActiveProfile } from "@/src/app/(protected)/_context/ActiveProfileContext";
 
 type TokenRow = {
   id: string;
@@ -33,6 +33,7 @@ export type BadgeRow = {
 
 export function useRewardData() {
   const router = useRouter();
+  const profile = useActiveProfile();
   const [loading, setLoading] = useState(true);
   const [allTokens, setAllTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
@@ -44,7 +45,6 @@ export function useRewardData() {
     async function load() {
       try {
         const supabase = createClient();
-        const profile = await getActiveProfile();
 
         // Rewards are student-only; redirect if another profile type is active.
         if (!profile || profile.type !== "student") {
@@ -89,7 +89,7 @@ export function useRewardData() {
     }
 
     load();
-  }, []);
+  }, [profile, router]);
 
   return {
     loading,
