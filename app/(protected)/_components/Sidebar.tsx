@@ -10,7 +10,7 @@ import {
   LessonsIcon,
   MessageCircleIcon,
   RewardsIcon,
-} from "./ui/icons";
+} from "@/components/ui/icons";
 
 /**
  * Role-specific navigation items.

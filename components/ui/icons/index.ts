@@ -1,1 +1,11 @@
+export { AttendanceMysteryStarIcon } from "./AttendanceMysteryStarIcon";
+export { AttendedIcon } from "./AttendedIcon";
+export { CaretIcon } from "./CaretIcon";
+export { EditIcon } from "./EditIcon";
 export { EyeIcon } from "./EyeIcon";
+export { HomeIcon } from "./HomeIcon";
+export { LessonsIcon } from "./LessonsIcon";
+export { LocationPinFilledIcon } from "./LocationPinFilledIcon";
+export { MessageCircleIcon } from "./MessageCircleIcon";
+export { MissedIcon } from "./MissedIcon";
+export { RewardsIcon } from "./RewardsIcon";

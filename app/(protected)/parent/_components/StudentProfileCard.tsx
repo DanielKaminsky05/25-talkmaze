@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  EditIcon,
-  LocationPinFilledIcon,
-} from "@/app/(protected)/_components/ui/icons";
+import { EditIcon, LocationPinFilledIcon } from "@/components/ui/icons";
 
 interface StudentProfileCardProps {
   name: string;

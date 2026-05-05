@@ -4,7 +4,7 @@ import {
   AttendanceMysteryStarIcon,
   AttendedIcon,
   MissedIcon,
-} from "@/app/(protected)/_components/ui/icons";
+} from "@/components/ui/icons";
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled" | "future";
 
