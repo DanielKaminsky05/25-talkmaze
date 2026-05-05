@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Calendar from "../../../_components/calendar/Calendar";
+import Calendar from "./Calendar";
 import { CalendarDays, ChevronDown, User } from "lucide-react";
 import AvailabilityModal from "./AvailabilityModal";
 
