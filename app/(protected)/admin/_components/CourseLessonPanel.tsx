@@ -6,7 +6,7 @@ import { createClient } from "@/services/supabase/clientServer";
 import { useRef } from "react";
 import AssignStudentDropDown from "./AssignStudentDropDown";
 import { Student } from "./AssignStudentDropDown";
-import FeedbackEditor from "@/app/(protected)/_components/ui/text-editor/FeedbackEditor";
+import FeedbackEditor from "@/components/common/FeedbackEditor";
 interface CourseLessonsPanelProps {
   courseId: string;
   students: Student[];

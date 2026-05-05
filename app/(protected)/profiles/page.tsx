@@ -1,8 +1,8 @@
 import { createClient } from "@/services/supabase/server";
 import { redirect } from "next/navigation";
-import ProfileCard from "../_components/profiles/ProfileCard";
-import ManageProfilesButton from "../_components/profiles/ManageProfilesButton";
-import AddProfileCard from "../_components/profiles/AddProfileCard";
+import ProfileCard from "./_components/ProfileCard";
+import ManageProfilesButton from "./_components/ManageProfilesButton";
+import AddProfileCard from "./_components/AddProfileCard";
 import { selectProfile } from "../../../lib/profile-management/selectProfile";
 import { getCurrentUser } from "@/services/supabase/lib/getCurrentUser";
 import { id } from "zod/locales";

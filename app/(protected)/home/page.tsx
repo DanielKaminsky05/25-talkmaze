@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import PageSpinner from "../_components/PageSpinner";
-import LessonProgressBar from "../_components/LessonProgressBar";
-import TokenBar from "../_components/TokensBar";
+import PageSpinner from "@/components/ui/PageSpinner";
+import LessonProgressBar from "@/components/common/LessonProgressBar";
+import TokenBar from "@/components/common/TokensBar";
 import ReviewLessonCard from "./_components/ReviewLesson";
 import NextLessonCard from "./_components/UpNextLesson";
 import ScheduleList from "../_components/ScheduleList";

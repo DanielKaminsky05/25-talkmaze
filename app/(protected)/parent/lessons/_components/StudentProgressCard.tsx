@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import LessonProgressBar from "../../../_components/LessonProgressBar";
-import { TokenIcon } from "../../../_components/TokenIcon";
-import { TokenMysteryStar } from "../../../_components/TokenMysteryStar";
+import LessonProgressBar from "@/components/common/LessonProgressBar";
+import { TokenIcon } from "@/components/common/TokenIcon";
+import { TokenMysteryStar } from "@/components/common/TokenMysteryStar";
 
 interface TokenProp {
   id: string;

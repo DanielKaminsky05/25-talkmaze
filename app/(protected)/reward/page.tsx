@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRewardData, EarnedBadge } from "./_hooks/useRewardData";
-import { TokenIcon } from "../_components/TokenIcon";
-import { TokenMysteryStar } from "../_components/TokenMysteryStar";
+import { TokenIcon } from "@/components/common/TokenIcon";
+import { TokenMysteryStar } from "@/components/common/TokenMysteryStar";
 import ClaimedBadge, { ClaimBadgeModal } from "./_components/ClaimedBadge";
 import GlowingBadge from "./_components/GlowingBadge";
 import LockedBadge from "./_components/LockedBadge";
-import PageSpinner from "../_components/PageSpinner";
+import PageSpinner from "@/components/ui/PageSpinner";
 import { createClient } from "@/services/supabase/client";
 
 // Display this many tokens when tokens section is not expanded

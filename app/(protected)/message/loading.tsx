@@ -1,4 +1,4 @@
-import PageSpinner from "../_components/PageSpinner";
+import PageSpinner from "@/components/ui/PageSpinner";
 export default function Loading() {
   return <PageSpinner />;
 }

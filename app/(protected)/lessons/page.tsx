@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
-import PageSpinner from "../_components/PageSpinner";
+import PageSpinner from "@/components/ui/PageSpinner";
 import ProgressCard from "./_components/ProgressCard";
 import TokensRow from "./_components/TokensRow";
 import LessonCard from "./_components/LessonCard";
