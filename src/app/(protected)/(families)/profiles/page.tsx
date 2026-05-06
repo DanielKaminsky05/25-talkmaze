@@ -41,7 +41,7 @@ async function getProfiles(): Promise<Profile[]> {
   if(isNew.new == true){
     //redirect to onboarding form
     console.log("redirecting to onboarding because new account")
-    redirect('/profiles/onboarding')
+    redirect('/profiles/new-user-setup')
   }
   // Fetch parent and student profiles in parallel
   const [{ data: parents }, { data: students }] = await Promise.all([

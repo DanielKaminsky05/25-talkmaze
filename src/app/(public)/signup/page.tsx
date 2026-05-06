@@ -7,7 +7,6 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { signUpNewUser } from "./actions";
-import { PassThrough } from "stream";
 import { useRouter } from "next/navigation";
 
 const userSchema = z
@@ -22,6 +21,16 @@ const userSchema = z
       .trim()
       .min(3, "Name must be at least 3 characters long")
       .max(50, "Name cannot exceed 50 characters"),
+    studentFirstName: z
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters long")
+      .max(50, "Name cannot exceed 50 characters"),
+    studentLastName: z
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters long")
+      .max(50, "Name cannot exceed 50 characters"),
     email: z.string().trim().email("Invalid email format"),
     password: z
       .string()
@@ -34,19 +43,10 @@ const userSchema = z
       )
       .regex(/\d/, "Password must have at least one number"),
     confirmPassword: z.string(),
-    masterPin: z
-      .string()
-      .regex(/^\d+$/, "Master pin must contain only numbers")
-      .regex(/^\d{4}$/, "Master pin must be exactly 4 digits"),
-    confirmMasterPin: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords must match",
     path: ["confirmPassword"],
-  })
-  .refine((data) => data.masterPin === data.confirmMasterPin, {
-    message: "Master pins must match",
-    path: ["confirmMasterPin"],
   });
 
 const inter = Inter({
@@ -59,74 +59,82 @@ const ErrorMessage = ({ message }: { message?: string[] }) => {
   return <p className="text-red-600 text-sm mt-1 ml-1 mb-1">{message[0]}</p>;
 };
 
+type formErrors = {
+  familyFirstName?: string[];
+  familyLastName?: string[];
+  studentFirstName?: string[];
+  studentLastName?: string[];
+  email?: string[];
+  password?: string[];
+  confirmPassword?: string[];
+};
+
 export default function SignupPage() {
   const router = useRouter();
 
   const [familyFirstName, setFamilyFirstName] = useState<string>("");
   const [familyLastName, setFamilyLastName] = useState<string>("");
+  const [studentFirstName, setStudentFirstName] = useState<string>("");
+  const [studentLastName, setStudentLastName] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<formErrors>({});
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [masterPin, setMasterPin] = useState<string>("");
-  const [showMasterPin, setShowMasterPin] = useState(false);
-  const [confirmMasterPin, setConfirmMasterPin] = useState<string>("");
-  const [showConfirmMasterPin, setShowConfirmMasterPin] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrors({});
 
     const formDataToValidate = {
-      familyFirstName: familyFirstName,
-      familyLastName: familyLastName,
-      email: email,
-      password: password,
-      confirmPassword: confirmPassword,
-      masterPin: masterPin,
-      confirmMasterPin: confirmMasterPin,
+      familyFirstName,
+      familyLastName,
+      studentFirstName,
+      studentLastName,
+      email,
+      password,
+      confirmPassword,
     };
 
     const result = userSchema.safeParse(formDataToValidate);
 
-    //Redirects the user to the home page if successful:
     if (result.success) {
-      console.log("Signing up new user");
-      await signUpNewUser(
+      setIsSubmitting(true);
+      const response = await signUpNewUser(
         familyFirstName,
         familyLastName,
+        studentFirstName,
+        studentLastName,
         email,
         password,
-        masterPin,
       );
-      router.push("/student");
-    } else {
-      console.log(result.error.flatten().fieldErrors);
+      setIsSubmitting(false);
 
+      if (response?.success && response.studentId) {
+        router.push(`/signup/account-created?studentId=${response.studentId}`);
+      } else {
+        alert("Unable to create account. Please try again.");
+      }
+    } else {
       const formattedErrors = result.error.flatten().fieldErrors;
       setErrors({
         familyFirstName: formattedErrors.familyFirstName,
         familyLastName: formattedErrors.familyLastName,
+        studentFirstName: formattedErrors.studentFirstName,
+        studentLastName: formattedErrors.studentLastName,
         email: formattedErrors.email,
         password: formattedErrors.password,
         confirmPassword: formattedErrors.confirmPassword,
-        masterPin: formattedErrors.masterPin,
-        confirmMasterPin: formattedErrors.confirmMasterPin,
       });
     }
   }
 
-  type formErrors = {
-    familyFirstName?: string[];
-    familyLastName?: string[];
-    email?: string[];
-    password?: string[];
-    confirmPassword?: string[];
-    masterPin?: string[];
-    confirmMasterPin?: string[];
-  };
+  const inputClass = (hasError: boolean) =>
+    `w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${
+      hasError ? "border-red-500" : "border-[#1F2E3B]"
+    } rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`;
 
   return (
     <div
@@ -150,40 +158,39 @@ export default function SignupPage() {
             </div>
 
             <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
-              {/**Family First Name field div: */}
+              <p className="text-xs font-semibold tracking-widest text-[#1F2E3B]/50 uppercase">
+                Your Info
+              </p>
+
+              {/* Family First Name */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
                     type="text"
-                    placeholder="Family First Name"
+                    placeholder="First Name"
                     value={familyFirstName}
-                    //add red border if error
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyFirstName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    className={inputClass(!!errors.familyFirstName)}
                     onChange={(e) => setFamilyFirstName(e.target.value)}
                   />
                 </div>
-                <div>
-                  <ErrorMessage message={errors.familyFirstName} />
-                </div>
+                <ErrorMessage message={errors.familyFirstName} />
               </div>
-              {/**Family Last Name div */}
+
+              {/* Family Last Name */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
                     type="text"
-                    placeholder="Family Last Name"
+                    placeholder="Last Name"
                     value={familyLastName}
-                    //add red border if error
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.familyLastName ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    className={inputClass(!!errors.familyLastName)}
                     onChange={(e) => setFamilyLastName(e.target.value)}
                   />
                 </div>
-                <div>
-                  <ErrorMessage message={errors.familyLastName} />
-                </div>
+                <ErrorMessage message={errors.familyLastName} />
               </div>
 
-              {/**email field div: */}
+              {/* Email */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
@@ -191,58 +198,13 @@ export default function SignupPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.email ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    className={inputClass(!!errors.email)}
                   />
                 </div>
                 <ErrorMessage message={errors.email} />
               </div>
-              {/**master pin field div: */}
-              <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
-                    type={showMasterPin ? "text" : "password"}
-                    value={masterPin}
-                    onChange={(e) => setMasterPin(e.target.value)}
-                    placeholder="Master Pin"
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.masterPin ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowMasterPin(!showMasterPin)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
-                  >
-                    <EyeIcon variant={showMasterPin ? "open" : "closed"} />
-                  </button>
-                </div>
 
-                <ErrorMessage message={errors.masterPin} />
-              </div>
-              {/*confirm master pin field div: */}
-              <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
-                    type={showConfirmMasterPin ? "text" : "password"}
-                    placeholder="Confirm Master PIN"
-                    value={confirmMasterPin}
-                    onChange={(e) => setConfirmMasterPin(e.target.value)}
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.confirmMasterPin ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmMasterPin(!showConfirmMasterPin)
-                    }
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
-                  >
-                    <EyeIcon
-                      variant={showConfirmMasterPin ? "open" : "closed"}
-                    />
-                  </button>
-                </div>
-                <ErrorMessage message={errors.confirmMasterPin} />
-              </div>
-
-              {/**password field div: */}
+              {/* Password */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
@@ -250,7 +212,7 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.password ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    className={inputClass(!!errors.password)}
                   />
                   <button
                     type="button"
@@ -260,11 +222,10 @@ export default function SignupPage() {
                     <EyeIcon variant={showPassword ? "open" : "closed"} />
                   </button>
                 </div>
-
                 <ErrorMessage message={errors.password} />
               </div>
 
-              {/**confirm password field div: */}
+              {/* Confirm Password */}
               <div className="flex flex-col gap-1">
                 <div className="relative h-[58px]">
                   <input
@@ -272,7 +233,7 @@ export default function SignupPage() {
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${errors.password ? "border-red-500" : "border-[#1F2E3B]"} rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`}
+                    className={inputClass(!!errors.confirmPassword)}
                   />
                   <button
                     type="button"
@@ -286,11 +247,49 @@ export default function SignupPage() {
                 </div>
                 <ErrorMessage message={errors.confirmPassword} />
               </div>
+
+              <p className="text-xs font-semibold tracking-widest text-[#1F2E3B]/50 uppercase">
+                Student Info
+              </p>
+
+              {/* Student First Name */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
+                  <input
+                    type="text"
+                    placeholder="Student First Name"
+                    value={studentFirstName}
+                    className={inputClass(!!errors.studentFirstName)}
+                    onChange={(e) => setStudentFirstName(e.target.value)}
+                  />
+                </div>
+                <ErrorMessage message={errors.studentFirstName} />
+              </div>
+
+              {/* Student Last Name */}
+              <div className="flex flex-col gap-1">
+                <div className="relative h-[58px]">
+                  <input
+                    type="text"
+                    placeholder="Student Last Name"
+                    value={studentLastName}
+                    className={inputClass(!!errors.studentLastName)}
+                    onChange={(e) => setStudentLastName(e.target.value)}
+                  />
+                </div>
+                <ErrorMessage message={errors.studentLastName} />
+              </div>
+
+              <p className="text-xs text-[#1F2E3B]/40 -mt-2">
+                You can add more students later from your account.
+              </p>
+
               <button
                 type="submit"
-                className="w-full h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                disabled={isSubmitting}
+                className="w-full h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Create an Account
+                {isSubmitting ? "Creating Account..." : "Create an Account"}
               </button>
 
               <div className="text-center mt-2">

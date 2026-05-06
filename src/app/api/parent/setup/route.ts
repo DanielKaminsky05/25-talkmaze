@@ -3,8 +3,7 @@ import { createClient } from "@/src/services/supabase/server";
 
 /**
  * PATCH /api/parent
- * This is the final step of account setup for users who signed up via the
- * minimalSignup (pay-first) flow.
+ * Updates the parent's phone number and PIN after account creation.
  */
 export async function PATCH(req: Request) {
   const supabase = await createClient();
