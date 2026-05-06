@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/src/services/stripe/client";
 import { createServiceRoleClient } from "@/src/services/supabase/service";
-import { setActiveProfile } from "@/src/app/(protected)/(families)/onboarding/actions";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
 
 type SubscriptionWithPeriod = Stripe.Subscription & {
@@ -379,30 +378,11 @@ export async function POST(request: Request) {
           });
         }
 
-        // Pull the metadata that was attached to the subscription at checkout
-        //
-        // EXISTING USER flow: account_id and student_id are real Supabase UUIDs
-        //
-        // NEW USER (sign up form): account_id and student_id are both "new"
-        // Since the account didn't exist yet when the subscription was created
-        // In that case, the signup info (names, email, password) is also stored
-        // here so we can create the account after the payment succeeds.
         const {
-          account_id: dummyAccountId,
-          student_id: dummyStudentId,
+          account_id: accountId,
+          student_id: studentId,
           price_id: priceId,
-          parent_first_name: parent_first_name,
-          parent_last_name: paraent_last_name,
-          student_first_name: student_first_name,
-          student_last_name: student_last_name,
-          email: email,
-          password: password,
         } = subscription.metadata ?? {};
-
-        // Overwrite these with the real IDs once the account is created below
-        let studentId = dummyStudentId;
-        let accountId = dummyAccountId;
-        const isNewSignup = accountId === "new" || studentId === "new";
 
         if (!accountId || !studentId || !priceId) {
           console.error(
@@ -411,111 +391,6 @@ export async function POST(request: Request) {
             subscription.metadata,
           );
         } else {
-          // This block only runs when the subscription was created before the
-          // user had an account - i.e. they signed up and paid in one shot.
-          if (accountId === "new" || studentId === "new") {
-            console.log("signing up new user");
-            console.log("User password: " + password);
-
-            // Create the Supabase auth user (email + password).
-            const { data: signUpData, error: signUpDataError } =
-              await supabase.auth.signUp({ email, password });
-
-            if (signUpDataError || !signUpData.user) {
-              console.log("Error signing up new user: " + signUpDataError);
-              return NextResponse.json({
-                status: 500,
-                message: "Unable to sign-up new user, please contact admin",
-              });
-            }
-
-            // Create the record in our 'account' table.
-            // 'new: true' signals that the user still needs to complete
-            // their profile setup (phone number, PIN) on first login.
-            const insertIntoAccountTable = await supabase
-              .from("account")
-              .insert({
-                id: signUpData.user.id,
-                email: email,
-                role: 1,
-                stripe_customer_id: stripeCustomerId,
-                new: true,
-              })
-              .select()
-              .single();
-            console.log(
-              "Insert into account: " +
-                JSON.stringify(insertIntoAccountTable.data),
-            );
-
-            // Update accountId so the rest of this handler uses the real UUID
-            accountId = signUpData.user.id;
-
-            // Create the student profile.
-            const { data: insertIntoStudents, error: insertIntoStudentsError } =
-              await supabase
-                .from("students")
-                .insert({
-                  account_id: insertIntoAccountTable.data.id,
-                  first_name: student_first_name,
-                  last_name: student_last_name,
-                  is_setup_complete: false,
-                })
-                .select()
-                .single();
-
-            if (insertIntoStudentsError || !insertIntoStudents) {
-              return NextResponse.json({
-                status: 500,
-                message:
-                  "Error inserting student for new account, please contact admin",
-              });
-            }
-
-            // Update studentId so the subscription links to the real student
-            studentId = insertIntoStudents.id;
-
-            // Create the parent profile.
-            const { data: insertIntoParents, error: insertIntoParentsError } =
-              await supabase
-                .from("parents")
-                .insert({
-                  account_id: insertIntoAccountTable.data.id,
-                  billing_email: email,
-                  first_name: parent_first_name,
-                  last_name: paraent_last_name,
-                })
-                .select()
-                .single();
-            if (insertIntoParentsError) {
-              return NextResponse.json({
-                status: 500,
-                message:
-                  "Error inserting parent for new account, please contact admin",
-              });
-            }
-
-            // Update the Stripe subscription metadata with the real IDs
-            await stripe.subscriptions.update(stripeSubscriptionId, {
-              metadata: {
-                account_id: accountId,
-                student_id: studentId,
-                price_id: priceId,
-                parent_first_name: "",
-                parent_last_name: "",
-                student_first_name: "",
-                student_last_name: "",
-                email: "",
-                password: "",
-              },
-            });
-          }
-
-          // ---------------------------------------------------------------
-          // Runs for BOTH new and existing users
-          // Look up our internal plan by the Stripe price ID so we know
-          // how many classes to grant.
-          // ---------------------------------------------------------------
           const { data: plan, error: planError } = await supabase
             .from("plans")
             .select("id, classes, name")
@@ -537,9 +412,6 @@ export async function POST(request: Request) {
               subscriptionItem.current_period_end * 1000,
             ).toISOString();
 
-            // Check whether this student already has a subscription record in
-            // our database. If they do, this invoice is a renewal; if not, it's
-            // their first payment
             const { data: existing } = await supabase
               .from("student_subscriptions")
               .select("id, pending_plan_id, pending_stripe_schedule_id")
@@ -554,9 +426,6 @@ export async function POST(request: Request) {
             if (existingId) {
               // RENEWAL: update the existing subscription record with the new
               // billing period and reset the session count for the new cycle.
-              //
-              // If the incoming plan matches the pending plan, this means the
-              // Subscription Schedule just activated Phase 2 - clear pending_*.
               const isScheduledPlanActivating =
                 existingRecord?.pending_plan_id === plan.id;
               const pendingReset = isScheduledPlanActivating
@@ -587,7 +456,6 @@ export async function POST(request: Request) {
               } else {
                 console.log("invoice.paid: subscription renewed", existingId);
                 try {
-                  // Schedule the next batch of sessions with a coach
                   await assignCoachToStudent(studentId, plan.classes);
                   console.log(
                     "invoice.paid: sessions bulk-generated for renewed student",
@@ -601,8 +469,9 @@ export async function POST(request: Request) {
                 }
               }
             } else {
-              // FIRST PAYMENT: insert a brand new subscription record and
-              // kick off coach assignment
+              // FIRST PAYMENT: insert a brand new subscription record.
+              // Coach assignment is skipped here — the parent sets up
+              // availability in the parent dashboard, which triggers it.
               const { error } = await supabase
                 .from("student_subscriptions")
                 .insert({
@@ -625,34 +494,10 @@ export async function POST(request: Request) {
                   "invoice.paid: subscription created for student",
                   studentId,
                 );
-                if (isNewSignup) {
-                  // Minimal signup students have no availability yet.
-                  // Coach assignment runs after the parent completes the
-                  // student setup form in the parent portal.
-                  console.log(
-                    "invoice.paid: skipping coach assignment for new signup student (no availability yet)",
-                    studentId,
-                  );
-                } else {
-                  try {
-                    await assignCoachToStudent(studentId, plan.classes);
-                    console.log(
-                      "invoice.paid: coach assigned & sessions bulk-generated for student",
-                      studentId,
-                    );
-                  } catch (coachErr) {
-                    console.error(
-                      "invoice.paid: coach assignment failed:",
-                      coachErr,
-                    );
-                  }
-                }
               }
             }
 
             // Provision a LessonSpace virtual classroom room for the student.
-            // This is a separate internal API that creates/updates the room
-            // in the LessonSpace service.
             const baseUrl =
               process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
             try {

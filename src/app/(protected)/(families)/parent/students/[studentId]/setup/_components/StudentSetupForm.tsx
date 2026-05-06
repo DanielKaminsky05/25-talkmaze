@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
+import Image from "next/image";
 import { completeStudentSetup } from "../actions";
-import {
-  OnboardingTimeZone,
-  TIME_ZONES,
-} from "@/src/app/(protected)/(families)/onboarding/types";
+import { OnboardingTimeZone, TIME_ZONES } from "@/src/lib/scheduling/types";
+import { createClient } from "@/src/services/supabase/client";
 
 interface Props {
   studentId: string;
   firstName: string;
   lastName: string;
+  redirectAfterSetup?: "parent" | "student";
 }
 
 type Slot = { start: string; end: string };
@@ -61,9 +61,15 @@ export default function StudentSetupForm({
   studentId,
   firstName,
   lastName,
+  redirectAfterSetup = "parent",
 }: Props) {
   const router = useRouter();
+  const backHref = redirectAfterSetup === "student" ? "/profiles" : "/parent";
   const [page, setPage] = useState(1);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [grade, setGrade] = useState<number>(1);
   const [timeZone, setTimeZone] =
     useState<OnboardingTimeZone>("America/Toronto");
@@ -153,16 +159,44 @@ export default function StudentSetupForm({
     return true;
   };
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError(null);
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError("Image must be under 2MB.");
+      return;
+    }
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {
+      setAvatarError("Allowed formats: PNG, JPG, JPEG, WEBP, GIF.");
+      return;
+    }
+    setPendingFile(file);
+    setPendingPreview(URL.createObjectURL(file));
+  }
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      let avatarUrl: string | undefined;
+      if (pendingFile) {
+        const supabase = createClient();
+        const ext = pendingFile.name.split(".").pop();
+        const path = `${studentId}/avatar-${Date.now()}.${ext}`;
+        await supabase.storage.from("avatars").upload(path, pendingFile, { upsert: true });
+        const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+        avatarUrl = data.publicUrl;
+      }
       await completeStudentSetup(
         studentId,
         grade,
         notes,
         timeZone,
         weeklyAvailability,
+        redirectAfterSetup,
+        avatarUrl,
       );
     } catch {
       setIsSubmitting(false);
@@ -190,6 +224,9 @@ export default function StudentSetupForm({
           />
           <div
             className={`h-2 flex-1 rounded-full transition-colors ${page >= 2 ? "bg-[#B1E7D6]" : "bg-gray-200"}`}
+          />
+          <div
+            className={`h-2 flex-1 rounded-full transition-colors ${page >= 3 ? "bg-[#B1E7D6]" : "bg-gray-200"}`}
           />
         </div>
 
@@ -308,7 +345,7 @@ export default function StudentSetupForm({
 
             <button
               type="button"
-              onClick={() => router.push("/parent")}
+              onClick={() => router.push(backHref)}
               className="text-[#1F2E3B]/50 hover:underline text-sm text-center"
             >
               Back to dashboard
@@ -321,7 +358,7 @@ export default function StudentSetupForm({
             className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault();
-              if (validatePage2()) handleSubmit();
+              if (validatePage2()) setPage(3);
             }}
           >
             <p className="text-sm text-[#A8A8A8]">
@@ -438,7 +475,7 @@ export default function StudentSetupForm({
                   Saving...
                 </>
               ) : (
-                "Complete Setup"
+                "Next: Profile Picture"
               )}
             </button>
 
@@ -450,6 +487,100 @@ export default function StudentSetupForm({
               Back to student info
             </button>
           </form>
+        )}
+
+        {page === 3 && (
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col items-center gap-1 mb-2">
+              <Image
+                src="/talkmaze_logo.svg"
+                alt="TalkMaze"
+                width={64}
+                height={64}
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-[#2B4257]">Profile Picture</h2>
+              <p className="text-sm text-[#2B4257]/60 mt-1">
+                Upload an image of your child to personalize their profile.
+              </p>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mx-auto w-40 h-40 rounded-full border-2 border-dashed border-[#65CFAD] flex flex-col items-center justify-center gap-2 hover:bg-[#65CFAD]/5 transition-colors overflow-hidden"
+            >
+              {pendingPreview ? (
+                <Image
+                  src={pendingPreview}
+                  alt="Preview"
+                  width={160}
+                  height={160}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <>
+                  <span className="text-3xl text-[#65CFAD]">+</span>
+                  <span className="text-xs text-[#2B4257]/60">Click to upload</span>
+                </>
+              )}
+            </button>
+
+            {avatarError && (
+              <p className="text-red-500 text-xs text-center">{avatarError}</p>
+            )}
+
+            <p className="text-center text-xs text-[#2B4257]/50 bg-[#F5F5F5] rounded-lg px-4 py-3">
+              This step is optional. You can always add a photo later!
+            </p>
+
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleSubmit}
+              className="w-full h-[48px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[18px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                "Complete Onboarding"
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPage(2)}
+              className="text-[#1F2E3B]/50 hover:underline text-sm text-center"
+            >
+              Back to availability
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="text-[#1F2E3B]/40 hover:underline text-sm text-center disabled:opacity-50"
+            >
+              exit
+            </button>
+          </div>
         )}
       </div>
     </div>

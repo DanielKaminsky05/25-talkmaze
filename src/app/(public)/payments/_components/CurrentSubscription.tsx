@@ -1,6 +1,6 @@
 import { createClient } from "@/src/services/supabase/server";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
-import DonutChart from "./SessionsRemainingDonutChart";
+import DonutChart from "@/src/components/common/charts/SessionsRemainingDonutChart";
 import CancelSubscriptionButton from "./CancelSubscriptionButton";
 import CancelScheduleButton from "./CancelScheduleButton";
 import ResumeSubscriptionButton from "./ResumeSubscriptionButton";

@@ -5,8 +5,9 @@ import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
-import { OnboardingTimeZone } from "@/src/app/(protected)/(families)/onboarding/types";
+import { OnboardingTimeZone } from "@/src/lib/scheduling/types";
 import { buildAvailabilityRows } from "@/src/lib/scheduling/server/availability";
+import { setProfileCookies } from "@/src/lib/profiles/server/profileCookies";
 
 export async function completeStudentSetup(
   studentId: string,
@@ -14,6 +15,8 @@ export async function completeStudentSetup(
   notes: string,
   timezone: OnboardingTimeZone,
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
+  destination: "parent" | "student" = "parent",
+  avatarUrl?: string,
 ) {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -38,6 +41,7 @@ export async function completeStudentSetup(
       grade: String(grade),
       notes,
       is_setup_complete: true,
+      ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
     })
     .eq("id", studentId);
 
@@ -93,5 +97,9 @@ export async function completeStudentSetup(
   }
 
   revalidatePath("/parent");
+  if (destination === "student") {
+    await setProfileCookies(studentId, "student");
+    redirect("/student");
+  }
   redirect("/parent");
 }

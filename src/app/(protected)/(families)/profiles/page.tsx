@@ -1,11 +1,9 @@
 import { createClient } from "@/src/services/supabase/server";
 import { redirect } from "next/navigation";
 import ProfileCard from "./_components/ProfileCard";
-import ManageProfilesButton from "./_components/ManageProfilesButton";
 import AddProfileCard from "./_components/AddProfileCard";
 import { selectProfile } from "@/src/lib/profiles/actions/selectProfile";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
-import { id } from "zod/locales";
 
 // Profile to select as the "active profile"
 type Profile = {
@@ -15,6 +13,7 @@ type Profile = {
   hasPin: boolean;
   avatarUrl: string | null;
   hasSubscription: boolean;
+  isSetupComplete: boolean;
 };
 
 /**
@@ -28,20 +27,23 @@ async function getProfiles(): Promise<Profile[]> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  
   if (!user) redirect("/login"); // Redirect to login if not authenticated
 
-  const {data: isNew, error: isNewError} = await supabase.from('account').select('new').eq('id',user.id).single();
+  const { data: isNew, error: isNewError } = await supabase
+    .from("account")
+    .select("new")
+    .eq("id", user.id)
+    .single();
 
-  if(!isNew || isNewError){
-    redirect("/login")
+  if (!isNew || isNewError) {
+    redirect("/login");
   }
 
-  console.log("Inside get all profiles trying to see if isNew")
-  if(isNew.new == true){
+  console.log("Inside get all profiles trying to see if isNew");
+  if (isNew.new == true) {
     //redirect to onboarding form
-    console.log("redirecting to onboarding because new account")
-    redirect('/profiles/onboarding')
+    console.log("redirecting to onboarding because new account");
+    redirect("/profiles/new-user-setup");
   }
   // Fetch parent and student profiles in parallel
   const [{ data: parents }, { data: students }] = await Promise.all([
@@ -51,7 +53,7 @@ async function getProfiles(): Promise<Profile[]> {
       .eq("account_id", user.id),
     supabase
       .from("students")
-      .select("id, first_name, last_name, avatar_url")
+      .select("id, first_name, last_name, avatar_url, is_setup_complete")
       .eq("account_id", user.id),
   ]);
 
@@ -64,7 +66,7 @@ async function getProfiles(): Promise<Profile[]> {
     .eq("status", "active");
 
   const subscribedStudentIds = new Set(
-    activeSubscriptions?.map((sub) => sub.student_id) || []
+    activeSubscriptions?.map((sub) => sub.student_id) || [],
   );
 
   // Combine and return parent and student profiles
@@ -75,7 +77,8 @@ async function getProfiles(): Promise<Profile[]> {
       type: "parent" as const,
       hasPin: p.profile_access_pin != null,
       avatarUrl: p.avatar_url ?? null,
-      hasSubscription: true, // Parents don't need subscriptions
+      hasSubscription: true,
+      isSetupComplete: true,
     })),
     ...(students ?? []).map((s) => ({
       id: s.id,
@@ -84,6 +87,7 @@ async function getProfiles(): Promise<Profile[]> {
       hasPin: false,
       avatarUrl: s.avatar_url ?? null,
       hasSubscription: subscribedStudentIds.has(s.id),
+      isSetupComplete: s.is_setup_complete ?? true,
     })),
   ];
 }
@@ -98,8 +102,6 @@ export default async function ProfilesPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-
-
   const profiles = await getProfiles();
   const { error } = await searchParams;
 
@@ -141,7 +143,30 @@ export default async function ProfilesPage({
         {/* Profile selection */}
         <div className="flex items-start justify-center gap-[clamp(24px,4vw,60px)] flex-wrap">
           {profiles.map((profile) => {
-            const isParentWithoutPin = profile.type === "parent" && !profile.hasPin;
+            const isParentWithoutPin =
+              profile.type === "parent" && !profile.hasPin;
+            const needsSetup =
+              profile.type === "student" &&
+              profile.hasSubscription &&
+              !profile.isSetupComplete;
+
+            if (needsSetup) {
+              return (
+                <a
+                  key={profile.id}
+                  href={`/onboarding?studentId=${profile.id}&from=profiles`}
+                  className="no-underline"
+                >
+                  <ProfileCard
+                    id={profile.id}
+                    name={profile.name}
+                    imageUrl={profile.avatarUrl ?? "/blank_profile.png"}
+                    hasPin={false}
+                    asLink={true}
+                  />
+                </a>
+              );
+            }
 
             if (isParentWithoutPin) {
               return (
@@ -185,12 +210,7 @@ export default async function ProfilesPage({
 
           <AddProfileCard />
         </div>
-
-        {/* Manage Profiles Button */}
-        {/*<ManageProfilesButton />*/}
       </main>
     </div>
   );
 }
-
-

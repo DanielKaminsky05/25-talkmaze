@@ -1,88 +1,64 @@
-"use server"
+"use server";
 
-import { createClient } from "@/src/services/supabase/server"
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import { createClient } from "@/src/services/supabase/server";
 
-//Sign up function
-export const signUpNewUser = async (familyFirstName: string, familyLastName: string, email: string, password: string, masterPin: string) => {
+export const signUpNewUser = async (
+  familyFirstName: string,
+  familyLastName: string,
+  studentFirstName: string,
+  studentLastName: string,
+  email: string,
+  password: string,
+): Promise<{ success: boolean; studentId?: string } | undefined> => {
+  const supabase = await createClient();
 
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
-    const testBody = {
-        customer: {
-            first_name: familyFirstName,
-            last_name: familyLastName,
-            customer_type: "Family",
-            email: email
-        }
-    }
+  if (error || !data.user) {
+    console.error("Error signing up user:", error);
+    return { success: false };
+  }
 
-    console.log("Insering into supabase: " + email);
-    const supabase = await createClient();
+  const { error: accountError } = await supabase.from("account").insert({
+    id: data.user.id,
+    email,
+    role: 1,
+    new: true,
+  });
 
-    const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
+  if (accountError) {
+    console.error("Error inserting account:", accountError);
+    return { success: false };
+  }
 
+  const { error: parentsError } = await supabase.from("parents").insert({
+    account_id: data.user.id,
+    first_name: familyFirstName,
+    last_name: familyLastName,
+    billing_email: email,
+    phone_number: null,
+  });
+
+  if (parentsError) {
+    console.error("Error inserting parent:", parentsError);
+    return { success: false };
+  }
+
+  const { data: studentData, error: studentsError } = await supabase
+    .from("students")
+    .insert({
+      account_id: data.user.id,
+      first_name: studentFirstName,
+      last_name: studentLastName,
+      is_setup_complete: false,
     })
+    .select("id")
+    .single();
 
-    
-    if(error){
-        console.log("Error signing up user: " + error);
-        return;
-    }
-    if(!data.user){
-        //return NextResponse.json({status:404, message: 'unable to identify user after supabase signup'})
-        console.log("No data.user");
-        return;
-    }
-    
-    //note customer is 1, coach is 2, and admin is 3
-    const insertIntoAccount = await supabase.from('account').insert({
-        id: data.user.id,
-        email: email,
-        role: 1,
-    }
-    )
-    
+  if (studentsError || !studentData) {
+    console.error("Error inserting student:", studentsError);
+    return { success: false };
+  }
 
-    const insertIntoParents = await supabase.from('parents').insert({
-        account_id: data.user.id,
-        first_name: familyFirstName,
-        last_name: familyLastName,
-        profile_access_pin: masterPin,
-        billing_email: email,
-        phone_number: null,
-    })
-    // })
-    // //write id to the database
-    // if (insertIntoParents.error) {
-    //     console.error("There was a problem signing up:", JSON.stringify(error))
-    //     return { success: false, error }
-    // }
-
-
-
-
-
-
-    return { success: true, data }
-}
-
-
-
-const userSchema = z.object({
-    userName: z.string().trim().min(3, "Name must be at least 3 characters long").max(50, "Name cannot exceed 50 characters"),
-    email: z.string().trim().email("Invalid email format"),
-    password: z.string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(/[A-Z]/, "Password must have at least one uppercase character")
-        .regex(/[a-z]/, "Password must have at least one lowercase character")
-        .regex(/[@$!%*?&#-~^]/, "Password must have at least one special character")
-        .regex(/\d/, "Password must have at least one number"),
-    confirmPassword: z.string()
-})
-    .refine(async (data) => data.password === data.confirmPassword, {
-        message: "Passwords must match",
-        path: ['confirmPassword'],
-    });
+  return { success: true, studentId: studentData.id };
+};

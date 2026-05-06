@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import NavigationBar from "./navigation/NavigationBar";
 import SideBar from "./navigation/Sidebar";
 import { PageTitleProvider } from "../_context/PageTitleContext";
-import { ActiveProfile, ActiveProfileProvider } from "../_context/ActiveProfileContext";
+import {
+  ActiveProfile,
+  ActiveProfileProvider,
+} from "../_context/ActiveProfileContext";
 
 type Props = {
   profileType: "student" | "parent";
@@ -40,7 +43,7 @@ export default function FamiliesLayoutShell({
     pathname?.startsWith("/profiles") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/coach") ||
-    pathname?.startsWith("/payments") ||
+    pathname?.startsWith("/onboarding") ||
     pathname?.endsWith("/profile") // students, parents: manage profile pages
   ) {
     return (

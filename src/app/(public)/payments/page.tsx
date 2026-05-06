@@ -25,95 +25,79 @@ export default async function PaymentPage({
 }: {
   searchParams: Promise<{
     studentId?: string;
-    pFName: string;
-    pLName: string;
-    sFName: string;
-    sLName: string;
-    email: string;
-    password: string;
   }>;
 }) {
   const { studentId: queryStudentId } = await searchParams;
 
-  let backLink = "";
-  let backLabel = "";
+  let backLink = "/profiles";
+  let backLabel = "Return to Profiles";
   let resolvedStudentId: string | undefined;
   let hasSubscription = false;
   let currentPlanStripeId: string | null = null;
   let pendingPlanId: string | null = null;
 
-  if (queryStudentId === "new") {
-    resolvedStudentId = "new";
-  }
   const supabase = await createClient();
   const { data: plans } = (await supabase.from("plans").select("*")) as {
     data: Plan[] | null;
   };
-  if (queryStudentId != "new") {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (queryStudentId && user) {
-      const { data: student } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", queryStudentId)
-        .eq("account_id", user.id)
-        .maybeSingle();
-      if (student) resolvedStudentId = student.id;
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const activeProfile = await getActiveProfile();
+  if (queryStudentId && user) {
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("id", queryStudentId)
+      .eq("account_id", user.id)
+      .maybeSingle();
+    if (student) resolvedStudentId = student.id;
+  }
 
-    if (!resolvedStudentId && activeProfile?.type === "student") {
-      resolvedStudentId = activeProfile.id;
-    }
+  const activeProfile = await getActiveProfile();
 
-    // Fetch active subscription to determine back link and pending state
-    if (resolvedStudentId) {
-      const { data: subscription } = await supabase
-        .from("student_subscriptions")
-        .select(
-          `
-          id,
-          pending_plan_id,
-          plans!student_plans_plan_id_fkey (
-            stripe_price_id
-          )
-        `,
+  if (!resolvedStudentId && activeProfile?.type === "student") {
+    resolvedStudentId = activeProfile.id;
+  }
+
+  if (resolvedStudentId) {
+    const { data: subscription } = await supabase
+      .from("student_subscriptions")
+      .select(
+        `
+        id,
+        pending_plan_id,
+        plans!student_plans_plan_id_fkey (
+          stripe_price_id
         )
-        .eq("student_id", resolvedStudentId)
-        .eq("status", "active")
-        .order("current_period_end", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      `,
+      )
+      .eq("student_id", resolvedStudentId)
+      .eq("status", "active")
+      .order("current_period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-      hasSubscription = !!subscription;
-      if (subscription) {
-        const currentPlan = Array.isArray(subscription.plans)
-          ? subscription.plans[0]
-          : subscription.plans;
-        currentPlanStripeId = currentPlan?.stripe_price_id ?? null;
-        pendingPlanId = subscription.pending_plan_id;
-      }
+    hasSubscription = !!subscription;
+    if (subscription) {
+      const currentPlan = Array.isArray(subscription.plans)
+        ? subscription.plans[0]
+        : subscription.plans;
+      currentPlanStripeId = currentPlan?.stripe_price_id ?? null;
+      pendingPlanId = subscription.pending_plan_id;
     }
+  }
 
-    const isParentFlow =
-      !!resolvedStudentId && resolvedStudentId === queryStudentId;
-    backLink = isParentFlow
-      ? "/parent"
-      : hasSubscription
-        ? "/student"
-        : "/profiles";
-    backLabel = isParentFlow
-      ? "Return to Dashboard"
-      : hasSubscription
-        ? "Return to Dashboard"
-        : "Return to Profiles";
-  } else {
-    backLink = "/signup/minimalSignup";
-    backLabel = "Return to Signup";
+  const isParentFlow =
+    !!resolvedStudentId && resolvedStudentId === queryStudentId;
+
+  if (isParentFlow) {
+    backLink = "/parent";
+    backLabel = "Return to Dashboard";
+  } else if (hasSubscription) {
+    backLink = "/student";
+    backLabel = "Return to Dashboard";
   }
 
   return (
@@ -134,12 +118,12 @@ export default async function PaymentPage({
         {/* Section 1 Heading - Current Subscription */}
         <div className="flex justify-center my-4">
           <span className="bg-white text-[#1f2e3b] text-[32px] font-bold px-20 py-0.5 rounded-[9px] border border-black/10 shadow-md">
-            {queryStudentId === "new"
-              ? "Make your first subscription!"
-              : "Current subscription in progress"}
+            {hasSubscription
+              ? "Current subscription in progress"
+              : "Make your first subscription!"}
           </span>
         </div>
-        {queryStudentId != "new" && (
+        {hasSubscription && (
           <CurrentSubscription studentId={resolvedStudentId} />
         )}
 

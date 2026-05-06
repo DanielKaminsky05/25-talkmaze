@@ -1,24 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Inter } from "next/font/google";
 import { z } from "zod";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { completeNewUserSetup } from "./actions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 const schema = z
   .object({
-    phoneNumber: z
-      .string()
-      .trim()
-      .min(7, "Please enter a valid phone number")
-      .regex(
-        /^[\d\s\+\-\(\)]+$/,
-        "Phone number can only contain digits, spaces, +, -, (, )",
-      ),
     pin: z.string().regex(/^\d{4}$/, "PIN must be exactly 4 digits"),
     confirmPin: z.string(),
   })
@@ -27,9 +19,7 @@ const schema = z
     path: ["confirmPin"],
   });
 
-type FormErrors = Partial<
-  Record<"phoneNumber" | "pin" | "confirmPin", string[]>
->;
+type FormErrors = Partial<Record<"pin" | "confirmPin", string[]>>;
 
 const inputClass = (hasError: boolean) =>
   `w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${
@@ -41,42 +31,35 @@ const ErrorMsg = ({ msg }: { msg?: string[] }) =>
     <p className="text-red-600 text-sm mt-1 ml-1">{msg[0]}</p>
   ) : null;
 
-export default function FinishOnboardingParent() {
-  const router = useRouter();
-
-  const [phoneNumber, setPhoneNumber] = useState("");
+export default function NewUserSetupPage() {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrors({});
+    setServerError(null);
 
-    const result = schema.safeParse({ phoneNumber, pin, confirmPin });
+    const result = schema.safeParse({ pin, confirmPin });
 
     if (!result.success) {
-      const fieldErrors = z.flattenError(result.error).fieldErrors;
+      const fieldErrors = result.error.flatten().fieldErrors;
       setErrors(fieldErrors as FormErrors);
       return;
     }
 
     setIsSubmitting(true);
-    const response = await fetch("/api/parent/setup", {
-      method: "PATCH",
-      body: JSON.stringify({ phoneNumber, pin }),
-    });
+    const response = await completeNewUserSetup(pin);
     setIsSubmitting(false);
 
-    if (!response.ok) {
-      alert("Unable to finish account setup. Please try again.");
-      return;
+    if (response && !response.success) {
+      setServerError(response.message ?? "Something went wrong.");
     }
-
-    router.push("/profiles");
   }
 
   return (
@@ -98,28 +81,14 @@ export default function FinishOnboardingParent() {
 
           <div className="text-center mb-2">
             <h1 className="text-2xl font-bold text-[#1F2E3B]">
-              Finish Setting Up Your Account
+              Set Your Parent PIN
             </h1>
             <p className="text-sm text-[#1F2E3B]/60 mt-2">
-              Before we get started, let&apos;s complete your account setup.
+              Create a 4-digit PIN to access your parent profile.
             </p>
           </div>
 
           <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
-            {/* Phone number */}
-            <div className="flex flex-col gap-1">
-              <div className="relative h-[58px]">
-                <input
-                  type="tel"
-                  placeholder="Phone number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className={inputClass(!!errors.phoneNumber)}
-                />
-              </div>
-              <ErrorMsg msg={errors.phoneNumber} />
-            </div>
-
             {/* PIN */}
             <div className="flex flex-col gap-1">
               <div className="relative h-[58px]">
@@ -168,16 +137,16 @@ export default function FinishOnboardingParent() {
               <ErrorMsg msg={errors.confirmPin} />
             </div>
 
-            <p className="text-xs text-[#1F2E3B]/50 text-center -mt-2">
-              Your PIN will be used to access your parent profile.
-            </p>
+            {serverError && (
+              <p className="text-red-600 text-sm text-center">{serverError}</p>
+            )}
 
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full h-12 mt-2 bg-[#B1E7D6] rounded-xl text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {isSubmitting ? "Saving..." : "Complete Setup"}
+              {isSubmitting ? "Saving..." : "Set PIN"}
             </button>
           </form>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import SessionsRemainingDonutChart from "../../payments/_components/SessionsRemainingDonutChart";
+import SessionsRemainingDonutChart from "@/src/components/common/charts/SessionsRemainingDonutChart";
 
 interface SelectedStudentSubscriptionStatusProps {
   sessionsLeft?: number;
