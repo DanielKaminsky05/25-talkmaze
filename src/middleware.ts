@@ -15,18 +15,6 @@ export async function middleware(request: NextRequest) {
   // Determine if the current route is a "profile locked" route
   // Profile locked routes require the user to have an active profile
 
-  if (pathname.startsWith("/onboarding")) {
-    return NextResponse.next();
-  }
-
-  // Allow unauthenticated access to the payments flow for new users (studentId=new)
-  if (
-    pathname.startsWith("/payments") ||
-    pathname.startsWith("/api/checkout")
-  ) {
-    return NextResponse.next();
-  }
-
   if (
     pathname.startsWith("/api/webhooks/stripe") ||
     pathname.startsWith("/api/webhooks/lessonspace")

@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
-import { OnboardingTimeZone } from "@/src/app/(protected)/(families)/onboarding/types";
+import { OnboardingTimeZone } from "@/src/lib/scheduling/types";
 import { buildAvailabilityRows } from "@/src/lib/scheduling/server/availability";
 
 export async function completeStudentSetup(

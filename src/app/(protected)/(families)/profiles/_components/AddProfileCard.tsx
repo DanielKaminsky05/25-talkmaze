@@ -4,7 +4,7 @@ interface AddProfileCardProps {
 }
 
 export default function AddProfileCard({
-  href = "/onboarding",
+  href = "/profiles/add-student",
   label = "+ add profile",
 }: AddProfileCardProps) {
   return (

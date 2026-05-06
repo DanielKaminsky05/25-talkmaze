@@ -40,8 +40,6 @@ export default function FamiliesLayoutShell({
     pathname?.startsWith("/profiles") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/coach") ||
-    pathname?.startsWith("/payments") ||
-    pathname?.startsWith("/onboarding") ||
     pathname?.endsWith("/profile") // students, parents: manage profile pages
   ) {
     return (

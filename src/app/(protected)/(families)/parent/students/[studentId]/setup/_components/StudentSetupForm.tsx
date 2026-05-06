@@ -7,7 +7,7 @@ import { completeStudentSetup } from "../actions";
 import {
   OnboardingTimeZone,
   TIME_ZONES,
-} from "@/src/app/(protected)/(families)/onboarding/types";
+} from "@/src/lib/scheduling/types";
 
 interface Props {
   studentId: string;
