@@ -1,20 +1,17 @@
-import { updateSession } from "@/src/services/supabase/middleware";
+import { updateSession } from "@/src/lib/auth/server/middleware/updateSession";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /**
  * Middleware function to handle incoming requests
  */
-
 export async function middleware(request: NextRequest) {
-  //remember to uncomment updateSession
   const response = await updateSession(request);
 
   const { pathname } = request.nextUrl;
 
   // Determine if the current route is a "profile locked" route
   // Profile locked routes require the user to have an active profile
-
   if (
     pathname.startsWith("/api/webhooks/stripe") ||
     pathname.startsWith("/api/webhooks/lessonspace")
