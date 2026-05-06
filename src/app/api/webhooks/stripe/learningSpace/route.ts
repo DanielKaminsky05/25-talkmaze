@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServiceRoleClient } from "@/src/services/supabase/service";
 import { createClient } from "@/src/services/supabase/server";
-import { createRoomParticipant } from "@/src/services/lessonspace/rooms";
+import { createAndPersistStudentParticipantLink } from "@/src/lib/lessonspace/server/participants";
 const base_url = "https://api.thelessonspace.com/v2/organizations/30106/";
 
-export async function GET(req: NextRequest) {
+/**
+ * Health/check endpoint that proxies a basic request to LessonSpace
+ * organization API.
+ *
+ * @param _req Incoming request (unused).
+ * @returns JSON payload from LessonSpace or an error response.
+ */
+export async function GET(_req: NextRequest) {
+  void _req;
   console.log("Inside learning_space fetch");
 
   //check if api key is missing
@@ -15,7 +22,7 @@ export async function GET(req: NextRequest) {
     );
   }
   try {
-    const URL = `base_url${fetch}`;
+    const URL = base_url;
     console.log("fetching");
     const response = await fetch(URL, {
       method: "GET",
@@ -38,18 +45,23 @@ export async function GET(req: NextRequest) {
     console.log("Lesson space response: " + response_json);
 
     return response_json;
-  } catch (err) {
+  } catch {
     return NextResponse.json({
       status: 500,
     });
   }
 }
 
+/**
+ * Creates a LessonSpace room/link for a student when missing
+ *
+ * @param req Request body containing `student_id`.
+ * @returns JSON success payload with launch URL, or an informative error response.
+ */
 export async function POST(req: NextRequest) {
   console.log("Inside Lessonspace POST");
 
   const supabase = await createClient();
-  const URL = "https://api.thelessonspace.com/v2/spaces/launch/";
 
   try {
     const { student_id } = await req.json();
@@ -78,12 +90,6 @@ export async function POST(req: NextRequest) {
     if (!lesson_space_id) {
       lesson_space_id = crypto.randomUUID();
       console.log("Creating new lesson space:", lesson_space_id);
-      const createJson = await createRoomParticipant(
-        fullName,
-        lesson_space_id,
-        student_id,
-        true,
-      );
       // Update student table
       const { error: updateError } = await supabase
         .from("students")
@@ -98,6 +104,13 @@ export async function POST(req: NextRequest) {
           message: "Error updating supabase: " + updateError.message,
         });
       }
+
+      const createJson = await createAndPersistStudentParticipantLink({
+        studentId: student_id,
+        lessonSpaceId: lesson_space_id,
+        fullName,
+        includeWebhooks: true,
+      });
 
       return NextResponse.json({ success: true, url: createJson.client_url });
     }

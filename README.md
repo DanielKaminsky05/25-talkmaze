@@ -30,6 +30,10 @@ The codebase uses route-level collocation for UI and route-only logic, with shar
 		- `server/` - server-only helpers that aren't actions (e.g. `getActiveProfile.ts`, `availability.ts`)
 		- `types.ts`, `schemas.ts` - top-level files for shared types and validation
 - `src/services/` is for third-party SDK clients and adapters (Supabase, Stripe, etc). Keep app logic out of this layer.
+	- `services` should be adapter-only:
+		- Allowed: SDK setup, HTTP request/response mapping, provider-specific payload formatting.
+		- Not allowed: setting profile cookies, database reads/writes, business workflow orchestration.
+	- Put business workflows in `src/lib/<domain>/server/` and call `src/services/*` from there.
 - `src/utils/` is for cross-domain helpers that are not tied to a single feature
 - `src/types/` is only for cross-domain primitives shared widely; keep domain types with their domain
 

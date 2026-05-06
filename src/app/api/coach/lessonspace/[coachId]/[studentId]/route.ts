@@ -1,49 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
-import { CreateTeacherRoom } from "@/src/app/api/admin/assignments/route";
+import { createTeacherLinkForCoachAccount } from "@/src/lib/lessonspace/server/participants";
+
+/**
+ * Returns a fresh LessonSpace teacher launch link for a coach/student pair.
+ *
+ * @param _req Incoming request (unused; route params are used).
+ * @param context Dynamic route params containing coach account id and student id.
+ * @returns JSON response with provider launch payload or an error object.
+ */
 export async function GET(
-    req: NextRequest,
-    {params}: {params: Promise<{coachId: string, studentId: string}>}
-){
-    
+  _req: NextRequest,
+  { params }: { params: Promise<{ coachId: string; studentId: string }> },
+) {
+  void _req;
+  const { coachId, studentId } = await params;
+  console.log("Trying to get all rooms ", coachId);
 
-    
-    
-    const {coachId, studentId} = await params;
-    console.log("Trying to get all rooms ", coachId)
-    try{
-        const supabase = await createClient();
+  try {
+    const teacherLink = await createTeacherLinkForCoachAccount({
+      studentId,
+      coachAccountId: coachId,
+    });
 
-        //get coach_id
-        const {data: coach_id_data, error: coach_id_data_error} = await supabase.from('coaches').select('*').eq('account_id',coachId).single();
-
-        if(coach_id_data_error){
-            return NextResponse.json({status:500,message: "Unable to identify coach"})
-        }
-        console.log("Retrieved coach id: " + coach_id_data?.id)
-        console.log("Whole coach: " + JSON.stringify(coach_id_data))
-        const {data: studentData, error: studentDataError} = await supabase.from('students').select("*").eq('id', studentId).single();
-
-        if(studentDataError || !studentData){
-            console.log("Error fetching student data for coach page")
-            return NextResponse.json({status:500, message: "Error fetching student data"})
-        }
-
-        //make a new link for the teacher in case of expiry
-        const teacher_link = await CreateTeacherRoom(studentData, coach_id_data)
-
-        //store teacher link into supabase
-        const {error: supabaseLsInsert} = await supabase.from('students').update({lesson_space_teacher_link: teacher_link.client_url}).eq('id', studentId)
-        return NextResponse.json(teacher_link);
-
-        
-        //make new room for coach
-
-        
-       
-    }catch(err){
-
-    }
-
-
+    return NextResponse.json(teacherLink);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        status: 500,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error fetching student data",
+      },
+      { status: 500 },
+    );
+  }
 }

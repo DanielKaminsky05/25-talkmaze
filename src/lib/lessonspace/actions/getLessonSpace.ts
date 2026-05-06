@@ -1,8 +1,14 @@
 "use server";
 import { createClient } from "@/src/services/supabase/server";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
-import { createRoomParticipant } from "@/src/services/lessonspace/rooms";
+import { createAndPersistStudentParticipantLink } from "@/src/lib/lessonspace/server/participants";
 
+/**
+ * Creates a fresh LessonSpace student launch URL for the currently active
+ * student profile.
+ *
+ * @returns A redirectable LessonSpace `client_url` string.
+ */
 export async function getLessonSpace() {
   const supabase = await createClient();
   const profile = await getActiveProfile();
@@ -28,12 +34,12 @@ export async function getLessonSpace() {
 
   const fullName =
     `${nameData.first_name || ""} ${nameData.last_name || ""}`.trim();
-  const data = await createRoomParticipant(
+  const data = await createAndPersistStudentParticipantLink({
+    studentId: student_id,
+    lessonSpaceId: nameData.lesson_space_id,
     fullName,
-    nameData.lesson_space_id,
-    student_id,
-    false,
-  );
+    includeWebhooks: false,
+  });
 
   console.log("Returning student link: " + data.client_url);
   return data.client_url;

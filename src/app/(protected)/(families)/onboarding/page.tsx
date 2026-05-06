@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
-import StudentSetupForm from "../parent/students/[studentId]/setup/_components/StudentSetupForm";
+import StudentSetupForm from "./_components/StudentSetupForm";
 
 interface Props {
   searchParams: Promise<{ studentId?: string; from?: string }>;
