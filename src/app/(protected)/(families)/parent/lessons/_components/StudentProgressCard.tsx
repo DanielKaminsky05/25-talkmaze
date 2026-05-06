@@ -42,10 +42,7 @@ export default function StudentProgressCard({
 
   if (isSetupComplete === false) {
     return (
-      <Link
-        href={`/parent/students/${studentId}/setup`}
-        className="group block"
-      >
+      <Link href={`/onboarding?studentId=${studentId}`} className="group block">
         <div className="bg-white rounded-2xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] p-6 flex flex-col gap-5 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-xl">
           <div className="flex items-center gap-4">
             <div

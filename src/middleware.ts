@@ -96,7 +96,11 @@ export async function middleware(request: NextRequest) {
         )?.value;
 
         // If no active profile, redirect them to select a profile
-        if (!activeProfileId && !pathname.startsWith("/profiles")) {
+        if (
+          !activeProfileId &&
+          !pathname.startsWith("/profiles") &&
+          !pathname.startsWith("/onboarding")
+        ) {
           const url = request.nextUrl.clone();
           url.pathname = "/profiles";
           return NextResponse.redirect(url);

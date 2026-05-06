@@ -85,7 +85,7 @@ export default function ParentDashboardClient({
                 </p>
               </div>
               <Link
-                href={`/parent/students/${s.id}/setup`}
+                href={`/onboarding?studentId=${s.id}`}
                 className="shrink-0 px-4 py-2 bg-[#B1E7D6] rounded-lg text-sm font-semibold text-[#2B4257] hover:opacity-90 transition-opacity whitespace-nowrap"
               >
                 Complete Setup
