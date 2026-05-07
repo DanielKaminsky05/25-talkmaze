@@ -49,6 +49,42 @@ export default async function CurrentSubscription({
   const sessionsRemaining = subscription.sessions_remaining ?? 0;
   const totalSessions = plan?.classes ?? 0;
 
+  const REFUND_WINDOW_DAYS = 28;
+  const periodStartMs = subscription.current_period_start
+    ? new Date(subscription.current_period_start).getTime()
+    : null;
+  const isEligibleForRefund =
+    !subscription.cancelled_at &&
+    periodStartMs !== null &&
+    Date.now() - periodStartMs <= REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+  const refundDeadline =
+    periodStartMs !== null
+      ? new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).format(
+          new Date(periodStartMs + REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000),
+        )
+      : null;
+
+  function getBannerText() {
+    if (subscription?.cancelled_at && currentPeriodEnd) {
+      return `Plan ends ${currentPeriodEnd} and will not renew`;
+    }
+    if (subscription?.pending_plan_id && currentPeriodEnd) {
+      return `Current plan cancels on ${currentPeriodEnd}`;
+    }
+    if (isEligibleForRefund && refundDeadline) {
+      return `28-day money-back guarantee – eligible for full refund until ${refundDeadline}`;
+    }
+    if (currentPeriodEnd) {
+      return `Auto-renews on ${currentPeriodEnd}`;
+    }
+    return "Active subscription";
+  }
+
   return (
     <div className="bg-[#b1e7d6] rounded-2xl p-4 flex flex-row items-stretch gap-0 border border-black/10 shadow-md">
       {/* LEFT: plan name + description */}
@@ -66,13 +102,9 @@ export default async function CurrentSubscription({
 
       {/* RIGHT: policy banner + billing box + pending plan + cancel */}
       <div className="flex-2 flex flex-col items-center gap-4">
-        {/* 28-day policy banner */}
+        {/* Policy banner */}
         <div className="w-full text-center bg-white rounded-[9px] px-6 py-2 text-sm font-medium text-[#2b4257] shadow-[inset_0_2px_6px_rgba(0,0,0,0.12)]">
-          {subscription.cancelled_at && currentPeriodEnd
-            ? `Plan ends ${currentPeriodEnd} and will not renew`
-            : subscription.pending_plan_id && currentPeriodEnd
-              ? `Current plan cancels on ${currentPeriodEnd}`
-              : "You have 28 days after purchase to cancel your package"}
+          {getBannerText()}
         </div>
 
         {/* Billing box: donut + sessions text */}
@@ -121,7 +153,11 @@ export default async function CurrentSubscription({
             <ResumeSubscriptionButton studentId={studentId} />
           </div>
         ) : (
-          <CancelSubscriptionButton studentId={studentId} />
+          <CancelSubscriptionButton
+            studentId={studentId}
+            isEligibleForRefund={isEligibleForRefund}
+            periodEndDate={currentPeriodEnd}
+          />
         )}
       </div>
     </div>
