@@ -7,7 +7,8 @@ import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server
 
 /**
  * POST /api/subscriptions/resume
- * Resumes auto-renewal for a subscription that was scheduled to cancel at period end.
+ * Resumes auto-renewal for a subscription that was scheduled to cancel at
+ * period end.
  */
 export async function POST(req: Request) {
   try {

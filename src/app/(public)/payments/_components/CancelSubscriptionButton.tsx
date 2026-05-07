@@ -7,6 +7,7 @@ type Props = {
   studentId?: string;
   isEligibleForRefund: boolean;
   periodEndDate: string | null;
+  refundOnly?: boolean;
 };
 
 type UIState =
@@ -20,6 +21,7 @@ export default function CancelSubscriptionButton({
   studentId,
   isEligibleForRefund,
   periodEndDate,
+  refundOnly = false,
 }: Props) {
   const [state, setState] = useState<UIState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,9 @@ export default function CancelSubscriptionButton({
 
   function handleInitialClick() {
     setError(null);
-    if (isEligibleForRefund) {
+    if (refundOnly) {
+      setState("confirmingRefund");
+    } else if (isEligibleForRefund) {
       setState("choosing");
     } else {
       setState("confirmingNoRenew");
@@ -60,9 +64,13 @@ export default function CancelSubscriptionButton({
     return (
       <button
         onClick={handleInitialClick}
-        className="bg-[#2b4257] text-white rounded-full px-16 py-3 text-sm font-semibold shadow-md hover:bg-[#1f2e3b] transition-colors cursor-pointer border-0"
+        className={
+          refundOnly
+            ? "bg-red-600 text-white rounded-full px-6 py-2 text-sm font-semibold shadow-md hover:bg-red-700 transition-colors cursor-pointer border-0"
+            : "bg-[#2b4257] text-white rounded-full px-16 py-3 text-sm font-semibold shadow-md hover:bg-[#1f2e3b] transition-colors cursor-pointer border-0"
+        }
       >
-        Cancel plan
+        {refundOnly ? "Cancel & get full refund" : "Cancel plan"}
       </button>
     );
   }

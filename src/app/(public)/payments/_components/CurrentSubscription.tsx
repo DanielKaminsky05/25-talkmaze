@@ -54,7 +54,6 @@ export default async function CurrentSubscription({
     ? new Date(subscription.current_period_start).getTime()
     : null;
   const isEligibleForRefund =
-    !subscription.cancelled_at &&
     periodStartMs !== null &&
     Date.now() - periodStartMs <= REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
@@ -70,6 +69,14 @@ export default async function CurrentSubscription({
       : null;
 
   function getBannerText() {
+    if (
+      subscription?.cancelled_at &&
+      isEligibleForRefund &&
+      currentPeriodEnd &&
+      refundDeadline
+    ) {
+      return `Plan ends ${currentPeriodEnd} and will not renew – eligible for full refund until ${refundDeadline}`;
+    }
     if (subscription?.cancelled_at && currentPeriodEnd) {
       return `Plan ends ${currentPeriodEnd} and will not renew`;
     }
@@ -151,6 +158,14 @@ export default async function CurrentSubscription({
         {subscription.cancelled_at ? (
           <div className="flex flex-col items-center gap-2">
             <ResumeSubscriptionButton studentId={studentId} />
+            {isEligibleForRefund && (
+              <CancelSubscriptionButton
+                studentId={studentId}
+                isEligibleForRefund={isEligibleForRefund}
+                periodEndDate={currentPeriodEnd}
+                refundOnly
+              />
+            )}
           </div>
         ) : (
           <CancelSubscriptionButton
