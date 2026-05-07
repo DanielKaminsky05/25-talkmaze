@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /** Props for the ProfileCard component */
 interface ProfileCardProps {
   id: string;
@@ -32,11 +34,7 @@ export default function ProfileCard({
       >
         {/* Profile image/avatar */}
         <div className="w-[clamp(140px,14vw,200px)] aspect-square rounded-xl overflow-hidden bg-[#b1e7d6] border-[0.5px] border-black shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] relative">
-          <img
-            src={imageUrl}
-            alt={name}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <Image src={imageUrl} alt={name} fill className="object-cover" />
           <div className="absolute inset-0 shadow-[inset_0px_4px_4px_0px_rgba(0,0,0,0.25)] rounded-xl pointer-events-none" />
         </div>
         {/* Profile name */}
@@ -50,9 +48,11 @@ export default function ProfileCard({
         {hasPin && (
           <div className="flex items-center gap-[clamp(4px,0.5vw,7px)]">
             {/* Lock icon */}
-            <img
+            <Image
               src="/lock-icon.svg"
               alt="Lock"
+              width={18}
+              height={18}
               className="w-[clamp(14px,1.2vw,18px)] h-[clamp(14px,1.2vw,18px)]"
             />
             {/* PIN input field */}
