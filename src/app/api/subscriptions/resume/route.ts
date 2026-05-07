@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
 import { stripe } from "@/src/services/stripe/client";
-import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
+import { getStripeCustomerIdForAccount } from "@/src/lib/payments/server/getStripeCustomerIdForAccount";
+import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server/findActiveStripeSubscriptionByStudent";
 
 /**
  * POST /api/subscriptions/resume
@@ -22,32 +24,26 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const bodyStudentId: string | undefined = body?.studentId;
 
-    let studentId: string | undefined;
+    const studentResolution = await resolveStudentIdForBilling({
+      supabase,
+      accountId: user.id,
+      requestedStudentId: bodyStudentId,
+      errors: {
+        studentNotFound: { error: "Student not found", status: 404 },
+        noActiveStudentProfile: {
+          error: "No active student profile",
+          status: 400,
+        },
+      },
+    });
 
-    if (bodyStudentId) {
-      const { data: student } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", bodyStudentId)
-        .eq("account_id", user.id)
-        .maybeSingle();
-      if (!student) {
-        return NextResponse.json(
-          { error: "Student not found" },
-          { status: 404 },
-        );
-      }
-      studentId = student.id;
-    } else {
-      const activeProfile = await getActiveProfile();
-      if (!activeProfile || activeProfile.type !== "student") {
-        return NextResponse.json(
-          { error: "No active student profile" },
-          { status: 400 },
-        );
-      }
-      studentId = activeProfile.id;
+    if (!studentResolution.ok) {
+      return NextResponse.json(
+        { error: studentResolution.error },
+        { status: studentResolution.status },
+      );
     }
+    const studentId = studentResolution.studentId;
 
     const { data: subscription } = await supabase
       .from("student_subscriptions")
@@ -66,27 +62,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: account } = await supabase
-      .from("account")
-      .select("stripe_customer_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!account?.stripe_customer_id) {
+    const stripeCustomerId = await getStripeCustomerIdForAccount({
+      supabase,
+      accountId: user.id,
+    });
+    if (!stripeCustomerId) {
       return NextResponse.json(
         { error: "No Stripe customer found" },
         { status: 404 },
       );
     }
 
-    const stripeSubscriptions = await stripe.subscriptions.list({
-      customer: account.stripe_customer_id,
-      status: "active",
+    const stripeSubscription = await findActiveStripeSubscriptionByStudent({
+      customerId: stripeCustomerId,
+      studentId,
     });
-
-    const stripeSubscription = stripeSubscriptions.data.find(
-      (sub) => sub.metadata?.student_id === studentId,
-    );
 
     if (!stripeSubscription) {
       return NextResponse.json(

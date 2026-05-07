@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/src/services/supabase/server";
 import { stripe } from "@/src/services/stripe/client";
-import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
-
-const REFUND_WINDOW_DAYS = 28;
+import { isWithinRefundWindow } from "@/src/lib/payments/server/policies";
+import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
+import { getStripeCustomerIdForAccount } from "@/src/lib/payments/server/getStripeCustomerIdForAccount";
+import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server/findActiveStripeSubscriptionByStudent";
 
 type RefundTarget = {
   paymentIntentId: string | null;
@@ -81,33 +82,26 @@ export async function POST(req: Request) {
     const bodyStudentId: string | undefined = body?.studentId;
     const requestRefund: boolean = body?.refund === true;
 
-    let studentId: string | undefined;
+    const studentResolution = await resolveStudentIdForBilling({
+      supabase,
+      accountId: user.id,
+      requestedStudentId: bodyStudentId,
+      errors: {
+        studentNotFound: { error: "Student not found", status: 404 },
+        noActiveStudentProfile: {
+          error: "No active student profile",
+          status: 400,
+        },
+      },
+    });
 
-    if (bodyStudentId) {
-      // Verify the authenticated user owns this student
-      const { data: student } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", bodyStudentId)
-        .eq("account_id", user.id)
-        .maybeSingle();
-      if (!student) {
-        return NextResponse.json(
-          { error: "Student not found" },
-          { status: 404 },
-        );
-      }
-      studentId = student.id;
-    } else {
-      const activeProfile = await getActiveProfile();
-      if (!activeProfile || activeProfile.type !== "student") {
-        return NextResponse.json(
-          { error: "No active student profile" },
-          { status: 400 },
-        );
-      }
-      studentId = activeProfile.id;
+    if (!studentResolution.ok) {
+      return NextResponse.json(
+        { error: studentResolution.error },
+        { status: studentResolution.status },
+      );
     }
+    const studentId = studentResolution.studentId;
 
     // Find the active subscription record in Supabase
     const { data: subscription } = await supabase
@@ -128,9 +122,7 @@ export async function POST(req: Request) {
 
     // Guard: refund is only valid within the 28-day window
     if (requestRefund) {
-      const periodStart = new Date(subscription.current_period_start).getTime();
-      const windowMs = REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-      if (Date.now() - periodStart > windowMs) {
+      if (!isWithinRefundWindow(subscription.current_period_start)) {
         return NextResponse.json(
           { error: "Refund window has expired" },
           { status: 403 },
@@ -138,29 +130,21 @@ export async function POST(req: Request) {
       }
     }
 
-    // Get the Stripe customer ID from the account table
-    const { data: account } = await supabase
-      .from("account")
-      .select("stripe_customer_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!account?.stripe_customer_id) {
+    const stripeCustomerId = await getStripeCustomerIdForAccount({
+      supabase,
+      accountId: user.id,
+    });
+    if (!stripeCustomerId) {
       return NextResponse.json(
         { error: "No Stripe customer found" },
         { status: 404 },
       );
     }
 
-    // Find the matching active Stripe subscription via student_id in metadata
-    const stripeSubscriptions = await stripe.subscriptions.list({
-      customer: account.stripe_customer_id,
-      status: "active",
+    const stripeSubscription = await findActiveStripeSubscriptionByStudent({
+      customerId: stripeCustomerId,
+      studentId,
     });
-
-    const stripeSubscription = stripeSubscriptions.data.find(
-      (sub) => sub.metadata?.student_id === studentId,
-    );
 
     if (!stripeSubscription) {
       return NextResponse.json(
