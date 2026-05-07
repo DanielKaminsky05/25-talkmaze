@@ -76,15 +76,7 @@ export default function AvatarIcon({ profileType, avatarUrl }: Props) {
           >
             Manage Profile
           </button>
-          <button
-            onClick={() => {
-              router.push("/payments");
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
-          >
-            Manage Subscription
-          </button>
+
           <button
             onClick={() => {
               router.push("/profiles");

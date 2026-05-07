@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
 import { stripe } from "@/src/services/stripe/client";
-import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
 
 type CancelScheduleBody = {
   studentId?: string;
@@ -22,32 +22,26 @@ export async function POST(req: Request) {
     const body = (await req.json().catch(() => ({}))) as CancelScheduleBody;
     const bodyStudentId = body?.studentId;
 
-    let studentId: string | undefined;
+    const studentResolution = await resolveStudentIdForBilling({
+      supabase,
+      accountId: user.id,
+      requestedStudentId: bodyStudentId,
+      errors: {
+        studentNotFound: { error: "Student not found", status: 404 },
+        noActiveStudentProfile: {
+          error: "No active student profile",
+          status: 400,
+        },
+      },
+    });
 
-    if (bodyStudentId) {
-      const { data: student } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", bodyStudentId)
-        .eq("account_id", user.id)
-        .maybeSingle();
-      if (!student) {
-        return NextResponse.json(
-          { error: "Student not found" },
-          { status: 404 },
-        );
-      }
-      studentId = student.id;
-    } else {
-      const activeProfile = await getActiveProfile();
-      if (!activeProfile || activeProfile.type !== "student") {
-        return NextResponse.json(
-          { error: "No active student profile" },
-          { status: 400 },
-        );
-      }
-      studentId = activeProfile.id;
+    if (!studentResolution.ok) {
+      return NextResponse.json(
+        { error: studentResolution.error },
+        { status: studentResolution.status },
+      );
     }
+    const studentId = studentResolution.studentId;
 
     const { data: subscription } = await supabase
       .from("student_subscriptions")

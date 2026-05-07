@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/src/services/supabase/server";
 import { stripe } from "@/src/services/stripe/client";
-import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
+import { getStripeCustomerIdForAccount } from "@/src/lib/payments/server/getStripeCustomerIdForAccount";
+import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server/findActiveStripeSubscriptionByStudent";
 
 type UpgradeRequestBody = {
   priceId?: string;
@@ -32,44 +34,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    let studentId: string;
+    const studentResolution = await resolveStudentIdForBilling({
+      supabase,
+      accountId: user.id,
+      requestedStudentId: studentIdOverride,
+      requireOwnedActiveProfileStudent: true,
+      errors: {
+        studentNotFound: { error: "Unauthorized", status: 403 },
+        noActiveStudentProfile: {
+          error: "Select a student profile before upgrading",
+          status: 400,
+        },
+        invalidActiveStudentProfile: {
+          error: "Active student profile is invalid",
+          status: 403,
+        },
+      },
+    });
 
-    if (studentIdOverride) {
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", studentIdOverride)
-        .eq("account_id", user.id)
-        .single();
-
-      if (studentError || !student) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-      }
-      studentId = student.id;
-    } else {
-      const activeProfile = await getActiveProfile();
-      if (!activeProfile || activeProfile.type !== "student") {
-        return NextResponse.json(
-          { error: "Select a student profile before upgrading" },
-          { status: 400 },
-        );
-      }
-
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id")
-        .eq("id", activeProfile.id)
-        .eq("account_id", user.id)
-        .single();
-
-      if (studentError || !student) {
-        return NextResponse.json(
-          { error: "Active student profile is invalid" },
-          { status: 403 },
-        );
-      }
-      studentId = student.id;
+    if (!studentResolution.ok) {
+      return NextResponse.json(
+        { error: studentResolution.error },
+        { status: studentResolution.status },
+      );
     }
+    const studentId = studentResolution.studentId;
 
     const { data: currentSubscription } = await supabase
       .from("student_subscriptions")
@@ -137,21 +126,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: account } = await supabase
-      .from("account")
-      .select("stripe_customer_id")
-      .eq("id", user.id)
-      .single();
+    const customerId = await getStripeCustomerIdForAccount({
+      supabase,
+      accountId: user.id,
+    });
 
-    const customerId =
-      account?.stripe_customer_id ||
-      (await stripe.customers.create({ email: user.email ?? undefined })).id;
-
-    if (!account?.stripe_customer_id) {
-      await supabase
-        .from("account")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
+    if (!customerId) {
+      return NextResponse.json(
+        { error: "No Stripe customer found" },
+        { status: 404 },
+      );
     }
 
     const customer = (await stripe.customers.retrieve(
@@ -163,14 +147,10 @@ export async function POST(request: Request) {
       phone: customer.phone ?? "",
     };
 
-    const stripeSubscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
+    const stripeSubscription = await findActiveStripeSubscriptionByStudent({
+      customerId,
+      studentId,
     });
-
-    const stripeSubscription = stripeSubscriptions.data.find(
-      (sub) => sub.metadata?.student_id === studentId,
-    );
 
     if (!stripeSubscription) {
       return NextResponse.json(
