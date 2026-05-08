@@ -37,7 +37,10 @@ export default async function PaymentPage({
   let pendingPlanId: string | null = null;
 
   const supabase = await createClient();
-  const { data: plans } = (await supabase.from("plans").select("*")) as {
+  const { data: plans } = (await supabase
+    .from("plans")
+    .select("*")
+    .eq("is_active", true)) as {
     data: Plan[] | null;
   };
 

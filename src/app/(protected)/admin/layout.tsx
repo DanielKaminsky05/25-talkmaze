@@ -5,7 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
 import CreateAdminModal from "./_components/CreateAdminModal";
-import { AdminMobileDetailProvider, useAdminMobileDetail } from "./_context/AdminMobileDetailContext";
+import {
+  AdminMobileDetailProvider,
+  useAdminMobileDetail,
+} from "./_context/AdminMobileDetailContext";
 
 const NAV_ITEMS = [
   { key: "students", label: "Students", href: "/admin/students" },
@@ -13,6 +16,7 @@ const NAV_ITEMS = [
   { key: "courses", label: "Courses", href: "/admin/courses" },
   { key: "assignments", label: "Assignments", href: "/admin/assignments" },
   { key: "pending", label: "Pending", href: "/admin/pending" },
+  { key: "payment-plans", label: "Plans", href: "/admin/payment-plans" },
 ] as const;
 
 function AdminLayoutInner({ children }: { children: ReactNode }) {
@@ -61,12 +65,24 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
                 onClick={() => router.back()}
                 className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
             )}
-            <h1 className="text-white font-bold text-base leading-none">Admin Dashboard</h1>
+            <h1 className="text-white font-bold text-base leading-none">
+              Admin Dashboard
+            </h1>
           </div>
           <button
             onClick={() => setIsCreateAdminModalOpen(true)}
@@ -101,9 +117,7 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Content area */}
-        <div className="flex flex-1 min-w-0 overflow-hidden">
-          {children}
-        </div>
+        <div className="flex flex-1 min-w-0 overflow-hidden">{children}</div>
       </div>
 
       {/* Mobile bottom nav */}
@@ -115,7 +129,9 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
               key={key}
               href={href}
               className={`flex-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition-colors text-center ${
-                isActive ? "text-[#B1E7D6]" : "text-white/35 hover:text-white/60"
+                isActive
+                  ? "text-[#B1E7D6]"
+                  : "text-white/35 hover:text-white/60"
               }`}
             >
               {label}
