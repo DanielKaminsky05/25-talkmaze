@@ -667,6 +667,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          is_active: boolean
           name: string
           renewal: string
           stripe_price_id: string
@@ -680,6 +681,7 @@ export type Database = {
           currency: string
           description?: string | null
           id?: string
+          is_active?: boolean
           name: string
           renewal: string
           stripe_price_id: string
@@ -693,6 +695,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          is_active?: boolean
           name?: string
           renewal?: string
           stripe_price_id?: string
