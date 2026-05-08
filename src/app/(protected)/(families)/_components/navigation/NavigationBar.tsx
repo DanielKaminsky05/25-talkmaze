@@ -53,7 +53,7 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
         className="flex flex-row items-center min-w-[100px] h-[66px]"
         onClick={goBack}
       >
-        <Image src="/caret.png" alt="caret" width={36} height={34.88} />
+        <Image src="/images/icons/caret.png" alt="caret" width={36} height={34.88} />
         <p
           className="inline text-white text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold ml-3
           truncate max-w-[130px] sm:max-w-xs md:max-w-sm lg:max-w-none"

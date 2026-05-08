@@ -113,7 +113,7 @@ export default async function ProfilesPage({
     <div className="min-h-screen w-full bg-[#2b4257] font-[Roboto,sans-serif]">
       <header className="absolute left-[clamp(16px,1.5vw,24px)] top-[clamp(15px,2vw,30px)] flex items-center gap-1">
         <img
-          src="/talkmaze-logo.png"
+          src="/images/logos/talkmaze-logo-mark.png"
           alt="TalkMaze Logo"
           className="w-[clamp(36px,3.4vw,52px)] h-[clamp(36px,3.4vw,52px)] object-contain"
         />
@@ -160,7 +160,7 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl={profile.avatarUrl ?? "/blank_profile.png"}
+                    imageUrl={profile.avatarUrl ?? "/images/content/blank_profile.png"}
                     hasPin={false}
                     asLink={true}
                   />
@@ -178,7 +178,7 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl={profile.avatarUrl ?? "/blank_profile.png"}
+                    imageUrl={profile.avatarUrl ?? "/images/content/blank_profile.png"}
                     hasPin={false}
                     asLink={true}
                   />
@@ -199,8 +199,8 @@ export default async function ProfilesPage({
                   imageUrl={
                     profile.avatarUrl ??
                     (profile.type === "student"
-                      ? "/blank_profile.png"
-                      : "/blank_profile.png")
+                      ? "/images/content/blank_profile.png"
+                      : "/images/content/blank_profile.png")
                   }
                   hasPin={profile.hasPin}
                 />

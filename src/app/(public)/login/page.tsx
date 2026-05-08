@@ -54,7 +54,7 @@ export default function LoginPage() {
           <div className="w-full max-w-[400px] flex flex-col gap-[18px]">
             <div className="flex flex-col items-center mb-6">
               <Image
-                src="/talkmaze_logo.svg"
+                src="/images/logos/talkmaze-logo-horizontal-color.svg"
                 alt="TalkMaze Logo"
                 width={150}
                 height={145}
@@ -148,7 +148,7 @@ export default function LoginPage() {
               className="w-full h-[49px] bg-white flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors border-[0.3px] border-[#1f2e3b] rounded-[10px]"
             >
               <Image
-                src="/google_logo.svg"
+                src="/images/brands/google_logo.svg"
                 alt="Google Logo"
                 width={20}
                 height={20}
@@ -166,7 +166,7 @@ export default function LoginPage() {
           style={{ borderRadius: "0px 8px 8px 0px" }}
         >
           <Image
-            src="/photo.svg"
+            src="/images/hero/photo.svg"
             alt="TalkMaze Illustration"
             fill
             className="object-cover"

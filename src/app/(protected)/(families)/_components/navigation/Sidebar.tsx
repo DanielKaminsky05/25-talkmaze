@@ -105,7 +105,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           style={{ width: "var(--panel-w)" }}
         >
           <Image
-            src="/talkmaze.svg"
+            src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
             alt="Talk Maze Logo"
             className="self-center mb-4"
             width={80}
@@ -134,7 +134,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         >
           <Image
-            src="/caret.png"
+            src="/images/icons/caret.png"
             alt=""
             width={18}
             height={17}
@@ -156,7 +156,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
         */}
         <div className="h-[68px] flex items-center justify-center mb-[13px]">
           <Image
-            src="/talkmaze.svg"
+            src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
             alt="Talk Maze Logo"
             width={150}
             height={68}

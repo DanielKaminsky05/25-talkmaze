@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
           <div className="w-full max-w-[400px] flex flex-col gap-[18px]">
             <div className="flex flex-col items-center mb-6">
               <Image
-                src="/talkmaze_logo.svg"
+                src="/images/logos/talkmaze-logo-horizontal-color.svg"
                 alt="TalkMaze Logo"
                 width={150}
                 height={145}
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
           style={{ borderRadius: "0px 8px 8px 0px" }}
         >
           <Image
-            src="/photo.svg"
+            src="/images/hero/photo.svg"
             alt="TalkMaze Illustration"
             fill
             className="object-cover"

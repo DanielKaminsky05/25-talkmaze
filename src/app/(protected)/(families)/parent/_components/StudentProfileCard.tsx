@@ -36,7 +36,7 @@ export default function StudentProfileCard({
       style={{
         height: "100%",
         backgroundColor: "#B1E7D6",
-        backgroundImage: "url('/student-profile-card-bg.png')",
+        backgroundImage: "url('/images/backgrounds/student-profile-card-bg.png')",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
       }}

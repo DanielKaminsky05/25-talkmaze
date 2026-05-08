@@ -70,7 +70,7 @@ export default function NewUserSetupPage() {
         <div className="w-full flex flex-col gap-[18px]">
           <div className="flex flex-col items-center mb-4">
             <Image
-              src="/talkmaze_logo.svg"
+              src="/images/logos/talkmaze-logo-horizontal-color.svg"
               alt="TalkMaze Logo"
               width={150}
               height={120}

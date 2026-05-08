@@ -495,7 +495,7 @@ export default function StudentSetupForm({
           <div className="flex flex-col gap-5">
             <div className="flex flex-col items-center gap-1 mb-2">
               <Image
-                src="/talkmaze_logo.svg"
+                src="/images/logos/talkmaze-logo-horizontal-color.svg"
                 alt="TalkMaze"
                 width={64}
                 height={64}

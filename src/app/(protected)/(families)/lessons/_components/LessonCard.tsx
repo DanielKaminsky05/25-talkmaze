@@ -32,7 +32,7 @@ const LessonCard = memo(function LessonCard({
           : "hover:shadow-xl transform hover:-translate-y-1"
       }`}
       style={{
-        backgroundImage: "url('/lesson-card-bg.png')",
+        backgroundImage: "url('/images/backgrounds/lesson-card-bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

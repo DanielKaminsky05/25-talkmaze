@@ -49,7 +49,7 @@ export default function ProfileCard({
           <div className="flex items-center gap-[clamp(4px,0.5vw,7px)]">
             {/* Lock icon */}
             <Image
-              src="/lock-icon.svg"
+              src="/images/icons/lock-icon.svg"
               alt="Lock"
               width={18}
               height={18}

@@ -11,8 +11,8 @@ import { signOut } from "@/src/lib/auth/actions/signOut";
  * Contained in the NavigiationBar.
  */
 const PROFILE_IMAGE = {
-  student: "/blank_profile.png",
-  parent: "/blank_profile.png",
+  student: "/images/content/blank_profile.png",
+  parent: "/images/content/blank_profile.png",
 };
 
 type Props = {

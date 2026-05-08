@@ -16,7 +16,7 @@ export default function ReviewLessonCard({
       onClick={onClick}
       className="flex relative rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden cursor-pointer w-full"
       style={{
-        backgroundImage: "url('/lesson-card-bg.png')",
+        backgroundImage: "url('/images/backgrounds/lesson-card-bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

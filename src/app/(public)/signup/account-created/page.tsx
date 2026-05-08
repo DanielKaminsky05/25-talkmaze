@@ -17,7 +17,7 @@ export default async function AccountCreatedPage({
     >
       <div className="w-full max-w-[480px] bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] py-12 px-8 flex flex-col items-center gap-6">
         <Image
-          src="/talkmaze_logo.svg"
+          src="/images/logos/talkmaze-logo-horizontal-color.svg"
           alt="TalkMaze Logo"
           width={150}
           height={120}
