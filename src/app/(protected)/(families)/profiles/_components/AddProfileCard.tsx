@@ -16,7 +16,7 @@ export default function AddProfileCard({
         <div className="w-[clamp(140px,14vw,200px)] aspect-square rounded-xl bg-[#b1e7d6] border-[0.5px] border-black shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] relative overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center mix-blend-color-dodge">
             <img
-              src="/images/icons/lock-icon.svg"
+              src="/images/icons/talkmazeAdd.svg"
               alt=""
               className="w-[75%] h-[75%] object-contain"
             />
