@@ -15,6 +15,7 @@ interface StudentListItemProps {
   onMessage: (student: Student) => void;
   onLessonSpace: (studentId: string) => void;
   onAssignCourse: (student: Student) => void;
+  isLaunchingLessonSpace?: boolean;
 }
 
 export default function StudentListItem({
@@ -24,6 +25,7 @@ export default function StudentListItem({
   onMessage,
   onLessonSpace,
   onAssignCourse,
+  isLaunchingLessonSpace = false,
 }: StudentListItemProps) {
   const studentFullName = fullName(
     student.first_name,
@@ -36,7 +38,6 @@ export default function StudentListItem({
 
   return (
     <li
-      onClick={() => onSelect(student)}
       className={`px-4 py-3 transition-all cursor-pointer border-l-2 ${
         isActive
           ? "bg-[#65CFAD]/10 border-l-[#65CFAD]"
@@ -44,44 +45,55 @@ export default function StudentListItem({
       }`}
     >
       <div className="flex items-center gap-3">
-        <div
-          className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
-            isActive
-              ? "bg-[#65CFAD] text-[#1F2E3B]"
-              : "bg-[#2B4257]/10 text-[#2B4257]"
-          }`}
+        <button
+          type="button"
+          onClick={() => onSelect(student)}
+          aria-label={`Open details for ${studentFullName}`}
+          aria-current={isActive ? "page" : undefined}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35"
         >
-          {initial}
-        </div>
-        <span
-          className={`text-sm font-medium truncate ${
-            isActive ? "text-[#1F2E3B]" : "text-gray-800"
-          }`}
-        >
-          {studentFullName}
-        </span>
-        <div
-          className="ml-auto flex items-center gap-0.5"
-          onClick={(e) => e.stopPropagation()}
-        >
+          <span
+            className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
+              isActive
+                ? "bg-[#65CFAD] text-[#1F2E3B]"
+                : "bg-[#2B4257]/10 text-[#2B4257]"
+            }`}
+            aria-hidden
+          >
+            {initial}
+          </span>
+          <span
+            className={`text-sm font-medium truncate ${
+              isActive ? "text-[#1F2E3B]" : "text-gray-800"
+            }`}
+          >
+            {studentFullName}
+          </span>
+        </button>
+
+        <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => onMessage(student)}
-            title="Message"
-            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+            aria-label={`Message ${studentFullName}`}
+            title={`Message ${studentFullName}`}
+            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
           >
             <MessageCircleIcon size={16} />
           </button>
           <button
+            disabled={isLaunchingLessonSpace}
             onClick={() => onLessonSpace(student.id)}
-            title="Start Lesson"
-            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+            aria-label={`Start lesson with ${studentFullName}`}
+            title={`Start lesson with ${studentFullName}`}
+            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <LessonsIcon size={16} />
           </button>
           <button
             onClick={() => onAssignCourse(student)}
-            title="Assign Course"
-            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+            aria-label={`Assign course to ${studentFullName}`}
+            title={`Assign course to ${studentFullName}`}
+            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
           >
             <BookOpen size={16} />
           </button>

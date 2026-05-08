@@ -1,24 +1,23 @@
-import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
-import { createClient } from "@/src/services/supabase/server";
+import { redirect } from "next/navigation";
 import CoachPageClient from "./CoachPageClient";
+import { getCoachDashboardContext } from "@/src/lib/coach/server/getCoachDashboardContext";
 
 export default async function CoachPage() {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("User not found");
+  const { account, students } = await getCoachDashboardContext();
 
-  const supabase = await createClient();
-  const { data: account } = await supabase
-    .from("account")
-    .select("id, email")
-    .eq("id", user.id)
-    .single();
-
-  if (!account) throw new Error("Account not found");
+  if (students.length > 0) {
+    redirect(`/coach/students/${students[0].id}`);
+  }
 
   return (
     <CoachPageClient
       currentUserId={account.id}
       currentUserEmail={account.email}
+      selectedStudent={null}
+      assignedStudents={students}
+      selectedStudentId={null}
+      selectionNotice={null}
+      initialOpenChatTarget={null}
     />
   );
 }

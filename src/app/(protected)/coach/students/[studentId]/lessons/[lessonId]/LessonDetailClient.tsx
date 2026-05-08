@@ -270,7 +270,7 @@ export default function LessonDetailClient({
       <div className="flex flex-col gap-6">
         <div>
           <Link
-            href="/coach"
+            href={`/coach/students/${studentId}`}
             className="inline-flex items-center gap-1.5 text-sm text-[#2B4257]/70 hover:text-[#2B4257] transition-colors"
           >
             <svg

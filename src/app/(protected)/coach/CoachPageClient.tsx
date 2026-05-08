@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import MyStudents from "./_components/MyStudents";
 import StudentDetails from "./_components/StudentDetails";
@@ -15,21 +16,49 @@ type Student = Database["public"]["Tables"]["students"]["Row"];
 interface CoachPageClientProps {
   currentUserId: string;
   currentUserEmail: string;
+  selectedStudent: Student | null;
+  assignedStudents: Student[];
+  selectedStudentId: string | null;
+  selectionNotice: string | null;
+  initialOpenChatTarget: "student" | "parent" | null;
 }
 
 export default function CoachPageClient({
   currentUserId,
   currentUserEmail,
+  selectedStudent,
+  assignedStudents,
+  selectedStudentId,
+  selectionNotice,
+  initialOpenChatTarget,
 }: CoachPageClientProps) {
-  const [activeStudent, setActiveStudent] = useState<Student | null>(null);
-  const [openChatForStudent, setOpenChatForStudent] = useState<Student | null>(
-    null,
-  );
+  const router = useRouter();
+  const [manualChatOpenKey, setManualChatOpenKey] = useState(0);
+  const [manualChatOpenTarget, setManualChatOpenTarget] = useState<
+    "student" | "parent" | null
+  >(null);
+
+  const autoOpenChatTarget = initialOpenChatTarget ?? manualChatOpenTarget;
+  const autoOpenChatKey = initialOpenChatTarget
+    ? `route:${selectedStudentId ?? "none"}:${initialOpenChatTarget}`
+    : `manual:${manualChatOpenKey}`;
+
+  const handleStudentClick = (student: Student | null) => {
+    if (!student) return;
+    if (student.id === selectedStudentId) return;
+    router.push(`/coach/students/${student.id}`);
+  };
 
   const handleMessageClick = (student: Student | null) => {
     if (!student) return;
-    setActiveStudent(student);
-    setOpenChatForStudent(student);
+
+    if (student.id !== selectedStudentId) {
+      router.push(`/coach/students/${student.id}?openChat=student`);
+      return;
+    }
+
+    setManualChatOpenTarget("student");
+    setManualChatOpenKey((prev) => prev + 1);
   };
 
   return (
@@ -49,28 +78,36 @@ export default function CoachPageClient({
           </Link>
         </header>
 
+        {selectionNotice === "student-unavailable" && (
+          <p className="text-sm text-[#1F2E3B] bg-[#B1E7D6] border border-[#B1E7D6]/70 rounded-lg px-4 py-2.5">
+            That student is unavailable for your account. Showing your first assigned student instead.
+          </p>
+        )}
+
         {/* Students + Details grid */}
         <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
           <MyStudents
-            activeStudentId={activeStudent?.id}
-            onStudentClick={setActiveStudent}
+            students={assignedStudents}
+            activeStudentId={selectedStudent?.id ?? null}
+            onStudentClick={handleStudentClick}
             onMessageClick={handleMessageClick}
             coachId={currentUserId}
           />
           <StudentDetails
-            student={activeStudent}
+            student={selectedStudent}
             currentUserId={currentUserId}
             currentUserEmail={currentUserEmail}
-            autoOpenChat={openChatForStudent?.id}
+            autoOpenChatTarget={autoOpenChatTarget}
+            autoOpenChatKey={autoOpenChatKey}
           />
         </div>
 
         {/* Lessons table */}
         <LessonsTable
-          studentId={activeStudent?.id}
+          studentId={selectedStudent?.id}
           studentName={fullName(
-            activeStudent?.first_name,
-            activeStudent?.last_name,
+            selectedStudent?.first_name,
+            selectedStudent?.last_name,
           )}
         />
       </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Database } from "@/src/services/supabase/types/database";
 import { fullName } from "@/src/utils/formatName";
 
@@ -7,14 +8,28 @@ type Student = Database["public"]["Tables"]["students"]["Row"];
 interface AssignCourseModalProps {
   student: Student;
   courses: Course[];
+  coursesLoading: boolean;
+  coursesError: string | null;
   setIsAssigningCourse: React.Dispatch<React.SetStateAction<boolean>>;
+  onAssignedMessage: (message: {
+    type: "error" | "success";
+    text: string;
+  }) => void;
 }
 
 export default function AssignCourseModal({
   student,
   courses,
+  coursesLoading,
+  coursesError,
   setIsAssigningCourse,
+  onAssignedMessage,
 }: AssignCourseModalProps) {
+  const [assigningCourseId, setAssigningCourseId] = useState<string | null>(
+    null,
+  );
+  const [inlineError, setInlineError] = useState<string | null>(null);
+
   const studentName = fullName(
     student.first_name,
     student.last_name,
@@ -22,17 +37,34 @@ export default function AssignCourseModal({
   );
 
   async function assignStudent(course: Course) {
-    const res = await fetch("/api/admin/courses/assign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId: student.id, courseId: course.id }),
-    });
+    setInlineError(null);
+    setAssigningCourseId(course.id);
+    try {
+      const res = await fetch("/api/admin/courses/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: student.id, courseId: course.id }),
+      });
 
-    if (res.ok) {
-      alert(`Successfully assigned "${course.title}" to ${studentName}.`);
+      if (!res.ok) {
+        throw new Error("Failed to assign course. Please try again.");
+      }
+
+      onAssignedMessage({
+        type: "success",
+        text: `Assigned "${course.title}" to ${studentName}.`,
+      });
       setIsAssigningCourse(false);
-    } else {
-      alert("Failed to assign course. Please try again.");
+    } catch (err: unknown) {
+      setInlineError(
+        err instanceof Error ? err.message : "Failed to assign course.",
+      );
+      onAssignedMessage({
+        type: "error",
+        text: `Could not assign "${course.title}" to ${studentName}.`,
+      });
+    } finally {
+      setAssigningCourseId(null);
     }
   }
 
@@ -79,7 +111,26 @@ export default function AssignCourseModal({
 
         {/* Course list */}
         <div className="overflow-y-auto flex-1 p-4 space-y-3">
-          {courses.length === 0 ? (
+          {inlineError && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {inlineError}
+            </p>
+          )}
+
+          {coursesLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-24 rounded-xl border border-gray-100 bg-gray-50 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : coursesError ? (
+            <p className="text-sm text-red-600 text-center py-10">
+              {coursesError}
+            </p>
+          ) : courses.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-10">
               No courses available.
             </p>
@@ -99,10 +150,13 @@ export default function AssignCourseModal({
                   Created {new Date(course.created_at).toLocaleDateString()}
                 </p>
                 <button
+                  disabled={assigningCourseId != null}
                   onClick={() => assignStudent(course)}
-                  className="mt-3 w-full bg-[#2B4257] text-white text-xs font-medium py-2 rounded-lg hover:bg-[#2B4257]/80 transition-colors"
+                  className="mt-3 w-full bg-[#2B4257] text-white text-xs font-medium py-2 rounded-lg hover:bg-[#2B4257]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Assign This Course
+                  {assigningCourseId === course.id
+                    ? "Assigning..."
+                    : "Assign This Course"}
                 </button>
               </div>
             ))

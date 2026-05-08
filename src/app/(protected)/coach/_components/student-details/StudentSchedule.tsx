@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { AttendanceStatus } from "../StudentDetails";
 import { fmtUtcDate, fmtUtcTime } from "@/src/utils/formatDateTime";
 
@@ -54,8 +53,6 @@ export default function StudentSchedule({
   onMarkAttendance,
   submittingSessionId,
 }: StudentScheduleProps) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-
   if (loading) {
     return (
       <div className="animate-pulse space-y-2">
@@ -76,18 +73,12 @@ export default function StudentSchedule({
     <div className="space-y-2">
       {sessions.map((s) => {
         const currentStatus = attendanceBySessionId[s.id];
-        const isExpanded = expandedId === s.id;
         const isSubmitting = submittingSessionId === s.id;
 
         return (
           <div
             key={s.id}
-            onClick={() => setExpandedId(isExpanded ? null : s.id)}
-            className={`bg-white border rounded-lg px-3 py-2.5 text-xs shadow-sm cursor-pointer transition-all select-none ${
-              isExpanded
-                ? "border-[#2B4257]/30 ring-1 ring-[#2B4257]/10"
-                : "border-[#2B4257]/10 hover:border-[#2B4257]/25"
-            }`}
+            className="bg-white border border-[#2B4257]/10 rounded-lg px-3 py-2.5 text-xs shadow-sm"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -105,11 +96,8 @@ export default function StudentSchedule({
               )}
             </div>
 
-            {isExpanded && onMarkAttendance && (
-              <div
-                className="mt-2.5 flex gap-1.5"
-                onClick={(e) => e.stopPropagation()}
-              >
+            {onMarkAttendance && (
+              <div className="mt-2.5 flex gap-1.5 flex-wrap">
                 {STATUS_BUTTONS.map(({ status, label, activeClass }) => (
                   <button
                     key={status}

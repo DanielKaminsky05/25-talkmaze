@@ -58,6 +58,10 @@ export default function LessonsTable({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [tableMessage, setTableMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
 
   const fetchLessons = useCallback(async () => {
     setLoading(true);
@@ -75,7 +79,9 @@ export default function LessonsTable({
       const data: OrganizedLessons[] = await res.json();
       setLessons(data ?? []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     } finally {
       setLoading(false);
     }
@@ -89,6 +95,7 @@ export default function LessonsTable({
     if (!studentId) return;
 
     setUpdatingId(lessonId);
+    setTableMessage(null);
     try {
       const res = await fetch("/api/coach/lesson-progress", {
         method: "PATCH",
@@ -112,11 +119,14 @@ export default function LessonsTable({
           return { ...courseGroup, status: newStatusArr };
         }),
       );
+      setTableMessage({ type: "success", text: "Lesson status updated." });
     } catch (err: unknown) {
-      alert(
-        "Error updating lesson status: " +
-          (err instanceof Error ? err.message : "Unknown error"),
-      );
+      setTableMessage({
+        type: "error",
+        text: `Error updating lesson status: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`,
+      });
     } finally {
       setUpdatingId(null);
     }
@@ -155,6 +165,17 @@ export default function LessonsTable({
               ? `Lessons — ${studentName}`
               : "Lessons"}
           </h2>
+          {tableMessage && (
+            <p
+              className={`text-xs mt-1 ${
+                tableMessage.type === "error"
+                  ? "text-red-600"
+                  : "text-emerald-700"
+              }`}
+            >
+              {tableMessage.text}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
