@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import MyStudents from "./_components/MyStudents";
 import StudentDetails from "./_components/StudentDetails";
 import LessonsTable from "./_components/LessonsTable";
@@ -35,15 +36,16 @@ export default function CoachPageClient({
     <div className="w-full px-4 sm:px-6 lg:px-8 py-8 mx-auto max-w-[1600px]">
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <header className="rounded-2xl bg-white/10 border border-white/10 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Coach Dashboard
           </h1>
           <Link
             href="/coach/calendar"
-            className="self-start sm:self-auto text-sm font-medium text-white border border-white/25 rounded-lg px-4 py-2 hover:bg-white/10 transition-colors whitespace-nowrap"
+            className="self-start sm:self-auto inline-flex items-center gap-2 text-sm font-medium text-white border border-white/25 rounded-lg px-4 py-2 hover:bg-white/10 transition-colors whitespace-nowrap"
           >
-            View Calendar →
+            <CalendarDays size={16} />
+            Calendar
           </Link>
         </header>
 

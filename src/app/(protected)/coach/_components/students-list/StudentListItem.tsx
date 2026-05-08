@@ -1,5 +1,8 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
+import { MessageCircleIcon } from "@/src/components/ui/icons/MessageCircleIcon";
+import { LessonsIcon } from "@/src/components/ui/icons/LessonsIcon";
 import type { Database } from "@/src/services/supabase/types/database";
 import { fullName } from "@/src/utils/formatName";
 
@@ -36,15 +39,15 @@ export default function StudentListItem({
       onClick={() => onSelect(student)}
       className={`px-4 py-3 transition-all cursor-pointer border-l-2 ${
         isActive
-          ? "bg-[#2B4257]/5 border-l-[#2B4257]"
+          ? "bg-[#65CFAD]/10 border-l-[#65CFAD]"
           : "border-l-transparent hover:bg-gray-50 hover:border-l-[#2B4257]/30"
       }`}
     >
       <div className="flex items-center gap-3">
         <div
-          className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 select-none ${
+          className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
             isActive
-              ? "bg-[#2B4257] text-white"
+              ? "bg-[#65CFAD] text-[#1F2E3B]"
               : "bg-[#2B4257]/10 text-[#2B4257]"
           }`}
         >
@@ -52,35 +55,37 @@ export default function StudentListItem({
         </div>
         <span
           className={`text-sm font-medium truncate ${
-            isActive ? "text-[#2B4257]" : "text-gray-800"
+            isActive ? "text-[#1F2E3B]" : "text-gray-800"
           }`}
         >
           {studentFullName}
         </span>
-      </div>
-
-      <div
-        className="mt-2.5 flex flex-wrap gap-1.5 pl-12"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => onMessage(student)}
-          className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md text-white bg-[#2B4257] hover:bg-[#2B4257]/80 transition-colors"
+        <div
+          className="ml-auto flex items-center gap-0.5"
+          onClick={(e) => e.stopPropagation()}
         >
-          Message
-        </button>
-        <button
-          onClick={() => onLessonSpace(student.id)}
-          className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
-        >
-          Lesson Space
-        </button>
-        <button
-          onClick={() => onAssignCourse(student)}
-          className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md text-[#2B4257] border border-[#2B4257]/25 hover:bg-[#2B4257]/5 transition-colors"
-        >
-          Assign Course
-        </button>
+          <button
+            onClick={() => onMessage(student)}
+            title="Message"
+            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+          >
+            <MessageCircleIcon size={16} />
+          </button>
+          <button
+            onClick={() => onLessonSpace(student.id)}
+            title="Start Lesson"
+            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+          >
+            <LessonsIcon size={16} />
+          </button>
+          <button
+            onClick={() => onAssignCourse(student)}
+            title="Assign Course"
+            className="p-1.5 rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+          >
+            <BookOpen size={16} />
+          </button>
+        </div>
       </div>
     </li>
   );

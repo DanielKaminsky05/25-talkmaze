@@ -29,6 +29,8 @@ export default function MyStudents({
   const [assigningStudent, setAssigningStudent] = useState<Student | null>(
     null,
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const STUDENTS_PER_PAGE = 6;
 
   useEffect(() => {
     Promise.all([
@@ -66,27 +68,27 @@ export default function MyStudents({
 
   return (
     <>
-      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden flex flex-col max-h-[600px] xl:max-h-none">
+      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden flex flex-col">
         {/* Panel header */}
-        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-base font-semibold text-[#2B4257]">
+        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#B1E7D6] flex items-center justify-between shrink-0">
+          <h2 className="text-base font-semibold text-[#1F2E3B]">
             My Students
           </h2>
           {!loading && !error && (
-            <span className="bg-[#2B4257]/10 text-[#2B4257] text-xs font-semibold px-2.5 py-1 rounded-full">
+            <span className="bg-white/60 text-[#1F2E3B] text-xs font-semibold px-2.5 py-1 rounded-full">
               {students.length}
             </span>
           )}
         </div>
 
-        {/* Scrollable list */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* List */}
+        <div className="min-h-0">
           {loading ? (
             <div className="p-5 space-y-3">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse h-16 bg-gray-100 rounded-lg"
+                  className="animate-pulse h-12 bg-gray-100 rounded-lg"
                 />
               ))}
             </div>
@@ -97,22 +99,64 @@ export default function MyStudents({
               No students assigned yet.
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {students.map((student) => (
-                <StudentListItem
-                  key={student.id}
-                  student={student}
-                  isActive={student.id === activeStudentId}
-                  onSelect={(s) => onStudentClick?.(s)}
-                  onMessage={(s) => onMessageClick?.(s)}
-                  onLessonSpace={handleLessonSpace}
-                  onAssignCourse={(s) => {
-                    setAssigningStudent(s);
-                    setIsAssigningCourse(true);
-                  }}
-                />
-              ))}
-            </ul>
+            <>
+              <ul className="divide-y divide-gray-100">
+                {students
+                  .slice(
+                    (currentPage - 1) * STUDENTS_PER_PAGE,
+                    currentPage * STUDENTS_PER_PAGE,
+                  )
+                  .map((student) => (
+                    <StudentListItem
+                      key={student.id}
+                      student={student}
+                      isActive={student.id === activeStudentId}
+                      onSelect={(s) => onStudentClick?.(s)}
+                      onMessage={(s) => onMessageClick?.(s)}
+                      onLessonSpace={handleLessonSpace}
+                      onAssignCourse={(s) => {
+                        setAssigningStudent(s);
+                        setIsAssigningCourse(true);
+                      }}
+                    />
+                  ))}
+              </ul>
+              {students.length > STUDENTS_PER_PAGE && (
+                <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    {(currentPage - 1) * STUDENTS_PER_PAGE + 1}–
+                    {Math.min(currentPage * STUDENTS_PER_PAGE, students.length)}{" "}
+                    of {students.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((p) =>
+                          Math.min(
+                            p + 1,
+                            Math.ceil(students.length / STUDENTS_PER_PAGE),
+                          ),
+                        )
+                      }
+                      disabled={
+                        currentPage ===
+                        Math.ceil(students.length / STUDENTS_PER_PAGE)
+                      }
+                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
