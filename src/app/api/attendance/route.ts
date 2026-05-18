@@ -1,6 +1,11 @@
 import { createClient } from "@/src/services/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "Unknown error";
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -40,9 +45,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ attendance: records ?? [], streak });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in GET /api/attendance:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -149,8 +154,89 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in POST /api/attendance:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: account } = await supabase
+      .from("account")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!account || (account.role !== 2 && account.role !== 3)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { student_id, session_date, session_id } = body;
+
+    if (!student_id || !session_date) {
+      return NextResponse.json(
+        { error: "student_id and session_date are required" },
+        { status: 400 },
+      );
+    }
+
+    const baseQuery = supabase
+      .from("session_attendance")
+      .select("id, status")
+      .eq("student_id", student_id);
+    const lookupQuery =
+      session_id != null
+        ? baseQuery.eq("session_id", session_id)
+        : baseQuery.eq("session_date", session_date);
+
+    const { data: existing, error: existingError } =
+      await lookupQuery.maybeSingle();
+
+    if (existingError)
+      return NextResponse.json({ error: existingError.message }, { status: 500 });
+    if (!existing) return NextResponse.json({ success: true }, { status: 200 });
+
+    const deleteQuery = supabase
+      .from("session_attendance")
+      .delete()
+      .eq("id", existing.id);
+
+    const { error } = await deleteQuery;
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const wasConsuming =
+      existing.status === "attended" || existing.status === "missed";
+
+    if (wasConsuming) {
+      const { data: sub } = await supabase
+        .from("student_subscriptions")
+        .select("id, sessions_remaining")
+        .eq("student_id", student_id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (sub) {
+        await supabase
+          .from("student_subscriptions")
+          .update({ sessions_remaining: (sub.sessions_remaining ?? 0) + 1 })
+          .eq("id", sub.id);
+      }
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("Error in DELETE /api/attendance:", error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
