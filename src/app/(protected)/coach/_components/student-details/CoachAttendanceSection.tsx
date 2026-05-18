@@ -1,7 +1,7 @@
 "use client";
 
 import type { AttendanceStatus } from "../StudentDetails";
-import { fmtUtcDate, fmtUtcTime } from "@/src/utils/formatDateTime";
+import { fmtLocalDate, fmtLocalTime } from "@/src/utils/formatDateTime";
 
 const STATUS_BUTTONS: {
   status: AttendanceStatus;
@@ -72,9 +72,9 @@ export default function CoachAttendanceSection({
             className="bg-white border border-[#2B4257]/10 rounded-lg px-3 py-2.5 shadow-sm"
           >
             <p className="text-xs font-medium text-gray-700 mb-2">
-              {fmtUtcDate(session.start_time, false)}
+              {fmtLocalDate(session.start_time, false)}
               {" · "}
-              {fmtUtcTime(session.start_time)}
+              {fmtLocalTime(session.start_time)}
             </p>
             <div className="flex gap-1.5 flex-wrap">
               {STATUS_BUTTONS.map(({ status, label, activeClass }) => (

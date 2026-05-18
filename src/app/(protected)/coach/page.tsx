@@ -18,6 +18,7 @@ export default async function CoachPage() {
       selectedStudentId={null}
       selectionNotice={null}
       initialOpenChatTarget={null}
+      activeTab="details"
     />
   );
 }

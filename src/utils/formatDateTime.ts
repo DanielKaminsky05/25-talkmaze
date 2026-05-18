@@ -27,3 +27,31 @@ export function fmtUtcDate(iso: string, includeWeekday = true): string {
     timeZone: "UTC",
   });
 }
+
+/**
+ * Formats an ISO timestamp using the viewer's local timezone.
+ * @param iso - ISO 8601 timestamp string.
+ * @returns Time string, e.g. "3:05 PM"
+ */
+export function fmtLocalTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+/**
+ * Formats an ISO timestamp as a short date string in local timezone.
+ * @param iso - ISO 8601 timestamp string.
+ * @param includeWeekday - Whether to prepend the abbreviated weekday. Defaults to `true`.
+ * @returns Date string, e.g. `"Mon, Jan 5"`
+ *          or `"Jan 5"` when `includeWeekday` is false.
+ */
+export function fmtLocalDate(iso: string, includeWeekday = true): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    ...(includeWeekday ? { weekday: "short" } : {}),
+    month: "short",
+    day: "numeric",
+  });
+}

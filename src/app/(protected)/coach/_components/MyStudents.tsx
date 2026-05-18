@@ -115,9 +115,11 @@ export default function MyStudents({
 
   return (
     <>
-      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden flex flex-col">
-        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#B1E7D6] flex items-center justify-between shrink-0">
-          <h2 className="text-base font-semibold text-[#1F2E3B]">My Students</h2>
+      <div className=" bg-white shadow-sm overflow-hidden flex flex-col flex-1">
+        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
+          <h2 className="text-base font-semibold text-[#1F2E3B]">
+            My Students
+          </h2>
           <span className="bg-white/60 text-[#1F2E3B] text-xs font-semibold px-2.5 py-1 rounded-full">
             {search.trim()
               ? `${filteredStudents.length}/${students.length}`
@@ -125,7 +127,7 @@ export default function MyStudents({
           </span>
         </div>
 
-        <div className="min-h-0 flex flex-col">
+        <div className="min-h-0 flex flex-col flex-1">
           <div className="px-4 py-3 border-b border-gray-100">
             <input
               type="search"
@@ -171,7 +173,9 @@ export default function MyStudents({
                       setAssigningStudent(s);
                       setIsAssigningCourse(true);
                     }}
-                    isLaunchingLessonSpace={launchingLessonSpaceId === student.id}
+                    isLaunchingLessonSpace={
+                      launchingLessonSpaceId === student.id
+                    }
                   />
                 ))}
               </ul>

@@ -6,7 +6,6 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
-import Link from "next/link";
 
 interface Session {
   id: number;
@@ -52,12 +51,14 @@ export default function CoachCalendarClient() {
         backgroundColor: "#2B4257",
         borderColor: "#1a2d3d",
         textColor: "#ffffff",
-      }))
+      })),
     );
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadSessions(); }, [loadSessions]);
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   const handleEventClick = (arg: EventClickArg) => {
     const session = sessions.find((s) => String(s.id) === arg.event.id);
@@ -95,21 +96,6 @@ export default function CoachCalendarClient() {
 
   return (
     <div className="w-full p-8 mx-auto">
-      <div className="rounded-2xl bg-[#2B4257]/10 border border-[#2B4257]/15 px-6 py-5 mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#2B4257]">My Calendar</h1>
-          <p className="mt-1 text-sm text-[#2B4257]/70">
-            View upcoming sessions. Click any session to reschedule it.
-          </p>
-        </div>
-        <Link
-          href="/coach"
-          className="text-sm font-medium text-[#2B4257] border border-[#2B4257]/30 rounded-lg px-4 py-2 hover:bg-[#2B4257]/10 transition-colors"
-        >
-          ← Dashboard
-        </Link>
-      </div>
-
       <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm p-6">
         {loading ? (
           <div className="h-[600px] flex items-center justify-center text-[#2B4257]/40 text-sm">
@@ -140,8 +126,12 @@ export default function CoachCalendarClient() {
       {selected && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-[#2B4257] mb-1">Reschedule Session</h2>
-            <p className="text-sm text-[#2B4257]/50 mb-6">{studentName(selected.students)}</p>
+            <h2 className="text-xl font-bold text-[#2B4257] mb-1">
+              Reschedule Session
+            </h2>
+            <p className="text-sm text-[#2B4257]/50 mb-6">
+              {studentName(selected.students)}
+            </p>
 
             <div className="space-y-4">
               <div>

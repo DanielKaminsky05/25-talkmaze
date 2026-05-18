@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { ChevronRight } from "lucide-react";
+
 import ExternalLinkIcon from "./ui/ExternalLinkIcon";
-import StatusBadge from "./ui/StatusBadge";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
@@ -35,7 +36,13 @@ type OrganizedLessons = {
   slide_show_inputs: (string | null)[];
 };
 
-function ExternalLink({ href }: { href: string }) {
+function ExternalLink({
+  href,
+  label = "View",
+}: {
+  href: string;
+  label?: string;
+}) {
   return (
     <a
       href={href}
@@ -43,7 +50,7 @@ function ExternalLink({ href }: { href: string }) {
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1 text-[#2B4257] hover:text-[#2B4257]/70 font-medium underline underline-offset-2"
     >
-      View
+      {label}
       <ExternalLinkIcon size={11} />
     </a>
   );
@@ -156,7 +163,7 @@ export default function LessonsTable({
   const showProgress = Boolean(studentId);
 
   return (
-    <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm overflow-hidden h-full min-h-0 flex flex-col">
       {/* Table header */}
       <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -194,7 +201,7 @@ export default function LessonsTable({
 
       {/* Body */}
       {loading ? (
-        <div className="p-6 space-y-2">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-2">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
@@ -203,9 +210,11 @@ export default function LessonsTable({
           ))}
         </div>
       ) : error ? (
-        <div className="p-10 text-center text-red-600 text-sm">{error}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-10 text-center text-red-600 text-sm">
+          {error}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="p-10 text-center text-gray-400 text-sm">
+        <div className="flex-1 min-h-0 overflow-y-auto p-10 text-center text-gray-400 text-sm">
           {search
             ? "No lessons match your search."
             : showProgress
@@ -213,22 +222,24 @@ export default function LessonsTable({
               : "Select a student above to view lessons."}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead>
               <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <th className="px-5 py-3 text-left font-medium">Title</th>
                 <th className="px-5 py-3 text-left font-medium">Course</th>
-                <th className="px-5 py-3 text-left font-medium">Description</th>
-                <th className="px-5 py-3 text-left font-medium">Pre-Lesson</th>
-                <th className="px-5 py-3 text-left font-medium">Post-Lesson</th>
-                <th className="px-5 py-3 text-left font-medium">Slides</th>
+                <th className="px-5 py-3 text-left font-medium hidden 2xl:table-cell">
+                  Description
+                </th>
+                <th className="px-5 py-3 text-left font-medium">Resources</th>
                 {showProgress && (
                   <th className="px-5 py-3 text-left font-medium">Progress</th>
                 )}
-                <th className="px-5 py-3 text-left font-medium">Created</th>
+                <th className="px-5 py-3 text-left font-medium hidden 2xl:table-cell">
+                  Created
+                </th>
                 {showProgress && (
-                  <th className="px-5 py-3 text-left font-medium">Details</th>
+                  <th className="px-3 py-3 text-left font-medium">Details</th>
                 )}
               </tr>
             </thead>
@@ -252,40 +263,46 @@ export default function LessonsTable({
                       )}
                     </td>
 
-                    <td className="px-5 py-3.5 text-gray-600 max-w-[200px] truncate">
+                    <td className="px-5 py-3.5 text-gray-600 max-w-[200px] truncate hidden 2xl:table-cell">
                       {lesson.description || (
                         <span className="text-gray-400 italic">—</span>
                       )}
                     </td>
 
                     <td className="px-5 py-3.5">
-                      {lesson.pre_lesson_url ? (
-                        <ExternalLink href={lesson.pre_lesson_url} />
-                      ) : (
-                        <span className="text-gray-400 italic">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      {lesson.post_lesson_url ? (
-                        <ExternalLink href={lesson.post_lesson_url} />
-                      ) : (
-                        <span className="text-gray-400 italic">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      {lesson.slide_show_input ? (
-                        <ExternalLink href={lesson.slide_show_input} />
-                      ) : (
-                        <span className="text-gray-400 italic">—</span>
-                      )}
+                      <div className="flex items-center gap-2 text-xs">
+                        {lesson.pre_lesson_url ? (
+                          <ExternalLink
+                            href={lesson.pre_lesson_url}
+                            label="Pre"
+                          />
+                        ) : (
+                          <span className="text-gray-400">Pre</span>
+                        )}
+                        <span className="text-gray-300">·</span>
+                        {lesson.post_lesson_url ? (
+                          <ExternalLink
+                            href={lesson.post_lesson_url}
+                            label="Post"
+                          />
+                        ) : (
+                          <span className="text-gray-400">Post</span>
+                        )}
+                        <span className="text-gray-300">·</span>
+                        {lesson.slide_show_input ? (
+                          <ExternalLink
+                            href={lesson.slide_show_input}
+                            label="Slides"
+                          />
+                        ) : (
+                          <span className="text-gray-400">Slides</span>
+                        )}
+                      </div>
                     </td>
 
                     {showProgress && (
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={lesson.status} />
                           <select
                             disabled={isUpdating}
                             value={lesson.status}
@@ -308,7 +325,7 @@ export default function LessonsTable({
                       </td>
                     )}
 
-                    <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap hidden 2xl:table-cell">
                       {new Date(lesson.created_at).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
@@ -317,12 +334,13 @@ export default function LessonsTable({
                     </td>
 
                     {showProgress && studentId && (
-                      <td className="px-5 py-3.5">
+                      <td className="px-3 py-3.5">
                         <Link
                           href={`/coach/students/${studentId}/lessons/${lesson.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[#2B4257] hover:text-[#2B4257]/70 border border-[#2B4257]/25 rounded-md px-2.5 py-1.5 hover:bg-[#2B4257]/5 transition-colors whitespace-nowrap"
+                          title="View lesson details"
+                          className="inline-flex items-center justify-center w-7 h-7 text-[#2B4257] hover:text-[#2B4257]/70 border border-[#2B4257]/25 rounded-md hover:bg-[#2B4257]/5 transition-colors"
                         >
-                          View Details
+                          <ChevronRight size={15} />
                         </Link>
                       </td>
                     )}

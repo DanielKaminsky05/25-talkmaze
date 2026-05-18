@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays } from "lucide-react";
 import MyStudents from "./_components/MyStudents";
 import StudentDetails from "./_components/StudentDetails";
 import LessonsTable from "./_components/LessonsTable";
@@ -21,6 +20,7 @@ interface CoachPageClientProps {
   selectedStudentId: string | null;
   selectionNotice: string | null;
   initialOpenChatTarget: "student" | "parent" | null;
+  activeTab: "details" | "lessons";
 }
 
 export default function CoachPageClient({
@@ -31,6 +31,7 @@ export default function CoachPageClient({
   selectedStudentId,
   selectionNotice,
   initialOpenChatTarget,
+  activeTab,
 }: CoachPageClientProps) {
   const router = useRouter();
   const [manualChatOpenKey, setManualChatOpenKey] = useState(0);
@@ -61,38 +62,51 @@ export default function CoachPageClient({
     setManualChatOpenKey((prev) => prev + 1);
   };
 
-  return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8 mx-auto max-w-[1600px]">
-      <div className="flex flex-col gap-6">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">
-            Coach Dashboard
-          </h1>
-          <Link
-            href="/coach/calendar"
-            className="self-start sm:self-auto inline-flex items-center gap-2 text-sm font-medium text-white border border-white/25 rounded-lg px-4 py-2 hover:bg-white/10 transition-colors whitespace-nowrap"
-          >
-            <CalendarDays size={16} />
-            Calendar
-          </Link>
-        </header>
+  const tabBase =
+    "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors";
+  const tabActive = "bg-white text-[#2B4257]";
+  const tabInactive = "text-white/60 hover:text-white";
 
+  return (
+    <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-hidden">
+      {/* Left panel: students list */}
+      <div className="xl:w-[360px] xl:flex-shrink-0 flex flex-col ">
         {selectionNotice === "student-unavailable" && (
-          <p className="text-sm text-[#1F2E3B] bg-[#B1E7D6] border border-[#B1E7D6]/70 rounded-lg px-4 py-2.5">
-            That student is unavailable for your account. Showing your first assigned student instead.
+          <p className="text-sm text-[#1F2E3B] bg-[#B1E7D6] px-4 py-2.5 mb-4">
+            That student is unavailable for your account. Showing your first
+            assigned student instead.
           </p>
         )}
+        <MyStudents
+          students={assignedStudents}
+          activeStudentId={selectedStudent?.id ?? null}
+          onStudentClick={handleStudentClick}
+          onMessageClick={handleMessageClick}
+          coachId={currentUserId}
+        />
+      </div>
 
-        {/* Students + Details grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
-          <MyStudents
-            students={assignedStudents}
-            activeStudentId={selectedStudent?.id ?? null}
-            onStudentClick={handleStudentClick}
-            onMessageClick={handleMessageClick}
-            coachId={currentUserId}
-          />
+      {/* Right panel */}
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 p-4 xl:p-6">
+        {/* Tab bar — only shown when a student is selected */}
+        {selectedStudentId && (
+          <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1 self-start">
+            <Link
+              href={`/coach/students/${selectedStudentId}`}
+              className={`${tabBase} ${activeTab === "details" ? tabActive : tabInactive}`}
+            >
+              Details
+            </Link>
+            <Link
+              href={`/coach/students/${selectedStudentId}/lessons`}
+              className={`${tabBase} ${activeTab === "lessons" ? tabActive : tabInactive}`}
+            >
+              Lessons
+            </Link>
+          </div>
+        )}
+
+        {activeTab === "details" && (
           <StudentDetails
             student={selectedStudent}
             currentUserId={currentUserId}
@@ -100,16 +114,19 @@ export default function CoachPageClient({
             autoOpenChatTarget={autoOpenChatTarget}
             autoOpenChatKey={autoOpenChatKey}
           />
-        </div>
+        )}
 
-        {/* Lessons table */}
-        <LessonsTable
-          studentId={selectedStudent?.id}
-          studentName={fullName(
-            selectedStudent?.first_name,
-            selectedStudent?.last_name,
-          )}
-        />
+        {activeTab === "lessons" && (
+          <div className="flex-1 min-h-0">
+            <LessonsTable
+              studentId={selectedStudent?.id}
+              studentName={fullName(
+                selectedStudent?.first_name,
+                selectedStudent?.last_name,
+              )}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

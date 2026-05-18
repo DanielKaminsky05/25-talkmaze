@@ -1,7 +1,7 @@
 "use client";
 
 import type { AttendanceStatus } from "../StudentDetails";
-import { fmtUtcDate, fmtUtcTime } from "@/src/utils/formatDateTime";
+import { fmtLocalDate, fmtLocalTime } from "@/src/utils/formatDateTime";
 
 const STATUS_BUTTONS: {
   status: AttendanceStatus;
@@ -83,10 +83,10 @@ export default function StudentSchedule({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="font-semibold text-[#2B4257]/70 shrink-0">
-                  {fmtUtcDate(s.start_time)}
+                  {fmtLocalDate(s.start_time)}
                 </span>
                 <span className="text-gray-500 shrink-0">
-                  {fmtUtcTime(s.start_time)} – {fmtUtcTime(s.end_time)}
+                  {fmtLocalTime(s.start_time)} – {fmtLocalTime(s.end_time)}
                 </span>
               </div>
               {currentStatus && (

@@ -100,43 +100,45 @@ export default async function CoachLessonDetailPage({ params }: PageProps) {
     ]);
 
   return (
-    <LessonDetailClient
-      studentId={studentId}
-      lessonId={lessonId}
-      courseId={lesson.course_id}
-      studentName={
-        [student.first_name, student.last_name].filter(Boolean).join(" ") ||
-        "Student"
-      }
-      lesson={{
-        title: lesson.title,
-        description: lesson.description,
-        courseName: lesson.courses?.title ?? null,
-        slideshowUrl,
-      }}
-      initialStatus={progress?.status ?? 1}
-      initialPositiveFeedback={progress?.positive_feedback ?? ""}
-      initialImprovementFeedback={progress?.improvement_feedback ?? ""}
-      defaultPreTask={
-        defaultPreTask
-          ? { ...defaultPreTask, file_url: defaultPreUrl }
-          : null
-      }
-      defaultPostTask={
-        defaultPostTask
-          ? { ...defaultPostTask, file_url: defaultPostUrl }
-          : null
-      }
-      overridePreTask={
-        overridePreTask
-          ? { ...overridePreTask, file_url: overridePreUrl }
-          : null
-      }
-      overridePostTask={
-        overridePostTask
-          ? { ...overridePostTask, file_url: overridePostUrl }
-          : null
-      }
-    />
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F4F7FA]">
+      <LessonDetailClient
+        studentId={studentId}
+        lessonId={lessonId}
+        courseId={lesson.course_id}
+        studentName={
+          [student.first_name, student.last_name].filter(Boolean).join(" ") ||
+          "Student"
+        }
+        lesson={{
+          title: lesson.title,
+          description: lesson.description,
+          courseName: lesson.courses?.title ?? null,
+          slideshowUrl,
+        }}
+        initialStatus={progress?.status ?? 1}
+        initialPositiveFeedback={progress?.positive_feedback ?? ""}
+        initialImprovementFeedback={progress?.improvement_feedback ?? ""}
+        defaultPreTask={
+          defaultPreTask
+            ? { ...defaultPreTask, file_url: defaultPreUrl }
+            : null
+        }
+        defaultPostTask={
+          defaultPostTask
+            ? { ...defaultPostTask, file_url: defaultPostUrl }
+            : null
+        }
+        overridePreTask={
+          overridePreTask
+            ? { ...overridePreTask, file_url: overridePreUrl }
+            : null
+        }
+        overridePostTask={
+          overridePostTask
+            ? { ...overridePostTask, file_url: overridePostUrl }
+            : null
+        }
+      />
+    </div>
   );
 }

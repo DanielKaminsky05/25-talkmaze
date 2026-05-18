@@ -38,10 +38,8 @@ export default function StudentListItem({
 
   return (
     <li
-      className={`px-4 py-3 transition-all cursor-pointer border-l-2 ${
-        isActive
-          ? "bg-[#65CFAD]/10 border-l-[#65CFAD]"
-          : "border-l-transparent hover:bg-gray-50 hover:border-l-[#2B4257]/30"
+      className={`px-4 py-3.5 transition-all cursor-pointer ${
+        isActive ? "bg-[#65CFAD]/10" : "hover:bg-gray-50"
       }`}
     >
       <div className="flex items-center gap-3">
@@ -53,7 +51,7 @@ export default function StudentListItem({
           className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35"
         >
           <span
-            className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
+            className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
               isActive
                 ? "bg-[#65CFAD] text-[#1F2E3B]"
                 : "bg-[#2B4257]/10 text-[#2B4257]"
