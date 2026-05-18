@@ -123,25 +123,49 @@ export default function StudentDetails({
     if (!student || submittingSessionId === session.id) return;
     setAttendanceMessage(null);
     setSubmittingSessionId(session.id);
-    setAttendanceBySessionId((prev) => ({ ...prev, [session.id]: status }));
+    const previousStatus = attendanceBySessionId[session.id];
+    const isClearing = previousStatus === status;
+
+    setAttendanceBySessionId((prev) => {
+      if (!isClearing) return { ...prev, [session.id]: status };
+      const next = { ...prev };
+      delete next[session.id];
+      return next;
+    });
 
     try {
-      const res = await fetch("/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_id: student.id,
-          session_date: session.start_time,
-          session_id: session.id,
-          status,
-        }),
-      });
+      const res = isClearing
+        ? await fetch("/api/attendance", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              student_id: student.id,
+              session_date: session.start_time,
+              session_id: session.id,
+            }),
+          })
+        : await fetch("/api/attendance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              student_id: student.id,
+              session_date: session.start_time,
+              session_id: session.id,
+              status,
+            }),
+          });
       if (!res.ok) throw new Error("Failed to save attendance");
-      setAttendanceMessage("Attendance updated.");
+      setAttendanceMessage(
+        isClearing ? "Attendance cleared." : "Attendance updated.",
+      );
     } catch {
       setAttendanceBySessionId((prev) => {
         const next = { ...prev };
-        delete next[session.id];
+        if (previousStatus == null) {
+          delete next[session.id];
+        } else {
+          next[session.id] = previousStatus;
+        }
         return next;
       });
       setAttendanceMessage("Could not update attendance. Please try again.");
