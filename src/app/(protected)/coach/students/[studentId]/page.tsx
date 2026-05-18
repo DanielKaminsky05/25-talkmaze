@@ -34,6 +34,7 @@ export default async function CoachStudentDashboardPage({
         selectedStudentId={null}
         selectionNotice={null}
         initialOpenChatTarget={null}
+        activeTab="details"
       />
     );
   }
@@ -52,6 +53,7 @@ export default async function CoachStudentDashboardPage({
       selectedStudentId={selectedStudent.id}
       selectionNotice={query.notice ?? null}
       initialOpenChatTarget={parseChatTarget(query.openChat)}
+      activeTab="details"
     />
   );
 }

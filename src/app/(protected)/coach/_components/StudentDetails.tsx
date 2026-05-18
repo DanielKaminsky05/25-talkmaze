@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 import { fullName } from "@/src/utils/formatName";
 import { ConversationClient } from "@/src/app/(protected)/(families)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
@@ -63,6 +64,8 @@ export default function StudentDetails({
   const [attendanceMessage, setAttendanceMessage] = useState<string | null>(
     null,
   );
+  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
+  const [isAttendanceOpen, setIsAttendanceOpen] = useState(true);
 
   // Reset state when student changes
   useEffect(() => {
@@ -72,6 +75,8 @@ export default function StudentDetails({
     setAllSessions([]);
     setAttendanceBySessionId({});
     setAttendanceMessage(null);
+    setIsScheduleOpen(true);
+    setIsAttendanceOpen(true);
   }, [student?.id]);
 
   // Auto-open chat when requested by URL action or list action.
@@ -206,7 +211,7 @@ export default function StudentDetails({
   // Empty state — no student selected
   if (!student) {
     return (
-      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm flex items-center justify-center min-h-[480px] p-8">
+      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm flex items-center justify-center flex-1 p-8">
         <div className="text-center max-w-xs">
           <div className="w-16 h-16 bg-[#2B4257]/5 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -243,7 +248,7 @@ export default function StudentDetails({
   );
 
   return (
-    <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm min-h-[480px] flex flex-col overflow-hidden">
+    <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm flex-1 flex flex-col overflow-hidden">
       {/* Panel header */}
       <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#2B4257]/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <h2 className="text-base font-semibold text-[#2B4257]">
@@ -310,46 +315,72 @@ export default function StudentDetails({
 
             {/* Schedule section */}
             <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-4">
-              <h4 className="text-sm font-semibold text-[#2B4257] mb-1">
-                Upcoming Schedule
-              </h4>
-              <p className="text-xs text-gray-400 mb-3">
-                Mark attendance directly from each session row.
-              </p>
-              {attendanceMessage && (
-                <p
-                  className={`mb-3 text-xs ${
-                    attendanceMessage.startsWith("Could not")
-                      ? "text-red-600"
-                      : "text-emerald-700"
-                  }`}
-                >
-                  {attendanceMessage}
-                </p>
+              <button
+                type="button"
+                onClick={() => setIsScheduleOpen((v) => !v)}
+                className="flex items-center justify-between w-full mb-1"
+              >
+                <h4 className="text-sm font-semibold text-[#2B4257]">
+                  Upcoming Schedule
+                </h4>
+                <ChevronDown
+                  size={16}
+                  className={`text-[#2B4257]/50 transition-transform duration-200 ${isScheduleOpen ? "rotate-0" : "-rotate-90"}`}
+                />
+              </button>
+              {isScheduleOpen && (
+                <>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Mark attendance directly from each session row.
+                  </p>
+                  {attendanceMessage && (
+                    <p
+                      className={`mb-3 text-xs ${
+                        attendanceMessage.startsWith("Could not")
+                          ? "text-red-600"
+                          : "text-emerald-700"
+                      }`}
+                    >
+                      {attendanceMessage}
+                    </p>
+                  )}
+                  <div className="max-h-52 overflow-y-auto pr-1">
+                    <StudentSchedule
+                      sessions={upcomingSessions}
+                      loading={loadingSchedule}
+                      attendanceBySessionId={attendanceBySessionId}
+                      onMarkAttendance={handleMarkAttendance}
+                      submittingSessionId={submittingSessionId}
+                    />
+                  </div>
+                </>
               )}
-              <div className="max-h-52 overflow-y-auto pr-1">
-                <StudentSchedule
-                  sessions={upcomingSessions}
+            </div>
+
+            {/* Attendance section */}
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsAttendanceOpen((v) => !v)}
+                className="flex items-center justify-between w-full mb-4"
+              >
+                <h4 className="text-sm font-semibold text-[#2B4257]">
+                  Attendance
+                </h4>
+                <ChevronDown
+                  size={16}
+                  className={`text-[#2B4257]/50 transition-transform duration-200 ${isAttendanceOpen ? "rotate-0" : "-rotate-90"}`}
+                />
+              </button>
+              {isAttendanceOpen && (
+                <CoachAttendanceSection
+                  sessions={attendanceSessions}
                   loading={loadingSchedule}
                   attendanceBySessionId={attendanceBySessionId}
                   onMarkAttendance={handleMarkAttendance}
                   submittingSessionId={submittingSessionId}
                 />
-              </div>
-            </div>
-
-            {/* Attendance section */}
-            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-              <h4 className="text-sm font-semibold text-[#2B4257] mb-4">
-                Attendance
-              </h4>
-              <CoachAttendanceSection
-                sessions={attendanceSessions}
-                loading={loadingSchedule}
-                attendanceBySessionId={attendanceBySessionId}
-                onMarkAttendance={handleMarkAttendance}
-                submittingSessionId={submittingSessionId}
-              />
+              )}
             </div>
           </div>
         )}

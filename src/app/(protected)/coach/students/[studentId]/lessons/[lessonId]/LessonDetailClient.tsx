@@ -266,7 +266,7 @@ export default function LessonDetailClient({
   };
 
   return (
-    <div className="w-full p-8 mx-auto max-w-4xl">
+    <div className="w-full max-w-4xl mx-auto px-6 py-6 md:px-8 md:py-8">
       <div className="flex flex-col gap-6">
         <div>
           <Link
