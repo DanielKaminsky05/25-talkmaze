@@ -331,7 +331,8 @@ export default function StudentDetails({
               {isScheduleOpen && (
                 <>
                   <p className="text-xs text-gray-400 mb-3">
-                    Mark attendance directly from each session row.
+                    Mark attendance directly from each session row. All times
+                    shown in your local timezone.
                   </p>
                   {attendanceMessage && (
                     <p
