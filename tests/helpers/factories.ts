@@ -28,6 +28,10 @@ function getClients() {
 }
 
 // ─── Counters for unique values ───────────────────────────────────────────────
+//
+// RUN_ID ensures emails are unique across test runs even if auth.users
+// isn't fully cleared between runs (supabase db reset only resets public schema).
+const RUN_ID = `${Date.now().toString(36)}`;
 
 let counter = 0;
 const next = () => ++counter;
@@ -51,7 +55,7 @@ export async function createAccount(
   const { db, auth } = getClients();
   const n = next();
   const role = overrides.role ?? 1;
-  const email = overrides.email ?? `test-user-${n}@test.talkmaze.com`;
+  const email = overrides.email ?? `test-${RUN_ID}-${n}@test.talkmaze.com`;
   const password = "TestPassword123!";
 
   const { data: authData, error: authError } = await auth.createUser({
@@ -63,12 +67,13 @@ export async function createAccount(
     throw new Error(`createAccount: auth error — ${authError?.message}`);
   }
 
-  const { error: dbError } = await db.from("account").insert({
-    id: authData.user.id,
-    email,
-    role,
-    new: false,
-  });
+  // The DB has a trigger that auto-creates an account row (with role=1) when a
+  // GoTrue user is created. Use upsert so we can set the desired role even when
+  // the trigger already inserted the row.
+  const { error: dbError } = await db.from("account").upsert(
+    { id: authData.user.id, email, role, new: false },
+    { onConflict: "id" },
+  );
   if (dbError) throw new Error(`createAccount: db error — ${dbError.message}`);
 
   return { id: authData.user.id, email, password, role };

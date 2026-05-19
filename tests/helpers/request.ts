@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { nextCookies } from "@tests/helpers/nextHeadersMock";
 
 type RouteHandler = (
   req: NextRequest,
@@ -24,6 +25,8 @@ interface CallResult {
 
 /**
  * Call a Next.js App Router route handler directly — no HTTP server required.
+ * Sets the next/headers cookie context before each call so that route handlers
+ * that call createClient() (which reads cookies()) see the right session.
  *
  * Usage:
  *   const res = await call(GET, { cookies: session, query: { id: "1" } });
@@ -35,6 +38,9 @@ export async function call(
   opts: CallOptions = {},
 ): Promise<CallResult> {
   const { method = "GET", body, params = {}, cookies, query } = opts;
+
+  // Wire up the cookie context so next/headers cookies() reads the right session.
+  nextCookies.header = cookies ?? "";
 
   const url = new URL("http://localhost:3000/test");
   if (query) {
