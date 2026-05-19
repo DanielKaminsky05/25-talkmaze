@@ -127,4 +127,5 @@ Full audit with file paths and severities in `docs/repo-quality-audit.md`. Headl
 - `docs/matchmaking.md` — coach/student matching algorithm.
 - `docs/lessonspace-runtime-flows.md` — LessonSpace integration map.
 - `docs/repo-quality-audit.md` — known issues.
+- `docs/testing-strategy.md` — testing groundwork: frameworks, layering, per-domain test catalogue, phased rollout.
 - `README.md` — original route collocation conventions.
