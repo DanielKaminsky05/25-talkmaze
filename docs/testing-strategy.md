@@ -11,7 +11,7 @@ Groundwork for going from zero tests to a useful safety net. This doc is opinion
 4. Establish a test harness future contributors can extend without re-litigating tooling choices.
 
 **Non-goals (for now)**
-- Component unit tests against god components scheduled for refactor (`CourseLessonPanel.tsx`, the two profile clients, `LessonDetailClient.tsx`). Tests written against these get thrown away the moment the components get broken up.
+- **Component-internal** unit tests against god components scheduled for refactor (`CourseLessonPanel.tsx`, the two profile clients, `LessonDetailClient.tsx`) — tests against their `useState` hooks, props shapes, or rendered JSX get thrown away the moment the components get broken up. **But journey-level tests against these components ARE in scope and should land BEFORE the refactor** — see "Pre-refactor characterisation tests" below.
 - Snapshot tests of any kind. They mostly assert that nothing changed; they don't tell you whether what changed is correct.
 - 100% coverage. Coverage is a side effect, not the target. Aim for *every documented critical and high-severity issue has a regression test*; everything else is opportunistic.
 - A staging environment, performance tests, load tests, or chaos tests. Out of scope.
@@ -475,6 +475,9 @@ Default MSW handlers for `https://api.stripe.com/*`, `https://api.lessonspace.co
 - Use Stripe test cards. Use real test-mode Stripe + real test-mode LessonSpace (or mock both at the network layer — preference: real Stripe test mode for the E2E only).
 - Run on main, not on PR (slower).
 
+**Pre-refactor characterisation work (parallel track, ad hoc).**
+Before each god-component refactor PR, pull forward a small Playwright slice for that component's client-only journeys (see the "Pre-refactor characterisation tests" section above). Integration coverage for the same components comes for free from Phase 2.
+
 ---
 
 ## CI
@@ -533,17 +536,57 @@ Cache Docker layers for `supabase start` to keep the integration job under ~3 mi
 
 ---
 
+## Pre-refactor characterisation tests (the god components)
+
+The four files flagged in `repo-quality-audit.md` (`CourseLessonPanel.tsx` — 1215 lines, `ParentProfilePageClient.tsx` — 767, `LessonDetailClient.tsx` — 718, `StudentProfilePageClient.tsx` — 633) are scheduled for refactor. Refactoring without tests is faith-based — characterisation tests need to land **before** the split, not after.
+
+The trick is to write tests at a granularity that survives the refactor. The rule:
+
+> **Test the journey at the highest stable boundary the journey crosses.**
+
+A journey through `CourseLessonPanel` (admin creates a lesson, uploads a PPTX, attaches a token, reorders, deletes) crosses the network boundary into `/api/admin/courses/[id]/lessons[...]`. The route shape is the stable contract; the component is the implementation. Tests at the route boundary survive any restructuring of the component.
+
+### Mapping each god component to its journey tests
+
+| God component | Journey it implements | Where to test it |
+|---|---|---|
+| `CourseLessonPanel.tsx` | Admin lists / creates / edits / deletes / reorders lessons; uploads slides (PPTX + slide-show URL); attaches token icons; toggles pre/post-lesson tasks. | **API integration** against `/api/admin/courses/[id]/lessons` (POST), `/api/admin/courses/[id]/lessons/[lessonId]` (PUT, DELETE). Already in Phase 2. Add Playwright for the drag-reorder + file upload UI behaviour that doesn't round-trip cleanly. |
+| `ParentProfilePageClient.tsx` | Parent edits avatar, bio, location, phone, billing email, PIN. | **API integration** against `/api/parent/setup` (PATCH) + whatever profile-update server actions live in `(families)/parent/profile/actions.ts`. Add Playwright for the section-by-section save/cancel UX and PIN flow. |
+| `StudentProfilePageClient.tsx` | Student edits their own profile fields. | API integration against the student profile server action in `(families)/student/profile/actions.ts`. Playwright for the section UX (mirrors parent profile). |
+| `LessonDetailClient.tsx` | Coach marks lesson status, writes feedback (rich text), overrides per-student tasks, uploads task files. | **API integration** against `/api/coach/lesson-progress` (PATCH), `/api/coach/lesson-feedback` (PATCH), `/api/coach/lesson-tasks` (PATCH). Add Playwright for the Tiptap editor saving HTML and the file-upload clearance flag. |
+
+**The good news**: most of these journeys are *already* in the Phase 2 audit-driven API tests, because the underlying routes need ownership-check regression tests anyway. Adding a few "happy path" integration tests alongside the auth-failure tests covers ~80% of each component's contract.
+
+**The gap**: client-only behaviour that doesn't round-trip — form validation, optimistic UI, conditional rendering of nested sections, the drag-reorder UI, the rich text editor's HTML output. For these, pull a small number of Playwright tests forward from Phase 4.
+
+### Workflow
+
+For each god component, before the refactor PR is opened:
+
+1. List the journeys (use the table above as a starting point, but read the component first).
+2. Write integration tests for each journey's API calls. Run green.
+3. Write 1–3 Playwright tests for client-only behaviour. Run green.
+4. Open the refactor PR. The suite must stay green throughout — if a test breaks, the refactor changed user-visible behaviour and needs adjustment, not a test update.
+5. After the refactor lands, the same tests still pass against the new structure. They become the long-term safety net.
+
+### Anti-patterns to avoid even at the journey level
+
+- Asserting against text content that's just a label ("Save", "Cancel"). Use `getByRole('button', { name: /save/i })`, but don't test that the word "Save" itself never changes — that's a copy concern, not a behaviour concern.
+- Asserting against DOM structure (`.find('div > div > span')`). Use accessible roles.
+- Asserting against Tailwind class names. Test behaviour, not styling.
+- Snapshot tests at any level. They assert "nothing changed" without telling you whether the change was correct.
+
 ## What NOT to test (yet)
 
-- The four god components listed in `repo-quality-audit.md`. They're scheduled for refactor; pin behaviour with E2E once they're split.
-- UI rendering of any kind. React Testing Library tests against churning components are net-negative.
-- Tailwind class names. Test behaviour, not styling.
+- Component-internal state, props shapes, or JSX structure of any component. Test journeys (above), not implementations.
+- UI rendering details like layout, spacing, colour, or Tailwind classes.
+- Snapshot tests of any kind.
 - Auto-generated `database.ts` — it has no logic.
 - Adapter code in `src/services/*` that's purely a HTTP/SDK shim — the integration tests using MSW already cover it.
 
 ---
 
-## Open questions to resolve before Phase 2
+## Open questions to resolve before Phase 2 or before each god-component refactor
 
 1. **Auth fixture mechanism.** Decide between (a) inserting directly into `auth.users` + crafting a JWT with the local GoTrue secret, or (b) using `supabase.auth.admin.createUser` + `signInWithPassword`. (a) is faster but couples to GoTrue internals; (b) is slower but provider-agnostic. Lean (a) for speed.
 2. **"First payment skips matchmaking" intent.** The audit flagged the inconsistency between the comment in `/api/webhooks/stripe/route.ts` and the actual code. Decide which behaviour is correct *before* writing the webhook test, so the test pins the right thing.
