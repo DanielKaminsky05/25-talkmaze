@@ -34,7 +34,11 @@ export async function setup() {
     stdio: "inherit",
   });
 
-  // 2. Clear all auth users so email collisions can't happen across runs.
+  // 2. Wait briefly for GoTrue to be fully ready after container restart.
+  //    The CLI returns as soon as containers start, not when they're healthy.
+  await new Promise((r) => setTimeout(r, 2000));
+
+  // 3. Clear all auth users so email collisions can't happen across runs.
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

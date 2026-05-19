@@ -16,10 +16,11 @@ const handlers = [
   }),
 
   // ── LessonSpace ─────────────────────────────────────────────────────────────
-  http.post("https://api.lessonspace.com/v2/spaces/launch/*", () => {
+  // Real domain is api.thelessonspace.com (not api.lessonspace.com)
+  http.post("https://api.thelessonspace.com/v2/spaces/launch/", () => {
     return HttpResponse.json({
-      client_url: "https://lessonspace.com/room/test-room",
-      room: { id: "test-room-id-123" },
+      client_url: "https://app.thelessonspace.com/room/test-room",
+      room_id: "test-room-id-123",
     });
   }),
 

@@ -31,7 +31,10 @@ function getClients() {
 //
 // RUN_ID ensures emails are unique across test runs even if auth.users
 // isn't fully cleared between runs (supabase db reset only resets public schema).
-const RUN_ID = `${Date.now().toString(36)}`;
+// Include random component so emails are unique even if auth.users
+// isn't fully cleared between runs (GoTrue may not be ready immediately
+// after supabase db reset restarts containers).
+const RUN_ID = `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 
 let counter = 0;
 const next = () => ++counter;
