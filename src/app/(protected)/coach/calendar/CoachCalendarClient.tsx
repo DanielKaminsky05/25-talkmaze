@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import FullCalendar from "@fullcalendar/react";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
+import AdminCalendar from "../../admin/_components/AdminCalendar";
 
 interface Session {
   id: number;
@@ -48,9 +45,9 @@ export default function CoachCalendarClient() {
         title: studentName(s.students),
         start: s.start_time,
         end: s.end_time ?? undefined,
-        backgroundColor: "#2B4257",
-        borderColor: "#1a2d3d",
-        textColor: "#ffffff",
+        backgroundColor: "#B1E7D6",
+        borderColor: "transparent",
+        textColor: "#1F2E3B",
       })),
     );
     setLoading(false);
@@ -95,34 +92,26 @@ export default function CoachCalendarClient() {
   };
 
   return (
-    <div className="w-full p-8 mx-auto">
-      <div className="rounded-2xl bg-white border border-[#2B4257]/10 shadow-sm p-6">
-        {loading ? (
-          <div className="h-[600px] flex items-center justify-center text-[#2B4257]/40 text-sm">
-            Loading sessions…
-          </div>
-        ) : (
-          <FullCalendar
-            plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            events={events}
-            eventClick={handleEventClick}
-            height="calc(100vh - 260px)"
-            slotMinTime="00:00:00"
-            slotMaxTime="24:00:00"
-            scrollTime="07:00:00"
-            scrollTimeReset={false}
-            allDaySlot={false}
-            nowIndicator
-          />
-        )}
+    <div className="w-full h-full p-4 md:p-6 mx-auto">
+      <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
+        <AdminCalendar
+          events={events}
+          initialView="dayGridMonth"
+          loading={loading}
+          offsetPx={250}
+          onEventClick={handleEventClick}
+          dayMaxEventRows
+          expandRows
+          moreLinkClick="day"
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+        />
       </div>
 
+      {/* Reschedule Modal */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4">
