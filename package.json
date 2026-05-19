@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gen-types": "supabase gen types typescript --project-id zfnmverkmybrasrwhjyg > ./src/services/supabase/types/database.ts"
+    "gen-types": "supabase gen types typescript --project-id zfnmverkmybrasrwhjyg > ./src/services/supabase/types/database.ts",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -44,9 +49,12 @@
     "@types/node": "^20.19.41",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.6",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.6",
+    "msw": "^2.14.6",
     "tailwindcss": "^4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.6"
   }
 }
