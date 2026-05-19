@@ -12,11 +12,12 @@ export async function PUT(
 
     const supabase = await createClient();
 
-    const supabasePayload: Record<string, unknown> = {};
+    const supabasePayload: { first_name?: string | null; last_name?: string | null; avatar_url?: string | null } = {};
 
-    if (employeeData.first_name !== undefined || employeeData.last_name !== undefined) {
-        supabasePayload.name = `${employeeData.first_name || ""} ${employeeData.last_name || ""}`.trim();
-    }
+    if (employeeData.first_name !== undefined)
+        supabasePayload.first_name = employeeData.first_name || null;
+    if (employeeData.last_name !== undefined)
+        supabasePayload.last_name = employeeData.last_name || null;
     if (employeeData.avatar_url !== undefined)
         supabasePayload.avatar_url = employeeData.avatar_url;
 

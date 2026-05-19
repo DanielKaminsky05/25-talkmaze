@@ -33,8 +33,16 @@ export async function PATCH(
     const body = await req.json();
     const { name, description, classes, renewal, type } = body;
 
+    type PlanUpdates = {
+      updated_at: string;
+      name?: string;
+      description?: string | null;
+      classes?: number;
+      renewal?: string;
+      type?: string | null;
+    };
     // Build the update object dynamically so omitted fields are left unchanged.
-    const updates: Record<string, unknown> = {
+    const updates: PlanUpdates = {
       updated_at: new Date().toISOString(),
     };
     if (name !== undefined) updates.name = name;

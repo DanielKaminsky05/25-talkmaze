@@ -12,7 +12,7 @@ export async function PUT(
 
     const supabase = await createClient();
 
-    const payload: Record<string, unknown> = {};
+    const payload: { title?: string; description?: string | null } = {};
     if (courseData.name !== undefined) payload.title = courseData.name;
     if (courseData.description !== undefined)
       payload.description = courseData.description;
