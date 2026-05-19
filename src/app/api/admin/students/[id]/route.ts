@@ -30,10 +30,25 @@ export async function PUT(
       "notes",
     ] as const;
 
-    const payload: Record<string, unknown> = {};
+    type StudentPayload = {
+      first_name?: string | null;
+      last_name?: string | null;
+      date_of_birth?: string | null;
+      grade?: string | null;
+      location?: string | null;
+      bio?: string | null;
+      avatar_url?: string | null;
+      lesson_space_id?: string | null;
+      lesson_space_student_link?: string | null;
+      lesson_space_teacher_link?: string | null;
+      post_lesson_days?: number;
+      post_lesson_tasks_enabled?: boolean;
+      notes?: string | null;
+    };
+    const payload: StudentPayload = {};
     for (const field of EDITABLE_FIELDS) {
       if (Object.prototype.hasOwnProperty.call(s, field)) {
-        payload[field] = s[field] ?? null;
+        (payload as Record<string, unknown>)[field] = s[field] ?? null;
       }
     }
 

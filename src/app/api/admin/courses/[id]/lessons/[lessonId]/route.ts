@@ -37,7 +37,14 @@ export async function PUT(
 
     const supabase = await createClient();
 
-    const payload: Record<string, unknown> = {};
+    type LessonPayload = {
+      title?: string;
+      description?: string | null;
+      content_url?: string | null;
+      slide_show_url?: string | null;
+      slide_pptx_url?: string | null;
+    };
+    const payload: LessonPayload = {};
     if (title !== undefined) payload.title = title.trim();
     if (description !== undefined)
       payload.description = description?.trim() || null;
@@ -192,7 +199,7 @@ export async function DELETE(
 
     if (lessonData) {
       // Patch course head/tail BEFORE deleting the lesson row.
-      const courseUpdate: Record<string, string | null> = {};
+      const courseUpdate: { head_lesson_id?: string | null; tail_lesson_id?: string | null } = {};
       if (lessonData.prev_lesson == null)
         courseUpdate.head_lesson_id = lessonData.next_lesson;
       if (lessonData.next_lesson == null)
