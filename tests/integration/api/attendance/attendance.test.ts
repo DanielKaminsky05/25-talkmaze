@@ -20,6 +20,7 @@ import {
   createStudent,
   createPlan,
   createSubscription,
+  linkCoachToStudent,
 } from "@tests/helpers/factories";
 import { signSessionFor, ANON } from "@tests/helpers/auth";
 import { call } from "@tests/helpers/request";
@@ -61,7 +62,7 @@ beforeAll(async () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  const { account: coachAccount } = await createCoach();
+  const { account: coachAccount, coach } = await createCoach();
   coachCookies = await signSessionFor(coachAccount);
 
   // A second coach with no assignment to the student
@@ -71,16 +72,20 @@ beforeAll(async () => {
   const admin = await createAccount({ role: 3 });
   adminCookies = await signSessionFor(admin);
 
-  const regular = await createAccount({ role: 1 });
-  regularCookies = await signSessionFor(regular);
-
   // A completely separate family — should not be able to read another family's attendance
   const foreignFamily = await createAccount({ role: 1 });
   foreignFamilyCookies = await signSessionFor(foreignFamily);
 
-  const familyAccount = await createAccount({ role: 1 });
-  const student = await createStudent(familyAccount);
+  // `regular` IS the student's family — owns studentId so GET-for-owner returns
+  // 200, while `foreignFamily` does NOT and returns 403 (audit-driven).
+  const regular = await createAccount({ role: 1 });
+  regularCookies = await signSessionFor(regular);
+  const student = await createStudent(regular);
   studentId = student.id;
+
+  // Link the primary coach to the student so POST/DELETE ownership passes.
+  // `unassignedCoachCookies` stays unlinked to exercise the 403 path.
+  await linkCoachToStudent(coach, student);
 
   const plan = await createPlan({ classes: SESSIONS_INITIAL });
   const sub = await createSubscription(student, plan, {
@@ -161,7 +166,8 @@ describe("GET /api/attendance", () => {
     expect(typeof body.streak).toBe("number");
   });
 
-  it("returns 200 with attendance records for a regular user (no ownership check on GET)", async () => {
+  it("returns 200 when the calling family OWNS the student", async () => {
+    // `regular` is studentId's family — assertOwnsStudent passes.
     const res = await call(GET, {
       cookies: regularCookies,
       query: { student_id: studentId },
