@@ -1,65 +1,64 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
 import { stripe } from "@/src/services/stripe/client";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
 import { getStripeCustomerIdForAccount } from "@/src/lib/payments/server/getStripeCustomerIdForAccount";
 import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server/findActiveStripeSubscriptionByStudent";
 
-type UpgradeRequestBody = {
-  priceId?: string;
-  studentId?: string;
-};
+const BodySchema = z
+  .object({
+    studentId: z.string().uuid(),
+    priceId: z.string().min(1),
+  })
+  .strict();
 
 export async function POST(request: Request) {
-  try {
-    const body = (await request.json().catch(() => ({}))) as UpgradeRequestBody;
-    const priceId = body.priceId;
-    const studentIdOverride = body.studentId;
+  // Stage 1: AUTH
+  const auth = await requireRole([1]);
+  if (auth instanceof NextResponse) return auth;
+  const { user, supabase } = auth;
 
-    if (!priceId) {
-      return NextResponse.json(
-        { error: "Price ID is required" },
-        { status: 400 },
-      );
-    }
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { priceId, studentId: studentIdOverride } = parsed.data;
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const studentResolution = await resolveStudentIdForBilling({
-      supabase,
-      accountId: user.id,
-      requestedStudentId: studentIdOverride,
-      requireOwnedActiveProfileStudent: true,
-      errors: {
-        studentNotFound: { error: "Unauthorized", status: 403 },
-        noActiveStudentProfile: {
-          error: "Select a student profile before upgrading",
-          status: 400,
-        },
-        invalidActiveStudentProfile: {
-          error: "Active student profile is invalid",
-          status: 403,
-        },
+  // Stage 3: AUTHORIZE (ownership)
+  const studentResolution = await resolveStudentIdForBilling({
+    supabase,
+    accountId: user.id,
+    requestedStudentId: studentIdOverride,
+    requireOwnedActiveProfileStudent: true,
+    errors: {
+      studentNotFound: { error: "Forbidden", status: 403 },
+      noActiveStudentProfile: {
+        error: "Select a student profile before upgrading",
+        status: 400,
       },
-    });
+      invalidActiveStudentProfile: {
+        error: "Active student profile is invalid",
+        status: 403,
+      },
+    },
+  });
 
-    if (!studentResolution.ok) {
-      return NextResponse.json(
-        { error: studentResolution.error },
-        { status: studentResolution.status },
-      );
-    }
-    const studentId = studentResolution.studentId;
+  if (!studentResolution.ok) {
+    return NextResponse.json(
+      { error: studentResolution.error },
+      { status: studentResolution.status },
+    );
+  }
+  const studentId = studentResolution.studentId;
 
+  // Stage 4: EXECUTE
+  try {
     const { data: currentSubscription } = await supabase
       .from("student_subscriptions")
       .select(
@@ -197,9 +196,10 @@ export async function POST(request: Request) {
       effectiveDate,
     });
   } catch (err: unknown) {
-    console.error("Upgrade initialization error:", err);
-    const message =
-      err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("schedule error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

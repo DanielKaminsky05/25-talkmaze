@@ -330,7 +330,8 @@ Decisions made during the rewrite that bind future work. Append to this list whe
 - [x] Phase 0: `resetDb`/`resetAuthUsers`/`resetAll` in `tests/helpers/db.ts`. `pg` added to devDependencies.
 - [x] Phase 1: build `requireRole` and ownership helpers.
 - [x] Phase 2: split existing test files 1:1 with route files. `_auth-matrix.test.ts` covers role gates for every gated route; `coach/ownership.test.ts` split into 7 per-route files; `admin/auth*.test.ts` deleted. `fileParallelism: false` added to integration config.
-- [ ] Phase 3: rewrite `subscriptions` domain as the worked example.
+- [x] Phase 3: rewrite `subscriptions` domain as the worked example. 4 per-route contract-shaped test files (cancel, resume, schedule, schedule/cancel); 4 routes brought into compliance via `contract-fix` agent loop (Zod `.strict()`, `requireRole([1])`, four-stage shape, 403 ownership via per-call `resolveStudentIdForBilling` override, tightened catch-all 500). New helpers: `tests/helpers/sideEffects.ts`, `tests/helpers/stripeMocks.ts`, `tests/helpers/subscriptionFixtures.ts`. Old monolithic `subscriptions/subscriptions.test.ts` deleted.
+- [ ] Phase 4: route-by-route sweep via agent loop.
 - [ ] Phase 4: route-by-route sweep via agent loop.
 - [ ] Phase 5: webhook contract tests.
 
