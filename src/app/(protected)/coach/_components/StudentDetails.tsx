@@ -205,7 +205,7 @@ export default function StudentDetails({
       let clientId = student.id;
 
       if (type === "parent") {
-        const parentRes = await fetch(`/api/parent/students/${student.id}`);
+        const parentRes = await fetch(`/api/coach/students/${student.id}/parent`);
         if (!parentRes.ok) throw new Error("Could not fetch parent");
         const body = await parentRes.json();
         clientId = body?.parent?.id ?? body?.id;

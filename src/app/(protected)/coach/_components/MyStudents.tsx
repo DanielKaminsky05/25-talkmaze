@@ -44,7 +44,7 @@ export default function MyStudents({
   const STUDENTS_PER_PAGE = 6;
 
   useEffect(() => {
-    fetch("/api/admin/courses")
+    fetch("/api/coach/courses")
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load courses");
         return r.json();

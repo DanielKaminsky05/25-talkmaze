@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assignCourseToStudent } from "@/src/lib/lessons/server/assignCourseToStudent";
 
 const BodySchema = z
   .object({
@@ -33,56 +34,10 @@ export async function POST(req: NextRequest) {
 
   // Stage 4: EXECUTE
   try {
-    const { data: lessons, error: lessonsError } = await supabase
-      .from("lessons")
-      .select("id")
-      .eq("course_id", courseId);
-
-    if (lessonsError) {
-      console.error("courses/assign: fetch lessons error", lessonsError);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 },
-      );
+    const result = await assignCourseToStudent(supabase, { studentId, courseId });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
-
-    const postedLessons = (lessons ?? []).map((lesson) => ({
-      student_id: studentId,
-      status: 1,
-      lesson_id: lesson.id,
-    }));
-
-    if (postedLessons.length > 0) {
-      const { error: pushError } = await supabase
-        .from("lesson_progress")
-        .insert(postedLessons);
-
-      if (pushError) {
-        console.error("courses/assign: push lessons error", pushError);
-        return NextResponse.json(
-          { error: "Internal server error" },
-          { status: 500 },
-        );
-      }
-    }
-
-    const { error: assignError } = await supabase
-      .from("course_assignment")
-      .insert({
-        course_id: courseId,
-        student_id: studentId,
-        progress: 0,
-        isActive: true,
-      });
-
-    if (assignError) {
-      console.error("courses/assign: insert assignment error", assignError);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 },
-      );
-    }
-
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("courses/assign error", err);

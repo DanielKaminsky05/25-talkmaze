@@ -81,6 +81,8 @@ import { GET as studentLessonsGET } from "@/src/app/api/admin/students/lessons/[
 
 // Coach
 import { GET as coachConversationGET } from "@/src/app/api/coach/conversation/route";
+import { GET as coachCoursesGET } from "@/src/app/api/coach/courses/route";
+import { POST as coachCourseAssignPOST } from "@/src/app/api/coach/courses/assign/route";
 import { GET as coachConversationMsgGET } from "@/src/app/api/coach/conversation/message/route";
 import { PATCH as coachFeedbackPATCH } from "@/src/app/api/coach/lesson-feedback/route";
 import { PATCH as coachProgressPATCH } from "@/src/app/api/coach/lesson-progress/route";
@@ -89,6 +91,8 @@ import { GET as coachLessonspaceGET } from "@/src/app/api/coach/lessonspace/[coa
 import { GET as coachSessionsGET } from "@/src/app/api/coach/sessions/route";
 import { PATCH as coachSessionPATCH } from "@/src/app/api/coach/sessions/[id]/route";
 import { GET as coachStudentsGET } from "@/src/app/api/coach/students/route";
+import { GET as coachStudentLessonsGET } from "@/src/app/api/coach/students/lessons/[studentId]/route";
+import { GET as coachStudentParentGET } from "@/src/app/api/coach/students/[studentId]/parent/route";
 
 // Parent
 import { PATCH as parentSetupPATCH } from "@/src/app/api/parent/setup/route";
@@ -167,6 +171,8 @@ const AUTH_CASES: AuthCase[] = [
 
   // ─── Coach (role [2]) ──────────────────────────────────────────────────────
   { name: "GET /api/coach/conversation", call: (c) => call(coachConversationGET, { cookies: c, query: { contactId: FAKE_ID } }), allowed: [2] },
+  { name: "GET /api/coach/courses", call: (c) => call(coachCoursesGET, { cookies: c }), allowed: [2] },
+  { name: "POST /api/coach/courses/assign", call: (c) => call(coachCourseAssignPOST, { method: "POST", cookies: c, body: { studentId: FAKE_ID, courseId: FAKE_ID } }), allowed: [2] },
   { name: "GET /api/coach/conversation/message", call: (c) => call(coachConversationMsgGET, { cookies: c, query: { conversationId: FAKE_ID } }), allowed: [2] },
   { name: "PATCH /api/coach/lesson-feedback", call: (c) => call(coachFeedbackPATCH, { method: "PATCH", cookies: c, body: { student_id: FAKE_ID, lesson_id: FAKE_ID, positive_feedback: "<p>x</p>", improvement_feedback: "<p>y</p>" } }), allowed: [2] },
   { name: "PATCH /api/coach/lesson-progress", call: (c) => call(coachProgressPATCH, { method: "PATCH", cookies: c, body: { student_id: FAKE_ID, lesson_id: FAKE_ID, status: 2 } }), allowed: [2] },
@@ -176,6 +182,8 @@ const AUTH_CASES: AuthCase[] = [
   { name: "GET /api/coach/sessions", call: (c) => call(coachSessionsGET, { cookies: c }), allowed: [2] },
   { name: "PATCH /api/coach/sessions/[id]", call: (c) => call(coachSessionPATCH, { method: "PATCH", cookies: c, params: { id: FAKE_ID }, body: {} }), allowed: [2] },
   { name: "GET /api/coach/students", call: (c) => call(coachStudentsGET, { cookies: c }), allowed: [2] },
+  { name: "GET /api/coach/students/lessons/[studentId]", call: (c) => call(coachStudentLessonsGET, { cookies: c, params: { studentId: FAKE_ID } }), allowed: [2] },
+  { name: "GET /api/coach/students/[studentId]/parent", call: (c) => call(coachStudentParentGET, { cookies: c, params: { studentId: FAKE_ID } }), allowed: [2] },
 
   // ─── Parent (role [1]) ─────────────────────────────────────────────────────
   { name: "PATCH /api/parent/setup", call: (c) => call(parentSetupPATCH, { method: "PATCH", cookies: c, body: {} }), allowed: [1] },

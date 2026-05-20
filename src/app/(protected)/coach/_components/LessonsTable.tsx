@@ -80,7 +80,7 @@ export default function LessonsTable({
         return;
       }
 
-      const res = await fetch(`/api/admin/students/lessons/${studentId}`);
+      const res = await fetch(`/api/coach/students/lessons/${studentId}`);
       if (!res.ok) throw new Error("Failed to fetch lessons");
 
       const body = await res.json();
