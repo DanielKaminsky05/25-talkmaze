@@ -28,3 +28,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
   revalidateTag: vi.fn(),
 }));
+
+// server-only is a Next.js marker package that throws in client contexts.
+// In Vitest (Node.js) it is safe to import server code, so we stub it out.
+vi.mock("server-only", () => ({}));
