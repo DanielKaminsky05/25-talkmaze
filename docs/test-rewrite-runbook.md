@@ -339,6 +339,10 @@ Decisions made during the rewrite that bind future work. Append to this list whe
   - Spillover (resolved): `coach/lesson-tasks` — requireRole + ownership + Zod + service-role drop. Added FormData support to `tests/helpers/request.ts`.
   - Cleanup (4.5): deleted `/api/profiles/select` (sole caller migrated to `selectProfile` server action); `/api/user/role` swapped to `requireRole([])`.
 - [ ] Phase 4: route-by-route sweep via agent loop.
-- [ ] Phase 5: webhook contract tests.
+- [x] Phase 5: webhook contract tests. Three files (19 tests total, all green):
+  - `tests/contract/webhooks/lessonspace.session-summary.test.ts` — fixed CRITICAL recipient bug (was hardcoded to wdstalkmaze@gmail.com; now uses account.email). Standardised error responses.
+  - `tests/contract/webhooks/stripe.invoice-paid.test.ts` — first-payment + renewal paths; signature verification.
+  - `tests/contract/webhooks/stripe.subscription-deleted.test.ts` — cancellation + state-based idempotency. Last test documents the audit's "no event-id dedupe" gap; flagged as future work.
+  - Outstanding: LessonSpace signature verification (deferred from audit; tracked in route comment).
 
 When you (or an agent) finish a phase, tick the box here and append to the Decision log if anything was decided along the way.
