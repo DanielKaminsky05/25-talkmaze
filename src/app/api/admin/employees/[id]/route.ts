@@ -1,49 +1,73 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
+const PutBodySchema = z
+  .object({
+    employee: z
+      .object({
+        first_name: z.string().nullable().optional(),
+        last_name: z.string().nullable().optional(),
+        avatar_url: z.string().nullable().optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export async function PUT(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
-  try {
-    const { id } = await params;
-    const body = await req.json();
-    const employeeData = body.employee;
-
-    const supabasePayload: { first_name?: string | null; last_name?: string | null; avatar_url?: string | null } = {};
-
-    if (employeeData.first_name !== undefined)
-        supabasePayload.first_name = employeeData.first_name || null;
-    if (employeeData.last_name !== undefined)
-        supabasePayload.last_name = employeeData.last_name || null;
-    if (employeeData.avatar_url !== undefined)
-        supabasePayload.avatar_url = employeeData.avatar_url;
-
-    if (Object.keys(supabasePayload).length > 0) {
-      const { data: updated, error: supabaseError } = await supabase
-        .from("coaches")
-        .update(supabasePayload)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (supabaseError) {
-        console.error("PUT employee supabase error", supabaseError);
-        return NextResponse.json({ error: "Failed to update employee" }, { status: 500 });
-      }
-
-      return NextResponse.json(updated);
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err: unknown) {
-    console.error("PUT employee error", err);
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
     return NextResponse.json(
-      { error: "Update failed" },
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PutBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const payload: { first_name?: string | null; last_name?: string | null; avatar_url?: string | null } = {};
+  const { employee } = parsedBody.data;
+  if (employee.first_name !== undefined) payload.first_name = employee.first_name || null;
+  if (employee.last_name !== undefined) payload.last_name = employee.last_name || null;
+  if (employee.avatar_url !== undefined) payload.avatar_url = employee.avatar_url;
+
+  try {
+    if (Object.keys(payload).length === 0) {
+      return NextResponse.json({ success: true });
+    }
+    const { data, error } = await supabase
+      .from("coaches")
+      .update(payload)
+      .eq("id", parsedParams.data.id)
+      .select("id, account_id, first_name, last_name, avatar_url, created_at")
+      .single();
+
+    if (error) {
+      console.error("admin/employees/[id] PUT error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ employee: data });
+  } catch (err: unknown) {
+    console.error("admin/employees/[id] PUT error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

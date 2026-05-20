@@ -1,82 +1,87 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
+const PutBodySchema = z
+  .object({
+    student: z
+      .object({
+        first_name: z.string().nullable().optional(),
+        last_name: z.string().nullable().optional(),
+        date_of_birth: z.string().nullable().optional(),
+        grade: z.string().nullable().optional(),
+        location: z.string().nullable().optional(),
+        bio: z.string().nullable().optional(),
+        avatar_url: z.string().nullable().optional(),
+        lesson_space_id: z.string().nullable().optional(),
+        lesson_space_student_link: z.string().nullable().optional(),
+        lesson_space_teacher_link: z.string().nullable().optional(),
+        post_lesson_days: z.number().int().optional(),
+        post_lesson_tasks_enabled: z.boolean().optional(),
+        notes: z.string().nullable().optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export async function PUT(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PutBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const payload: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(parsedBody.data.student)) {
+    if (v !== undefined) payload[k] = v;
+  }
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const s = body.student;
-
-    if (!s || typeof s !== "object") {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
-
-    const EDITABLE_FIELDS = [
-      "first_name",
-      "last_name",
-      "date_of_birth",
-      "grade",
-      "location",
-      "bio",
-      "avatar_url",
-      "lesson_space_id",
-      "lesson_space_student_link",
-      "lesson_space_teacher_link",
-      "post_lesson_days",
-      "post_lesson_tasks_enabled",
-      "notes",
-    ] as const;
-
-    type StudentPayload = {
-      first_name?: string | null;
-      last_name?: string | null;
-      date_of_birth?: string | null;
-      grade?: string | null;
-      location?: string | null;
-      bio?: string | null;
-      avatar_url?: string | null;
-      lesson_space_id?: string | null;
-      lesson_space_student_link?: string | null;
-      lesson_space_teacher_link?: string | null;
-      post_lesson_days?: number;
-      post_lesson_tasks_enabled?: boolean;
-      notes?: string | null;
-    };
-    const payload: StudentPayload = {};
-    for (const field of EDITABLE_FIELDS) {
-      if (Object.prototype.hasOwnProperty.call(s, field)) {
-        (payload as Record<string, unknown>)[field] = s[field] ?? null;
-      }
-    }
-
     if (Object.keys(payload).length === 0) {
-      return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 },
+      );
     }
-
-    const { data: updated, error } = await supabase
+    const { data, error } = await supabase
       .from("students")
       .update(payload)
-      .eq("id", id)
+      .eq("id", parsedParams.data.id)
       .select()
-      .single();
-
+      .maybeSingle();
     if (error) {
-      console.error("PUT student supabase error", error);
-      return NextResponse.json({ error: "Failed to update student" }, { status: 500 });
+      console.error("admin/students/[id] PUT error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
-
-    return NextResponse.json(updated);
+    if (!data) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    }
+    return NextResponse.json({ student: data });
   } catch (err: unknown) {
-    console.error("PUT student error", err);
+    console.error("admin/students/[id] PUT error", err);
     return NextResponse.json(
-      { error: "Update failed" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

@@ -1,79 +1,77 @@
-import { requireRole } from "@/src/lib/auth/server/requireRole";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
-export async function POST(request: Request) {
+const BodySchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    name: z.string().min(1),
+  })
+  .strict();
+
+export async function POST(req: Request) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
+  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { email, password, name } = parsed.data;
+
   try {
-    const { email, password, name } = await request.json();
-
-    // Validate input
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: "Email, password, and name are required" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
-
-    // We must use a separate client for sign up so we don't overwrite the admin's session in the Next.js cookies
+    // Separate client so we don't overwrite the admin's session cookies.
     const authClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      // Use service role if available, otherwise fallback to publishable key
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,
         },
-      }
+      },
     );
 
-    // Create the user account
     const { data: authData, error: authError } = await authClient.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      }
+      },
     });
 
     if (authError) {
-      console.error("create-admin: auth error", authError);
+      console.error("create-admin auth error", authError);
       return NextResponse.json(
         { error: "Failed to create admin account" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
     if (!authData.user) {
       return NextResponse.json(
-        { error: "Failed to create user" },
-        { status: 500 }
+        { error: "Failed to create admin account" },
+        { status: 500 },
       );
     }
 
-    // Update the account table to set role to 3 (admin)
     const { error: accountError } = await supabase
       .from("account")
       .update({ role: 3 })
       .eq("id", authData.user.id);
 
     if (accountError) {
-      console.error("Account update error:", accountError);
+      console.error("create-admin account update error", accountError);
       return NextResponse.json(
-        { error: "Failed to set admin role" },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
@@ -82,14 +80,14 @@ export async function POST(request: Request) {
       admin: {
         id: authData.user.id,
         email: authData.user.email,
-        name: name,
+        name,
       },
     });
-  } catch (error) {
-    console.error("Error creating admin:", error);
+  } catch (err: unknown) {
+    console.error("create-admin error", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

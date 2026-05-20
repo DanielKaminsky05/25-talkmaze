@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/src/services/supabase/server";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 import type { Database } from "@/src/services/supabase/types/database";
+
+const ParamsSchema = z.object({ studentId: z.string().uuid() }).strict();
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
 type LessonTask = Database["public"]["Tables"]["lesson_tasks"]["Row"];
@@ -17,14 +20,21 @@ type OrganizedLessons = {
 };
 
 export async function GET(
-  request: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ studentId: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
-  const { studentId } = await params;
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { studentId } = parsed.data;
 
   const { data: assigned_courses, error: assigned_courses_error } =
     await supabase
@@ -33,8 +43,11 @@ export async function GET(
       .eq("student_id", studentId);
 
   if (assigned_courses_error) {
-    console.error("admin/students/lessons: error getting assigned courses", assigned_courses_error);
-    return NextResponse.json({ error: "Error retrieving courses assigned to student" }, { status: 500 });
+    console.error("admin/students/lessons GET error", assigned_courses_error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 
   let response = [];
@@ -55,8 +68,13 @@ export async function GET(
       .eq("course_id", course_id);
 
     if (allLessonsError) {
+      console.error(
+        "admin/students/lessons GET: lessons fetch error",
+        allLessonsError,
+      );
       return NextResponse.json(
-        "Error getting all lessons of associated course " + course_id,
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
@@ -66,7 +84,14 @@ export async function GET(
       .eq("student_id", studentId);
 
     if (statusDataError) {
-      return NextResponse.json({ error: "Unable to fetch the statuses of the lessons" }, { status: 500 });
+      console.error(
+        "admin/students/lessons GET: progress fetch error",
+        statusDataError,
+      );
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
 
     // Fetch all lesson_tasks for this student (their overrides + admin defaults)
@@ -169,17 +194,15 @@ export async function GET(
 
     response.push(lesson_ordered);
   }
-  return NextResponse.json(response);
+  return NextResponse.json({ courses: response });
 }
 
 async function getFileFromCloud(databaseUrl: string) {
   const supabase = await createClient();
-  console.log("Link: " + databaseUrl);
   const cleanPath3 = databaseUrl.replace(/^course_files\//, "");
   const { data: filesSlide } = await supabase.storage
     .from("course_files")
     .getPublicUrl(`${cleanPath3}`);
 
-  console.log("Retrieved URL: " + filesSlide.publicUrl);
   return filesSlide.publicUrl;
 }

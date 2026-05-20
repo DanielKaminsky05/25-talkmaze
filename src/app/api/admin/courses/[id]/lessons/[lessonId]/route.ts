@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 
@@ -9,28 +10,60 @@ function adminStorage() {
   ).storage.from("course_files");
 }
 
+const ParamsSchema = z
+  .object({ id: z.string().uuid(), lessonId: z.string().uuid() })
+  .strict();
+
+const PutBodySchema = z
+  .object({
+    title: z.string().optional(),
+    description: z.string().nullable().optional(),
+    content_url: z.string().nullable().optional(),
+    pre_file_name: z.string().nullable().optional(),
+    post_file_name: z.string().nullable().optional(),
+    slide_pdf_name: z.string().nullable().optional(),
+    slide_pptx_name: z.string().nullable().optional(),
+    pre_lesson_description: z.string().nullable().optional(),
+    post_lesson_description: z.string().nullable().optional(),
+  })
+  .strict();
+
 export async function PUT(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string; lessonId: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PutBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { id, lessonId } = parsedParams.data;
+  const {
+    title,
+    description,
+    content_url,
+    pre_file_name,
+    post_file_name,
+    slide_pdf_name,
+    slide_pptx_name,
+    pre_lesson_description,
+    post_lesson_description,
+  } = parsedBody.data;
+
   try {
-    const { id, lessonId } = await params;
-    const body = await req.json();
-    const {
-      title,
-      description,
-      content_url,
-      pre_file_name,
-      post_file_name,
-      slide_pdf_name,
-      slide_pptx_name,
-      pre_lesson_description,
-      post_lesson_description,
-    } = body;
 
     if (title !== undefined && !title?.trim()) {
       return NextResponse.json(
@@ -158,41 +191,53 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ lesson: data });
   } catch (err: unknown) {
-    console.error("PUT lesson error", err);
+    console.error("admin/courses/[id]/lessons/[lessonId] PUT error", err);
     return NextResponse.json(
-      { error: "Failed to update lesson" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string; lessonId: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
-  try {
-    const { id, lessonId } = await params;
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { id, lessonId } = parsedParams.data;
 
-    // Fetch linked-list pointers and slide file URLs before deletion
+  try {
+    // Fetch linked-list pointers and slide file URLs before deletion.
     const { data: lessonData, error: lessonFetchError } = await supabase
       .from("lessons")
-      .select(
-        "next_lesson, prev_lesson, slide_show_url, slide_pptx_url",
-      )
+      .select("next_lesson, prev_lesson, slide_show_url, slide_pptx_url")
       .eq("id", lessonId)
-      .single();
+      .maybeSingle();
 
     if (lessonFetchError) {
-      return NextResponse.json({
-        status: 500,
-        message: "Unable to fetch lesson before deletion",
-      });
+      console.error(
+        "admin/courses/[id]/lessons/[lessonId] DELETE: lesson fetch error",
+        lessonFetchError,
+      );
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    if (!lessonData) {
+      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
     // Fetch all lesson_tasks for this lesson (admin defaults + all overrides)
@@ -265,9 +310,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    console.error("DELETE lesson error", err);
+    console.error("admin/courses/[id]/lessons/[lessonId] DELETE error", err);
     return NextResponse.json(
-      { error: "Failed to delete lesson" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

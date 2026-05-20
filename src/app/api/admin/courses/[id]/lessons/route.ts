@@ -1,226 +1,212 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
+const PostBodySchema = z
+  .object({
+    lesson_id: z.string().uuid(),
+    title: z.string().min(1),
+    description: z.string().optional(),
+    content_url: z.string().optional(),
+    pre_file_name: z.string().optional(),
+    post_file_name: z.string().optional(),
+    slide_pdf_name: z.string().optional(),
+    slide_pptx_name: z.string().optional(),
+    pre_lesson_description: z.string().optional(),
+    post_lesson_description: z.string().optional(),
+  })
+  .strict();
+
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
-  try {
-    const { id } = await params;
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
 
+  try {
     const { data, error } = await supabase
       .from("lessons")
-      .select("*")
-      .eq("course_id", id)
+      .select("id, title, description, content_url, slug, course_id, created_at, slide_show_url, slide_pptx_url, prev_lesson, next_lesson")
+      .eq("course_id", parsed.data.id)
       .order("created_at", { ascending: true });
 
-    if (error) throw error;
-
-    return NextResponse.json(data ?? []);
+    if (error) {
+      console.error("admin/courses/[id]/lessons GET error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ lessons: data ?? [] });
   } catch (err: unknown) {
-    console.error("GET course lessons error", err);
+    console.error("admin/courses/[id]/lessons GET error", err);
     return NextResponse.json(
-      { error: "Failed to fetch lessons" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
 
 export async function POST(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const auth = await requireRole([3]);
   if (auth instanceof NextResponse) return auth;
   const { supabase } = auth;
 
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PostBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const courseId = parsedParams.data.id;
+  const data = parsedBody.data;
+  const title = data.title.trim();
+  if (!title) {
+    return NextResponse.json(
+      { error: "Lesson title is required" },
+      { status: 400 },
+    );
+  }
+
+  const slug =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") +
+    "-" +
+    data.lesson_id.slice(0, 8);
+
+  const slide_show_url = data.slide_pdf_name
+    ? `course_files/${courseId}/${data.lesson_id}/lessons/${data.slide_pdf_name}`
+    : null;
+  const slide_pptx_url = data.slide_pptx_name
+    ? `course_files/${courseId}/${data.lesson_id}/lessons/${data.slide_pptx_name}`
+    : null;
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-
-    if (!body) {
-      return NextResponse.json({
-        status: 404,
-        message: "Unable to get user inputted fields",
-      });
-    }
-
-    const {
-      lesson_id,
-      title,
-      description,
-      content_url,
-      pre_file_name,
-      post_file_name,
-      slide_pdf_name,
-      slide_pptx_name,
-      pre_lesson_description,
-      post_lesson_description,
-    } = body;
-
-    if (!lesson_id) {
-      return NextResponse.json({ status: 404, message: "Lesson id not found" });
-    }
-
-    if (!title?.trim()) {
-      return NextResponse.json(
-        { error: "Lesson title is required" },
-        { status: 400 },
-      );
-    }
-
-    const slug =
-      title
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "") +
-      "-" +
-      lesson_id.slice(0, 8);
-
-    const slide_show_url = slide_pdf_name
-      ? `course_files/${id}/${lesson_id}/lessons/${slide_pdf_name}`
-      : null;
-    const slide_pptx_url = slide_pptx_name
-      ? `course_files/${id}/${lesson_id}/lessons/${slide_pptx_name}`
-      : null;
-
-    const { data, error } = await supabase
+    const { data: lesson, error } = await supabase
       .from("lessons")
       .insert({
-        id: lesson_id,
-        course_id: id,
-        title: title.trim(),
+        id: data.lesson_id,
+        course_id: courseId,
+        title,
         slug,
-        description: description?.trim() || null,
-        content_url: content_url?.trim() || null,
+        description: data.description?.trim() || null,
+        content_url: data.content_url?.trim() || null,
         slide_show_url,
         slide_pptx_url,
       })
-      .select()
+      .select("id, title, description, content_url, slug, course_id, created_at, slide_show_url, slide_pptx_url")
       .single();
 
-    if (error) throw new Error(error.message);
-
-    // Insert lesson_tasks rows for admin defaults (student_id = null)
-    const preFileUrl = pre_file_name
-      ? `course_files/${id}/${lesson_id}/pre_lesson_tasks/${pre_file_name}`
-      : null;
-    const postFileUrl = post_file_name
-      ? `course_files/${id}/${lesson_id}/post_lesson_tasks/${post_file_name}`
-      : null;
-
-    if (preFileUrl || pre_lesson_description) {
-      await supabase.from("lesson_tasks").insert({
-        lesson_id,
-        student_id: null,
-        type: "pre",
-        file_url: preFileUrl,
-        description: pre_lesson_description || null,
-      });
-    }
-
-    if (postFileUrl || post_lesson_description) {
-      await supabase.from("lesson_tasks").insert({
-        lesson_id,
-        student_id: null,
-        type: "post",
-        file_url: postFileUrl,
-        description: post_lesson_description || null,
-      });
-    }
-
-    // Create a token row for this lesson so the admin can upload an icon immediately
-    await supabase.from("tokens").insert({
-      lesson_id: lesson_id,
-      title: title.trim(),
-      code: lesson_id.slice(0, 8).toUpperCase(),
-    });
-
-    //now need to update the lesson head and tail
-
-    //make sure the course is not empty
-
-    console.log("making sure the course is not empty");
-    const { data: checkCourseData, error: checkCourseDataError } =
-      await supabase
-        .from("courses")
-        .select("head_lesson_id")
-        .eq("id", id)
-        .single();
-
-    if (checkCourseDataError) {
-      return NextResponse.json({
-        status: 404,
-        message: "Unable to verify head of course",
-      });
-    }
-
-    console.log(
-      "Results from checking the courses: " +
-        JSON.stringify(checkCourseData?.head_lesson_id),
-    );
-
-    if (checkCourseData.head_lesson_id == null) {
-      const { data: update_tail, error: update_tail_error } = await supabase
-        .from("courses")
-        .update({ head_lesson_id: lesson_id, tail_lesson_id: lesson_id })
-        .eq("id", id);
-    } else {
-      //first find the previous tail
-
-      const { data: tail_data, error: tail_data_error } = await supabase
-        .from("courses")
-        .select("tail_lesson_id")
-        .eq("id", id)
-        .single();
-
-      if (!tail_data) {
-        return NextResponse.json({
-          status: 500,
-          message: "Error retrieving tail of course",
-        });
-      }
-      console.log("Retrieved current tail: " + tail_data.tail_lesson_id);
-      if (!tail_data.tail_lesson_id) {
-        return NextResponse.json({
-          status: 500,
-          message: "Tail lesson id is null",
-        });
-      }
-      const { data: update_tail, error: update_tail_error } = await supabase
-        .from("courses")
-        .update({ tail_lesson_id: lesson_id })
-        .eq("id", id);
-      //update the next lesson of the previous
-      const { data: update_lesson_prev_data, error: update_lesson_prev_error } =
-        await supabase
-          .from("lessons")
-          .update({ prev_lesson: tail_data.tail_lesson_id })
-          .eq("id", lesson_id);
-      const { data: update_next_lesson_data, error: update_next_lesson_error } =
-        await supabase
-          .from("lessons")
-          .update({ next_lesson: lesson_id })
-          .eq("id", tail_data.tail_lesson_id);
-
-      console.log(
-        "After inserting new lesson and updating order: " +
-          JSON.stringify(update_tail),
+    if (error) {
+      console.error("admin/courses/[id]/lessons POST insert error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
-    //now need to make sure the next and prev_lessons are updated
+    // Admin-default lesson_tasks rows (student_id = null).
+    const preFileUrl = data.pre_file_name
+      ? `course_files/${courseId}/${data.lesson_id}/pre_lesson_tasks/${data.pre_file_name}`
+      : null;
+    const postFileUrl = data.post_file_name
+      ? `course_files/${courseId}/${data.lesson_id}/post_lesson_tasks/${data.post_file_name}`
+      : null;
 
-    return NextResponse.json(data, { status: 201 });
+    if (preFileUrl || data.pre_lesson_description) {
+      await supabase.from("lesson_tasks").insert({
+        lesson_id: data.lesson_id,
+        student_id: null,
+        type: "pre",
+        file_url: preFileUrl,
+        description: data.pre_lesson_description || null,
+      });
+    }
+    if (postFileUrl || data.post_lesson_description) {
+      await supabase.from("lesson_tasks").insert({
+        lesson_id: data.lesson_id,
+        student_id: null,
+        type: "post",
+        file_url: postFileUrl,
+        description: data.post_lesson_description || null,
+      });
+    }
+
+    // Token row so the admin can upload an icon right after creation.
+    await supabase.from("tokens").insert({
+      lesson_id: data.lesson_id,
+      title,
+      code: data.lesson_id.slice(0, 8).toUpperCase(),
+    });
+
+    // Linked-list head/tail pointer maintenance. TODO: extract to
+    // src/lib/lessons/server/insertLessonAtTail() — this is the cautionary
+    // tale called out in docs/api-contract.md §domain-logic-placement.
+    const { data: course, error: courseLookupError } = await supabase
+      .from("courses")
+      .select("head_lesson_id, tail_lesson_id")
+      .eq("id", courseId)
+      .maybeSingle();
+
+    if (courseLookupError || !course) {
+      console.error(
+        "admin/courses/[id]/lessons POST: course pointer lookup failed",
+        courseLookupError,
+      );
+      return NextResponse.json({ lesson }, { status: 201 });
+    }
+
+    if (course.head_lesson_id == null) {
+      await supabase
+        .from("courses")
+        .update({ head_lesson_id: data.lesson_id, tail_lesson_id: data.lesson_id })
+        .eq("id", courseId);
+    } else if (course.tail_lesson_id) {
+      await supabase
+        .from("courses")
+        .update({ tail_lesson_id: data.lesson_id })
+        .eq("id", courseId);
+      await supabase
+        .from("lessons")
+        .update({ prev_lesson: course.tail_lesson_id })
+        .eq("id", data.lesson_id);
+      await supabase
+        .from("lessons")
+        .update({ next_lesson: data.lesson_id })
+        .eq("id", course.tail_lesson_id);
+    }
+
+    return NextResponse.json({ lesson }, { status: 201 });
   } catch (err: unknown) {
-    console.error("POST course lesson error", err);
+    console.error("admin/courses/[id]/lessons POST error", err);
     return NextResponse.json(
-      { error: "Failed to create lesson" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
