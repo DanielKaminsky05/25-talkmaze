@@ -23,10 +23,12 @@ export default defineConfig({
       "tests/setup/test-setup.ts",
       "tests/setup/integration-mocks.ts",
     ],
-    // Single worker so tests don't race on the same DB.
+    // Single worker so tests don't race on the same DB. fileParallelism: false
+    // forces sequential file execution within that fork — otherwise files
+    // interleave their beforeAll seeding and step on each other's DB state.
     // Parallelise later by giving each worker its own schema.
     pool: "forks",
-    forks: { singleFork: true },
+    fileParallelism: false,
     testTimeout: 15_000,
     hookTimeout: 30_000,
   },

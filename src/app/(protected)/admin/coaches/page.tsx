@@ -46,7 +46,8 @@ export default function CoachesPage() {
       setEmployeesLoading(true);
       const res = await fetch("/api/admin/employees");
       if (!res.ok) throw new Error();
-      setEmployees(await res.json());
+      const body = await res.json();
+      setEmployees(Array.isArray(body?.employees) ? body.employees : []);
     } finally {
       setEmployeesLoading(false);
     }

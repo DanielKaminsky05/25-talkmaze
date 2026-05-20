@@ -78,7 +78,7 @@ export function usePendingBookings() {
       const res = await fetch("/api/admin/pending-bookings");
       if (!res.ok) throw new Error();
       const data = await res.json();
-      const bookings = Array.isArray(data) ? data : [];
+      const bookings = Array.isArray(data?.pending) ? data.pending : [];
       setPendingBookings(bookings);
       setCurrentPage(1);
       // Keep the current selection if it's still in the list.
@@ -96,7 +96,7 @@ export function usePendingBookings() {
     fetchPendingBookings();
     fetch("/api/admin/employees")
       .then((r) => r.json())
-      .then((d) => setEmployees(Array.isArray(d) ? d : []))
+      .then((d) => setEmployees(Array.isArray(d?.employees) ? d.employees : []))
       .catch(() => {});
   }, []);
 

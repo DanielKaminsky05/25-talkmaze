@@ -1,19 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { approvePendingBookedSlot } from "@/src/lib/scheduling/server/matchmaking";
 
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
 export async function POST(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  const result = await approvePendingBookedSlot(id);
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
 
-  if (!result.success) {
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: result.error ?? "Failed to approve pending booking" },
-      { status: result.status ?? 500 },
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
     );
   }
 
-  return NextResponse.json(result);
+  try {
+    const result = await approvePendingBookedSlot(parsed.data.id);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error ?? "Failed to approve pending booking" },
+        { status: result.status ?? 500 },
+      );
+    }
+
+    return NextResponse.json(result);
+  } catch (err: unknown) {
+    console.error("pending-bookings approve error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

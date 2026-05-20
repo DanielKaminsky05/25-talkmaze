@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachAssignedToStudent } from "@/src/lib/auth/server/ownership";
 
 /**
  * PATCH /api/coach/lesson-feedback
@@ -9,30 +11,45 @@ import { createClient } from "@/src/services/supabase/server";
  *
  * Both feedback fields are HTML strings produced by Tiptap's FeedbackEditor.
  */
+const BodySchema = z
+  .object({
+    student_id: z.string().uuid(),
+    lesson_id: z.string().uuid(),
+    positive_feedback: z.string().optional(),
+    improvement_feedback: z.string().optional(),
+  })
+  .strict();
+
 export async function PATCH(request: Request) {
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(
+    await request.json().catch(() => ({})),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request body",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+  const { student_id, lesson_id, positive_feedback, improvement_feedback } =
+    parsed.data;
+
+  // Stage 3: AUTHORIZE
+  const ownership = await assertCoachAssignedToStudent(auth, student_id);
+  if (ownership instanceof NextResponse) return ownership;
+
+  // Stage 4: EXECUTE
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { student_id, lesson_id, positive_feedback, improvement_feedback } =
-      body;
-
-    if (!student_id || !lesson_id) {
-      return NextResponse.json(
-        { error: "Missing required fields: student_id, lesson_id" },
-        { status: 400 },
-      );
-    }
-
-    const { data, error } = await (supabase.from("lesson_progress") as any)
+    const { data, error } = await supabase
+      .from("lesson_progress")
       .upsert(
         {
           student_id,
@@ -47,13 +64,16 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      console.error("Upsert feedback error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("coach/lesson-feedback upsert error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in PATCH /api/coach/lesson-feedback:", error);
+  } catch (err: unknown) {
+    console.error("coach/lesson-feedback error", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

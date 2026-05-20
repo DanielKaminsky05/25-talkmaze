@@ -18,10 +18,13 @@ export default function AssignmentsPage() {
       fetch("/api/admin/assignments").then((r) => r.json()),
     ])
       .then(([empData, stuData, asnData]) => {
-        setEmployees(Array.isArray(empData) ? empData : []);
+        const empList = Array.isArray(empData?.employees) ? empData.employees : [];
+        const stuList = Array.isArray(stuData?.students) ? stuData.students : [];
+        const asnList = Array.isArray(asnData?.assignments) ? asnData.assignments : [];
+        setEmployees(empList);
         setStudents(
-          Array.isArray(stuData)
-            ? stuData.map((s: any) => ({
+          stuList.length
+            ? stuList.map((s: any) => ({
                 id: String(s.id),
                 account_id: String(s.account_id),
                 first_name: s.first_name ?? null,
@@ -43,7 +46,7 @@ export default function AssignmentsPage() {
               }))
             : [],
         );
-        setAssignments(Array.isArray(asnData) ? asnData : []);
+        setAssignments(asnList);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -59,8 +62,8 @@ export default function AssignmentsPage() {
       alert("Failed to add assignment");
       return;
     }
-    const newAssignment = await res.json();
-    setAssignments((prev) => [...prev, newAssignment]);
+    const body = await res.json();
+    if (body?.assignment) setAssignments((prev) => [...prev, body.assignment]);
   };
 
   const handleRemoveAssignment = async (assignmentId: string) => {
@@ -72,7 +75,9 @@ export default function AssignmentsPage() {
       alert("Failed to remove assignment");
       fetch("/api/admin/assignments")
         .then((r) => r.json())
-        .then(setAssignments);
+        .then((body) =>
+          setAssignments(Array.isArray(body?.assignments) ? body.assignments : []),
+        );
     }
   };
 

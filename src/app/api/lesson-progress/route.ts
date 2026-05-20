@@ -1,45 +1,52 @@
-import { createClient } from "@/src/services/supabase/server";
 import { NextResponse } from "next/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
-export async function GET(request: Request) {
-    const supabase = await createClient();
+export async function GET(_req: Request) {
+  const auth = await requireRole([1, 2, 3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("account_id", user.id)
+      .maybeSingle();
+    if (!student) {
+      return NextResponse.json(
+        { error: "Student profile not found" },
+        { status: 404 },
+      );
     }
 
-    const { data: student, error: studentError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('account_id', user.id)
-        .single();
-
-    if (studentError || !student) {
-        console.error("Student not found for user:", user.id);
-        return NextResponse.json({ completed: 0, total: 0, error: "Student profile not found" });
+    const [completed, total] = await Promise.all([
+      supabase
+        .from("lesson_progress")
+        .select("*", { count: "exact", head: true })
+        .eq("student_id", student.id)
+        .eq("status", 1),
+      supabase.from("lessons").select("*", { count: "exact", head: true }),
+    ]);
+    if (completed.error || total.error) {
+      console.error(
+        "lesson-progress count error",
+        completed.error ?? total.error,
+      );
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
-
-    const studentId = student.id;
-
-    const { count: completedCount, error: completedError } = await supabase
-        .from('lesson_progress')
-        .select('*', { count: 'exact', head: true })
-        .eq('student_id', studentId)
-        .eq('status', 1);
-
-    const { count: totalCount, error: totalError } = await supabase
-        .from('lessons')
-        .select('*', { count: 'exact', head: true });
-
-    if (completedError || totalError) {
-        return NextResponse.json({ error: "Database error" }, { status: 500 });
-    }
-
     return NextResponse.json({
-        completed: completedCount || 0,
-        total: totalCount || 24,
-        studentId: studentId
+      completed: completed.count ?? 0,
+      total: total.count ?? 24,
+      studentId: student.id,
     });
+  } catch (err: unknown) {
+    console.error("lesson-progress error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

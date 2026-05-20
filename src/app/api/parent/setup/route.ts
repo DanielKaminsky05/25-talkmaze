@@ -1,53 +1,53 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+
+const BodySchema = z
+  .object({
+    phoneNumber: z.string().min(1),
+    pin: z.string().min(1),
+  })
+  .strict();
 
 /**
- * PATCH /api/parent
+ * PATCH /api/parent/setup
  * Updates the parent's phone number and PIN after account creation.
  */
 export async function PATCH(req: Request) {
-  const supabase = await createClient();
+  const auth = await requireRole([1]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
-  const { phoneNumber, pin } = await req.json();
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (!user || error) {
+  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error finding current user",
-      },
-      { status: 401 },
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
     );
   }
 
-  // Save the phone number and PIN on the parent record.
-  // The PIN is what lets the parent unlock their profile on the /profiles page.
-  const { error: updateError } = await supabase
-    .from("parents")
-    .update({
-      phone_number: phoneNumber,
-      profile_access_pin: pin,
-    })
-    .eq("account_id", user.id);
-
-  if (updateError) {
-    console.log("Update err: " + JSON.stringify(updateError));
+  try {
+    const { error: updateError } = await supabase
+      .from("parents")
+      .update({
+        phone_number: parsed.data.phoneNumber,
+        profile_access_pin: parsed.data.pin,
+      })
+      .eq("account_id", user.id);
+    if (updateError) {
+      console.error("parent/setup update error", updateError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    await supabase.from("account").update({ new: false }).eq("id", user.id);
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("parent/setup error", err);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to finish parent onboarding",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
-
-  // Mark onboarding as complete so /profiles stops redirecting them here.
-  await supabase.from("account").update({ new: false }).eq("id", user.id);
-
-  return NextResponse.json({ success: true }, { status: 200 });
 }

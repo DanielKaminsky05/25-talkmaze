@@ -9,6 +9,12 @@ type RouteHandler = (
 interface CallOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
+  /**
+   * Multipart form body. When provided, `body` is ignored and Content-Type is
+   * set by FormData itself (with its multipart boundary). Use this for routes
+   * that read via `request.formData()` (e.g. file uploads).
+   */
+  formData?: FormData;
   /** URL path params e.g. { id: "abc" } for a [id] segment. */
   params?: Record<string, string>;
   /** Raw Cookie header string from signSessionFor(). */
@@ -37,7 +43,7 @@ export async function call(
   handler: RouteHandler,
   opts: CallOptions = {},
 ): Promise<CallResult> {
-  const { method = "GET", body, params = {}, cookies, query } = opts;
+  const { method = "GET", body, formData, params = {}, cookies, query } = opts;
 
   // Wire up the cookie context so next/headers cookies() reads the right session.
   nextCookies.header = cookies ?? "";
@@ -48,12 +54,22 @@ export async function call(
   }
 
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (formData === undefined && body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
   if (cookies) headers["Cookie"] = cookies;
+
+  // FormData wins when both are present; it carries its own multipart boundary
+  // via the underlying Request, so we don't set Content-Type ourselves.
+  const requestBody: BodyInit | undefined = formData
+    ? formData
+    : body !== undefined
+      ? JSON.stringify(body)
+      : undefined;
 
   const req = new NextRequest(url, {
     method,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: requestBody,
     headers,
   });
 

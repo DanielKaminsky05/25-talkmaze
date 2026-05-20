@@ -36,7 +36,6 @@ export function CheckoutPageClient() {
   const sFName = searchParams.get("sFName");
   const sLName = searchParams.get("sLName");
   const email = searchParams.get("email");
-  const password = searchParams.get("password");
 
   const amountDisplay = amountCents
     ? `$${(Number.parseInt(amountCents, 10) / 100).toFixed(0)}`
@@ -51,24 +50,27 @@ export function CheckoutPageClient() {
         setInitError("Missing price_id");
         return;
       }
+      if (!studentId) {
+        setInitError("Missing studentId");
+        return;
+      }
 
       try {
         const timeoutId = setTimeout(() => abortController.abort(), 15000);
         const endpoint =
           mode === "schedule" ? "/api/subscriptions/schedule" : "/api/checkout";
+        const body: Record<string, string> = { priceId, studentId };
+        if (studentId === "new") {
+          if (pFName) body.pFName = pFName;
+          if (pLName) body.pLName = pLName;
+          if (sFName) body.sFName = sFName;
+          if (sLName) body.sLName = sLName;
+          if (email) body.email = email;
+        }
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            priceId,
-            studentId,
-            pFName,
-            pLName,
-            sFName,
-            sLName,
-            email,
-            password,
-          }),
+          body: JSON.stringify(body),
           signal: abortController.signal,
         });
         clearTimeout(timeoutId);

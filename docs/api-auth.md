@@ -283,7 +283,7 @@ try {
 
 ## Testing the contract
 
-`tests/integration/api/admin/auth.test.ts` and `auth-extended.test.ts` together describe the role matrix. After `requireRole` lands and the audit's auth-missing routes are fixed, ~80 RED tests turn GREEN. The test pattern is in `docs/testing-critique.md` — don't write new "expect(200)" tests; pair every status assertion with a side-effect assertion (`expectSideEffect(table, predicate)` or `expectNoSideEffect`).
+`tests/integration/api/_auth-matrix.test.ts` is the parameterised role-gate matrix — one row per route. Per-route 5Q test files cover ownership + validation + response shape + side effects + external calls. Always pair a status-code assertion with a side-effect assertion via `expectRowExists` / `expectNoRow` from `tests/helpers/sideEffects.ts`.
 
 The full test matrix to maintain:
 
@@ -305,8 +305,12 @@ for (const c of AUTH_CASES) {
   });
   it(`${c.route} accepts allowed role`, () => {
     for (const r of c.allowed) {
+      // Only assert not-401: the matrix tests the *role gate*, not ownership.
+      // A 403 from the ownership layer (e.g. assertOwnsStudent on a FAKE_ID
+      // resource we pass in the request) is contract-correct and is exercised
+      // by the per-route test file. Asserting not-403 here would falsely flag
+      // ownership-coupled routes (subscriptions, parent/students, coach/*).
       expect(c.call(cookiesFor(r))).status.not.toBe(401);
-      expect(c.call(cookiesFor(r))).status.not.toBe(403);
     }
   });
 }

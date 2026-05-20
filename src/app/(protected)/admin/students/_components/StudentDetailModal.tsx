@@ -113,7 +113,7 @@ export default function StudentDetailModal({
       if (!response.ok) {
         throw new Error(data?.error ?? "Failed to save changes");
       }
-      onUpdate(data);
+      onUpdate(data?.student ?? data);
       setIsEditing(false);
       setEditForm({});
     } catch (err) {

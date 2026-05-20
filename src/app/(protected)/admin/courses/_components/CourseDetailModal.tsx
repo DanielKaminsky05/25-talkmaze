@@ -58,7 +58,7 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
       });
       if (!response.ok) throw new Error("Failed to update course");
       const updated = await response.json();
-      onUpdate(updated);
+      onUpdate(updated?.course ?? updated);
       setIsEditing(false);
       setEditForm({});
     } catch (err) {

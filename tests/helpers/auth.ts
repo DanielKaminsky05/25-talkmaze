@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import type { TestAccount } from "./factories";
+import { createAccount, type TestAccount } from "./factories";
+
+export type Role = 1 | 2 | 3;
 
 /**
  * Signs in as the given test account and returns a Cookie header string
@@ -33,3 +35,13 @@ export async function signSessionFor(account: TestAccount): Promise<string> {
 
 /** Convenience constant for unauthenticated requests. */
 export const ANON = { cookies: "" } as const;
+
+/**
+ * Creates a fresh account with the given role and returns its session-bearing
+ * Cookie header. Each call yields a new account — safe to use inside `it()`
+ * blocks alongside `beforeEach(resetAll)`.
+ */
+export async function cookiesFor(role: Role): Promise<string> {
+  const account = await createAccount({ role });
+  return signSessionFor(account);
+}

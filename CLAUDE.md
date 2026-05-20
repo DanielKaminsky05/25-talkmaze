@@ -93,45 +93,67 @@ Business workflows live here and call into `src/services/*`. Don't reverse the d
 - **Calendars:** FullCalendar (dayGrid + timeGrid + interaction). Wrappers force remount with `key={`${initialView}-${initialDate}`}` to work around plugin state issues.
 - **Icons:** Local SVGs barreled from `src/components/ui/icons/index.ts`. `lucide-react` is also available and used sparingly.
 
-### Known quality issues (don't propagate when editing)
+### API contract (read this before editing any route)
 
-Full audit with file paths and severities in `docs/repo-quality-audit.md`. Headline items:
+**The contract layer is canonical** — see `docs/api-contract.md`, `docs/api-auth.md`, `docs/api-ownership.md`. Every gated route in `src/app/api/**` follows the four-stage shape: `requireRole` → Zod `.strict()` → `assertOwns*` → execute. When editing or adding a route, mirror this shape; don't reinvent.
 
-**Critical**
-- `create-admin/route.ts` has its RBAC check commented out — any authenticated user can grant admin.
-- **17 `/api/admin/**` routes have no auth at all**; the 4 `pending-bookings` routes also bypass RLS via `createServiceRoleClient()`. Add `getCurrentUser()` + `account.role === 3` whenever you touch one of them.
-- `parent/students/[studentId]` and `coach/lessonspace/[coachId]/[studentId]` accept IDs from the URL with no auth check.
-- The LessonSpace webhook (`/api/webhooks/lessonspace`) accepts any POST — no signature verification — and emails the lesson summary to a hardcoded `wdstalkmaze@gmail.com` instead of the resolved account email.
-- `/api/checkout` accepts a `password` field, `console.log`s it, and stores it in Stripe subscription metadata. Stripe metadata is visible in the dashboard.
-- Coach routes (`lesson-feedback`, `lesson-progress`, `lesson-tasks`, `lessons`, `sessions`, `conversation`) authenticate the user but never check that the `studentId` they're acting on belongs to the calling coach. Use the `coach_students` join.
+Helpers in `src/lib/auth/server/`:
+- `requireRole(allowedRoles)` — returns `{ user, account, supabase } | NextResponse`. Pass `[]` for any-authed; pass `[3]` for admin-only; etc.
+- `assertOwnsStudent`, `assertCoachAssignedToStudent`, `assertCoachOwnsConversation`, `assertCoachOwnsSession` — per-resource ownership. Always called AFTER role gate.
+- `resolveStudentIdForBilling` — composed helper for subscription routes; defaults to `studentNotFound: 404` but override to `403` per `docs/api-ownership.md:166`.
 
-**High**
-- `src/lib/scheduling/server/matchmaking.ts` has nested loops that re-query `booked_slots` and `sessions` inside the innermost iteration — pre-fetch and build an in-memory conflict map.
-- N+1 in `app/(protected)/(families)/message/[id]/page.tsx` (and the equivalent `api/coach/conversation/message/route.ts`) — fetch sender profiles with a relational `select()` join instead of mapping per-message.
-- God components: `admin/courses/_components/CourseLessonPanel.tsx` (1215 lines, 28 `useState`), `parent/profile/_components/ParentProfilePageClient.tsx` (767 lines, 26 `useState`), `coach/students/.../LessonDetailClient.tsx` (718 lines), `student/profile/_components/StudentProfilePageClient.tsx` (633 lines). (The old "`admin/page.tsx` is 1700 lines" claim is stale — admin has been split.)
-- Cross-route private import: `coach/_components/StudentDetails.tsx` imports `ConversationClient` from `(families)/message/[id]/_client`. Promote to `src/lib/messaging/` or `src/components/`.
-- Half-finished `coach_availabilities` / `student_availabilities` column migration: the new `start_time_new`/`end_time_new` columns coexist with the legacy `start_time`/`end_time`. The two parent/admin availability GET routes still read the legacy columns only.
+Response shapes:
+- List endpoints: wrap in a named collection (`{ students: [...] }`, never bare arrays).
+- Entity endpoints: `{ student: {...} }` or `{ success: true }` for mutations with no return value.
+- Errors: `{ error: string }` with proper HTTP status code. **Never** `{ status, message }` in the body. **Never** leak `err.message` from a catch — use a generic `"Internal server error"`.
 
-**Medium**
-- Zod is installed but used in only ~4 places (signup, onboarding, two profile-setup pages) — every API body is validated by ad-hoc `typeof` checks. When you touch a route, add a schema.
-- `as any` casts cluster in `coach/lesson-progress/route.ts` (5 instances) and the parent lesson pages. The lesson-progress casts suggest the generated DB types are out of sync — consider regenerating via `npm run gen-types`.
-- Inconsistent error shapes: `{ error }` vs `{ message }` vs `{ status, message }` (sometimes with the HTTP status not actually set on the response). Standardise on `{ error: string }` with `NextResponse.json(body, { status })`.
-- ~21 stray `console.log`/`console.error` calls (notably one logging the user's password in `/api/checkout`) and 14 `alert()` calls for user-facing errors.
-- `src/app/api/admin/courses/assign/route.ts` builds a `.not()` filter via string concatenation — SQL injection shape.
+Worked examples to mirror:
+- `src/app/api/subscriptions/cancel/route.ts` — Phase-3 canonical four-stage example.
+- `src/app/api/coach/lesson-progress/route.ts` — thin handler delegating to `src/lib/lessons/server/awardProgress.ts`.
 
-**Cruft**
-- Modals lack `role="dialog"` / `aria-modal` and most icon-only buttons lack `aria-label`.
-- `ReviewLesson.tsx` and `UpNextLesson.tsx` are 44-line near-duplicates — merge.
-- Stale `tw_id` comments and a no-op `resolveCoachUUID()` stub in `api/admin/employees/[id]/availability/route.ts`. `students.teach_works_url` column still exists but is unused — drop next migration.
+### Status (2026-05-20): contract rewrite complete
+
+The 6-phase rewrite (`docs/test-rewrite-runbook.md`) closed every CRITICAL audit finding. 627 tests pass (99 unit + 528 integration/contract). Outstanding items below are tracked in `docs/repo-quality-audit.md`.
+
+**Intentional deferrals**
+- Stripe webhook lacks event-id dedupe — state-based idempotency in place; processed-events table is a future PR.
+- LessonSpace webhook lacks signature verification — waiting on provider HMAC.
+- LessonSpace email recipient hardcoded to `wdstalkmaze@gmail.com` — product decision; route resolves `account.email`; flip is a one-line change in the route + the contract test.
+
+**Data integrity (needs Postgres RPC migrations to fix properly)**
+- `admin/employees/[id]/availability` PUT does DELETE-then-INSERT without transaction. Partial INSERT failure → coach has zero availability. Same shape in `admin/courses/assign` and `src/lib/lessons/server/insertLessonIntoCourse.ts`. Canonical fix: a Postgres function called via `supabase.rpc(...)`.
+
+**Pre-existing tech debt unrelated to the contract**
+- Half-finished `coach_availabilities` / `student_availabilities` column migration: `start_time_new`/`end_time_new` coexist with legacy `start_time`/`end_time`.
+- `students.teach_works_url` column unused — drop in next migration.
+- Stale `tw_id` references in comments.
+- God components: `CourseLessonPanel.tsx` (1215 lines), `ParentProfilePageClient.tsx` (767), `LessonDetailClient.tsx` (718), `StudentProfilePageClient.tsx` (633).
+- Cross-route private import: `coach/_components/StudentDetails.tsx` imports from `(families)/message/[id]/_client`. Promote to `src/lib/messaging/` or `src/components/`.
+- Modals missing `role="dialog"` / `aria-modal`; icon-only buttons missing `aria-label`.
+- ~100 pre-existing UI lint errors (`react-hooks/set-state-in-effect`, `no-explicit-any`, etc.) — all in dashboard components, all pre-date the rewrite.
+
+### When adding code
+
+- **New API routes** → follow the four-stage shape. Add a per-route 5-question test file (`docs/test-rewrite-runbook.md` line 156).
+- **New tests** → `beforeEach(resetAll)` from `tests/helpers/db.ts`. Side-effect assertions via `expectRowExists` / `expectNoRow` from `tests/helpers/sideEffects.ts`.
+- **Domain logic** with significant code in a route handler → extract to `src/lib/<domain>/server/`. The route should be the auth/validate/authorize/delegate skeleton.
+- **New gated routes** → add a row to `tests/integration/api/_auth-matrix.test.ts` for the role-gate matrix.
 
 ### Supporting docs
 
-- `docs/data-model.md` — full table inventory and entity graph (created here).
-- `docs/payments-flow.md` — Stripe checkout → invoice → schedule lifecycle (created here).
-- `docs/api-conventions.md` — per-route auth/validation patterns and the service-role audit (created here).
+Canonical (read these before editing):
+- `docs/api-contract.md` — route shape, status codes, error format. **THE spec.**
+- `docs/api-auth.md` — `requireRole`, role matrix per URL prefix.
+- `docs/api-ownership.md` — `assertOwns*` helpers, 404-vs-403 rule.
+
+Domain references:
+- `docs/data-model.md` — full table inventory and entity graph.
+- `docs/payments-flow.md` — Stripe checkout → invoice → schedule lifecycle.
 - `docs/matchmaking.md` — coach/student matching algorithm.
 - `docs/lessonspace-runtime-flows.md` — LessonSpace integration map.
-- `docs/repo-quality-audit.md` — known issues.
-- `docs/testing-strategy.md` — testing framework choices, tooling decisions, per-domain test catalogue, phased rollout plan.
-- `docs/testing-coverage.md` — **current test coverage state**: what's written, what's passing/failing, what still needs to be done, key patterns and gotchas.
+
+Current state + history:
+- `docs/testing-coverage.md` — current test coverage, helpers, CI shape.
+- `docs/test-rewrite-runbook.md` — multi-phase rewrite plan (done, kept for the 5Q template + decision log).
+- `docs/repo-quality-audit.md` — original audit findings + tracked residuals.
 - `README.md` — original route collocation conventions.

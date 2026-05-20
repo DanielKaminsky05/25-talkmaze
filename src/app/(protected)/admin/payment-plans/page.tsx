@@ -30,7 +30,7 @@ export default function PaymentPlansPage() {
         const res = await fetch("/api/admin/payment-plans");
         if (!res.ok) throw new Error();
         const data = await res.json();
-        setPlans(data);
+        setPlans(Array.isArray(data?.plans) ? data.plans : []);
       } finally {
         setLoading(false);
       }

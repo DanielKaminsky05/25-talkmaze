@@ -58,14 +58,15 @@ export default function AvailabilityModal({
     fetch(`/api/parent/students/${selectedStudentId}/availability`)
       .then((r) => r.json())
       .then(
-        (
-          rows: {
+        (body: {
+          availability?: {
             weekday: number;
             start_time: string;
             end_time: string;
             timezone: string;
-          }[],
-        ) => {
+          }[];
+        }) => {
+          const rows = Array.isArray(body?.availability) ? body.availability : [];
           const mapped: Availability = {};
           rows.forEach(({ weekday, start_time, end_time, timezone: tz }) => {
             const day = DAY_MAP[weekday];

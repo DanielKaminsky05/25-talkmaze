@@ -40,8 +40,9 @@ export default function CoursesPage() {
         const res = await fetch("/api/admin/courses");
         if (!res.ok) throw new Error();
         const data = await res.json();
+        const list = Array.isArray(data?.courses) ? data.courses : [];
         setCourses(
-          data.map((c: any) => ({
+          list.map((c: any) => ({
             id: c.id,
             name: c.title,
             description: c.description,
@@ -57,8 +58,8 @@ export default function CoursesPage() {
       .then((r) => r.json())
       .then((data) =>
         setStudents(
-          Array.isArray(data)
-            ? data.map((s: any) => ({
+          Array.isArray(data?.students)
+            ? data.students.map((s: any) => ({
                 id: String(s.id),
                 account_id: String(s.account_id),
                 first_name: s.first_name ?? null,

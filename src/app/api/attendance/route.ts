@@ -1,37 +1,92 @@
-import { createClient } from "@/src/services/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import {
+  requireRole,
+  type AuthContext,
+  type Role,
+} from "@/src/lib/auth/server/requireRole";
+import {
+  assertOwnsStudent,
+  assertCoachAssignedToStudent,
+} from "@/src/lib/auth/server/ownership";
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "Unknown error";
+const GetQuerySchema = z
+  .object({ student_id: z.string().uuid() })
+  .strict();
+
+const PostBodySchema = z
+  .object({
+    student_id: z.string().uuid(),
+    session_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    status: z.enum(["attended", "missed", "cancelled"]),
+    session_id: z.number().int().optional(),
+    notes: z.string().optional(),
+  })
+  .strict();
+
+const DeleteBodySchema = z
+  .object({
+    student_id: z.string().uuid(),
+    session_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    session_id: z.number().int().optional(),
+  })
+  .strict();
+
+async function checkAttendanceOwnership(
+  auth: AuthContext,
+  studentId: string,
+): Promise<NextResponse | null> {
+  const role = auth.account.role as Role;
+  if (role === 1) {
+    const r = await assertOwnsStudent(auth, studentId);
+    return r instanceof NextResponse ? r : null;
+  }
+  if (role === 2) {
+    const r = await assertCoachAssignedToStudent(auth, studentId);
+    return r instanceof NextResponse ? r : null;
+  }
+  return null; // role 3 admin: bypass
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await requireRole([]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  const parsed = GetQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+
+  const ownership = await checkAttendanceOwnership(
+    auth,
+    parsed.data.student_id,
+  );
+  if (ownership) return ownership;
+
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { searchParams } = new URL(request.url);
-    const studentId = searchParams.get("student_id");
-    if (!studentId)
-      return NextResponse.json(
-        { error: "student_id is required" },
-        { status: 400 },
-      );
-
     const { data: records, error } = await supabase
       .from("session_attendance")
       .select("id, session_date, session_id, status, notes, coach_id")
-      .eq("student_id", studentId)
+      .eq("student_id", parsed.data.student_id)
       .order("session_date", { ascending: false })
       .limit(12);
 
-    if (error)
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("attendance GET query error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
     let streak = 0;
     for (const record of records ?? []) {
@@ -46,46 +101,40 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ attendance: records ?? [], streak });
   } catch (error: unknown) {
-    console.error("Error in GET /api/attendance:", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    console.error("attendance GET error", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireRole([2, 3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
+
+  const parsed = PostBodySchema.safeParse(
+    await request.json().catch(() => ({})),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { student_id, session_date, status, session_id, notes } = parsed.data;
+
+  const ownership = await checkAttendanceOwnership(auth, student_id);
+  if (ownership) return ownership;
+
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { data: account } = await supabase
-      .from("account")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!account || (account.role !== 2 && account.role !== 3)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { student_id, session_date, status, session_id, notes } = body;
-
-    if (!student_id || !session_date || !status) {
-      return NextResponse.json(
-        { error: "student_id, session_date, and status are required" },
-        { status: 400 },
-      );
-    }
-
     // Auto-lookup coach_id from authenticated user's coach profile
     const { data: coachProfile } = await supabase
       .from("coaches")
       .select("id")
       .eq("account_id", user.id)
-      .single();
+      .maybeSingle();
 
     // Check existing record to detect status transition for sessions_remaining adjustment
     const { data: existing } = await supabase
@@ -112,8 +161,13 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error)
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("attendance POST upsert error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
     // "attended" and "missed" both consume a session slot; "cancelled" does not.
     // Adjust sessions_remaining only when the consuming state changes.
@@ -155,40 +209,34 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error: unknown) {
-    console.error("Error in POST /api/attendance:", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    console.error("attendance POST error", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await requireRole([2, 3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  const parsed = DeleteBodySchema.safeParse(
+    await request.json().catch(() => ({})),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { student_id, session_date, session_id } = parsed.data;
+
+  const ownership = await checkAttendanceOwnership(auth, student_id);
+  if (ownership) return ownership;
+
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { data: account } = await supabase
-      .from("account")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!account || (account.role !== 2 && account.role !== 3)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { student_id, session_date, session_id } = body;
-
-    if (!student_id || !session_date) {
-      return NextResponse.json(
-        { error: "student_id and session_date are required" },
-        { status: 400 },
-      );
-    }
-
     const baseQuery = supabase
       .from("session_attendance")
       .select("id, status")
@@ -201,8 +249,13 @@ export async function DELETE(request: NextRequest) {
     const { data: existing, error: existingError } =
       await lookupQuery.maybeSingle();
 
-    if (existingError)
-      return NextResponse.json({ error: existingError.message }, { status: 500 });
+    if (existingError) {
+      console.error("attendance DELETE lookup error", existingError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
     if (!existing) return NextResponse.json({ success: true }, { status: 200 });
 
     const deleteQuery = supabase
@@ -211,8 +264,13 @@ export async function DELETE(request: NextRequest) {
       .eq("id", existing.id);
 
     const { error } = await deleteQuery;
-    if (error)
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("attendance DELETE error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
     const wasConsuming =
       existing.status === "attended" || existing.status === "missed";
@@ -236,7 +294,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {
-    console.error("Error in DELETE /api/attendance:", error);
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+    console.error("attendance DELETE error", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

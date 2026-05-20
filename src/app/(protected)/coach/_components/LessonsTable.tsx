@@ -83,8 +83,13 @@ export default function LessonsTable({
       const res = await fetch(`/api/admin/students/lessons/${studentId}`);
       if (!res.ok) throw new Error("Failed to fetch lessons");
 
-      const data: OrganizedLessons[] = await res.json();
-      setLessons(data ?? []);
+      const body = await res.json();
+      const data: OrganizedLessons[] = Array.isArray(body?.courses)
+        ? body.courses
+        : Array.isArray(body)
+          ? body
+          : [];
+      setLessons(data);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred",

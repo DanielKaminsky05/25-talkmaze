@@ -1,52 +1,78 @@
-import { createClient } from "@/src/services/supabase/server";
-import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachAssignedToStudent } from "@/src/lib/auth/server/ownership";
+
+const QuerySchema = z
+  .object({
+    contactId: z.string().uuid(),
+  })
+  .strict();
 
 export async function GET(request: Request) {
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  console.log("Retrieving student message logs");
-  const { searchParams } = new URL(request.url);
-  const contactId = searchParams.get("contactId");
-  
-  if (!contactId) return NextResponse.json({ error: "No contactId" }, { status: 400 });
+  // Stage 2: VALIDATE
+  const parsed = QuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+  const { contactId } = parsed.data;
 
-  const user = await getCurrentUser();
-  
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Stage 3: AUTHORIZE
+  const ownership = await assertCoachAssignedToStudent(auth, contactId);
+  if (ownership instanceof NextResponse) return ownership;
+  const { coachId } = ownership;
 
-  const supabase = await createClient();
-
-  // Resolve the coach's coaches.id from their account id
-  const { data: coach } = await supabase
-    .from("coaches")
-    .select("id")
-    .eq("account_id", user.id)
-    .single();
-
-  if (!coach) return NextResponse.json({ error: "Coach not found" }, { status: 403 });
-
-  // contactId is always a profile ID (student or parent) from the contact list
+  // Stage 4: EXECUTE
+  try {
+    // The route historically supports student OR parent contacts. The contract
+    // test only exercises the student path; keep both branches to preserve UI.
     const { data: studentProfile } = await supabase
-    .from("students")
-    .select("id")
-    .eq("id", contactId)
-    .maybeSingle();
+      .from("students")
+      .select("id")
+      .eq("id", contactId)
+      .maybeSingle();
+    const profileType = studentProfile ? "student" : "parent";
 
-  const profileType = studentProfile ? "student" : "parent";
+    const { data: conv, error } = await supabase
+      .from("conversations")
+      .upsert(
+        {
+          coach_id: coachId,
+          profile_id: contactId,
+          profile_type: profileType,
+        },
+        { onConflict: "coach_id,profile_id" },
+      )
+      .select("id")
+      .single();
 
-  // Upsert — the unique constraint on (coach_id, profile_id) prevents duplicates
+    if (error) {
+      console.error("coach/conversation upsert error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
-  console.log("Selected Type: " + profileType);
-  const { data: conv, error } = await supabase
-    .from("conversations")
-    .upsert(
-      { coach_id: coach.id, profile_id: contactId, profile_type: profileType },
-      { onConflict: "coach_id,profile_id" },
-    )
-    .select("id")
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ conversationId: conv.id });
+    return NextResponse.json({ conversationId: conv.id });
+  } catch (err: unknown) {
+    console.error("coach/conversation error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

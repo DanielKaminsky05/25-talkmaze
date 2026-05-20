@@ -1,10 +1,21 @@
 # Code Quality Audit
 
-Ground truth as of the current `dev` branch. Findings come from re-reading the actual code, not from prior audit notes. File paths are absolute from repo root. Severities: **CRITICAL** = security or data-loss risk; **HIGH** = bug or maintainability cliff; **MED** = inconsistency or correctness smell; **LOW** = cruft.
+Ground truth from the original read of `dev`. Severities: **CRITICAL** = security or data-loss risk; **HIGH** = bug or maintainability cliff; **MED** = inconsistency or correctness smell; **LOW** = cruft.
 
 ---
 
-> **Regression tests exist for every CRITICAL issue listed here.** See `docs/testing-coverage.md` for the per-file breakdown. Failing tests in `tests/integration/` document the exact gap — when a fix lands the test turns green, preventing re-introduction.
+> **Status (2026-05-20): the contract rewrite is complete on `testing-overhaul`. Every CRITICAL item below is fixed and has a regression test.** See `docs/test-rewrite-runbook.md` for the commit chain (Phases 1–6 + finalisation sweeps). HIGH/MEDIUM items are partially addressed — response-shape and Zod validation drift is closed (Phase 4.6); `select("*")` and ownership cleanups landed in the per-route sweeps; god-component refactors are still pending.
+>
+> The body below is kept as the historical starting-state record. Read top-to-bottom as "what `dev` looked like *before* the rewrite." For the residual list see the heading below.
+>
+> **Outstanding (not addressed):**
+> - Stripe webhook event-id dedupe — state-based idempotency in place; processed-events table is a future PR.
+> - LessonSpace webhook signature verification — waiting on provider HMAC.
+> - LessonSpace email recipient pinned to `wdstalkmaze@gmail.com` — product decision; `account.email` resolution wired in the route, flip is one line.
+> - Delete-then-INSERT atomicity in `admin/employees/[id]/availability`, `admin/courses/assign`, `insertLessonIntoCourse` — RPC-shaped follow-up.
+> - `coach_availabilities` / `student_availabilities` half-finished column migration (`_new` variants coexist with legacy columns).
+> - God components: `CourseLessonPanel.tsx`, `ParentProfilePageClient.tsx`, `LessonDetailClient.tsx`, `StudentProfilePageClient.tsx`.
+> - Pre-existing UI lint errors (~100, all in dashboard components).
 
 ## CRITICAL — fix before doing anything else in these files
 

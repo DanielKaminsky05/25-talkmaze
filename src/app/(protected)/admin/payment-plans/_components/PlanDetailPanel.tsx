@@ -78,7 +78,7 @@ export default function PlanDetailPanel({
       });
       if (!res.ok) throw new Error();
       const updated = await res.json();
-      onUpdate({ ...plan, ...updated });
+      onUpdate({ ...plan, ...(updated?.plan ?? updated) });
       setEditing(false);
     } catch {
       setError("Failed to save changes.");

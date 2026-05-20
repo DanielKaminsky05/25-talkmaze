@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertOwnsStudent } from "@/src/lib/auth/server/ownership";
 
 const DAY_MAP: Record<string, number> = {
   Sunday: 0,
@@ -11,110 +13,135 @@ const DAY_MAP: Record<string, number> = {
   Saturday: 6,
 };
 
-async function verifyOwnership(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  studentId: string,
-  userId: string,
-): Promise<boolean> {
-  const { data } = await supabase
-    .from("students")
-    .select("id")
-    .eq("id", studentId)
-    .eq("account_id", userId)
-    .maybeSingle();
-  return !!data;
-}
+const ParamsSchema = z.object({ studentId: z.string().uuid() }).strict();
+
+const PutBodySchema = z
+  .object({
+    availability: z.record(
+      z.string(),
+      z.array(z.object({ start: z.string(), end: z.string() })),
+    ),
+    timezone: z.string(),
+  })
+  .strict();
 
 export async function GET(
-  _: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ studentId: string }> },
 ) {
-  const { studentId } = await params;
-  const supabase = await createClient();
+  const auth = await requireRole([1]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
-  if (!(await verifyOwnership(supabase, studentId, user.id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ownership = await assertOwnsStudent(auth, parsed.data.studentId);
+  if (ownership instanceof NextResponse) return ownership;
+
+  try {
+    const { data, error } = await supabase
+      .from("student_availabilities")
+      .select("weekday, start_time, end_time, timezone")
+      .eq("student_id", parsed.data.studentId);
+    if (error) {
+      console.error("parent/availability GET error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ availability: data ?? [] });
+  } catch (err: unknown) {
+    console.error("parent/availability GET error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
-
-  const { data, error } = await supabase
-    .from("student_availabilities")
-    .select("weekday, start_time, end_time, timezone")
-    .eq("student_id", studentId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data ?? []);
 }
 
 export async function PUT(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ studentId: string }> },
 ) {
-  const { studentId } = await params;
-  const supabase = await createClient();
+  const auth = await requireRole([1]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsedParams.error.flatten(),
+      },
+      { status: 400 },
+    );
   }
-
-  if (!(await verifyOwnership(supabase, studentId, user.id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const {
-    availability,
-    timezone,
-  }: {
-    availability: Record<string, { start: string; end: string }[]>;
-    timezone: string;
-  } = await req.json();
-
-  const { error: deleteError } = await supabase
-    .from("student_availabilities")
-    .delete()
-    .eq("student_id", studentId);
-
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
-  }
-
-  const rows = Object.entries(availability).flatMap(([day, slots]) =>
-    slots
-      .filter((s) => s.start && s.end)
-      .map((s) => ({
-        student_id: studentId,
-        weekday: DAY_MAP[day],
-        start_time: new Date(`1970-01-01T${s.start}:00Z`).toISOString(),
-        end_time: new Date(`1970-01-01T${s.end}:00Z`).toISOString(),
-        start_time_new: `${s.start}:00`,
-        end_time_new: `${s.end}:00`,
-        timezone,
-      })),
+  const parsedBody = PutBodySchema.safeParse(
+    await req.json().catch(() => ({})),
   );
-
-  if (rows.length > 0) {
-    const { error: insertError } = await supabase
-      .from("student_availabilities")
-      .insert(rows);
-
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
   }
 
-  return NextResponse.json({ success: true });
+  const ownership = await assertOwnsStudent(auth, parsedParams.data.studentId);
+  if (ownership instanceof NextResponse) return ownership;
+
+  try {
+    const { error: deleteError } = await supabase
+      .from("student_availabilities")
+      .delete()
+      .eq("student_id", parsedParams.data.studentId);
+    if (deleteError) {
+      console.error("parent/availability PUT delete error", deleteError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+
+    const rows = Object.entries(parsedBody.data.availability).flatMap(
+      ([day, slots]) =>
+        slots
+          .filter((s) => s.start && s.end)
+          .map((s) => ({
+            student_id: parsedParams.data.studentId,
+            weekday: DAY_MAP[day],
+            start_time: new Date(`1970-01-01T${s.start}:00Z`).toISOString(),
+            end_time: new Date(`1970-01-01T${s.end}:00Z`).toISOString(),
+            start_time_new: `${s.start}:00`,
+            end_time_new: `${s.end}:00`,
+            timezone: parsedBody.data.timezone,
+          })),
+    );
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase
+        .from("student_availabilities")
+        .insert(rows);
+      if (insertError) {
+        console.error("parent/availability PUT insert error", insertError);
+        return NextResponse.json(
+          { error: "Internal server error" },
+          { status: 500 },
+        );
+      }
+    }
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("parent/availability PUT error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
