@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, testing]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev, testing]
   workflow_dispatch: # allow manual runs from the Actions tab
 
 concurrency:
