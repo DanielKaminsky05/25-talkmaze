@@ -112,6 +112,10 @@ describe("unauthenticated access", () => {
   });
 });
 
+// ── Authenticated user on /login ─────────────────────────────────────────────
+// updateSession already handles /login for all roles — redirects to /profiles,
+// then RBAC bounces coaches → /coach and admins → /admin from there.
+
 describe("authenticated user on /login", () => {
   it("redirects a logged-in regular user away from /login to /profiles", async () => {
     const res = await middleware(makeReq("/login", regularCookies));
@@ -123,6 +127,77 @@ describe("authenticated user on /login", () => {
     const res = await middleware(makeReq("/login", coachCookies));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/profiles");
+  });
+
+  it("redirects a logged-in admin away from /login to /profiles", async () => {
+    const res = await middleware(makeReq("/login", adminCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/profiles");
+  });
+});
+
+// ── Authenticated user on other public-only pages (NOT YET IMPLEMENTED) ──────
+// /signup, /forgot-password, and / have no value for a logged-in user.
+// Expected destination is role-specific: regular → /profiles, coach → /coach,
+// admin → /admin. Currently all pass through without a redirect.
+
+describe("authenticated user on /signup", () => {
+  it("redirects a logged-in regular user away from /signup to /profiles", async () => {
+    const res = await middleware(makeReq("/signup", regularCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/profiles");
+  });
+
+  it("redirects a logged-in coach away from /signup to /coach", async () => {
+    const res = await middleware(makeReq("/signup", coachCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/coach");
+  });
+
+  it("redirects a logged-in admin away from /signup to /admin", async () => {
+    const res = await middleware(makeReq("/signup", adminCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/admin");
+  });
+});
+
+describe("authenticated user on /forgot-password", () => {
+  it("redirects a logged-in regular user away from /forgot-password to /profiles", async () => {
+    const res = await middleware(makeReq("/forgot-password", regularCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/profiles");
+  });
+
+  it("redirects a logged-in coach away from /forgot-password to /coach", async () => {
+    const res = await middleware(makeReq("/forgot-password", coachCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/coach");
+  });
+
+  it("redirects a logged-in admin away from /forgot-password to /admin", async () => {
+    const res = await middleware(makeReq("/forgot-password", adminCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/admin");
+  });
+});
+
+describe("authenticated user on /", () => {
+  it("redirects a logged-in regular user away from / to /profiles", async () => {
+    const res = await middleware(makeReq("/", regularCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/profiles");
+  });
+
+  it("redirects a logged-in coach away from / to /coach", async () => {
+    const res = await middleware(makeReq("/", coachCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/coach");
+  });
+
+  it("redirects a logged-in admin away from / to /admin", async () => {
+    const res = await middleware(makeReq("/", adminCookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/admin");
   });
 });
 
@@ -226,5 +301,103 @@ describe("profile cookie gating", () => {
     const res = await middleware(makeReq("/parent", cookies));
     // Parents bypass the subscription gate — should not redirect to /payments
     expect(res.headers.get("location") ?? "").not.toContain("/payments");
+  });
+});
+
+// ── /reset-password accessibility ─────────────────────────────────────────────
+// The Supabase reset flow: user clicks email link → /auth/confirm validates the
+// token and creates a session → browser lands on /reset-password already authed.
+// So /reset-password must stay reachable for authenticated users. It should also
+// be reachable unauthenticated in case the session isn't established yet.
+// BUG: updateSession does not whitelist /reset-password, so unauthenticated
+// requests are redirected to /login. Regular users with no profile cookie are
+// also redirected to /profiles by the profile gate.
+
+describe("/reset-password accessibility", () => {
+  it("allows unauthenticated access to /reset-password (token is the credential)", async () => {
+    const res = await middleware(makeReq("/reset-password"));
+    expect(res.headers.get("location") ?? "").not.toContain("/login");
+  });
+
+  it("allows authenticated regular user to access /reset-password (not blocked by profile gate)", async () => {
+    const res = await middleware(makeReq("/reset-password", regularCookies));
+    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+  });
+
+  it("allows authenticated coach to access /reset-password", async () => {
+    const res = await middleware(makeReq("/reset-password", coachCookies));
+    expect(res.status).not.toBe(307);
+  });
+
+  it("allows authenticated admin to access /reset-password", async () => {
+    const res = await middleware(makeReq("/reset-password", adminCookies));
+    expect(res.status).not.toBe(307);
+  });
+});
+
+// ── /payments accessibility ────────────────────────────────────────────────────
+// /payments is intentionally in (public)/ so students without a subscription can
+// reach the paywall. The profile cookie gate must not block it.
+// BUG: /payments is not in the profile-gate carve-out (only /profiles and
+// /onboarding are excluded), so a regular user with no profile cookie gets
+// redirected to /profiles instead of being allowed through to pay.
+
+describe("/payments accessibility", () => {
+  it("allows authenticated regular user without a profile cookie to reach /payments", async () => {
+    // New users land here before they have an active_profile_id cookie
+    const res = await middleware(makeReq("/payments", regularCookies));
+    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+  });
+
+  it("allows authenticated regular user with a student profile to reach /payments", async () => {
+    const cookies = withProfile(regularCookies, studentId, "student");
+    const res = await middleware(makeReq("/payments", cookies));
+    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+  });
+
+  it("allows coach to access /payments", async () => {
+    const res = await middleware(makeReq("/payments", coachCookies));
+    expect(res.status).not.toBe(307);
+  });
+});
+
+// ── Cross-profile-type access ─────────────────────────────────────────────────
+// The middleware checks the subscription gate for /student when profile type is
+// "student", but it does not currently block a student profile from hitting
+// /parent or vice versa. These tests document the current pass-through behaviour.
+// If cross-profile access should be blocked, add explicit checks here.
+
+describe("cross-profile-type access (currently unguarded)", () => {
+  it("student profile type can reach /parent (middleware does not block cross-profile access)", async () => {
+    const cookies = withProfile(regularCookies, studentId, "student");
+    const res = await middleware(makeReq("/parent", cookies));
+    // No redirect expected — middleware has no cross-profile guard today
+    expect(res.headers.get("location") ?? "").not.toContain("/student");
+    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+  });
+
+  it("parent profile type can reach /student (middleware does not block cross-profile access)", async () => {
+    const cookies = withProfile(regularCookies, studentId, "parent");
+    const res = await middleware(makeReq("/student", cookies));
+    // Subscription gate only fires for profile type "student", so parent passes through
+    expect(res.headers.get("location") ?? "").not.toContain("/payments");
+    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+  });
+});
+
+// ── Coach and admin on /student ───────────────────────────────────────────────
+// The middleware protects /coach (non-coaches → /student) and /admin (non-admins
+// → /student) but /student itself has no role guard. Coaches and admins can
+// reach it, which is intentional — admin may need to preview the student view.
+
+describe("coach and admin on /student (unguarded by design)", () => {
+  it("coach can access /student without being redirected", async () => {
+    const res = await middleware(makeReq("/student", coachCookies));
+    expect(res.status).not.toBe(307);
+  });
+
+  it("admin can access /student without being redirected", async () => {
+    const res = await middleware(makeReq("/student", adminCookies));
+    expect(res.status).not.toBe(307);
   });
 });
