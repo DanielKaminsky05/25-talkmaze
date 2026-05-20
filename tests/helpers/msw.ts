@@ -20,7 +20,7 @@ const handlers = [
   http.post("https://api.thelessonspace.com/v2/spaces/launch/", () => {
     return HttpResponse.json({
       client_url: "https://app.thelessonspace.com/room/test-room",
-      room_id: "test-room-id-123",
+      room_id: "00000000-0000-0000-0000-000000000099", // must be a valid UUID (webhook_room_id column)
     });
   }),
 
