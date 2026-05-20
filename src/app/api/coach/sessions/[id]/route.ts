@@ -1,46 +1,81 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachOwnsSession } from "@/src/lib/auth/server/ownership";
+
+const ParamsSchema = z
+  .object({ id: z.coerce.number().int().positive() })
+  .strict();
+
+const BodySchema = z
+  .object({
+    start_time: z.string().datetime(),
+    end_time: z.string().datetime(),
+  })
+  .strict();
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const { data: coachData } = await supabase
-    .from("coaches")
-    .select("id")
-    .eq("account_id", user.id)
-    .single();
-
-  if (!coachData) return NextResponse.json({ error: "Coach not found" }, { status: 404 });
-
-  const { id } = await params;
-  const { start_time, end_time } = await request.json();
-
-  if (!start_time || !end_time) {
-    return NextResponse.json({ error: "start_time and end_time are required" }, { status: 400 });
+  // Stage 2: VALIDATE — path param first (so "not-a-number" doesn't reach
+  // assertCoachOwnsSession with NaN), then body.
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsedParams.error.flatten(),
+      },
+      { status: 400 },
+    );
   }
 
-  const sessionId = Number(id);
+  const parsedBody = BodySchema.safeParse(
+    await req.json().catch(() => ({})),
+  );
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request body",
+        details: parsedBody.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
 
-  const { data: existing } = await supabase
-    .from("sessions")
-    .select("id")
-    .eq("id", sessionId)
-    .eq("coach_id", coachData.id)
-    .single();
+  // Stage 3: AUTHORIZE — 404 for both "missing" and "not yours" (enumeration
+  // prevention; sessions.id is sequential bigint).
+  const ownership = await assertCoachOwnsSession(auth, parsedParams.data.id);
+  if (ownership instanceof NextResponse) return ownership;
 
-  if (!existing) return NextResponse.json({ error: "Session not found" }, { status: 404 });
-
-  const { error } = await supabase
-    .from("sessions")
-    .update({ start_time, end_time })
-    .eq("id", sessionId);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ success: true });
+  // Stage 4: EXECUTE
+  try {
+    const { error } = await supabase
+      .from("sessions")
+      .update({
+        start_time: parsedBody.data.start_time,
+        end_time: parsedBody.data.end_time,
+      })
+      .eq("id", parsedParams.data.id);
+    if (error) {
+      console.error("coach/sessions/[id] update error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("coach/sessions/[id] error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

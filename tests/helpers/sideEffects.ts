@@ -107,7 +107,9 @@ export async function expectNoRow<T extends PublicTable>(
   const db = adminDb();
   const q = applyPredicate(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    db.from(table as any).select("id", { count: "exact", head: true }),
+    // Use "*" — head:true means no rows are returned, but some composite-PK
+    // tables (student_tokens, student_badges) have no `id` column.
+    db.from(table as any).select("*", { count: "exact", head: true }),
     predicate,
   );
   const { error, count } = await q;

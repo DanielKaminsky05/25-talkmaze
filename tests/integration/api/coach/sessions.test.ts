@@ -1,61 +1,137 @@
 /**
- * Behavioural tests for GET /api/coach/sessions.
+ * Contract tests for GET /api/coach/sessions.
  *
- * Role-gate assertions live in tests/integration/api/_auth-matrix.test.ts.
+ * Returns sessions assigned to the calling coach. Optional `?student_id=`
+ * filter — per docs/api-ownership.md scope discussion, when the student
+ * doesn't belong to the coach we return an empty list (no information leak),
+ * NOT a 403 (which would reveal the student's existence).
  *
- * The route is already coach-scoped (filters by coach_id), so the interesting
- * tests are about scoping correctness rather than ownership 403s.
+ * Five questions:
+ *   Q1 ownership — implicit via coach_id filter; no per-resource 403
+ *   Q2 validation — student_id optional + UUID + .strict()
+ *   Q3 response — { sessions: [...] } named collection
+ *   Q4 side effects — none (read)
+ *   Q5 external calls — none
  */
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from "vitest";
 import {
   createAccount,
   createCoach,
   createStudent,
+  createSession,
   linkCoachToStudent,
 } from "@tests/helpers/factories";
 import { signSessionFor } from "@tests/helpers/auth";
+import { resetAll } from "@tests/helpers/db";
 import { call } from "@tests/helpers/request";
 import { server } from "@tests/helpers/msw";
 
 import { GET as sessionsGET } from "@/src/app/api/coach/sessions/route";
 
-let ownerCoachCookies: string;
-let foreignStudentId: string;
-
-beforeAll(async () => {
-  server.listen({ onUnhandledRequest: "bypass" });
-
-  const { account: ownerAccount, coach: ownerCoach } = await createCoach();
-  const familyAccount = await createAccount({ role: 1 });
-  const assignedStudent = await createStudent(familyAccount);
-  await linkCoachToStudent(ownerCoach, assignedStudent);
-  ownerCoachCookies = await signSessionFor(ownerAccount);
-
-  // A second coach with their own separate student, NOT linked to ownerCoach.
-  const { coach: otherCoach } = await createCoach();
-  const otherFamily = await createAccount({ role: 1 });
-  const foreignStudent = await createStudent(otherFamily);
-  foreignStudentId = foreignStudent.id;
-  await linkCoachToStudent(otherCoach, foreignStudent);
-});
-
+beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 afterAll(() => server.close());
+beforeEach(resetAll);
 
-describe("GET /api/coach/sessions", () => {
-  it("returns 200 for a coach (filtered to their own sessions)", async () => {
-    const res = await call(sessionsGET, { cookies: ownerCoachCookies });
+async function seedTwoCoachesWithStudents() {
+  // Coach A linked to student A; coach B linked to student B. Each has one session.
+  const { account: aAccount, coach: aCoach } = await createCoach();
+  const aFamily = await createAccount({ role: 1 });
+  const aStudent = await createStudent(aFamily);
+  await linkCoachToStudent(aCoach, aStudent);
+  await createSession(aCoach, aStudent);
+  const aCookies = await signSessionFor(aAccount);
+
+  const { account: bAccount, coach: bCoach } = await createCoach();
+  const bFamily = await createAccount({ role: 1 });
+  const bStudent = await createStudent(bFamily);
+  await linkCoachToStudent(bCoach, bStudent);
+  await createSession(bCoach, bStudent);
+  const bCookies = await signSessionFor(bAccount);
+
+  return { aAccount, aCoach, aStudent, aCookies, bAccount, bCoach, bStudent, bCookies };
+}
+
+// Q1
+describe("GET /api/coach/sessions — scoping (implicit ownership)", () => {
+  it("returns only the calling coach's sessions (no cross-coach leak)", async () => {
+    const { aCookies } = await seedTwoCoachesWithStudents();
+    const res = await call(sessionsGET, { cookies: aCookies });
     expect(res.status).toBe(200);
+    const body = await res.json<{ sessions: Array<{ student_id: string }> }>();
+    expect(body.sessions.length).toBe(1);
   });
 
-  it("does not leak the other coach's sessions when student_id filter is applied", async () => {
-    // foreignStudentId belongs to otherCoach, not ownerCoach. The route scopes
-    // by coach_id so ownerCoach should get an empty list, not 403.
+  it("returns an empty list when ?student_id= belongs to a different coach (silent scope, NOT 403)", async () => {
+    const { aCookies, bStudent } = await seedTwoCoachesWithStudents();
     const res = await call(sessionsGET, {
-      cookies: ownerCoachCookies,
-      query: { student_id: foreignStudentId },
+      cookies: aCookies,
+      query: { student_id: bStudent.id },
     });
     expect(res.status).toBe(200);
     const body = await res.json<{ sessions: unknown[] }>();
-    expect(body.sessions).toHaveLength(0); // no cross-coach leakage
+    expect(body.sessions).toHaveLength(0);
   });
 });
+
+// Q2
+describe("GET /api/coach/sessions — input validation", () => {
+  it("returns 400 when student_id is malformed (not a UUID)", async () => {
+    const { aCookies } = await seedTwoCoachesWithStudents();
+    const res = await call(sessionsGET, {
+      cookies: aCookies,
+      query: { student_id: "not-a-uuid" },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("error responses use the { error: string } shape", async () => {
+    const { aCookies } = await seedTwoCoachesWithStudents();
+    const res = await call(sessionsGET, {
+      cookies: aCookies,
+      query: { student_id: "not-a-uuid" },
+    });
+    const body = await res.json<{ error?: string; message?: string; status?: number }>();
+    expect(typeof body.error).toBe("string");
+    expect(body.message).toBeUndefined();
+    expect(body.status).toBeUndefined();
+  });
+});
+
+// Q3
+describe("GET /api/coach/sessions — response shape", () => {
+  it("returns { sessions: [...] } named collection", async () => {
+    const { aCookies } = await seedTwoCoachesWithStudents();
+    const res = await call(sessionsGET, { cookies: aCookies });
+    const body = await res.json<{ sessions: unknown[] }>();
+    expect(Array.isArray(body.sessions)).toBe(true);
+  });
+
+  it("each session includes id, start_time, end_time, student_id, students relation", async () => {
+    const { aCookies, aStudent } = await seedTwoCoachesWithStudents();
+    const res = await call(sessionsGET, { cookies: aCookies });
+    const body = await res.json<{
+      sessions: Array<{
+        id: number | string;
+        start_time: string;
+        end_time: string;
+        student_id: string;
+        students: unknown;
+      }>;
+    }>();
+    const s = body.sessions[0];
+    expect(s.student_id).toBe(aStudent.id);
+    expect(typeof s.start_time).toBe("string");
+    expect(typeof s.end_time).toBe("string");
+    expect(s.students).toBeTruthy();
+  });
+});
+
+// Q4 — read-only.
+// Q5 — no external calls.

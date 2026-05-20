@@ -7,6 +7,11 @@ type ConversationRow = Pick<
   "id" | "coach_id" | "profile_id" | "profile_type"
 >;
 
+type SessionRow = Pick<
+  Database["public"]["Tables"]["sessions"]["Row"],
+  "id" | "coach_id" | "student_id"
+>;
+
 /**
  * Verifies the calling family account owns `studentId`.
  * Returns the student row on success, or a `NextResponse` (404 / 403) on failure.
@@ -109,4 +114,45 @@ export async function assertCoachOwnsConversation(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return { conversation: conv };
+}
+
+/**
+ * Verifies the calling coach owns `sessionId` (the integer PK of `sessions`).
+ * Because `sessions.id` is a sequential bigint, the contract uses 404 for BOTH
+ * "doesn't exist" and "exists but not yours" to prevent ID enumeration
+ * (docs/api-ownership.md:170-178). Returns the session on success.
+ */
+export async function assertCoachOwnsSession(
+  { supabase, user }: AuthContext,
+  sessionId: number,
+): Promise<{ session: SessionRow } | NextResponse> {
+  const { data: coach } = await supabase
+    .from("coaches")
+    .select("id")
+    .eq("account_id", user.id)
+    .maybeSingle();
+
+  if (!coach) {
+    console.error(
+      "assertCoachOwnsSession: role=2 but no coaches row",
+      { userId: user.id },
+    );
+    return NextResponse.json(
+      { error: "Coach record missing" },
+      { status: 500 },
+    );
+  }
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("id, coach_id, student_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  // 404 for both "doesn't exist" AND "exists but not yours" — prevents
+  // enumeration of sequential session IDs (api-ownership.md:170-178).
+  if (!session || session.coach_id !== coach.id) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
+  return { session };
 }

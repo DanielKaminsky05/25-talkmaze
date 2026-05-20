@@ -1,42 +1,46 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachAssignedToStudent } from "@/src/lib/auth/server/ownership";
+
+const BodySchema = z
+  .object({
+    student_id: z.string().uuid(),
+    lesson_id: z.string().uuid(),
+    status: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  })
+  .strict();
 
 export async function PATCH(request: Request) {
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(
+    await request.json().catch(() => ({})),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request body",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+  const { student_id, lesson_id, status } = parsed.data;
+
+  // Stage 3: AUTHORIZE
+  const ownership = await assertCoachAssignedToStudent(auth, student_id);
+  if (ownership instanceof NextResponse) return ownership;
+
+  // Stage 4: EXECUTE — preserve existing cascade logic verbatim.
   try {
-    console.log("Inside PATCH");
-    const supabase = await createClient();
-
-    // Authenticate
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { student_id, lesson_id, status } = body;
-
-    if (!student_id || !lesson_id || status === undefined) {
-      return NextResponse.json(
-        { error: "Missing required fields: student_id, lesson_id, status" },
-        { status: 400 },
-      );
-    }
-
-    if (![1, 2, 3].includes(status)) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid status. Must be 1 (not started), 2 (in progress), or 3 (done).",
-        },
-        { status: 400 },
-      );
-    }
-
     // Upsert: if the row exists update it; if not, create it.
-    const { data, error } = await (supabase.from("lesson_progress") as any)
+    const { data, error } = await supabase
+      .from("lesson_progress")
       .upsert(
         {
           student_id,
@@ -53,17 +57,21 @@ export async function PATCH(request: Request) {
 
     if (error) {
       console.error("Upsert progress error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
 
-    const { data: token } = await (supabase.from("tokens") as any)
+    const { data: token } = await supabase
+      .from("tokens")
       .select("id")
       .eq("lesson_id", lesson_id)
       .maybeSingle();
 
     if (token) {
       if (status === 3) {
-        await (supabase.from("student_tokens") as any).upsert(
+        await supabase.from("student_tokens").upsert(
           {
             student_id,
             token_id: token.id,
@@ -72,7 +80,8 @@ export async function PATCH(request: Request) {
           { onConflict: "student_id,token_id" },
         );
       } else {
-        await (supabase.from("student_tokens") as any)
+        await supabase
+          .from("student_tokens")
           .delete()
           .eq("student_id", student_id)
           .eq("token_id", token.id);
@@ -99,15 +108,16 @@ export async function PATCH(request: Request) {
           const [{ data: allLessons }, { data: completedRows }] =
             await Promise.all([
               supabase.from("lessons").select("id").eq("course_id", course_id),
-              (supabase.from("lesson_progress") as any)
+              supabase
+                .from("lesson_progress")
                 .select("lesson_id")
                 .eq("student_id", student_id)
                 .eq("status", 3),
             ]);
           const completedIds = new Set(
-            (completedRows ?? []).map((r: any) => r.lesson_id),
+            (completedRows ?? []).map((r) => r.lesson_id),
           );
-          const allDone = (allLessons ?? []).every((l: any) =>
+          const allDone = (allLessons ?? []).every((l) =>
             completedIds.has(l.id),
           );
           if (allDone) {
@@ -131,8 +141,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in PATCH /api/coach/lesson-progress:", error);
+  } catch (err: unknown) {
+    console.error("coach/lesson-progress error", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
