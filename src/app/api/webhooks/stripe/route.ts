@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/src/services/stripe/client";
 import { createServiceRoleClient } from "@/src/services/supabase/service";
@@ -28,11 +27,9 @@ type SubscriptionItemWithPeriod = {
 export async function POST(request: Request) {
   try {
     // Read the raw body as text. Required by Stripe's signature verification,
-    // which breaks if the body is parsed (e.g. via request.json()) first
-    console.log("Webhook hit!");
+    // which breaks if the body is parsed (e.g. via request.json()) first.
     const body = await request.text();
-    const headersList = await headers();
-    const signature = headersList.get("stripe-signature");
+    const signature = request.headers.get("stripe-signature");
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
