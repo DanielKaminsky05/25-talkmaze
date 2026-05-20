@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, dev, testing]
+    branches: [main, dev, testing, testing-overhaul]
   pull_request:
-    branches: [main, dev, testing]
+    branches: [main, dev, testing, testing-overhaul]
   workflow_dispatch: # allow manual runs from the Actions tab
 
 concurrency:
@@ -92,6 +92,10 @@ jobs:
           printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_KEY" >> .env.test
           printf 'STRIPE_SECRET_KEY=sk_test_dummy\n' >> .env.test
           printf 'STRIPE_WEBHOOK_SECRET=whsec_test_talkmaze_integration\n' >> .env.test
+          # LessonSpace + Resend: HTTP calls are intercepted by MSW; values
+          # just need to be non-empty so the route/lib env-guards pass.
+          printf 'LESSONSPACE_API_KEY=ls_test_dummy\n' >> .env.test
+          printf 'RESEND_API_KEY=re_test_dummy\n' >> .env.test
           echo ".env.test written successfully"
 
       - name: Run integration tests

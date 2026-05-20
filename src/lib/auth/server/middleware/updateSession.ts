@@ -72,12 +72,18 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Logged-out users may access only explicitly public auth/onboarding routes.
-  // Any other route requires authentication, so send them to /login.
+  // /forgot-password is the request-reset entry point; /reset-password is the
+  // landing page Supabase redirects to after the email-link exchange (the token
+  // IS the credential there, so it must remain reachable when there's no
+  // session yet). Both bypass the auth gate. See
+  // tests/integration/middleware/redirects.test.ts §"/reset-password accessibility".
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/signup") &&
+    !request.nextUrl.pathname.startsWith("/forgot-password") &&
+    !request.nextUrl.pathname.startsWith("/reset-password") &&
     request.nextUrl.pathname !== "/"
   ) {
     const url = request.nextUrl.clone();
