@@ -61,13 +61,23 @@ export async function createAccount(
   const email = overrides.email ?? `test-${RUN_ID}-${n}@test.talkmaze.com`;
   const password = "TestPassword123!";
 
-  const { data: authData, error: authError } = await auth.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
+  // Retry up to 3 times with backoff — local GoTrue can return transient empty
+  // errors ({}) when under load from concurrent test-file setup.
+  let authData: Awaited<ReturnType<typeof auth.createUser>>["data"] = { user: null };
+  let authError: Awaited<ReturnType<typeof auth.createUser>>["error"] = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 800 * attempt));
+    ({ data: authData, error: authError } = await auth.createUser({
+      email,
+      password,
+      email_confirm: true,
+    }));
+    if (!authError && authData.user) break;
+  }
   if (authError || !authData.user) {
-    throw new Error(`createAccount: auth error — ${authError?.message}`);
+    throw new Error(
+      `createAccount: auth error — ${authError?.message ?? JSON.stringify(authError)}`,
+    );
   }
 
   // The DB has a trigger that auto-creates an account row (with role=1) when a
