@@ -56,8 +56,15 @@ jobs:
 
       # npx supabase is the CLI binary bundled with the npm package (supabase ^2.100.1).
       # It downloads the linux-amd64 binary on first install. No separate setup action needed.
+      #
+      # --exclude trims the service set to what tests actually need (postgres, gotrue,
+      # postgrest, postgres-meta, storage-api). studio/imgproxy/pooler/vector/edge-runtime/mailpit
+      # are unused here and add ~6 image pulls per run — enough to hit Docker Hub's
+      # anonymous-pull rate limit (100/6h per IP, shared across GitHub Actions runners)
+      # on busy days. If this still rate-limits, the next step is `docker login` against
+      # Docker Hub with a personal access token added as a repo secret.
       - name: Start Supabase
-        run: npx supabase start
+        run: npx supabase start --exclude studio,imgproxy,pooler,vector,edge-runtime,mailpit
 
       # Write .env.test so global-setup.ts reads it exactly as it does locally.
       # The keys are ephemeral and generated per run — not secrets.
