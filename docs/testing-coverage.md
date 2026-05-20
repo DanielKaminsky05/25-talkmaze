@@ -6,13 +6,13 @@ Current state of the test suite as of May 2026. For the overall strategy, toolin
 
 ## Headline numbers
 
-| Layer | Files | Tests | Passing | Failing |
-|---|---|---|---|---|
-| Unit | 5 | 83 | 83 | 0 |
-| Integration | 19 | ~239 | ~116 | ~123 |
-| **Total** | **24** | **~322** | **~199** | **~123** |
+| Layer | Files | Tests | Passing | Failing | Todo |
+|---|---|---|---|---|---|
+| Unit | 5 | 83 | 83 | 0 | 0 |
+| Integration | 22 | 268 | 146 | 117 | 5 |
+| **Total** | **27** | **351** | **229** | **117** | **5** |
 
-The ~123 failing integration tests are **intentional** — they document audit bugs (routes with no auth, security gaps, missing ownership checks). They are **not** broken tests. They turn green as fixes land.
+The 117 failing integration tests are **intentional** — they document audit bugs (routes with no auth, security gaps, missing ownership checks). They are **not** broken tests. They turn green as fixes land.
 
 ---
 
@@ -212,14 +212,66 @@ Stripe mocked via `vi.hoisted()` + `vi.mock("stripe")` (route creates its own `n
 
 ---
 
+### Server actions (`tests/integration/actions/`)
+
+**`selectProfile.test.ts`** — 13 tests, all green
+
+Tests the `selectProfile` server action end-to-end. The action uses `redirect()` (which throws), so tests catch the thrown error and inspect the destination URL. `setProfileCookies` is mocked as a spy to verify it is called (or not) on each path.
+
+| Scenario | Tests | Status |
+|---|---|---|
+| Missing profileId or profileType | 2 | ✓ |
+| Unauthenticated → redirect /login | 1 | ✓ |
+| Student profile, owner → cookies set + redirect /student | 1 | ✓ |
+| Student profile, wrong account → /profiles?error=not_found | 1 | ✓ |
+| Student profile, non-existent id → /profiles?error=not_found | 1 | ✓ |
+| Student profile, custom destination | 1 | ✓ |
+| Parent profile, no PIN, owner → cookies set + redirect /parent | 1 | ✓ |
+| Parent profile, no PIN, wrong account → /profiles?error=not_found | 1 | ✓ |
+| Parent profile, with PIN, correct → cookies set + redirect /parent | 1 | ✓ |
+| Parent profile, with PIN, wrong → /profiles?error=wrong_pin | 1 | ✓ |
+| Parent profile, with PIN, omitted → /profiles?error=wrong_pin | 1 | ✓ |
+| Parent profile, non-existent id → /profiles?error=not_found | 1 | ✓ |
+
+**`sendMessage.test.ts`** — 9 tests + 1 todo, all passing
+
+Tests the `sendMessage` server action. The action returns `{ error, message }` (no redirect). Active-profile cookies are appended to `nextCookies.header` to drive sender-name resolution.
+
+| Scenario | Tests | Status |
+|---|---|---|
+| Unauthenticated → `{ error: true }` | 1 | ✓ |
+| Empty text → `{ error: true }` | 1 | ✓ |
+| Whitespace-only text → `{ error: true }` | 1 | ✓ |
+| Student profile → sender name from `students` table | 1 | ✓ |
+| Parent profile → sender name from `parents` table | 1 | ✓ |
+| No profile (coach fallback) → sender name from `coaches` table | 1 | ✓ |
+| Message has id, text, created_at, sender_id | 1 | ✓ |
+| Message text matches input verbatim | 1 | ✓ |
+| avatar_url is null when not set | 1 | ✓ |
+| Cross-conversation gap (no membership check) | — | todo |
+
+**`getLessonSpace.test.ts`** — 6 tests, all green
+
+Tests the `getLessonSpace` server action. LessonSpace HTTP calls are intercepted by MSW. Two tests capture the outbound request body to assert `includeWebhooks: false` and the correct `lesson_space_id`.
+
+| Scenario | Tests | Status |
+|---|---|---|
+| No active profile → throws "Unable to identify student" | 1 | ✓ |
+| Active profile = parent → throws "Unable to identify student" | 1 | ✓ |
+| Student with null lesson_space_id → throws "Unable to find room" | 1 | ✓ |
+| Student with lesson_space_id → returns client_url | 1 | ✓ |
+| Outbound request has no `webhooks` field (includeWebhooks: false) | 1 | ✓ |
+| Outbound request sends correct lesson_space_id as room id | 1 | ✓ |
+
+---
+
 ## What's not covered yet
 
-### Phase 2 remaining
+### Intentionally deferred (not Phase 2 scope)
 
 - **`/api/profiles/*`** — profile selection, creation, and validation routes
 - **`/api/user/*`** — user account management routes
 - **`/api/lesson-progress/*`** — standalone lesson progress route (separate from the coach group)
-- **Server actions** — `selectProfile`, `sendMessage`, `getLessonSpace`, onboarding actions
 
 ### Phase 3 — Webhook contract tests
 
@@ -313,10 +365,16 @@ Both configs are at the repo root. Integration tests require local Supabase (`su
 
 ### `.env.test` (gitignored)
 
+Required to run integration tests locally. Get the Supabase keys from `npx supabase status --output env` after `supabase start`.
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local anon key from supabase start>
-SUPABASE_SERVICE_ROLE_KEY=<local service role key from supabase start>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<ANON_KEY from supabase status>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY from supabase status>
+LESSONSPACE_API_KEY=ls_test_dummy
 STRIPE_SECRET_KEY=sk_test_dummy
-STRIPE_WEBHOOK_SECRET=whsec_test_talkmaze_integration
+STRIPE_WEBHOOK_SECRET=whsec_test_dummy
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_dummy
 ```
+
+In CI, `global-setup.ts` falls back to `process.env` when `.env.test` is absent — the integration job writes the Supabase keys to `$GITHUB_ENV` before the test runner starts.

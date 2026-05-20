@@ -454,12 +454,11 @@ Default MSW handlers for `https://api.stripe.com/*`, `https://api.lessonspace.co
 - Covers: matchmaking, payments policies, formatDateTime, formatName, profileCookies.
 - Deliverable met: pure logic locked down, no DB needed.
 
-**Phase 2 — integration harness + audit regression tests. ✅ SUBSTANTIALLY COMPLETE**
+**Phase 2 — integration harness + audit regression tests. ✅ COMPLETE**
 - Full test harness built (`tests/helpers/`, `tests/setup/`, two vitest configs).
-- ~239 integration tests written across 19 files.
-- ~116 passing (correct behaviour confirmed), ~123 failing (audit bugs documented — intentionally red until fixes land).
-- Covered: middleware, all coach routes, all admin routes (24 total), subscriptions, checkout, attendance, parent/students.
-- Remaining gaps: `/api/profiles/*`, `/api/user/*`, `/api/lesson-progress/*`, server actions.
+- 268 integration tests written across 22 files.
+- 146 passing (correct behaviour confirmed), 117 failing (audit bugs documented — intentionally red until fixes land), 5 todo.
+- Covered: middleware, all coach routes, all admin routes (24 total), subscriptions, checkout, attendance, parent/students, all three server actions (`selectProfile`, `sendMessage`, `getLessonSpace`).
 - See `docs/testing-coverage.md` for the per-file breakdown.
 
 **Phase 3 — webhook contract tests. NOT STARTED**
