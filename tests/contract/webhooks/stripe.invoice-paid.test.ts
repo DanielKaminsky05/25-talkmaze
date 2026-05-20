@@ -49,9 +49,10 @@ vi.mock("@/src/services/stripe/client", async () => {
   };
 });
 
-// The route fetches /api/webhooks/stripe/learningSpace internally for room
-// provisioning — that fetch fails in tests (connection refused) but the
-// route wraps it in try/catch and logs, so no global fetch override needed.
+// The webhook now provisions LessonSpace rooms via a direct lib call
+// (src/lib/lessonspace/server/provisionStudentRoom). In tests it throws
+// because LESSONSPACE_WEBHOOK_URL isn't set; the webhook catches that and
+// logs, so no provisioning-side mock is needed. The route still returns 200.
 
 import { createClient } from "@supabase/supabase-js";
 import {
