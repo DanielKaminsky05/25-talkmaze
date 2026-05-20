@@ -66,7 +66,7 @@ The pyramid is deliberately skewed toward layer 2. Most SaaS production bugs are
 | Coverage | **Vitest's `--coverage` (v8 provider)** | Built-in, no extra deps. Don't gate PRs on a coverage number — gate on the audit's regression tests existing. |
 | CI | **GitHub Actions** | `supabase/setup-cli` + Docker layer caching is enough. |
 
-Versions to pin: `vitest@^2`, `@playwright/test@^1.47+`, `msw@^2`, `supabase` CLI matching the repo's existing dep.
+Versions in use: `vitest@^4` (not v2 — v4 was the current release when the suite was set up), `msw@^2`, `@playwright/test` (Phase 4, not yet installed). The `supabase` CLI version matches the existing repo dependency.
 
 ---
 
@@ -449,78 +449,43 @@ Default MSW handlers for `https://api.stripe.com/*`, `https://api.lessonspace.co
 
 ## Phased rollout
 
-**Phase 1 (week 1) — unit tests + tooling.**
-- Add `vitest`, `@vitest/coverage-v8`, set up `vitest.config.ts`.
-- Write tests in `tests/unit/scheduling/matchmaking.test.ts` against the in-memory shape (stub the Supabase client). Cover all matchmaking and approval cases listed above.
-- Write `tests/unit/payments/policies.test.ts` (refund window).
-- Write `tests/unit/utils/*` (date, name).
-- Add a GitHub Action that runs `vitest run --coverage` on every PR.
-- **Deliverable:** ~40 unit tests, no DB infra needed, CI green.
+**Phase 1 — unit tests + tooling. ✅ COMPLETE**
+- Vitest configured (`vitest.config.ts`), 83 tests, all green.
+- Covers: matchmaking, payments policies, formatDateTime, formatName, profileCookies.
+- Deliverable met: pure logic locked down, no DB needed.
 
-**Phase 2 (week 2–3) — integration harness + audit regression tests.**
-- Add `supabase` CLI to CI; bring up the stack in a setup script.
-- Write `tests/helpers/{db,auth,factories,request,msw}.ts`.
-- Write the middleware redirect tests.
-- Write one regression test per audit-flagged auth hole. Each test seeds a user of the wrong role, calls the route, asserts the expected status. **These tests should fail today.** As the auth fixes land, they flip to green.
-- **Deliverable:** a failing-then-fixed test set that gates re-introduction of every documented Critical-severity bug.
+**Phase 2 — integration harness + audit regression tests. ✅ COMPLETE**
+- Full test harness built (`tests/helpers/`, `tests/setup/`, two vitest configs).
+- 268 integration tests written across 22 files.
+- 146 passing (correct behaviour confirmed), 117 failing (audit bugs documented — intentionally red until fixes land), 5 todo.
+- Covered: middleware, all coach routes, all admin routes (24 total), subscriptions, checkout, attendance, parent/students, all three server actions (`selectProfile`, `sendMessage`, `getLessonSpace`).
+- See `docs/testing-coverage.md` for the per-file breakdown.
 
-**Phase 3 (week 3–4) — webhook contract tests.**
-- Capture fixtures: trigger each event type once against a Stripe test account, save the JSON.
-- Write the Stripe webhook tests; pin the "first payment skips matchmaking" question one way or the other.
-- Write the LessonSpace webhook tests (most start `it.todo` until signature verification ships, except the hardcoded-email regression test which can run today).
-- **Deliverable:** webhook handlers safe to refactor without manually replaying Stripe events.
+**Phase 3 — webhook contract tests. NOT STARTED**
+- Fixtures exist in `tests/fixtures/stripe/` and `tests/fixtures/lessonspace/`.
+- Neither webhook handler has tests yet.
+- Both handlers have bugs that tests will document (LessonSpace: no signature verification, hardcoded email recipient; Stripe: no replay idempotency).
+- Write these before any webhook handler refactor.
 
-**Phase 4 (later) — E2E.**
-- Playwright config; one signup → first lesson path; one admin approval path.
-- Use Stripe test cards. Use real test-mode Stripe + real test-mode LessonSpace (or mock both at the network layer — preference: real Stripe test mode for the E2E only).
-- Run on main, not on PR (slower).
+**Phase 4 — E2E. NOT STARTED**
+- Playwright not yet installed.
+- Target journeys: signup → checkout → student dashboard; admin booking approval.
+- Run on main + nightly, not on PR.
 
 **Pre-refactor characterisation work (parallel track, ad hoc).**
-Before each god-component refactor PR, pull forward a small Playwright slice for that component's client-only journeys (see the "Pre-refactor characterisation tests" section above). Integration coverage for the same components comes for free from Phase 2.
+Before each god-component refactor PR, pull forward journey-level API integration tests (most already exist from Phase 2) plus 1–3 Playwright tests for client-only behaviour (drag-reorder, rich-text editor, file upload). See the "Pre-refactor characterisation tests" section above for the per-component mapping.
 
 ---
 
 ## CI
 
-`.github/workflows/test.yml`:
+The workflow is at `.github/workflows/test.yml`. It runs on push to `main`/`dev` and on PRs. See `docs/testing-coverage.md` for a full description of each job.
 
-```yaml
-name: test
-on: [pull_request, push]
-jobs:
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci
-      - run: npx vitest run tests/unit --coverage
-
-  integration:
-    runs-on: ubuntu-latest
-    services:
-      docker: { image: docker:dind }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - uses: supabase/setup-cli@v1
-        with: { version: latest }
-      - run: supabase start
-      - run: npm ci
-      - run: npx vitest run tests/integration tests/contract
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.LOCAL_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.LOCAL_SERVICE_ROLE_KEY }}
-          STRIPE_SECRET_KEY: sk_test_dummy
-          STRIPE_WEBHOOK_SECRET: whsec_test_dummy
-```
-
-The "local anon / service role keys" are the static values the Supabase CLI prints on `supabase start` — they're not secrets, they're deterministic per-CLI-version, but storing them in secrets keeps the file clean.
-
-Cache Docker layers for `supabase start` to keep the integration job under ~3 minutes.
+Key decisions made during implementation:
+- **No `supabase/setup-cli` action needed** — the Supabase CLI binary is bundled with the `supabase` npm package already in `package.json`. `npx supabase start` works without a separate setup step.
+- **No GitHub secrets for Supabase keys** — the locally-generated anon key and service role key are extracted dynamically from `npx supabase status` output at runtime. They are ephemeral and valid only for the duration of the job.
+- **Stripe uses dummy values** — `sk_test_dummy` / `whsec_test_talkmaze_integration`. All Stripe calls in integration tests are mocked at the module level, so the real SDK never fires.
+- **Draft PRs skip integration** — `if: github.event.pull_request.draft == false` keeps CI fast while iterating.
 
 ---
 

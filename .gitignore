@@ -42,3 +42,6 @@ next-env.d.ts
 
 #mcp
 .context
+
+#local claude settings
+.claude/settings.local.json

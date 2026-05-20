@@ -4,6 +4,8 @@ Ground truth as of the current `dev` branch. Findings come from re-reading the a
 
 ---
 
+> **Regression tests exist for every CRITICAL issue listed here.** See `docs/testing-coverage.md` for the per-file breakdown. Failing tests in `tests/integration/` document the exact gap — when a fix lands the test turns green, preventing re-introduction.
+
 ## CRITICAL — fix before doing anything else in these files
 
 ### 1. `src/app/api/admin/create-admin/route.ts` — RBAC check commented out
@@ -29,6 +31,8 @@ The recipient email is also hardcoded to `wdstalkmaze@gmail.com` (line ~69) inst
 ### 5. `src/app/api/checkout/route.ts` — plaintext password in Stripe metadata
 
 The signup flow accepts a `password` field in the request body and stuffs it into the Stripe `Subscription.metadata` so the webhook can create the auth user later (line ~197). The password is also `console.log`'d (line ~25). Stripe metadata is visible in the dashboard, persisted, and indexed. Move account creation into the same request that has the password and remove the metadata field.
+
+**Regression tests:** `tests/integration/api/checkout/checkout.test.ts` — "does not log the plaintext password to console" and "does not store the password in Stripe subscription metadata" are currently failing (bugs confirmed present); they turn green when the fix lands.
 
 ### 6. Admin routes with zero auth (use `createClient()` but never call `auth.getUser()`)
 

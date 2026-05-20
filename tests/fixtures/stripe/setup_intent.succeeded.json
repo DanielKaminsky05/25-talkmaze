@@ -1,0 +1,21 @@
+{
+  "id": "evt_test_setup_intent_succeeded",
+  "object": "event",
+  "type": "setup_intent.succeeded",
+  "livemode": false,
+  "created": 1716000000,
+  "data": {
+    "object": {
+      "id": "seti_test_001",
+      "object": "setup_intent",
+      "status": "succeeded",
+      "payment_method": "pm_test_001",
+      "metadata": {
+        "target_price_id": "price_test_002",
+        "stripe_subscription_id": "sub_test_001",
+        "account_id": "REPLACE_account_id",
+        "student_id": "REPLACE_student_id"
+      }
+    }
+  }
+}
