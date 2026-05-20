@@ -336,7 +336,8 @@ Decisions made during the rewrite that bind future work. Append to this list whe
   - 4.2: 7 coach routes (lesson-feedback, lesson-progress, lessons, conversation, conversation/message, lessonspace, sessions×2) with per-route 5Q tests and ownership helpers; `assertCoachOwnsSession` added. `lesson-tasks` deferred (FormData infra needed).
   - 4.3: 6 security-critical routes (checkout, attendance×3, parent/students, parent/availability×2, parent/setup, lesson-progress). Removed checkout password leak.
   - 4.4: 7 admin business-logic routes (courses/assign SQL-injection fix, 4 pending-bookings dropping service-role, payment-plans/stripe-preview, create-coach shape cleanup) + 3 catch-up routes (coach/students, parent/sessions, parent/students).
-  - Spillover: `coach/lesson-tasks` (FormData).
+  - Spillover (resolved): `coach/lesson-tasks` — requireRole + ownership + Zod + service-role drop. Added FormData support to `tests/helpers/request.ts`.
+  - Cleanup (4.5): deleted `/api/profiles/select` (sole caller migrated to `selectProfile` server action); `/api/user/role` swapped to `requireRole([])`.
 - [ ] Phase 4: route-by-route sweep via agent loop.
 - [ ] Phase 5: webhook contract tests.
 
