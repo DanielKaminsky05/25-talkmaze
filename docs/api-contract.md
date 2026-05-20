@@ -268,6 +268,25 @@ The current `/api/webhooks/lessonspace` doesn't verify signatures and emails to 
 
 ---
 
+## Production runs with RLS disabled
+
+**Important environmental fact:** this codebase runs **without Row Level Security in production**. Local Supabase may have RLS enabled (depending on migrations), but prod does not.
+
+Implications every route author must internalise:
+
+- **The handler-level auth and ownership checks are the entire security boundary.** There is no second line of defense. A handler that forgets to filter `coach_id` leaks every coach's data in prod — RLS will not catch it.
+- **The "user-scoped client" and the "service-role client" are functionally equivalent in prod.** Both bypass RLS because there's no RLS to bypass. The audit's warnings about `createServiceRoleClient()` misuse are still correct — service-role usage in non-webhook routes is a bug — but the fix isn't "switch to the user client and let RLS protect you." The fix is **add explicit ownership filtering**.
+- **`requireRole` and the ownership helpers (`docs/api-auth.md`, `docs/api-ownership.md`) are load-bearing, not redundant.** Every route that touches a per-user resource must call them. There is no scenario where "RLS will block this if I miss" is true.
+- **Never write a route that relies on RLS as a secondary check.** If you find yourself thinking "the policy will catch any leak," stop. The policy isn't there.
+
+### Test isolation implication
+
+Integration tests run against local Supabase, which may have RLS enabled. A test that passes locally because RLS blocked a missing handler check **does not prove the same code is safe in prod**. To match prod honestly, prefer running integration tests against an RLS-disabled local instance (or assert behaviour explicitly via the service-role client, not the user client, in setup).
+
+If/when RLS is enabled in prod as a separate project, the handler-level checks remain correct and become belt-and-suspenders. The migration to that state is not a prerequisite for this contract rewrite; the rewrite makes the codebase safer in the *current* RLS-off state by forcing the explicit checks.
+
+---
+
 ## The service-role escape hatch
 
 `createServiceRoleClient()` from `src/services/supabase/service.ts` bypasses RLS. **Only valid in:**
