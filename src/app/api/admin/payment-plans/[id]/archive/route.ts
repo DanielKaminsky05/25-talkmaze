@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 /**
  * PATCH /api/admin/payment-plans/[id]/archive
@@ -20,9 +20,12 @@ export async function PATCH(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id } = await params;
-    const supabase = await createClient();
 
     const { data: plan, error } = await supabase
       .from("plans")

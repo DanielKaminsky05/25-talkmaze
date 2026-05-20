@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { stripe } from "@/src/services/stripe/client";
 import Stripe from "stripe";
 
@@ -12,8 +12,11 @@ import Stripe from "stripe";
  * @returns 200 Array of plan rows merged with Stripe price/product fields.
  */
 export async function GET() {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
-    const supabase = await createClient();
     const { data: plans, error } = await supabase
       .from("plans")
       .select("*")
@@ -79,6 +82,10 @@ export async function GET() {
  * @returns 409 If a plan already uses the given Stripe price ID.
  */
 export async function POST(req: NextRequest) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const body = await req.json();
     const { stripe_price_id, classes, name, description, renewal, type } = body;
@@ -102,8 +109,6 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-
-    const supabase = await createClient();
 
     // Prevent duplicate plans pointing at the same Stripe price - one price
     // should correspond to exactly one plan in our DB.

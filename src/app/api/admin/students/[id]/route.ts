@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -56,8 +60,6 @@ export async function PUT(
       return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-
     const { data: updated, error } = await supabase
       .from("students")
       .update(payload)
@@ -66,14 +68,15 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error("Supabase update failed:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("PUT student supabase error", error);
+      return NextResponse.json({ error: "Failed to update student" }, { status: 500 });
     }
 
     return NextResponse.json(updated);
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("PUT student error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Update failed" },
+      { error: "Update failed" },
       { status: 500 },
     );
   }

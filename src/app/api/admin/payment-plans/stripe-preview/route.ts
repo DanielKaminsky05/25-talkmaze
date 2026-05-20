@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { stripe } from "@/src/services/stripe/client";
 import Stripe from "stripe";
 
@@ -17,6 +18,9 @@ import Stripe from "stripe";
  * @returns 404 If the price doesn't exist in Stripe.
  */
 export async function GET(req: NextRequest) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+
   const priceId = req.nextUrl.searchParams.get("priceId");
 
   if (!priceId) {

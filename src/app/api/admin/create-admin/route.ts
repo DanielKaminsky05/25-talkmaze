@@ -1,8 +1,12 @@
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { email, password, name } = await request.json();
 
@@ -20,30 +24,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
-
-    // Check if current user is an admin (role 3)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const { data: currentAccount } = await supabase
-      .from("account")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    /*if (!currentAccount || currentAccount.role !== 3) {
-      return NextResponse.json(
-        { error: "Only admins can create admin accounts" },
-        { status: 403 }
-      );
-    }*/
 
     // We must use a separate client for sign up so we don't overwrite the admin's session in the Next.js cookies
     const authClient = createSupabaseClient(
@@ -69,9 +49,9 @@ export async function POST(request: Request) {
     });
 
     if (authError) {
-      console.error("Auth error:", authError);
+      console.error("create-admin: auth error", authError);
       return NextResponse.json(
-        { error: authError.message },
+        { error: "Failed to create admin account" },
         { status: 400 }
       );
     }

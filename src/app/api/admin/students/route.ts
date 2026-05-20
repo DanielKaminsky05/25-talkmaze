@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 export async function GET() {
-  try {
-    
-    const supabase = await createClient();
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-    const {data,error} = await supabase.from('students').select("*");
-    console.log("Data: " + data)
+  try {
+    const { data, error } = await supabase.from('students').select("*");
+    if (error) throw error;
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error fetching students:", error);
+  } catch (err: unknown) {
+    console.error("GET students error", err);
     return NextResponse.json(
       { error: "Failed to fetch students" },
       { status: 500 }

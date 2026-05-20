@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 export async function GET() {
-  try {
-  
-    const supabase = await createClient();
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-    const {data,error} = await supabase.from('coaches').select("*");
+  try {
+    const { data, error } = await supabase.from('coaches').select("*");
+
+    if (error) throw error;
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error fetching employees:", error);
+  } catch (err: unknown) {
+    console.error("GET employees error", err);
     return NextResponse.json(
       { error: "Failed to fetch employees" },
       { status: 500 }

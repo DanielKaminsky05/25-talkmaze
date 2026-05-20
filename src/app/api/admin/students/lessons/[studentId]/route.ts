@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
@@ -19,10 +20,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string }> },
 ) {
-  console.log("Inside get lessons for coach");
-  const { studentId } = await params;
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const supabase = await createClient();
+  const { studentId } = await params;
 
   const { data: assigned_courses, error: assigned_courses_error } =
     await supabase
@@ -31,16 +33,9 @@ export async function GET(
       .eq("student_id", studentId);
 
   if (assigned_courses_error) {
-    console.log("error getting assigned courses ", assigned_courses_error);
-    return NextResponse.json({
-      status: 500,
-      message: "Error retrieving courses assigned to student",
-    });
+    console.error("admin/students/lessons: error getting assigned courses", assigned_courses_error);
+    return NextResponse.json({ error: "Error retrieving courses assigned to student" }, { status: 500 });
   }
-
-  console.log(
-    "Retrieved assigned courses: " + JSON.stringify(assigned_courses),
-  );
 
   let response = [];
   for (let i = 0; i < assigned_courses.length; i++) {
@@ -71,10 +66,7 @@ export async function GET(
       .eq("student_id", studentId);
 
     if (statusDataError) {
-      return NextResponse.json({
-        status: 500,
-        message: "Unable to fetch the statuses of the lessons",
-      });
+      return NextResponse.json({ error: "Unable to fetch the statuses of the lessons" }, { status: 500 });
     }
 
     // Fetch all lesson_tasks for this student (their overrides + admin defaults)

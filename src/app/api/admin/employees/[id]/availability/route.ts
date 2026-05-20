@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 const DAY_MAP: Record<string, number> = {
   Sunday: 0,
@@ -22,8 +23,11 @@ export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   const { id } = await params;
-  const supabase = await createClient();
 
   // ✅ convert tw_id → UUID
   const coachUUID = await resolveCoachUUID(supabase, id);
@@ -41,14 +45,8 @@ export async function GET(
     .eq("coach_id", coachUUID); // ✅ use UUID
 
   if (error) {
-    console.log(
-      "GET error:",
-      error.message,
-      error.details,
-      error.hint,
-      error.code,
-    );
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("GET employee availability error", error);
+    return NextResponse.json({ error: "Failed to fetch availability" }, { status: 500 });
   }
 
   return NextResponse.json(data ?? []);
@@ -58,8 +56,11 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   const { id } = await params;
-  const supabase = await createClient();
 
   const coachUUID = await resolveCoachUUID(supabase, id);
 
@@ -82,17 +83,11 @@ export async function PUT(
     .eq("coach_id", coachUUID);
 
   if (deleteError) {
-    console.log(
-      "DELETE error:",
-      deleteError.message,
-      deleteError.details,
-      deleteError.hint,
-      deleteError.code,
-    );
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    console.error("PUT employee availability delete error", deleteError);
+    return NextResponse.json({ error: "Failed to update availability" }, { status: 500 });
   }
 
-  const rows = Object.entries(availability).flatMap(([day, slots]) =>
+  const rows = Object.entries(availability ?? {}).flatMap(([day, slots]) =>
     slots
       .filter((s) => s.start && s.end)
       .map((s) => ({
@@ -112,14 +107,8 @@ export async function PUT(
       .insert(rows);
 
     if (insertError) {
-      console.log(
-        "INSERT error:",
-        insertError.message,
-        insertError.details,
-        insertError.hint,
-        insertError.code,
-      );
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      console.error("PUT employee availability insert error", insertError);
+      return NextResponse.json({ error: "Failed to update availability" }, { status: 500 });
     }
   }
 

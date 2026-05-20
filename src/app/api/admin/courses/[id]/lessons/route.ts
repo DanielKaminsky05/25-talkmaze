@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id } = await params;
-    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from("lessons")
@@ -15,12 +18,13 @@ export async function GET(
       .eq("course_id", id)
       .order("created_at", { ascending: true });
 
-    if (error) throw new Error(error.message);
+    if (error) throw error;
 
     return NextResponse.json(data ?? []);
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("GET course lessons error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to fetch lessons" },
+      { error: "Failed to fetch lessons" },
       { status: 500 },
     );
   }
@@ -30,6 +34,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -64,8 +72,6 @@ export async function POST(
         { status: 400 },
       );
     }
-
-    const supabase = await createClient();
 
     const slug =
       title
@@ -211,9 +217,10 @@ export async function POST(
     //now need to make sure the next and prev_lessons are updated
 
     return NextResponse.json(data, { status: 201 });
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("POST course lesson error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to create lesson" },
+      { error: "Failed to create lesson" },
       { status: 500 },
     );
   }

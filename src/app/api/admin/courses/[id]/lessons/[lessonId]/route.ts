@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 function adminStorage() {
@@ -13,6 +13,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; lessonId: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id, lessonId } = await params;
     const body = await req.json();
@@ -34,8 +38,6 @@ export async function PUT(
         { status: 400 },
       );
     }
-
-    const supabase = await createClient();
 
     type LessonPayload = {
       title?: string;
@@ -73,9 +75,7 @@ export async function PUT(
       .select()
       .single();
 
-    console.log("Put data: " + JSON.stringify(data));
-
-    if (error) throw new Error(error.message);
+    if (error) throw error;
     if (!data)
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
@@ -159,9 +159,10 @@ export async function PUT(
     }
 
     return NextResponse.json(data);
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("PUT lesson error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to update lesson" },
+      { error: "Failed to update lesson" },
       { status: 500 },
     );
   }
@@ -171,9 +172,12 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string; lessonId: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id, lessonId } = await params;
-    const supabase = await createClient();
 
     // Fetch linked-list pointers and slide file URLs before deletion
     const { data: lessonData, error: lessonFetchError } = await supabase
@@ -260,9 +264,10 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("DELETE lesson error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to delete lesson" },
+      { error: "Failed to delete lesson" },
       { status: 500 },
     );
   }

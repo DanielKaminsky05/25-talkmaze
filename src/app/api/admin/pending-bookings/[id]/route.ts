@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/src/services/supabase/service";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 function normalizeTime(value: unknown) {
   if (typeof value !== "string") return null;
@@ -12,6 +13,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   const body = await req.json();
 
@@ -96,7 +100,7 @@ export async function PATCH(
 
   if (error) {
     console.error("PATCH pending booking error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update pending booking" }, { status: 500 });
   }
 
   return NextResponse.json(data);

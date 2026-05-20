@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   try {
     const { id } = await params;
     const body = await req.json();
     const employeeData = body.employee;
-
-    const supabase = await createClient();
 
     const supabasePayload: { first_name?: string | null; last_name?: string | null; avatar_url?: string | null } = {};
 
@@ -30,17 +32,18 @@ export async function PUT(
         .single();
 
       if (supabaseError) {
-        console.error("Supabase update failed:", supabaseError.message);
-        return NextResponse.json({ error: supabaseError.message }, { status: 500 });
+        console.error("PUT employee supabase error", supabaseError);
+        return NextResponse.json({ error: "Failed to update employee" }, { status: 500 });
       }
 
       return NextResponse.json(updated);
     }
 
-    return NextResponse.json({ message: "No changes provided" });
-  } catch (err) {
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("PUT employee error", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Update failed" },
+      { error: "Update failed" },
       { status: 500 },
     );
   }

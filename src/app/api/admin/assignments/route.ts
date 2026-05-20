@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import type { Assignment } from "@/src/app/(protected)/admin/_types";
 //fetch all assignments joined with coach/student names
 
@@ -23,7 +23,9 @@ type AssignmentRow = {
  * @returns JSON array of assignments shaped for admin UI consumption.
  */
 export async function GET() {
-  const supabase = await createClient();
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
   const { data, error } = await supabase.from("coach_students").select(`
       coach_id,
       student_id,
@@ -33,7 +35,7 @@ export async function GET() {
 
   if (error) {
     console.error("GET Assignments Supabase Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch assignments" }, { status: 500 });
   }
 
   // Return original Supabase UUIDs for the frontend to match with its local cache
@@ -62,10 +64,11 @@ export async function GET() {
  * @returns JSON assignment object for immediate UI insertion.
  */
 export async function POST(req: NextRequest) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
   const { coach_id: coach_id_1, student_id: student_id_1 } = await req.json();
-  const supabase = await createClient();
-  console.log("Coach_id: " + coach_id_1);
-  console.log("Student_id: " + student_id_1);
 
   const { data: coachData } = await supabase
     .from("coaches")
@@ -78,8 +81,6 @@ export async function POST(req: NextRequest) {
     .eq("id", String(student_id_1))
     .single();
 
-  console.log("Coach Data: " + JSON.stringify(coachData));
-  console.log("Student Data :" + JSON.stringify(studentData));
   if (!coachData) {
     return NextResponse.json(
       { error: "Coach not found in local TalkMaze database." },
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("POST Assignment Insert Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create assignment" }, { status: 500 });
   }
 
   const newAssignment: Assignment = {
