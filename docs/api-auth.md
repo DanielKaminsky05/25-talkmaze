@@ -283,7 +283,7 @@ try {
 
 ## Testing the contract
 
-`tests/integration/api/admin/auth.test.ts` and `auth-extended.test.ts` together describe the role matrix. After `requireRole` lands and the audit's auth-missing routes are fixed, ~80 RED tests turn GREEN. The test pattern is in `docs/testing-critique.md` — don't write new "expect(200)" tests; pair every status assertion with a side-effect assertion (`expectSideEffect(table, predicate)` or `expectNoSideEffect`).
+`tests/integration/api/_auth-matrix.test.ts` is the parameterised role-gate matrix — one row per route. Per-route 5Q test files cover ownership + validation + response shape + side effects + external calls. Always pair a status-code assertion with a side-effect assertion via `expectRowExists` / `expectNoRow` from `tests/helpers/sideEffects.ts`.
 
 The full test matrix to maintain:
 

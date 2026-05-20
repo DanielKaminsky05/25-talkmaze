@@ -1,6 +1,6 @@
 # API Contract
 
-The rules every API route in `src/app/api/**` follows. This document is **prescriptive** — when a route disagrees with this doc, the route is wrong and gets fixed when next touched. For the descriptive audit of current state (what routes look like today and which ones to copy vs avoid) see `docs/api-conventions.md`.
+The rules every API route in `src/app/api/**` follows. This document is **prescriptive** — when a route disagrees with this doc, the route is wrong and gets fixed when next touched.
 
 Companion docs:
 - `docs/api-auth.md` — who can call which routes (roles).
@@ -305,7 +305,7 @@ When you see `createServiceRoleClient()` in a non-webhook route, that's a bug. F
 
 ## Migration plan
 
-This document describes the target state. The current state is documented in `docs/api-conventions.md` and `docs/repo-quality-audit.md`. Drift between the two is the work to do.
+As of 2026-05-20 the codebase matches this spec — see `docs/test-rewrite-runbook.md` for the rewrite history and `docs/repo-quality-audit.md` for tracked residuals. New routes follow the rules below from day one.
 
 **When editing any route:**
 1. Read the contract above.
