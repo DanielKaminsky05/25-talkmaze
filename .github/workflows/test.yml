@@ -68,18 +68,31 @@ jobs:
           echo "=== supabase status ==="
           echo "$STATUS"
           echo "======================"
-          ANON_KEY=$(echo "$STATUS" | grep 'anon key' | awk '{print $NF}')
-          SERVICE_KEY=$(echo "$STATUS" | grep 'service_role key' | awk '{print $NF}')
+
+          # Supabase CLI v2.100.1+ uses new key format: sb_publishable_* / sb_secret_*
+          # Older versions used "anon key" / "service_role key" labels with JWT values.
+          ANON_KEY=$(echo "$STATUS" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+' | head -1)
+          SERVICE_KEY=$(echo "$STATUS" | grep -oE 'sb_secret_[A-Za-z0-9_-]+' | head -1)
+
+          # Fallback for older CLI versions
+          if [ -z "$ANON_KEY" ]; then
+            ANON_KEY=$(echo "$STATUS" | grep 'anon key' | awk '{print $NF}')
+          fi
+          if [ -z "$SERVICE_KEY" ]; then
+            SERVICE_KEY=$(echo "$STATUS" | grep 'service_role key' | awk '{print $NF}')
+          fi
+
           if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
             echo "ERROR: failed to extract Supabase keys from status output above"
             exit 1
           fi
+
           printf 'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321\n' > .env.test
           printf 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' "$ANON_KEY" >> .env.test
           printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_KEY" >> .env.test
           printf 'STRIPE_SECRET_KEY=sk_test_dummy\n' >> .env.test
           printf 'STRIPE_WEBHOOK_SECRET=whsec_test_talkmaze_integration\n' >> .env.test
-          echo ".env.test written"
+          echo ".env.test written successfully"
 
       - name: Run integration tests
         run: npm run test:integration
