@@ -11,14 +11,19 @@ Next.js 16 (App Router) + React 19 + TypeScript (strict) + Tailwind v4 + Supabas
 ## Commands
 
 ```bash
-npm run dev          # next dev (http://localhost:3000)
-npm run build        # next build
-npm run start        # next start
-npm run lint         # eslint (custom layering rules enforced — see below)
-npm run gen-types    # regenerate src/services/supabase/types/database.ts from project zfnmverkmybrasrwhjyg
+npm run dev              # next dev (http://localhost:3000)
+npm run build            # next build
+npm run start            # next start
+npm run lint             # eslint (custom layering rules enforced — see below)
+npm run gen-types        # regenerate src/services/supabase/types/database.ts from project zfnmverkmybrasrwhjyg
+npm run test:unit        # vitest unit tests (no DB needed, ~10s)
+npm run test:integration # vitest integration tests (requires supabase start + .env.test, ~60s)
+npm run test:coverage    # unit tests with v8 coverage report
 ```
 
-No test runner is configured. No Prettier/formatter beyond ESLint. The Supabase project ID is hard-coded into the `gen-types` script.
+No Prettier/formatter beyond ESLint. The Supabase project ID is hard-coded into the `gen-types` script. Integration tests require a local Supabase instance (`supabase start`) and a `.env.test` file — see `docs/testing-coverage.md`.
+
+CI runs both test suites automatically on every push and PR via `.github/workflows/test.yml`. Unit tests run unconditionally; integration tests are skipped on draft PRs.
 
 ## Architecture — the load-bearing pieces
 
@@ -127,5 +132,6 @@ Full audit with file paths and severities in `docs/repo-quality-audit.md`. Headl
 - `docs/matchmaking.md` — coach/student matching algorithm.
 - `docs/lessonspace-runtime-flows.md` — LessonSpace integration map.
 - `docs/repo-quality-audit.md` — known issues.
-- `docs/testing-strategy.md` — testing groundwork: frameworks, layering, per-domain test catalogue, phased rollout.
+- `docs/testing-strategy.md` — testing framework choices, tooling decisions, per-domain test catalogue, phased rollout plan.
+- `docs/testing-coverage.md` — **current test coverage state**: what's written, what's passing/failing, what still needs to be done, key patterns and gotchas.
 - `README.md` — original route collocation conventions.
