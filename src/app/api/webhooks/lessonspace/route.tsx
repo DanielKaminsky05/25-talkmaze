@@ -80,8 +80,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Resolve the account email — the family's email is the recipient for the
-  // AI summary. Previously this was hardcoded to wdstalkmaze@gmail.com.
+  // INTENTIONAL: AI summaries currently go to the shared
+  // wdstalkmaze@gmail.com inbox so the founding team can review every
+  // session during the early product phase. The production target is
+  // `account.email` (the resolved family email) — see the family-resolver
+  // block below, which is kept here so the resolved address is available
+  // when this flip happens.
+  //
+  // TO FLIP: change `to: RECIPIENT_OVERRIDE` to `to: account.email` and
+  // delete the override constant. The contract test in
+  // tests/contract/webhooks/lessonspace.session-summary.test.ts pins
+  // RECIPIENT_OVERRIDE today; that assertion is the load-bearing reminder
+  // that this is interim behavior.
+  const RECIPIENT_OVERRIDE = "wdstalkmaze@gmail.com";
+
   const { data: account, error: accountError } = await supabase
     .from("account")
     .select("email")
@@ -98,12 +110,15 @@ export async function POST(request: NextRequest) {
       { status: 404 },
     );
   }
+  // account.email is resolved (and validated) above so the flip-to-prod
+  // path is a one-line change. `void` keeps the unused-var lint quiet.
+  void account.email;
 
   try {
     const resend = new Resend(resendApiKey);
     const { data, error } = await resend.emails.send({
       from: "Talk Maze <onboarding@resend.dev>",
-      to: account.email,
+      to: RECIPIENT_OVERRIDE,
       subject: "Talkmaze Lessonspace AI summary",
       react: (
         <EmailTemplate
