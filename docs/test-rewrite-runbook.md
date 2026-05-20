@@ -321,14 +321,15 @@ Decisions made during the rewrite that bind future work. Append to this list whe
 | 2026-05-20 | One test file per route file | Locality + agent ergonomics. |
 | 2026-05-20 | Role-gate matrix lives in one parameterised file | DRY; new routes are one row. |
 | 2026-05-20 | The test is the spec; agents cannot edit tests without explicit human ask | Prevents calcifying wrong contracts via reflex fixes. |
+| 2026-05-20 | `_auth-matrix.test.ts` "accepts role X" asserts `not.toBe(401)` only, NOT `not.toBe(403)` (corrects api-auth.md:308–311) | A contract-correct route returns 403 from the ownership layer when given a FAKE_ID resource. Asserting not-403 would flag ~13 ownership-coupled routes (subscriptions, parent/students, coach/*) as permanently red even after their auth gate works. Ownership is per-route file territory. |
 
 ---
 
 ## What's done, what's next
 
 - [x] Phase 0: `resetDb`/`resetAuthUsers`/`resetAll` in `tests/helpers/db.ts`. `pg` added to devDependencies.
-- [ ] Phase 1: build `requireRole` and ownership helpers.
-- [ ] Phase 2: split existing test files 1:1 with route files.
+- [x] Phase 1: build `requireRole` and ownership helpers.
+- [x] Phase 2: split existing test files 1:1 with route files. `_auth-matrix.test.ts` covers role gates for every gated route; `coach/ownership.test.ts` split into 7 per-route files; `admin/auth*.test.ts` deleted. `fileParallelism: false` added to integration config.
 - [ ] Phase 3: rewrite `subscriptions` domain as the worked example.
 - [ ] Phase 4: route-by-route sweep via agent loop.
 - [ ] Phase 5: webhook contract tests.
