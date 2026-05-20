@@ -115,7 +115,9 @@ import { GET as attendanceGET, POST as attendancePOST, DELETE as attendanceDELET
 
 // ── Test setup ────────────────────────────────────────────────────────────────
 
-const FAKE_ID = "00000000-0000-0000-0000-000000000099";
+// v4-shape UUID with the version (13th char) and variant (17th char) bits
+// set correctly. Required because Zod's .uuid() rejects nil-pattern UUIDs.
+const FAKE_ID = "00000000-0000-4000-8000-000000000099";
 const ALL_ROLES: Role[] = [1, 2, 3];
 
 type AuthCase = {

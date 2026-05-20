@@ -1,103 +1,145 @@
-"use server"
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
-import { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-export async function POST(req: NextRequest){
-    const auth = await requireRole([3]);
-    if (auth instanceof NextResponse) return auth;
-    const { supabase } = auth;
 
-    const body = await req.json();
+const BodySchema = z
+  .object({
+    studentId: z.string().uuid(),
+    courseId: z.string().uuid(),
+  })
+  .strict();
 
-    const {studentId, courseId} = body;
+const QuerySchema = z
+  .object({
+    course_id: z.string().uuid(),
+  })
+  .strict();
 
-    try{
+export async function POST(req: NextRequest) {
+  // Stage 1: AUTH
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-        const{data:lessons, error: lessons_error} = await supabase.from('lessons').select("id").eq("course_id",courseId);
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { studentId, courseId } = parsed.data;
 
-        if(lessons_error){
-            console.error("courses/assign: fetch lessons error", lessons_error);
-            return NextResponse.json({ error: "Can not fetch lessons associated with course" }, { status: 500 })
-        }
-        
+  // Stage 4: EXECUTE
+  try {
+    const { data: lessons, error: lessonsError } = await supabase
+      .from("lessons")
+      .select("id")
+      .eq("course_id", courseId);
 
-        //array of objects to be pushed to supabase
-        const posted_lessons = []
+    if (lessonsError) {
+      console.error("courses/assign: fetch lessons error", lessonsError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
-        for(let i = 0; i < lessons.length; i++){
-            const newEntry = {
-                student_id: studentId,
-                status: 1,
-                lesson_id: lessons[i].id
-            }
+    const postedLessons = (lessons ?? []).map((lesson) => ({
+      student_id: studentId,
+      status: 1,
+      lesson_id: lesson.id,
+    }));
 
-            posted_lessons.push(newEntry);
-        }
+    if (postedLessons.length > 0) {
+      const { error: pushError } = await supabase
+        .from("lesson_progress")
+        .insert(postedLessons);
 
-        //push all the new lessons to the lesson_progress table
+      if (pushError) {
+        console.error("courses/assign: push lessons error", pushError);
+        return NextResponse.json(
+          { error: "Internal server error" },
+          { status: 500 },
+        );
+      }
+    }
 
-        const{data: push_lessons_data, error: push_lessons_data_error} = await supabase.from('lesson_progress').insert(posted_lessons)
-
-        if(push_lessons_data_error){
-            console.error("courses/assign: push lessons error", push_lessons_data_error)
-            return NextResponse.json({ error: "Unable to update database to assign course lessons to user" }, { status: 500 })
-        }
-        //add course assigned into course assignment table
-        const {data, error} = await supabase.from('course_assignment').insert({
+    const { error: assignError } = await supabase
+      .from("course_assignment")
+      .insert({
         course_id: courseId,
         student_id: studentId,
         progress: 0,
-        isActive: true
-        })
-        if(error){
-            throw new Error(`Error ${JSON.stringify(error)}`);
-        }
-        
-        //Also need to add to lesson_progress table with all status 0s
-    
-    
-   
-    
-    return NextResponse.json({ success: true })
-    }catch(err: unknown){
-        console.error("courses/assign error", err);
-        return NextResponse.json({ error: "Error assigning student" }, { status: 500 })
+        isActive: true,
+      });
+
+    if (assignError) {
+      console.error("courses/assign: insert assignment error", assignError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
 
-
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("courses/assign error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
 
-export async function GET(req: NextRequest){
-    const auth = await requireRole([3]);
-    if (auth instanceof NextResponse) return auth;
-    const { supabase } = auth;
+export async function GET(req: NextRequest) {
+  // Stage 1: AUTH
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-    //only get the students that arent assigned in this course
+  // Stage 2: VALIDATE
+  const parsedQuery = QuerySchema.safeParse(
+    Object.fromEntries(new URL(req.url).searchParams),
+  );
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { error: "Invalid query parameters", details: parsedQuery.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { course_id } = parsedQuery.data;
 
-    const body = await req.json();
-    const{course_id} = body;
+  // Stage 4: EXECUTE
+  const { data: assigned, error: assignedError } = await supabase
+    .from("course_assignment")
+    .select("student_id")
+    .eq("course_id", course_id);
 
-    const { data: assigned, error: assignedError } = await supabase
-        .from("course_assignment")
-        .select("student_id")
-        .eq("course_id", course_id);
+  if (assignedError) {
+    console.error("courses/assign GET: fetch assigned error", assignedError);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 
-    if(assignedError){
-        console.error("courses/assign GET: error getting assigned students", assignedError);
-    }
+  const assignedIds = new Set((assigned ?? []).map((a) => a.student_id));
 
-    if(!assigned){
-        return NextResponse.json({ error: "Error fetching assigned students" }, { status: 500 });
-    }
-    const assignedIds = assigned.map((a) => a.student_id);
+  const { data: students, error: studentsError } = await supabase
+    .from("students")
+    .select("*");
 
+  if (studentsError) {
+    console.error("courses/assign GET: fetch students error", studentsError);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 
-    const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .not("id", "in", `(${assignedIds.join(",")})`);
+  const filtered = (students ?? []).filter((s) => !assignedIds.has(s.id));
 
-    return NextResponse.json(data);
-
-
+  return NextResponse.json({ students: filtered });
 }
