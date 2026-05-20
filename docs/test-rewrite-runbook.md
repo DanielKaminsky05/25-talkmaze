@@ -331,7 +331,12 @@ Decisions made during the rewrite that bind future work. Append to this list whe
 - [x] Phase 1: build `requireRole` and ownership helpers.
 - [x] Phase 2: split existing test files 1:1 with route files. `_auth-matrix.test.ts` covers role gates for every gated route; `coach/ownership.test.ts` split into 7 per-route files; `admin/auth*.test.ts` deleted. `fileParallelism: false` added to integration config.
 - [x] Phase 3: rewrite `subscriptions` domain as the worked example. 4 per-route contract-shaped test files (cancel, resume, schedule, schedule/cancel); 4 routes brought into compliance via `contract-fix` agent loop (Zod `.strict()`, `requireRole([1])`, four-stage shape, 403 ownership via per-call `resolveStudentIdForBilling` override, tightened catch-all 500). New helpers: `tests/helpers/sideEffects.ts`, `tests/helpers/stripeMocks.ts`, `tests/helpers/subscriptionFixtures.ts`. Old monolithic `subscriptions/subscriptions.test.ts` deleted.
-- [ ] Phase 4: route-by-route sweep via agent loop.
+- [x] Phase 4: route-by-route sweep. **Matrix is 219/219 GREEN** — every gated route in `src/app/api/**` satisfies the role-gate spec.
+  - 4.1: 22 admin routes brought under `requireRole([3])`.
+  - 4.2: 7 coach routes (lesson-feedback, lesson-progress, lessons, conversation, conversation/message, lessonspace, sessions×2) with per-route 5Q tests and ownership helpers; `assertCoachOwnsSession` added. `lesson-tasks` deferred (FormData infra needed).
+  - 4.3: 6 security-critical routes (checkout, attendance×3, parent/students, parent/availability×2, parent/setup, lesson-progress). Removed checkout password leak.
+  - 4.4: 7 admin business-logic routes (courses/assign SQL-injection fix, 4 pending-bookings dropping service-role, payment-plans/stripe-preview, create-coach shape cleanup) + 3 catch-up routes (coach/students, parent/sessions, parent/students).
+  - Spillover: `coach/lesson-tasks` (FormData).
 - [ ] Phase 4: route-by-route sweep via agent loop.
 - [ ] Phase 5: webhook contract tests.
 
