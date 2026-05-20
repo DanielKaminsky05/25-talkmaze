@@ -236,23 +236,24 @@ export default function LessonDetailClient({
 
       const saved = await res.json();
 
+      const task = saved?.task ?? null;
       if (isPre) {
         setPreOverrideFile(null);
         setClearPreFile(false);
-        if (saved.deleted) {
+        if (saved?.deleted) {
           setCurrentOverridePre(null);
           setPreOverrideDesc("");
         } else {
-          setCurrentOverridePre(saved);
+          setCurrentOverridePre(task);
         }
       } else {
         setPostOverrideFile(null);
         setClearPostFile(false);
-        if (saved.deleted) {
+        if (saved?.deleted) {
           setCurrentOverridePost(null);
           setPostOverrideDesc("");
         } else {
-          setCurrentOverridePost(saved);
+          setCurrentOverridePost(task);
         }
       }
 

@@ -49,7 +49,9 @@ export default function MyStudents({
         if (!r.ok) throw new Error("Failed to load courses");
         return r.json();
       })
-      .then((coursesData) => setCourses(coursesData))
+      .then((coursesData) =>
+        setCourses(Array.isArray(coursesData?.courses) ? coursesData.courses : []),
+      )
       .catch((err: unknown) =>
         setCoursesError(
           err instanceof Error ? err.message : "Failed to load courses",

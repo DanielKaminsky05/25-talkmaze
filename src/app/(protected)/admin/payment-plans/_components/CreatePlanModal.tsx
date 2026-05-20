@@ -115,7 +115,8 @@ export default function CreatePlanModal({
         setSaveError(body.error ?? "Failed to create plan.");
         return;
       }
-      const plan: AdminPlan = await res.json();
+      const body = await res.json();
+      const plan: AdminPlan = body?.plan ?? body;
       reset();
       onSuccess(plan);
     } finally {

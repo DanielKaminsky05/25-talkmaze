@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
+import type { TablesUpdate } from "@/src/services/supabase/types/database";
 
 const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
 
@@ -37,9 +38,9 @@ export async function PATCH(
     );
   }
 
-  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const updates: TablesUpdate<"plans"> = { updated_at: new Date().toISOString() };
   for (const [k, v] of Object.entries(parsedBody.data)) {
-    if (v !== undefined) updates[k] = v;
+    if (v !== undefined) (updates as Record<string, unknown>)[k] = v;
   }
 
   try {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
+import type { TablesUpdate } from "@/src/services/supabase/types/database";
 
 const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
 
@@ -49,9 +50,9 @@ export async function PUT(
     );
   }
 
-  const payload: Record<string, unknown> = {};
+  const payload: TablesUpdate<"students"> = {};
   for (const [k, v] of Object.entries(parsedBody.data.student)) {
-    if (v !== undefined) payload[k] = v;
+    if (v !== undefined) (payload as Record<string, unknown>)[k] = v;
   }
 
   try {
