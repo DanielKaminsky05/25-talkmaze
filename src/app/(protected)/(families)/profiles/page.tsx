@@ -169,20 +169,20 @@ export default async function ProfilesPage({
             }
 
             if (isParentWithoutPin) {
+              // Parent-without-PIN uses the same selectProfile server action
+              // as every other no-PIN branch. Previously hit /api/profiles/select
+              // (a redirect-based GET route) — removed as part of the contract sweep.
               return (
-                <a
-                  key={profile.id}
-                  href={`/api/profiles/select?profileId=${profile.id}&profileType=parent`}
-                  className="no-underline"
-                >
+                <form key={profile.id} action={selectProfile}>
+                  <input type="hidden" name="profileId" value={profile.id} />
+                  <input type="hidden" name="profileType" value="parent" />
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
                     imageUrl={profile.avatarUrl ?? "/images/content/blank_profile.png"}
                     hasPin={false}
-                    asLink={true}
                   />
-                </a>
+                </form>
               );
             }
 

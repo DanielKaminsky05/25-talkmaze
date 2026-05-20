@@ -187,8 +187,9 @@ const AUTH_CASES: AuthCase[] = [
 
   // ─── User / Profiles / Lesson-progress ─────────────────────────────────────
   { name: "GET /api/user/role", call: (c) => call(userRoleGET, { cookies: c }), allowed: [] },
-  // /api/profiles/select uses 307 redirects (not JSON status codes) — exempt from the role-gate matrix;
-  // covered by tests/integration/actions/selectProfile.test.ts which tests the redirect targets.
+  // /api/profiles/select was deleted in Phase 4.5 — its sole caller (parent-without-PIN
+  // branch of /profiles page) now uses the `selectProfile` server action like every
+  // other branch. Covered by tests/integration/actions/selectProfile.test.ts.
   { name: "GET /api/lesson-progress", call: (c) => call(lessonProgressGET, { cookies: c, query: { studentId: FAKE_ID } }), allowed: [1, 2, 3] },
 
   // ─── Checkout (publicSubFlow) ──────────────────────────────────────────────
