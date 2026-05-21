@@ -6,7 +6,11 @@ import { z } from "zod";
 import Image from "next/image";
 import { completeStudentSetup } from "../actions";
 import { OnboardingTimeZone, TIME_ZONES } from "@/src/lib/scheduling/types";
+import { weeklyAvailabilitySchema } from "@/src/lib/scheduling/schemas";
 import { createClient } from "@/src/services/supabase/client";
+import WeeklyAvailabilityEditor, {
+  WeeklyAvailabilityValue,
+} from "../../_components/WeeklyAvailabilityEditor";
 
 interface Props {
   studentId: string;
@@ -15,48 +19,20 @@ interface Props {
   redirectAfterSetup?: "parent" | "student";
 }
 
-type Slot = { start: string; end: string };
-
+/**
+ * Composed schema for the full wizard. `availability` uses the shared schema so
+ * the rules (end > start, at least one filled slot) stay aligned with the modal
+ * Each page validates its own slice via `.pick(...)` before advancing.
+ */
 const setupSchema = z.object({
   grade: z.number().min(1, "Please select a grade"),
   timeZone: z.string().min(1, "Time zone is required"),
-  availability: z
-    .record(
-      z.string(),
-      z.array(
-        z
-          .object({
-            start: z.string().min(1, "Start time required"),
-            end: z.string().min(1, "End time required"),
-          })
-          .refine((data) => !data.start || !data.end || data.end > data.start, {
-            message: "End time must be after start time",
-            path: ["end"],
-          }),
-      ),
-    )
-    .refine(
-      (val) => {
-        const entries = Object.entries(val);
-        if (entries.length === 0) return false;
-        return entries.every(([, slots]) =>
-          slots.some((s) => s.start && s.end),
-        );
-      },
-      { message: "Please ensure all selected days have valid time slots" },
-    ),
+  availability: weeklyAvailabilitySchema,
 });
 
-const DAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
+/**
+ * Three-page onboarding wizard for completing a student's profile:
+ */
 export default function StudentSetupForm({
   studentId,
   firstName,
@@ -74,58 +50,10 @@ export default function StudentSetupForm({
   const [timeZone, setTimeZone] =
     useState<OnboardingTimeZone>("America/Toronto");
   const [notes, setNotes] = useState("");
-  const [weeklyAvailability, setWeeklyAvailability] = useState<
-    Record<string, Slot[]>
-  >({});
+  const [weeklyAvailability, setWeeklyAvailability] =
+    useState<WeeklyAvailabilityValue>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const toggleDay = (day: string) => {
-    setWeeklyAvailability((prev) => {
-      const copy = { ...prev };
-      if (copy[day]) {
-        delete copy[day];
-      } else {
-        copy[day] = [{ start: "", end: "" }];
-      }
-      return copy;
-    });
-  };
-
-  const addSlot = (day: string) => {
-    setWeeklyAvailability((prev) => ({
-      ...prev,
-      [day]: [...(prev[day] || []), { start: "", end: "" }],
-    }));
-  };
-
-  const updateSlot = (
-    day: string,
-    index: number,
-    field: "start" | "end",
-    value: string,
-  ) => {
-    setWeeklyAvailability((prev) => {
-      const updated = [...prev[day]];
-      updated[index][field] = value;
-      return { ...prev, [day]: updated };
-    });
-  };
-
-  const removeSlot = (day: string, index: number) => {
-    setWeeklyAvailability((prev) => {
-      const slots = prev[day];
-      if (!slots) return prev;
-      const updated = slots.filter((_, i) => i !== index);
-      const next = { ...prev };
-      if (updated.length === 0) {
-        delete next[day];
-      } else {
-        next[day] = updated;
-      }
-      return next;
-    });
-  };
 
   const validatePage1 = () => {
     const result = setupSchema
@@ -159,6 +87,9 @@ export default function StudentSetupForm({
     return true;
   };
 
+  /**
+   * Vets the picked avatar before staging it for upload
+   */
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -176,6 +107,11 @@ export default function StudentSetupForm({
     setPendingPreview(URL.createObjectURL(file));
   }
 
+  /**
+   * Uploads the staged avatar (if any) to Supabase storage, then calls the
+   * server action to persist all collected fields. The action handles the
+   * post-setup redirect, so we only reset `isSubmitting` on failure.
+   */
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -366,87 +302,13 @@ export default function StudentSetupForm({
             <p className="text-sm text-[#A8A8A8]">
               Select the days and times {firstName} is available each week.
             </p>
-            {errors.availability && (
-              <p className="text-red-500 text-sm font-medium">
-                {errors.availability}
-              </p>
-            )}
 
-            <div className="flex flex-col gap-3">
-              {DAYS.map((day) => {
-                const enabled = !!weeklyAvailability[day];
-                const slots = weeklyAvailability[day] || [];
-                return (
-                  <div
-                    key={day}
-                    className="border border-[#1F2E3B]/10 p-4 rounded-xl"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-[#1F2E3B]">
-                        {day}
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={() => toggleDay(day)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-[#B1E7D6] transition-colors duration-200" />
-                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-5" />
-                      </label>
-                    </div>
-
-                    {enabled && (
-                      <div className="flex flex-col gap-2">
-                        {slots.map((slot, idx) => (
-                          <div key={idx} className="flex flex-col gap-1">
-                            <div className="flex gap-2 items-center">
-                              <input
-                                type="time"
-                                value={slot.start}
-                                onChange={(e) =>
-                                  updateSlot(day, idx, "start", e.target.value)
-                                }
-                                className="border border-[#1F2E3B]/20 rounded px-2 py-1 text-sm"
-                              />
-                              <span className="text-[#1F2E3B]/50">–</span>
-                              <input
-                                type="time"
-                                value={slot.end}
-                                onChange={(e) =>
-                                  updateSlot(day, idx, "end", e.target.value)
-                                }
-                                className="border border-[#1F2E3B]/20 rounded px-2 py-1 text-sm"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeSlot(day, idx)}
-                                className="text-red-400 hover:text-red-600 text-sm"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                            {errors[`availability.${day}.${idx}.end`] && (
-                              <p className="text-red-500 text-xs">
-                                {errors[`availability.${day}.${idx}.end`]}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => addSlot(day)}
-                          className="text-sm text-[#65CFAD] hover:underline mt-1 text-left"
-                        >
-                          + Add time
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <WeeklyAvailabilityEditor
+              value={weeklyAvailability}
+              onChange={setWeeklyAvailability}
+              timezone={timeZone}
+              errors={errors}
+            />
 
             <button
               type="submit"
