@@ -37,7 +37,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSuccess }: Create
         throw new Error(data.error || "Failed to create course");
       }
       const created = await response.json();
-      onSuccess(created);
+      onSuccess(created?.course ?? created);
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

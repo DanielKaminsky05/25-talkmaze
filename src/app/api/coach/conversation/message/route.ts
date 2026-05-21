@@ -1,83 +1,115 @@
-import { createClient } from "@/src/services/supabase/server";
-import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachOwnsConversation } from "@/src/lib/auth/server/ownership";
+
+const QuerySchema = z
+  .object({
+    conversationId: z.string().uuid(),
+  })
+  .strict();
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const conversationId = searchParams.get("conversationId");
-  if (!conversationId) return NextResponse.json([], { status: 400 });
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Stage 2: VALIDATE
+  const parsed = QuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+  const { conversationId } = parsed.data;
 
-  const supabase = await createClient();
+  // Stage 3: AUTHORIZE
+  const ownership = await assertCoachOwnsConversation(auth, conversationId);
+  if (ownership instanceof NextResponse) return ownership;
+  const conv = ownership.conversation;
 
-  // Fetch conversation to know coach and profile
-  const { data: conv, error: convError } = await supabase
-    .from("conversations")
-    .select("coach_id, profile_id, profile_type")
-    .eq("id", conversationId)
-    .single();
+  // Stage 4: EXECUTE
+  try {
+    // Coach display info — for sender name enrichment.
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("account_id, first_name, last_name, avatar_url")
+      .eq("id", conv.coach_id)
+      .single();
 
-  if (convError || !conv) return NextResponse.json([], { status: 404 });
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, body, created_at, sender_id")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
 
-  // Resolve coach's account_id and display info
-  const { data: coach } = await supabase
-    .from("coaches")
-    .select("account_id, first_name, last_name, avatar_url")
-    .eq("id", conv.coach_id)
-    .single();
+    if (error) {
+      console.error("coach/conversation/message query error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
 
-  const { data, error } = await supabase
-    .from("messages")
-    .select("id, body, created_at, sender_id")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
+    const messages = await Promise.all(
+      (data ?? []).map(async (m) => {
+        let name = "Unknown";
+        let avatar_url: string | null = null;
 
-  console.log("Retrieved messages: " + JSON.stringify(data))
-  if (error) return NextResponse.json([], { status: 500 });
-
-  const messages = await Promise.all(
-    data.map(async (m) => {
-      let name: string;
-      let avatar_url: string | null = null;
-
-      if (coach && m.sender_id === coach.account_id) {
-        name = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
-        avatar_url = coach.avatar_url ?? null;
-      } else {
-        if (conv.profile_type === "student") {
+        if (coach && m.sender_id === coach.account_id) {
+          name =
+            `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() ||
+            "Unknown";
+          avatar_url = coach.avatar_url ?? null;
+        } else if (conv.profile_type === "student") {
           const { data: student } = await supabase
             .from("students")
             .select("first_name, last_name, avatar_url")
             .eq("id", conv.profile_id)
             .maybeSingle();
-          name = student
-            ? `${student.first_name || ""} ${student.last_name || ""}`.trim()
-            : "Unknown";
-          avatar_url = student?.avatar_url ?? null;
+          if (student) {
+            name =
+              `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() ||
+              "Unknown";
+            avatar_url = student.avatar_url ?? null;
+          }
         } else {
           const { data: parent } = await supabase
             .from("parents")
             .select("first_name, last_name, avatar_url")
             .eq("id", conv.profile_id)
             .maybeSingle();
-          name = parent
-            ? `${parent.first_name || ""} ${parent.last_name || ""}`.trim()
-            : "Unknown";
-          avatar_url = parent?.avatar_url ?? null;
+          if (parent) {
+            name =
+              `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() ||
+              "Unknown";
+            avatar_url = parent.avatar_url ?? null;
+          }
         }
-      }
 
-      return {
-        id: m.id,
-        text: m.body,
-        created_at: m.created_at,
-        sender_id: m.sender_id,
-        sender: { name, avatar_url },
-      };
-    }),
-  );
+        return {
+          id: m.id,
+          text: m.body,
+          created_at: m.created_at,
+          sender_id: m.sender_id,
+          sender: { name, avatar_url },
+        };
+      }),
+    );
 
-  return NextResponse.json(messages);
+    return NextResponse.json({ messages });
+  } catch (err: unknown) {
+    console.error("coach/conversation/message error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

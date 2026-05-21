@@ -1,0 +1,1210 @@
+
+
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+CREATE SCHEMA IF NOT EXISTS "public";
+
+
+ALTER SCHEMA "public" OWNER TO "pg_database_owner";
+
+
+COMMENT ON SCHEMA "public" IS 'standard public schema';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."broadcast_message_insert"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$DECLARE
+  sender_name text;
+  avatar_url  text;
+  conv_record record;
+  coach_account_id uuid;
+BEGIN
+  -- Get conversation info
+  SELECT coach_id, profile_id, profile_type
+  INTO conv_record
+  FROM public.conversations
+  WHERE id = NEW.conversation_id;
+
+  -- Get coach's account_id
+  SELECT account_id INTO coach_account_id
+  FROM public.coaches
+  WHERE id = conv_record.coach_id;
+
+  IF NEW.sender_id = coach_account_id THEN
+    -- Sender is the coach
+    SELECT TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))
+    INTO sender_name
+    FROM public.coaches
+    WHERE account_id = NEW.sender_id;
+
+    SELECT c.avatar_url INTO avatar_url
+    FROM public.coaches c
+    WHERE c.account_id = NEW.sender_id;
+
+  ELSIF conv_record.profile_type = 'student' THEN
+    SELECT TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))
+    INTO sender_name
+    FROM public.students
+    WHERE id = conv_record.profile_id;
+
+    SELECT s.avatar_url INTO avatar_url
+    FROM public.students s
+    WHERE id = conv_record.profile_id;
+
+  ELSE
+    SELECT TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))
+    INTO sender_name
+    FROM public.parents
+    WHERE id = conv_record.profile_id;
+
+    SELECT p.avatar_url INTO avatar_url
+    FROM public.parents p
+    WHERE id = conv_record.profile_id;
+  END IF;
+
+  PERFORM realtime.send(
+    jsonb_build_object(
+      'id',          NEW.id,
+      'text',        NEW.body,
+      'created_at',  NEW.created_at,
+      'sender_id',   NEW.sender_id,
+      'sender_name', sender_name,
+      'avatar_url',  avatar_url
+    ),
+    'INSERT',
+    'room:' || NEW.conversation_id::text || ':messages',
+    false
+  );
+
+  RETURN NEW;
+END;$$;
+
+
+ALTER FUNCTION "public"."broadcast_message_insert"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
+
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."account" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "email" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "role" integer NOT NULL,
+    "stripe_customer_id" "text",
+    "new" boolean
+);
+
+
+ALTER TABLE "public"."account" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."account"."stripe_customer_id" IS 'ID of customer record on Stripe tied to this account. Should be NULL if  this account''s user has never made a payment';
+
+
+
+COMMENT ON COLUMN "public"."account"."new" IS 'If user still needs to fill out onboarding form';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."badges" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "image_url" "text",
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."badges" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."booked_slots" (
+    "coach_id" "uuid" NOT NULL,
+    "student_id" "uuid" NOT NULL,
+    "weekday" smallint NOT NULL,
+    "start_time" time without time zone NOT NULL,
+    "end_time" time without time zone NOT NULL,
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "status" "text" NOT NULL,
+    "timezone" "text" NOT NULL,
+    "num_sessions" bigint,
+    "start_date" "date"
+);
+
+
+ALTER TABLE "public"."booked_slots" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."booked_slots"."num_sessions" IS 'the base amount of sessions from the plan';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."coach_availabilities" (
+    "id" bigint NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "coach_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "start_time" timestamp with time zone,
+    "weekday" smallint,
+    "end_time" timestamp with time zone,
+    "start_time_new" time without time zone,
+    "end_time_new" time without time zone,
+    "timezone" "text"
+);
+
+
+ALTER TABLE "public"."coach_availabilities" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."coach_availabilities" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."coach_availabilities_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."coach_students" (
+    "coach_id" "uuid" NOT NULL,
+    "student_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+
+ALTER TABLE "public"."coach_students" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."coach_students" IS 'coach to student relationship';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."coaches" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "avatar_url" "text",
+    "first_name" "text",
+    "last_name" "text"
+);
+
+
+ALTER TABLE "public"."coaches" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."conversations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "coach_id" "uuid" NOT NULL,
+    "profile_id" "uuid" NOT NULL,
+    "profile_type" "text" NOT NULL
+);
+
+
+ALTER TABLE "public"."conversations" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."conversations" IS 'Realtime messaging conversation between two users. Note that regular accounts (role=1) can have multiple users (profiles), and conversations are tracked separately between those profiles.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."course_assignment" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "course_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "student_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "progress" integer,
+    "isActive" boolean
+);
+
+
+ALTER TABLE "public"."course_assignment" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."courses" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "head_lesson_id" "uuid",
+    "tail_lesson_id" "uuid"
+);
+
+
+ALTER TABLE "public"."courses" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."lesson_progress" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "student_id" "uuid" NOT NULL,
+    "lesson_id" "uuid" NOT NULL,
+    "coach_notes" "text",
+    "status" integer DEFAULT 0 NOT NULL,
+    "completed_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "positive_feedback" "text",
+    "improvement_feedback" "text"
+);
+
+
+ALTER TABLE "public"."lesson_progress" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."lesson_summaries" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "student_id" "uuid" NOT NULL,
+    "lesson_id" "uuid" NOT NULL,
+    "summary" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."lesson_summaries" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."lesson_tasks" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lesson_id" "uuid" NOT NULL,
+    "student_id" "uuid",
+    "type" "text" NOT NULL,
+    "file_url" "text",
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "lesson_tasks_type_check" CHECK (("type" = ANY (ARRAY['pre'::"text", 'post'::"text"])))
+);
+
+
+ALTER TABLE "public"."lesson_tasks" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."lessons" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "content_url" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "slide_show_url" "text",
+    "prev_lesson" "uuid",
+    "next_lesson" "uuid",
+    "slug" "text",
+    "slide_pptx_url" "text"
+);
+
+
+ALTER TABLE "public"."lessons" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."messages" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "conversation_id" "uuid" NOT NULL,
+    "sender_id" "uuid" NOT NULL,
+    "body" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "edited_at" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."messages" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."messages" IS 'Messages sent by users via the real-time conversations channels.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."parents" (
+    "account_id" "uuid" NOT NULL,
+    "profile_access_pin" character varying,
+    "billing_email" "text",
+    "phone_number" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "avatar_url" "text",
+    "first_name" "text",
+    "last_name" "text",
+    "bio" "text",
+    "location" character varying(255)
+);
+
+
+ALTER TABLE "public"."parents" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."plans" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "renewal" "text" NOT NULL,
+    "currency" "text" NOT NULL,
+    "stripe_price_id" "text" NOT NULL,
+    "cents" integer NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "classes" integer NOT NULL,
+    "type" "text",
+    "is_active" boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE "public"."plans" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."plans" IS 'Available subscription plans for Talkmaze students. Plans are tied to a Stripe product (stripe_price_id)..';
+
+
+
+COMMENT ON COLUMN "public"."plans"."type" IS 'name of the type of plan';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."session_attendance" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "student_id" "uuid" NOT NULL,
+    "session_date" timestamp with time zone NOT NULL,
+    "status" "text" NOT NULL,
+    "coach_id" "uuid",
+    "notes" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "session_id" integer,
+    CONSTRAINT "session_attendance_status_check" CHECK (("status" = ANY (ARRAY['attended'::"text", 'missed'::"text", 'cancelled'::"text"])))
+);
+
+
+ALTER TABLE "public"."session_attendance" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."sessions" (
+    "id" bigint NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "coach_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "student_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "weekday" smallint,
+    "start_time" timestamp with time zone,
+    "end_time" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."sessions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."sessions" IS 'Contains the booked times of all the coaches and which students booked them';
+
+
+
+ALTER TABLE "public"."sessions" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."sessions_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."student_availabilities" (
+    "id" bigint NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "student_id" "uuid" DEFAULT "gen_random_uuid"(),
+    "start_time" timestamp with time zone,
+    "end_time" timestamp with time zone,
+    "weekday" smallint,
+    "start_time_new" time without time zone,
+    "end_time_new" time without time zone,
+    "timezone" "text"
+);
+
+
+ALTER TABLE "public"."student_availabilities" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."student_availabilities" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."student_availabilities_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."student_badges" (
+    "student_id" "uuid" NOT NULL,
+    "badge_id" "uuid" NOT NULL,
+    "awarded_at" timestamp with time zone DEFAULT "now"(),
+    "claimed_at" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."student_badges" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."student_subscriptions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "student_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "plan_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "status" "text" NOT NULL,
+    "current_period_start" timestamp with time zone NOT NULL,
+    "current_period_end" timestamp with time zone NOT NULL,
+    "cancelled_at" timestamp with time zone,
+    "sessions_remaining" integer,
+    "pending_plan_id" "uuid",
+    "pending_stripe_schedule_id" "text",
+    "pending_effective_date" timestamp with time zone,
+    "pending_created_at" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."student_subscriptions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."student_subscriptions" IS 'Tracks which plan the student is subscribed to, and the status of their subscription (sessions left, renewal, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."student_subscriptions"."sessions_remaining" IS 'gives number of classes left for students';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."student_tokens" (
+    "student_id" "uuid" NOT NULL,
+    "token_id" "uuid" NOT NULL,
+    "awarded_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "badge_url" "text"
+);
+
+
+ALTER TABLE "public"."student_tokens" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."students" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "lesson_space_id" "uuid",
+    "teach_works_url" "text",
+    "lesson_space_teacher_link" "text",
+    "lesson_space_student_link" "text",
+    "grade" "text",
+    "avatar_url" "text",
+    "first_name" "text",
+    "last_name" "text",
+    "notes" "text",
+    "location" "text",
+    "date_of_birth" "date",
+    "bio" "text",
+    "webhook_room_id" "uuid",
+    "post_lesson_tasks_enabled" boolean DEFAULT true NOT NULL,
+    "post_lesson_days" integer DEFAULT 0 NOT NULL,
+    "is_setup_complete" boolean
+);
+
+
+ALTER TABLE "public"."students" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."students"."lesson_space_id" IS 'URL of the Lessonspace "space" created for this student';
+
+
+
+COMMENT ON COLUMN "public"."students"."webhook_room_id" IS 'lessonspace has its own internal room id which is what the webhook returns, we use this id to identify the student it is referring to';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."tokens" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "code" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "icon_url" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "lesson_id" "uuid"
+);
+
+
+ALTER TABLE "public"."tokens" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."tokens"."lesson_id" IS 'lesson that badge belongs to';
+
+
+
+ALTER TABLE ONLY "public"."account"
+    ADD CONSTRAINT "account_email_key" UNIQUE ("email");
+
+
+
+ALTER TABLE ONLY "public"."account"
+    ADD CONSTRAINT "account_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."tokens"
+    ADD CONSTRAINT "badges_code_key" UNIQUE ("code");
+
+
+
+ALTER TABLE ONLY "public"."badges"
+    ADD CONSTRAINT "badges_course_id_key" UNIQUE ("course_id");
+
+
+
+ALTER TABLE ONLY "public"."tokens"
+    ADD CONSTRAINT "badges_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."badges"
+    ADD CONSTRAINT "badges_pkey1" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."booked_slots"
+    ADD CONSTRAINT "booked_slots_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."coach_availabilities"
+    ADD CONSTRAINT "coach_availabilities_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."coach_students"
+    ADD CONSTRAINT "coach_students_pkey" PRIMARY KEY ("coach_id", "student_id");
+
+
+
+ALTER TABLE ONLY "public"."coaches"
+    ADD CONSTRAINT "coaches_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."conversations"
+    ADD CONSTRAINT "conversations_coach_profile_unique" UNIQUE ("coach_id", "profile_id");
+
+
+
+ALTER TABLE ONLY "public"."conversations"
+    ADD CONSTRAINT "conversations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."course_assignment"
+    ADD CONSTRAINT "course_assignment_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_progress"
+    ADD CONSTRAINT "lesson_progress_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_progress"
+    ADD CONSTRAINT "lesson_progress_student_lesson_unique" UNIQUE ("student_id", "lesson_id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_summaries"
+    ADD CONSTRAINT "lesson_summaries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_summaries"
+    ADD CONSTRAINT "lesson_summaries_student_lesson_unique" UNIQUE ("student_id", "lesson_id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_tasks"
+    ADD CONSTRAINT "lesson_tasks_lesson_id_student_id_type_key" UNIQUE NULLS NOT DISTINCT ("lesson_id", "student_id", "type");
+
+
+
+ALTER TABLE ONLY "public"."lesson_tasks"
+    ADD CONSTRAINT "lesson_tasks_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."lessons"
+    ADD CONSTRAINT "lessons_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."lessons"
+    ADD CONSTRAINT "lessons_slug_unique" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."messages"
+    ADD CONSTRAINT "messages_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."parents"
+    ADD CONSTRAINT "parents_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."plans"
+    ADD CONSTRAINT "plans_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."session_attendance"
+    ADD CONSTRAINT "session_attendance_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."session_attendance"
+    ADD CONSTRAINT "session_attendance_student_id_session_date_key" UNIQUE ("student_id", "session_date");
+
+
+
+ALTER TABLE ONLY "public"."sessions"
+    ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."student_availabilities"
+    ADD CONSTRAINT "student_availabilities_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."student_tokens"
+    ADD CONSTRAINT "student_badges_pkey" PRIMARY KEY ("student_id", "token_id");
+
+
+
+ALTER TABLE ONLY "public"."student_badges"
+    ADD CONSTRAINT "student_badges_pkey1" PRIMARY KEY ("student_id", "badge_id");
+
+
+
+ALTER TABLE ONLY "public"."student_subscriptions"
+    ADD CONSTRAINT "student_plans_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."students"
+    ADD CONSTRAINT "students_pkey" PRIMARY KEY ("id");
+
+
+
+CREATE INDEX "idx_lessons_course_id" ON "public"."lessons" USING "btree" ("course_id");
+
+
+
+CREATE INDEX "idx_messages_conversation_id" ON "public"."messages" USING "btree" ("conversation_id");
+
+
+
+CREATE INDEX "idx_messages_created_at" ON "public"."messages" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_messages_sender_id" ON "public"."messages" USING "btree" ("sender_id");
+
+
+
+CREATE INDEX "lesson_summaries_lesson_id_idx" ON "public"."lesson_summaries" USING "btree" ("lesson_id");
+
+
+
+CREATE INDEX "lesson_summaries_student_id_idx" ON "public"."lesson_summaries" USING "btree" ("student_id");
+
+
+
+CREATE OR REPLACE TRIGGER "broadcast_message_insert_trigger" AFTER INSERT ON "public"."messages" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_message_insert"();
+
+
+
+CREATE OR REPLACE TRIGGER "lesson_summaries_updated_at" BEFORE UPDATE ON "public"."lesson_summaries" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_account_updated_at" BEFORE UPDATE ON "public"."account" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_badges_updated_at" BEFORE UPDATE ON "public"."tokens" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_coaches_updated_at" BEFORE UPDATE ON "public"."coaches" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_courses_updated_at" BEFORE UPDATE ON "public"."courses" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_lesson_progress_updated_at_" BEFORE UPDATE ON "public"."lesson_progress" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_lessons_updated_at" BEFORE UPDATE ON "public"."lessons" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_parents_updated_at" BEFORE UPDATE ON "public"."parents" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_plans_updated_at" BEFORE UPDATE ON "public"."plans" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_students_updated_at" BEFORE UPDATE ON "public"."students" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+ALTER TABLE ONLY "public"."badges"
+    ADD CONSTRAINT "badges_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."booked_slots"
+    ADD CONSTRAINT "booked_slots_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id") ON UPDATE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."booked_slots"
+    ADD CONSTRAINT "booked_slots_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."coach_availabilities"
+    ADD CONSTRAINT "coach_availabilities_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id");
+
+
+
+ALTER TABLE ONLY "public"."coach_students"
+    ADD CONSTRAINT "coach_students_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."coach_students"
+    ADD CONSTRAINT "coach_students_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."coaches"
+    ADD CONSTRAINT "coaches_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "public"."account"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."conversations"
+    ADD CONSTRAINT "conversations_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id");
+
+
+
+ALTER TABLE ONLY "public"."course_assignment"
+    ADD CONSTRAINT "course_assignment_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id");
+
+
+
+ALTER TABLE ONLY "public"."course_assignment"
+    ADD CONSTRAINT "course_assignment_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id");
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_head_lesson_id_fkey" FOREIGN KEY ("head_lesson_id") REFERENCES "public"."lessons"("id");
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_tail_lesson_id_fkey" FOREIGN KEY ("tail_lesson_id") REFERENCES "public"."lessons"("id");
+
+
+
+ALTER TABLE ONLY "public"."lesson_progress"
+    ADD CONSTRAINT "lesson_progress_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "public"."lessons"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lesson_progress"
+    ADD CONSTRAINT "lesson_progress_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lesson_summaries"
+    ADD CONSTRAINT "lesson_summaries_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "public"."lessons"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lesson_summaries"
+    ADD CONSTRAINT "lesson_summaries_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lesson_tasks"
+    ADD CONSTRAINT "lesson_tasks_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "public"."lessons"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lesson_tasks"
+    ADD CONSTRAINT "lesson_tasks_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."lessons"
+    ADD CONSTRAINT "lessons_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."messages"
+    ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."messages"
+    ADD CONSTRAINT "messages_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "public"."account"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."parents"
+    ADD CONSTRAINT "parents_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "public"."account"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."session_attendance"
+    ADD CONSTRAINT "session_attendance_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id");
+
+
+
+ALTER TABLE ONLY "public"."session_attendance"
+    ADD CONSTRAINT "session_attendance_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."session_attendance"
+    ADD CONSTRAINT "session_attendance_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id");
+
+
+
+ALTER TABLE ONLY "public"."sessions"
+    ADD CONSTRAINT "sessions_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."coaches"("id");
+
+
+
+ALTER TABLE ONLY "public"."sessions"
+    ADD CONSTRAINT "sessions_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id");
+
+
+
+ALTER TABLE ONLY "public"."student_availabilities"
+    ADD CONSTRAINT "student_availabilities_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id");
+
+
+
+ALTER TABLE ONLY "public"."student_tokens"
+    ADD CONSTRAINT "student_badges_badge_id_fkey" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."student_badges"
+    ADD CONSTRAINT "student_badges_badge_id_fkey1" FOREIGN KEY ("badge_id") REFERENCES "public"."badges"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."student_tokens"
+    ADD CONSTRAINT "student_badges_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."student_badges"
+    ADD CONSTRAINT "student_badges_student_id_fkey1" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."student_subscriptions"
+    ADD CONSTRAINT "student_plans_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."plans"("id");
+
+
+
+ALTER TABLE ONLY "public"."student_subscriptions"
+    ADD CONSTRAINT "student_plans_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "public"."students"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."student_subscriptions"
+    ADD CONSTRAINT "student_subscriptions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "public"."account"("id");
+
+
+
+ALTER TABLE ONLY "public"."student_subscriptions"
+    ADD CONSTRAINT "student_subscriptions_pending_plan_id_fkey" FOREIGN KEY ("pending_plan_id") REFERENCES "public"."plans"("id");
+
+
+
+ALTER TABLE ONLY "public"."students"
+    ADD CONSTRAINT "students_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "public"."account"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Students can view their own summaries" ON "public"."lesson_summaries" FOR SELECT USING (("student_id" IN ( SELECT "students"."id"
+   FROM "public"."students"
+  WHERE ("students"."account_id" = "auth"."uid"()))));
+
+
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."broadcast_message_insert"() TO "anon";
+GRANT ALL ON FUNCTION "public"."broadcast_message_insert"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."broadcast_message_insert"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."account" TO "anon";
+GRANT ALL ON TABLE "public"."account" TO "authenticated";
+GRANT ALL ON TABLE "public"."account" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."badges" TO "anon";
+GRANT ALL ON TABLE "public"."badges" TO "authenticated";
+GRANT ALL ON TABLE "public"."badges" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."booked_slots" TO "anon";
+GRANT ALL ON TABLE "public"."booked_slots" TO "authenticated";
+GRANT ALL ON TABLE "public"."booked_slots" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."coach_availabilities" TO "anon";
+GRANT ALL ON TABLE "public"."coach_availabilities" TO "authenticated";
+GRANT ALL ON TABLE "public"."coach_availabilities" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."coach_availabilities_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."coach_availabilities_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."coach_availabilities_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."coach_students" TO "anon";
+GRANT ALL ON TABLE "public"."coach_students" TO "authenticated";
+GRANT ALL ON TABLE "public"."coach_students" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."coaches" TO "anon";
+GRANT ALL ON TABLE "public"."coaches" TO "authenticated";
+GRANT ALL ON TABLE "public"."coaches" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."conversations" TO "anon";
+GRANT ALL ON TABLE "public"."conversations" TO "authenticated";
+GRANT ALL ON TABLE "public"."conversations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."course_assignment" TO "anon";
+GRANT ALL ON TABLE "public"."course_assignment" TO "authenticated";
+GRANT ALL ON TABLE "public"."course_assignment" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."courses" TO "anon";
+GRANT ALL ON TABLE "public"."courses" TO "authenticated";
+GRANT ALL ON TABLE "public"."courses" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."lesson_progress" TO "anon";
+GRANT ALL ON TABLE "public"."lesson_progress" TO "authenticated";
+GRANT ALL ON TABLE "public"."lesson_progress" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."lesson_summaries" TO "anon";
+GRANT ALL ON TABLE "public"."lesson_summaries" TO "authenticated";
+GRANT ALL ON TABLE "public"."lesson_summaries" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."lesson_tasks" TO "anon";
+GRANT ALL ON TABLE "public"."lesson_tasks" TO "authenticated";
+GRANT ALL ON TABLE "public"."lesson_tasks" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."lessons" TO "anon";
+GRANT ALL ON TABLE "public"."lessons" TO "authenticated";
+GRANT ALL ON TABLE "public"."lessons" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."messages" TO "anon";
+GRANT ALL ON TABLE "public"."messages" TO "authenticated";
+GRANT ALL ON TABLE "public"."messages" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."parents" TO "anon";
+GRANT ALL ON TABLE "public"."parents" TO "authenticated";
+GRANT ALL ON TABLE "public"."parents" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."plans" TO "anon";
+GRANT ALL ON TABLE "public"."plans" TO "authenticated";
+GRANT ALL ON TABLE "public"."plans" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."session_attendance" TO "anon";
+GRANT ALL ON TABLE "public"."session_attendance" TO "authenticated";
+GRANT ALL ON TABLE "public"."session_attendance" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."sessions" TO "anon";
+GRANT ALL ON TABLE "public"."sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."sessions" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."student_availabilities" TO "anon";
+GRANT ALL ON TABLE "public"."student_availabilities" TO "authenticated";
+GRANT ALL ON TABLE "public"."student_availabilities" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."student_availabilities_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."student_availabilities_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."student_availabilities_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."student_badges" TO "anon";
+GRANT ALL ON TABLE "public"."student_badges" TO "authenticated";
+GRANT ALL ON TABLE "public"."student_badges" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."student_subscriptions" TO "anon";
+GRANT ALL ON TABLE "public"."student_subscriptions" TO "authenticated";
+GRANT ALL ON TABLE "public"."student_subscriptions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."student_tokens" TO "anon";
+GRANT ALL ON TABLE "public"."student_tokens" TO "authenticated";
+GRANT ALL ON TABLE "public"."student_tokens" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."students" TO "anon";
+GRANT ALL ON TABLE "public"."students" TO "authenticated";
+GRANT ALL ON TABLE "public"."students" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."tokens" TO "anon";
+GRANT ALL ON TABLE "public"."tokens" TO "authenticated";
+GRANT ALL ON TABLE "public"."tokens" TO "service_role";
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+
+
+
+
+
+

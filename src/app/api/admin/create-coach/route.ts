@@ -1,119 +1,97 @@
-import { createClient } from "@/src/services/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
-export async function POST(request: Request) {
+const BodySchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+  })
+  .strict();
+
+export async function POST(req: Request) {
+  // Stage 1: AUTH (above the try/catch, no manual getUser+role-check shape).
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { email, password, firstName, lastName } = parsed.data;
+
+  // Stage 4: EXECUTE
   try {
-    const { email, password, firstName, lastName } = await request.json();
-
-    // Validate input
-    if (!email || !password || !firstName || !lastName) {
-      return NextResponse.json(
-        { error: "Email, password, first name, and last name are required" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await createClient();
-
-    // Check if current user is an admin (role 3)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const { data: currentAccount } = await supabase
-      .from("account")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!currentAccount || currentAccount.role !== 3) {
-      return NextResponse.json(
-        { error: "Only admins can create coach accounts" },
-        { status: 403 }
-      );
-    }
-
-    // We must use a separate client for sign up so we don't overwrite the admin's session in the Next.js cookies
+    // A separate client so we don't overwrite the admin's own session cookies.
     const authClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      // Use service role if available, otherwise fallback to publishable key
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         auth: {
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,
         },
-      }
+      },
     );
 
-    // Create the user account
     const { data: authData, error: authError } = await authClient.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      }
+      },
     });
 
     if (authError) {
-      console.error("Auth error:", authError);
+      console.error("create-coach auth error", authError);
       return NextResponse.json(
-        { error: authError.message },
-        { status: 400 }
+        { error: "Failed to create coach account" },
+        { status: 400 },
       );
     }
 
     if (!authData.user) {
       return NextResponse.json(
-        { error: "Failed to create user" },
-        { status: 500 }
+        { error: "Failed to create coach account" },
+        { status: 500 },
       );
     }
 
-    // Update the account table to set role to 2 (coach)
     const { error: accountError } = await supabase
       .from("account")
-      .insert({ 
-        id: authData.user.id,
-        email: email,
-        role: 2 
-      });
+      .insert({ id: authData.user.id, email, role: 2 });
 
     if (accountError) {
-      console.error("Account update error:", accountError);
+      console.error("create-coach account insert error", accountError);
       return NextResponse.json(
-        { error: "Failed to set coach role" },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
-    // Insert into coaches table
     const { error: coachError } = await supabase
       .from("coaches")
       .insert({
         account_id: authData.user.id,
         first_name: firstName,
-        last_name: lastName
+        last_name: lastName,
       });
 
     if (coachError) {
-      console.error("Coach insert error:", coachError);
+      console.error("create-coach coach insert error", coachError);
       return NextResponse.json(
-        { error: "Failed to create coach profile" },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
@@ -125,11 +103,11 @@ export async function POST(request: Request) {
         name: `${firstName} ${lastName}`.trim(),
       },
     });
-  } catch (error) {
-    console.error("Error creating coach:", error);
+  } catch (err: unknown) {
+    console.error("create-coach error", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

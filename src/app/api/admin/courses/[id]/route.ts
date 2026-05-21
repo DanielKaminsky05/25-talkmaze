@@ -1,65 +1,109 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
+const PutBodySchema = z
+  .object({
+    course: z
+      .object({
+        title: z.string().min(1).optional(),
+        description: z.string().nullable().optional(),
+      })
+      .strict(),
+  })
+  .strict();
 
 export async function PUT(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  try {
-    const { id } = await params;
-    const body = await req.json();
-    const courseData = body.course;
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-    const supabase = await createClient();
-
-    const payload: Record<string, unknown> = {};
-    if (courseData.name !== undefined) payload.title = courseData.name;
-    if (courseData.description !== undefined)
-      payload.description = courseData.description;
-
-    if (Object.keys(payload).length > 0) {
-      const { data: updated, error } = await supabase
-        .from("courses")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) {
-        console.error("Supabase update failed:", error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      return NextResponse.json(updated);
-    }
-
-    return NextResponse.json(payload);
-  } catch (err) {
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to update course" },
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PutBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const payload: { title?: string; description?: string | null } = {};
+  if (parsedBody.data.course.title !== undefined) payload.title = parsedBody.data.course.title;
+  if (parsedBody.data.course.description !== undefined) {
+    payload.description = parsedBody.data.course.description;
+  }
+
+  try {
+    if (Object.keys(payload).length === 0) {
+      return NextResponse.json({ course: null });
+    }
+    const { data, error } = await supabase
+      .from("courses")
+      .update(payload)
+      .eq("id", parsedParams.data.id)
+      .select("id, title, description, created_at")
+      .single();
+    if (error) {
+      console.error("admin/courses PUT error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ course: data });
+  } catch (err: unknown) {
+    console.error("admin/courses PUT error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  try {
-    const { id } = await params;
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-    const supabase = await createClient();
-
-    console.log("ID passed to delete function: " + id);
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) {
-      console.error("Supabase delete failed:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to delete course" },
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const { error } = await supabase
+      .from("courses")
+      .delete()
+      .eq("id", parsed.data.id);
+    if (error) {
+      console.error("admin/courses DELETE error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("admin/courses DELETE error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

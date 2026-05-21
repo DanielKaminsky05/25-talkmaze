@@ -1,45 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
-/**
- * PATCH /api/admin/payment-plans/[id]/archive
- *
- * Soft-deletes a payment plan by setting is_active = false. The plan record is
- * intentionally kept in the database so that existing student_subscriptions
- * referencing it via plan_id remain intact and queries against historical data
- * continue to work.
- *
- * Archiving does NOT cancel any active student subscriptions. 
- *
- * @param id - Plan UUID from the URL segment
- *
- * @returns 200 Updated plan row with is_active = false
- * @returns 404 If no plan with the given id exists
- */
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
 export async function PATCH(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  try {
-    const { id } = await params;
-    const supabase = await createClient();
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
+  const parsed = ParamsSchema.safeParse(await params);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  try {
     const { data: plan, error } = await supabase
       .from("plans")
       .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .eq("id", parsed.data.id)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
-    if (!plan)
+    if (error) {
+      console.error("admin/payment-plans/[id]/archive PATCH error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    if (!plan) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
-
-    return NextResponse.json(plan);
-  } catch (error) {
-    console.error("Error archiving payment plan:", error);
+    }
+    return NextResponse.json({ plan });
+  } catch (err: unknown) {
+    console.error("admin/payment-plans/[id]/archive PATCH error", err);
     return NextResponse.json(
-      { error: "Failed to archive plan" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

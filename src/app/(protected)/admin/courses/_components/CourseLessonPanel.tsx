@@ -160,8 +160,8 @@ export default function CourseLessonsPanel({
     fetch(`/api/admin/courses/${courseId}/lessons`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setLessons(data);
-        else setError(data.error ?? "Failed to load lessons");
+        if (Array.isArray(data?.lessons)) setLessons(data.lessons);
+        else setError(data?.error ?? "Failed to load lessons");
       })
       .catch(() => setError("Failed to load lessons"))
       .finally(() => setLoading(false));
@@ -313,7 +313,7 @@ export default function CourseLessonsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create lesson");
 
-      setLessons((prev) => [...prev, data]);
+      setLessons((prev) => [...prev, data?.lesson ?? data]);
       setAddForm({ ...EMPTY_FORM });
       setNewPreTask(null);
       setNewPostTask(null);
@@ -457,7 +457,8 @@ export default function CourseLessonsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to update lesson");
 
-      setLessons((prev) => prev.map((l) => (l.id === lessonId ? data : l)));
+      const updatedLesson = data?.lesson ?? data;
+      setLessons((prev) => prev.map((l) => (l.id === lessonId ? updatedLesson : l)));
 
       // Delete old slide storage files for any that were replaced
       // (pre/post task file cleanup is handled server-side by the PUT route)

@@ -1,65 +1,71 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import type { TablesUpdate } from "@/src/services/supabase/types/database";
 
-/**
- * PATCH /api/admin/payment-plans/[id]
- *
- * Updates the editable metadata fields of a payment plan. Only display/config
- * fields can be changed here — price amount, currency, and stripe_price_id are
- * intentionally excluded because Stripe prices are immutable once created.
- *
- * Changing `classes` only affects new signups and the next renewal for existing
- * subscribers; it does not retroactively update sessions_remaining on active
- * student_subscriptions.
- *
- * All fields are optional — only provided keys are updated.
- *
- * @param id          - Plan UUID from the URL segment
- * @body name         - Display name for the plan
- * @body description  - Optional plan description
- * @body classes      - Number of coaching sessions per billing period
- * @body renewal      - Human-readable billing interval (e.g. "per 3 months")
- * @body type         - Optional label (e.g. "3 Classes")
- *
- * @returns 200 Updated plan row.
- * @returns 404 If no plan with the given id exists.
- */
+const ParamsSchema = z.object({ id: z.string().uuid() }).strict();
+
+const PatchBodySchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    classes: z.number().int().positive().optional(),
+    renewal: z.string().min(1).optional(),
+    type: z.string().nullable().optional(),
+  })
+  .strict();
+
 export async function PATCH(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { error: "Invalid request parameters", details: parsedParams.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const parsedBody = PatchBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const updates: TablesUpdate<"plans"> = { updated_at: new Date().toISOString() };
+  for (const [k, v] of Object.entries(parsedBody.data)) {
+    if (v !== undefined) (updates as Record<string, unknown>)[k] = v;
+  }
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const { name, description, classes, renewal, type } = body;
-
-    // Build the update object dynamically so omitted fields are left unchanged.
-    const updates: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
-    if (classes !== undefined) updates.classes = Number(classes);
-    if (renewal !== undefined) updates.renewal = renewal;
-    if (type !== undefined) updates.type = type;
-
-    const supabase = await createClient();
     const { data: plan, error } = await supabase
       .from("plans")
       .update(updates)
-      .eq("id", id)
+      .eq("id", parsedParams.data.id)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
-    if (!plan)
+    if (error) {
+      console.error("admin/payment-plans/[id] PATCH error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    if (!plan) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
-
-    return NextResponse.json(plan);
-  } catch (error) {
-    console.error("Error updating payment plan:", error);
+    }
+    return NextResponse.json({ plan });
+  } catch (err: unknown) {
+    console.error("admin/payment-plans/[id] PATCH error", err);
     return NextResponse.json(
-      { error: "Failed to update plan" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

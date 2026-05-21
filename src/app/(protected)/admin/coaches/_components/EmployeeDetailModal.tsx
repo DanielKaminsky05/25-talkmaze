@@ -39,7 +39,9 @@ export default function EmployeeDetailModal({ employee, onClose, onUpdate }: Pro
     async function fetchAvailability() {
       const res = await fetch(`/api/admin/employees/${employee.id}/availability`);
       if (!res.ok) return;
-      const rows: { weekday: number; start_time: string; end_time: string }[] = await res.json();
+      const body = await res.json();
+      const rows: { weekday: number; start_time: string; end_time: string }[] =
+        Array.isArray(body?.availability) ? body.availability : [];
       const mapped: Availability = {};
       rows.forEach(({ weekday, start_time, end_time }) => {
         const day = DAY_MAP[weekday];
@@ -63,7 +65,7 @@ export default function EmployeeDetailModal({ employee, onClose, onUpdate }: Pro
       });
       if (!response.ok) throw new Error("Failed to update employee");
       const updated = await response.json();
-      onUpdate(updated);
+      onUpdate(updated?.employee ?? updated);
       setIsEditing(false);
       setEditForm({});
     } catch (err) {

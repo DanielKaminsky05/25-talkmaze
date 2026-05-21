@@ -1,0 +1,109 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, dev, testing, testing-overhaul]
+  pull_request:
+    branches: [main, dev, testing, testing-overhaul]
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true # cancel a queued run if a newer commit arrives
+
+jobs:
+  # ── Unit tests ──────────────────────────────────────────────────────────────
+  # Fast, no Docker. Runs in ~10s. Catches pure-logic regressions on every push.
+
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  # ── Integration tests ────────────────────────────────────────────────────────
+  # Requires Docker (pre-installed on ubuntu-latest). Spins up a local Supabase
+  # stack, resets the schema, seeds via factories, then tears down.
+  # Runs on PRs and pushes to main/dev. Skipped on draft PRs.
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npx supabase is the CLI binary bundled with the npm package (supabase ^2.100.1).
+      # It downloads the linux-amd64 binary on first install. No separate setup action needed.
+      #
+      # --exclude trims the service set to what tests actually need (postgres, gotrue,
+      # postgrest, postgres-meta, storage-api). studio/imgproxy/pooler/vector/edge-runtime/mailpit
+      # are unused here and add ~6 image pulls per run — enough to hit Docker Hub's
+      # anonymous-pull rate limit (100/6h per IP, shared across GitHub Actions runners)
+      # on busy days. If this still rate-limits, the next step is `docker login` against
+      # Docker Hub with a personal access token added as a repo secret.
+      - name: Start Supabase
+        run: npx supabase start --exclude studio,imgproxy,pooler,vector,edge-runtime,mailpit
+
+      # Write .env.test so global-setup.ts reads it exactly as it does locally.
+      # The keys are ephemeral and generated per run — not secrets.
+      # Debug output is printed first so failures are easy to diagnose.
+      - name: Write .env.test
+        run: |
+          STATUS=$(npx supabase status 2>&1)
+          echo "=== supabase status ==="
+          echo "$STATUS"
+          echo "======================"
+
+          # Supabase CLI v2.100.1+ uses new key format: sb_publishable_* / sb_secret_*
+          # Older versions used "anon key" / "service_role key" labels with JWT values.
+          ANON_KEY=$(echo "$STATUS" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+' | head -1)
+          SERVICE_KEY=$(echo "$STATUS" | grep -oE 'sb_secret_[A-Za-z0-9_-]+' | head -1)
+
+          # Fallback for older CLI versions
+          if [ -z "$ANON_KEY" ]; then
+            ANON_KEY=$(echo "$STATUS" | grep 'anon key' | awk '{print $NF}')
+          fi
+          if [ -z "$SERVICE_KEY" ]; then
+            SERVICE_KEY=$(echo "$STATUS" | grep 'service_role key' | awk '{print $NF}')
+          fi
+
+          if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
+            echo "ERROR: failed to extract Supabase keys from status output above"
+            exit 1
+          fi
+
+          printf 'NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321\n' > .env.test
+          printf 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' "$ANON_KEY" >> .env.test
+          printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SERVICE_KEY" >> .env.test
+          printf 'STRIPE_SECRET_KEY=sk_test_dummy\n' >> .env.test
+          printf 'STRIPE_WEBHOOK_SECRET=whsec_test_talkmaze_integration\n' >> .env.test
+          # LessonSpace + Resend: HTTP calls are intercepted by MSW; values
+          # just need to be non-empty so the route/lib env-guards pass.
+          printf 'LESSONSPACE_API_KEY=ls_test_dummy\n' >> .env.test
+          printf 'RESEND_API_KEY=re_test_dummy\n' >> .env.test
+          echo ".env.test written successfully"
+
+      - name: Run integration tests
+        run: npm run test:integration

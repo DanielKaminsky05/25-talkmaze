@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
 import { stripe } from "@/src/services/stripe/client";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { resolveStudentIdForBilling } from "@/src/lib/payments/server/resolveStudentIdForBilling";
 import { getStripeCustomerIdForAccount } from "@/src/lib/payments/server/getStripeCustomerIdForAccount";
 import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server/findActiveStripeSubscriptionByStudent";
+
+const BodySchema = z.object({ studentId: z.string().uuid() }).strict();
 
 /**
  * POST /api/subscriptions/resume
@@ -11,41 +14,44 @@ import { findActiveStripeSubscriptionByStudent } from "@/src/lib/payments/server
  * period end.
  */
 export async function POST(req: Request) {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+  // Stage 1: AUTH
+  const auth = await requireRole([1]);
+  if (auth instanceof NextResponse) return auth;
+  const { user, supabase } = auth;
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Stage 2: VALIDATE
+  const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
 
-    const body = await req.json().catch(() => ({}));
-    const bodyStudentId: string | undefined = body?.studentId;
-
-    const studentResolution = await resolveStudentIdForBilling({
-      supabase,
-      accountId: user.id,
-      requestedStudentId: bodyStudentId,
-      errors: {
-        studentNotFound: { error: "Student not found", status: 404 },
-        noActiveStudentProfile: {
-          error: "No active student profile",
-          status: 400,
-        },
+  // Stage 3: AUTHORIZE (ownership)
+  const studentResolution = await resolveStudentIdForBilling({
+    supabase,
+    accountId: user.id,
+    requestedStudentId: parsed.data.studentId,
+    errors: {
+      studentNotFound: { error: "Forbidden", status: 403 },
+      noActiveStudentProfile: {
+        error: "No active student profile",
+        status: 400,
       },
-    });
+    },
+  });
 
-    if (!studentResolution.ok) {
-      return NextResponse.json(
-        { error: studentResolution.error },
-        { status: studentResolution.status },
-      );
-    }
-    const studentId = studentResolution.studentId;
+  if (!studentResolution.ok) {
+    return NextResponse.json(
+      { error: studentResolution.error },
+      { status: studentResolution.status },
+    );
+  }
+  const studentId = studentResolution.studentId;
 
+  // Stage 4: EXECUTE
+  try {
     const { data: subscription } = await supabase
       .from("student_subscriptions")
       .select("id")
@@ -54,7 +60,7 @@ export async function POST(req: Request) {
       .not("cancelled_at", "is", null)
       .order("current_period_end", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!subscription) {
       return NextResponse.json(
@@ -104,9 +110,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    console.error("Resume subscription error:", err);
-    const message =
-      err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("resume error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

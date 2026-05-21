@@ -9,8 +9,8 @@ type ParentInfoUpdate = {
   last_name?: string;
   phone_number?: string;
   billing_email?: string;
-  bio?: string;
-  location?: string;
+  bio?: string | null;
+  location?: string | null;
   avatar_url?: string;
 };
 
@@ -27,7 +27,7 @@ export async function updateParentInfo(
   if (!user) return { success: false, error: "Not authenticated" };
 
   // Only include defined fields in the update payload
-  const payload: Record<string, string | null> = {};
+  const payload: ParentInfoUpdate = {};
   if (data.first_name !== undefined) payload.first_name = data.first_name;
   if (data.last_name !== undefined) payload.last_name = data.last_name;
   if (data.phone_number !== undefined) payload.phone_number = data.phone_number;

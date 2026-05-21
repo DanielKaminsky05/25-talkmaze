@@ -1,18 +1,30 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
-export async function GET() {
-  try {
-    
-    const supabase = await createClient();
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 
-    const {data,error} = await supabase.from('students').select("*");
-    console.log("Data: " + data)
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error fetching students:", error);
+export async function GET() {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  try {
+    const { data, error } = await supabase
+      .from("students")
+      .select(
+        "id, account_id, first_name, last_name, grade, avatar_url, location, date_of_birth, bio, is_setup_complete, lesson_space_id, created_at",
+      );
+    if (error) {
+      console.error("admin/students GET error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ students: data ?? [] });
+  } catch (err: unknown) {
+    console.error("admin/students GET error", err);
     return NextResponse.json(
-      { error: "Failed to fetch students" },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

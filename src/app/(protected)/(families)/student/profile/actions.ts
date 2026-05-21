@@ -7,10 +7,10 @@ import { revalidatePath } from "next/cache";
 type StudentInfoUpdate = {
   first_name?: string;
   last_name?: string;
-  bio?: string;
-  location?: string;
-  grade?: string;
-  date_of_birth?: string;
+  bio?: string | null;
+  location?: string | null;
+  grade?: string | null;
+  date_of_birth?: string | null;
   avatar_url?: string;
 };
 
@@ -26,7 +26,7 @@ export async function updateStudentInfo(
   const user = await getCurrentUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const payload: Record<string, string | null> = {};
+  const payload: StudentInfoUpdate = {};
   if (data.first_name !== undefined) payload.first_name = data.first_name;
   if (data.last_name !== undefined) payload.last_name = data.last_name;
   if (data.bio !== undefined) payload.bio = data.bio || null;

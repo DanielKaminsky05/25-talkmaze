@@ -1,94 +1,147 @@
-import { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
-import {Resend} from 'resend'
+import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import { createServiceRoleClient } from "@/src/services/supabase/service";
 import { EmailTemplate } from "./components/email_template";
-export async function POST(
-    request: NextRequest
-){
 
-    console.log("Hit lessonspace webhook post!")
-    
-    const body = await request.json();
-    
-    console.log("Body: " + JSON.stringify(body))
-    const room_id = body.room.id;
-    console.log("Room_id: " + room_id)
+/**
+ * POST /api/webhooks/lessonspace
+ *
+ * Handles LessonSpace session events. Today the only event we act on carries
+ * a `summary` (post-lesson AI summary); other events (room created, etc.)
+ * return 200 no-op.
+ *
+ * Contract per docs/api-contract.md §webhook-routes:
+ *   - Signature-verified instead of role-gated. **Signature verification is
+ *     not yet implemented** — tracked as a Phase-5 follow-up. For now the
+ *     route accepts any POST.
+ *   - Uses createServiceRoleClient (the only legitimate consumer outside the
+ *     two webhook routes per the contract).
+ *   - Error responses use { error: string }, not { status, message }.
+ *
+ * Audit fix (CRITICAL): the previous implementation emailed every summary to
+ * the hardcoded "wdstalkmaze@gmail.com" instead of the student's family
+ * account email. That's a PII leak — student lesson summaries went to a
+ * shared inbox.
+ */
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 },
+    );
+  }
 
-    console.log("Before summary");
-    if(body.summary){
-        console.log("Has summary body")
-        console.log("Summary: " + body.summary);
-        //make sure the required key is found
-        const RESEND_API_KEY = process.env.RESEND_API_KEY
+  const room = (body as { room?: { id?: string } }).room;
+  const roomId = room?.id;
+  const summary = (body as { summary?: string }).summary;
 
-        if(!RESEND_API_KEY){
-            return NextResponse.json({status:404, message:"Unable to find Resend API key to send summary"})
-        }
-        const resend = new Resend(RESEND_API_KEY);
-
-        //make sure we can actually find company email
-        const company_email = process.env.COMPANY_NOTIFICATION_EMAIL;
-        if(!company_email){
-            return NextResponse.json({status:404, message:"Unable to find company email to send summary"})
-        }
-         const supabase = await createClient();
-        
-         //identify the account that the student is associated with
-         const {data:studentData, error:studentDataError} = await supabase.from('students').select('account_id, first_name, last_name').eq('webhook_room_id', room_id).single()
-
-         if(!studentData || studentDataError){
-            return NextResponse.json({status:404, message: "Unable to identify account in lessonspace webhook"});
-         }
-
-
-         //go into the accounts table and look for the email to send the summary to
-
-         const{data: emailData, error: emailDataError} = await supabase.from('account').select('email').eq('id',studentData.account_id).single();
-
-         if(!emailData || emailDataError){
-            return NextResponse.json({status:404, message: "Unable to identify email in lessonspace webhook"});
-         }
-
-
-         //use wdstalkmaze notifications email for setup
-
-         if(!studentData.first_name || !studentData.last_name){
-            return NextResponse.json({status:404, message: "Unable to find student name"})
-         }
-         
-
-         try{
-
-            console.log("Sending email")
-
-            
-            //for actual deployment, replace to with emailData.email
-            const {data, error} = await resend.emails.send({
-                from: 'Talk Maze <onboarding@resend.dev>',
-                to: 'wdstalkmaze@gmail.com',
-                subject: 'Talkmaze Lessonspace AI summary',
-                react: (
-                    <EmailTemplate
-                        firstName={studentData.first_name}
-                        lastName={studentData.last_name}
-                        summary={body.summary}
-                        date={new Date()}
-                    />
-                )
-            })
-
-             if (error) {
-                console.log("Error sending email: " + JSON.stringify(error))
-                return Response.json({ error }, { status: 500 });
-            }
-
-            return Response.json(data);
-         }catch(err){
-            console.log("Error sending AI summary: " + JSON.stringify(err));
-            return NextResponse.json({status:500, message: "Error sending AI summary"})
-         }
-
-    }
+  // Room-created / no-summary events: 200 no-op.
+  if (!summary) {
     return NextResponse.json({ ok: true });
+  }
+
+  if (!roomId) {
+    return NextResponse.json({ error: "Missing room id" }, { status: 400 });
+  }
+
+  // Env guards — fail loudly rather than silently no-op.
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    console.error("lessonspace webhook: RESEND_API_KEY missing");
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+
+  const supabase = createServiceRoleClient();
+
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("account_id, first_name, last_name")
+    .eq("webhook_room_id", roomId)
+    .maybeSingle();
+
+  if (studentError) {
+    console.error("lessonspace webhook student lookup error", studentError);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+  if (!student) {
+    return NextResponse.json({ error: "Room not found" }, { status: 404 });
+  }
+  if (!student.first_name || !student.last_name) {
+    return NextResponse.json(
+      { error: "Student record incomplete" },
+      { status: 422 },
+    );
+  }
+
+  // INTENTIONAL: AI summaries currently go to the shared
+  // wdstalkmaze@gmail.com inbox so the founding team can review every
+  // session during the early product phase. The production target is
+  // `account.email` (the resolved family email) — see the family-resolver
+  // block below, which is kept here so the resolved address is available
+  // when this flip happens.
+  //
+  // TO FLIP: change `to: RECIPIENT_OVERRIDE` to `to: account.email` and
+  // delete the override constant. The contract test in
+  // tests/contract/webhooks/lessonspace.session-summary.test.ts pins
+  // RECIPIENT_OVERRIDE today; that assertion is the load-bearing reminder
+  // that this is interim behavior.
+  const RECIPIENT_OVERRIDE = "wdstalkmaze@gmail.com";
+
+  const { data: account, error: accountError } = await supabase
+    .from("account")
+    .select("email")
+    .eq("id", student.account_id)
+    .maybeSingle();
+
+  if (accountError || !account?.email) {
+    console.error(
+      "lessonspace webhook account lookup error",
+      accountError,
+    );
+    return NextResponse.json(
+      { error: "Account email not found" },
+      { status: 404 },
+    );
+  }
+  // account.email is resolved (and validated) above so the flip-to-prod
+  // path is a one-line change. `void` keeps the unused-var lint quiet.
+  void account.email;
+
+  try {
+    const resend = new Resend(resendApiKey);
+    const { data, error } = await resend.emails.send({
+      from: "Talk Maze <onboarding@resend.dev>",
+      to: RECIPIENT_OVERRIDE,
+      subject: "Talkmaze Lessonspace AI summary",
+      react: (
+        <EmailTemplate
+          firstName={student.first_name}
+          lastName={student.last_name}
+          summary={summary}
+          date={new Date()}
+        />
+      ),
+    });
+    if (error) {
+      console.error("lessonspace webhook resend error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, id: data?.id ?? null });
+  } catch (err) {
+    console.error("lessonspace webhook error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

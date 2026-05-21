@@ -40,8 +40,8 @@ export default function StudentsPage() {
         if (!res.ok) throw new Error();
         const data = await res.json();
         setStudents(
-          Array.isArray(data)
-            ? data.map((s: any) => ({
+          Array.isArray(data?.students)
+            ? data.students.map((s: any) => ({
                 id: String(s.id),
                 account_id: String(s.account_id),
                 first_name: s.first_name ?? null,

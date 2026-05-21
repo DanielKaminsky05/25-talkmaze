@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/src/services/stripe/client";
 import { createServiceRoleClient } from "@/src/services/supabase/service";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
+import { provisionStudentRoom } from "@/src/lib/lessonspace/server/provisionStudentRoom";
 
 type SubscriptionWithPeriod = Stripe.Subscription & {
   current_period_start: number;
@@ -28,11 +28,9 @@ type SubscriptionItemWithPeriod = {
 export async function POST(request: Request) {
   try {
     // Read the raw body as text. Required by Stripe's signature verification,
-    // which breaks if the body is parsed (e.g. via request.json()) first
-    console.log("Webhook hit!");
+    // which breaks if the body is parsed (e.g. via request.json()) first.
     const body = await request.text();
-    const headersList = await headers();
-    const signature = headersList.get("stripe-signature");
+    const signature = request.headers.get("stripe-signature");
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
@@ -498,26 +496,19 @@ export async function POST(request: Request) {
             }
 
             // Provision a LessonSpace virtual classroom room for the student.
-            const baseUrl =
-              process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+            // Direct lib call — was a fetch self-hop to a public route that
+            // the audit flagged as a public mutation endpoint. The route is
+            // now deleted; the logic lives in src/lib/lessonspace/server/
+            // provisionStudentRoom.ts.
             try {
-              const lsRes = await fetch(
-                `${baseUrl}/api/webhooks/stripe/learningSpace`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ student_id: studentId }),
-                },
-              );
-              const lsBody = await lsRes.json();
-              console.log(
-                "invoice.paid: LessonSpace response:",
-                lsRes.status,
-                lsBody,
+              const result = await provisionStudentRoom(supabase, studentId);
+              console.error(
+                "invoice.paid: LessonSpace provision result",
+                result,
               );
             } catch (lessonSpaceError) {
               console.error(
-                "invoice.paid: error creating LessonSpace:",
+                "invoice.paid: error provisioning LessonSpace room",
                 lessonSpaceError,
               );
             }

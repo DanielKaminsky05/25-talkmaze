@@ -205,10 +205,11 @@ export default function StudentDetails({
       let clientId = student.id;
 
       if (type === "parent") {
-        const parentRes = await fetch(`/api/parent/students/${student.id}`);
+        const parentRes = await fetch(`/api/coach/students/${student.id}/parent`);
         if (!parentRes.ok) throw new Error("Could not fetch parent");
-        const { id } = await parentRes.json();
-        clientId = id;
+        const body = await parentRes.json();
+        clientId = body?.parent?.id ?? body?.id;
+        if (!clientId) throw new Error("Could not fetch parent");
       }
 
       const convRes = await fetch(
@@ -220,7 +221,8 @@ export default function StudentDetails({
       const msgsRes = await fetch(
         `/api/coach/conversation/message?conversationId=${convId}`,
       );
-      const msgs = msgsRes.ok ? ((await msgsRes.json()) as Message[]) : [];
+      const msgsBody = msgsRes.ok ? await msgsRes.json() : null;
+      const msgs = (Array.isArray(msgsBody?.messages) ? msgsBody.messages : []) as Message[];
 
       setConversationId(convId);
       setMessages(msgs);

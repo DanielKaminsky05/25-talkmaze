@@ -1,21 +1,43 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
+import { assertCoachAssignedToStudent } from "@/src/lib/auth/server/ownership";
+
+const QuerySchema = z
+  .object({
+    studentId: z.string().uuid().optional(),
+  })
+  .strict();
 
 export async function GET(request: Request) {
+  // Stage 1: AUTH
+  const auth = await requireRole([2]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
+
+  // Stage 2: VALIDATE
+  const parsed = QuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Invalid request parameters",
+        details: parsed.error.flatten(),
+      },
+      { status: 400 },
+    );
+  }
+  const { studentId } = parsed.data;
+
+  // Stage 3: AUTHORIZE (only when studentId is present)
+  if (studentId) {
+    const ownership = await assertCoachAssignedToStudent(auth, studentId);
+    if (ownership instanceof NextResponse) return ownership;
+  }
+
+  // Stage 4: EXECUTE
   try {
-    const supabase = await createClient();
-
-    // Authenticate user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Optional: filter progress by student
-    const { searchParams } = new URL(request.url);
-    const studentId = searchParams.get("studentId");
-
-    // Fetch all lessons with their course title
     const { data: lessons, error: lessonsError } = await supabase
       .from("lessons")
       .select(`
@@ -25,16 +47,23 @@ export async function GET(request: Request) {
         content_url,
         created_at,
         updated_at,
-        courses(id, title)
+        courses!lessons_course_id_fkey(id, title)
       `)
       .order("created_at", { ascending: false });
 
     if (lessonsError) {
-      console.error("Lessons query error:", lessonsError);
-      return NextResponse.json({ error: lessonsError.message }, { status: 500 });
+      console.error("coach/lessons query error", lessonsError);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
     }
 
-    // If a studentId is given, fetch their lesson_progress records
+    let result: Array<Record<string, unknown>> = (lessons ?? []).map((l) => ({
+      ...l,
+      progress: null as unknown,
+    }));
+
     if (studentId) {
       const { data: progressRows, error: progressError } = await supabase
         .from("lesson_progress")
@@ -42,26 +71,28 @@ export async function GET(request: Request) {
         .eq("student_id", studentId);
 
       if (progressError) {
-        console.error("Progress query error:", progressError);
-        return NextResponse.json({ error: progressError.message }, { status: 500 });
+        console.error("coach/lessons progress query error", progressError);
+        return NextResponse.json(
+          { error: "Internal server error" },
+          { status: 500 },
+        );
       }
 
-      // Build a map for O(1) lookups - cast to any to bypass stale type generation
-      const progressMap = new Map((progressRows as any[]).map((p: any) => [p.lesson_id, p]));
-
-      // Attach progress to each lesson (null means not started)
-      const lessonsWithProgress = lessons.map(lesson => ({
-        ...lesson,
-        progress: progressMap.get(lesson.id) ?? null,
+      const progressMap = new Map(
+        (progressRows ?? []).map((p) => [p.lesson_id, p]),
+      );
+      result = result.map((l) => ({
+        ...l,
+        progress: progressMap.get(l.id as string) ?? null,
       }));
-
-      return NextResponse.json(lessonsWithProgress);
     }
 
-    return NextResponse.json(lessons);
-
-  } catch (error) {
-    console.error("Error in /api/coach/lessons:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ lessons: result });
+  } catch (err: unknown) {
+    console.error("coach/lessons error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

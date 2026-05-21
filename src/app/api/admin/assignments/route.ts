@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/services/supabase/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireRole } from "@/src/lib/auth/server/requireRole";
 import type { Assignment } from "@/src/app/(protected)/admin/_types";
-//fetch all assignments joined with coach/student names
 
 type AssignmentRow = {
   coach_id: string | null;
@@ -17,13 +17,20 @@ type AssignmentRow = {
   } | null;
 };
 
+const PostBodySchema = z
+  .object({
+    coach_id: z.string().uuid(),
+    student_id: z.string().uuid(),
+  })
+  .strict();
+
 /**
  * Lists coach-student assignments with basic coach/student display fields.
- *
- * @returns JSON array of assignments shaped for admin UI consumption.
  */
 export async function GET() {
-  const supabase = await createClient();
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
   const { data, error } = await supabase.from("coach_students").select(`
       coach_id,
       student_id,
@@ -32,13 +39,15 @@ export async function GET() {
     `);
 
   if (error) {
-    console.error("GET Assignments Supabase Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("admin/assignments GET error", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 
-  // Return original Supabase UUIDs for the frontend to match with its local cache
-  const mappedData = (data as AssignmentRow[]).map((row) => ({
-    id: `${row.coach_id}_${row.student_id}`, // Used strictly for the DELETE route decomposition
+  const assignments = (data as AssignmentRow[]).map((row) => ({
+    id: `${row.coach_id}_${row.student_id}`,
     coach_id: String(row.coach_id),
     student_id: String(row.student_id),
     coaches: {
@@ -52,73 +61,74 @@ export async function GET() {
     },
   }));
 
-  return NextResponse.json(mappedData);
+  return NextResponse.json({ assignments });
 }
 
-/**
- * Creates a new coach-student assignment row in `coach_students`.
- *
- * @param req Request body containing `coach_id` and `student_id`.
- * @returns JSON assignment object for immediate UI insertion.
- */
-export async function POST(req: NextRequest) {
-  const { coach_id: coach_id_1, student_id: student_id_1 } = await req.json();
-  const supabase = await createClient();
-  console.log("Coach_id: " + coach_id_1);
-  console.log("Student_id: " + student_id_1);
+export async function POST(req: Request) {
+  const auth = await requireRole([3]);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase } = auth;
 
-  const { data: coachData } = await supabase
-    .from("coaches")
-    .select("id, first_name, last_name")
-    .eq("id", String(coach_id_1))
-    .single();
-  const { data: studentData } = await supabase
-    .from("students")
-    .select("id, first_name, last_name, account_id")
-    .eq("id", String(student_id_1))
-    .single();
-
-  console.log("Coach Data: " + JSON.stringify(coachData));
-  console.log("Student Data :" + JSON.stringify(studentData));
-  if (!coachData) {
+  const parsed = PostBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Coach not found in local TalkMaze database." },
-      { status: 404 },
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 },
     );
   }
-  if (!studentData) {
+  const { coach_id, student_id } = parsed.data;
+
+  try {
+    const { data: coachData } = await supabase
+      .from("coaches")
+      .select("id, first_name, last_name")
+      .eq("id", coach_id)
+      .maybeSingle();
+    const { data: studentData } = await supabase
+      .from("students")
+      .select("id, first_name, last_name, account_id")
+      .eq("id", student_id)
+      .maybeSingle();
+
+    if (!coachData) {
+      return NextResponse.json({ error: "Coach not found" }, { status: 404 });
+    }
+    if (!studentData) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    }
+
+    const { error } = await supabase
+      .from("coach_students")
+      .insert({ coach_id: coachData.id, student_id: studentData.id });
+
+    if (error) {
+      console.error("admin/assignments POST insert error", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+
+    const newAssignment: Assignment = {
+      id: `${coachData.id}_${studentData.id}`,
+      coach_id: coachData.id,
+      student_id: studentData.id,
+      coaches: {
+        first_name: coachData.first_name ?? null,
+        last_name: coachData.last_name ?? null,
+      },
+      students: {
+        first_name: studentData.first_name ?? null,
+        last_name: studentData.last_name ?? null,
+        account_id: studentData.account_id ?? null,
+      },
+    };
+    return NextResponse.json({ assignment: newAssignment });
+  } catch (err: unknown) {
+    console.error("admin/assignments POST error", err);
     return NextResponse.json(
-      { error: "Student not found in local TalkMaze database." },
-      { status: 404 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
-
-  const coach_id = coachData.id;
-  const student_id = studentData.id;
-
-  const { error } = await supabase
-    .from("coach_students")
-    .insert({ coach_id, student_id });
-
-  if (error) {
-    console.error("POST Assignment Insert Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const newAssignment: Assignment = {
-    id: `${coach_id}_${student_id}`,
-    coach_id: coach_id,
-    student_id: student_id,
-    coaches: {
-      first_name: coachData?.first_name ?? null,
-      last_name: coachData?.last_name ?? null,
-    },
-    students: {
-      first_name: studentData?.first_name ?? null,
-      last_name: studentData?.last_name ?? null,
-      account_id: studentData?.account_id ?? null,
-    },
-  };
-
-  return NextResponse.json(newAssignment);
 }

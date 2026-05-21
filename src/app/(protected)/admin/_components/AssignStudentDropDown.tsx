@@ -41,8 +41,7 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
       try {
         const response = await fetch("/api/admin/students");
         const data = await response.json();
-        if (Array.isArray(data)) setStudents(data);
-        else if (Array.isArray(data.data)) setStudents(data.data);
+        if (Array.isArray(data?.students)) setStudents(data.students);
         else setStudents([]);
       } catch {
         setStudents([]);

@@ -40,7 +40,7 @@ export default function AssignCourseModal({
     setInlineError(null);
     setAssigningCourseId(course.id);
     try {
-      const res = await fetch("/api/admin/courses/assign", {
+      const res = await fetch("/api/coach/courses/assign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId: student.id, courseId: course.id }),
