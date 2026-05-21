@@ -77,6 +77,13 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── FullCalendar dark theme ── */
 
 /* FullCalendar zeroes border-top on all scrollgrid-section children. The liquid

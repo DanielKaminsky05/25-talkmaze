@@ -8,7 +8,7 @@ import SessionDetailsModal from "./SessionDetailsModal";
 import SessionsPanel from "./SessionsPanel";
 import type { SessionProp, StudentProp } from "./types";
 
-const CALENDAR_HEIGHT = "clamp(520px, calc(100vh - 290px), 760px)";
+const CALENDAR_HEIGHT = "clamp(520px, calc(100vh - 290px), 610px)";
 
 export type { SessionProp, StudentProp } from "./types";
 
@@ -58,10 +58,11 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
 
   return (
     <>
-      <div className="w-full h-full px-[clamp(12px,1.5vw,24px)] py-[clamp(12px,1.5vw,24px)] overflow-x-hidden">
-        <div className="h-full min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_clamp(300px,30vw,402px)] gap-[clamp(12px,1.2vw,20px)]">
-          <section className="min-h-0 min-w-0 flex flex-col">
-            <div className="bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)]">
+      <div className="flex w-full h-full px-[clamp(12px,1.5vw,24px)] py-[clamp(12px,1.5vw,24px)] overflow-x-hidden">
+        <div className="h-full min-h-0 max-w-[1512px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,800px)_clamp(300px,30vw,402px)] gap-[clamp(12px,1.2vw,20px)]">
+          {/* Calendar */}
+          <section className="min-h-0 min-w-0 flex flex-col items-center self-center">
+            <div className="w-full max-w-[800px] bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)]">
               <AdminCalendar
                 events={calendarEvents}
                 initialView="dayGridMonth"
@@ -81,7 +82,7 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
             </div>
           </section>
 
-          <section className="min-h-0 flex flex-col items-end gap-3">
+          <section className="min-h-0 flex flex-col items-end gap-3 self-center">
             <div className="w-full h-[clamp(520px,calc(100vh-290px),760px)]">
               <SessionsPanel
                 students={students}

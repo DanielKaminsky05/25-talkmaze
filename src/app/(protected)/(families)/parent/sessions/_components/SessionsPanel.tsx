@@ -32,7 +32,7 @@ export default function SessionsPanel({
         )}
       </div>
 
-      <div className="w-full flex flex-1 flex-col gap-2.5 xl:gap-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="w-full flex flex-1 flex-col gap-2.5 xl:gap-3 overflow-y-auto pr-1 no-scrollbar">
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center gap-2">
             <CalendarDays size={32} className="text-[#2B4257]/40" />
