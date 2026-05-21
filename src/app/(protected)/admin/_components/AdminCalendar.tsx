@@ -12,6 +12,9 @@ type FullCalendarProps = ComponentProps<typeof FullCalendar>;
 interface AdminCalendarProps {
   events: EventInput[];
   initialView?: "dayGridMonth" | "timeGridWeek" | "timeGridDay";
+  theme?: "dark" | "light";
+  /** Explicit calendar height (e.g. `640`, `70vh`, `clamp(...)`). */
+  height?: string | number;
   /** Pixels consumed above the calendar (header + cards + padding).
    *  Defaults work for the admin detail panel layout. */
   offsetPx?: number;
@@ -29,6 +32,8 @@ interface AdminCalendarProps {
 export default function AdminCalendar({
   events,
   initialView = "dayGridMonth",
+  theme = "dark",
+  height,
   offsetPx = 300,
   loading = false,
   initialDate,
@@ -49,7 +54,7 @@ export default function AdminCalendar({
   }
 
   const isTimeGrid = initialView !== "dayGridMonth";
-  const calHeight = `calc(100vh - ${offsetPx}px)`;
+  const calHeight = height ?? `calc(100vh - ${offsetPx}px)`;
   const resolvedHeaderToolbar = headerToolbar ?? {
     left: "prev,next today",
     center: "title",
@@ -59,7 +64,15 @@ export default function AdminCalendar({
   };
 
   return (
-    <div className={["admin-calendar", className].filter(Boolean).join(" ")}>
+    <div
+      className={[
+        "admin-calendar",
+        `admin-calendar--${theme}`,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <FullCalendar
         key={`${initialView}-${initialDate ?? "default"}`}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
