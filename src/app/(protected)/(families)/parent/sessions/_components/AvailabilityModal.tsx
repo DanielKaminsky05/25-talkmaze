@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, ChevronDown } from "lucide-react";
+import { X } from "lucide-react";
 import type { StudentProp } from "./ParentSessionsClient";
 import { WEEKDAYS } from "@/src/lib/scheduling/types";
 import { availabilityFormSchema } from "@/src/lib/scheduling/schemas";
+import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
 import WeeklyAvailabilityEditor, {
   WeeklyAvailabilityValue,
 } from "../../../_components/WeeklyAvailabilityEditor";
@@ -31,7 +32,6 @@ export default function AvailabilityModal({
   const [selectedStudentId, setSelectedStudentId] = useState<string>(
     initialStudentId ?? students[0]?.id ?? "",
   );
-  const [studentDropdownOpen, setStudentDropdownOpen] = useState(false);
   const [availability, setAvailability] = useState<WeeklyAvailabilityValue>({});
   const [timezone, setTimezone] = useState("America/Toronto");
   const [loading, setLoading] = useState(false);
@@ -139,45 +139,33 @@ export default function AvailabilityModal({
             </h2>
 
             {students.length > 1 && (
-              <div className="relative">
-                <button
-                  onClick={() => setStudentDropdownOpen((v) => !v)}
-                  className="flex items-center gap-1.5 bg-white border border-[#1F2E3B]/20 hover:border-[#65CFAD] text-[#2B4257] text-xs px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                >
-                  <span>
-                    {[selectedStudent?.first_name, selectedStudent?.last_name]
-                      .filter(Boolean)
-                      .join(" ") || "Student"}
-                  </span>
-                  <ChevronDown
-                    size={11}
-                    className={`text-[#65CFAD] transition-transform ${studentDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {studentDropdownOpen && (
-                  <div className="absolute top-full mt-1.5 left-0 z-20 bg-white border border-[#1F2E3B]/20 rounded-xl shadow-xl min-w-[160px] overflow-hidden">
+              <Dropdown
+                label={
+                  [selectedStudent?.first_name, selectedStudent?.last_name]
+                    .filter(Boolean)
+                    .join(" ") || "Student"
+                }
+                align="left"
+              >
+                {({ close }) => (
+                  <>
                     {students.map((s) => (
-                      <button
+                      <DropdownItem
                         key={s.id}
+                        active={selectedStudentId === s.id}
                         onClick={() => {
                           setSelectedStudentId(s.id);
-                          setStudentDropdownOpen(false);
+                          close();
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-xs transition-colors cursor-pointer ${
-                          selectedStudentId === s.id
-                            ? "bg-[#B1E7D6]/40 text-[#2B4257] font-semibold"
-                            : "text-[#2B4257] hover:bg-[#F5F5F5]"
-                        }`}
                       >
                         {[s.first_name, s.last_name]
                           .filter(Boolean)
                           .join(" ") || "Student"}
-                      </button>
+                      </DropdownItem>
                     ))}
-                  </div>
+                  </>
                 )}
-              </div>
+              </Dropdown>
             )}
           </div>
 
