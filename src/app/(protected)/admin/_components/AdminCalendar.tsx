@@ -4,10 +4,46 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { EventInput } from "@fullcalendar/core";
+import type { EventContentArg, EventInput } from "@fullcalendar/core";
 import type { ComponentProps } from "react";
 
 type FullCalendarProps = ComponentProps<typeof FullCalendar>;
+
+function renderEventContent(arg: EventContentArg) {
+  const isDayGrid = arg.view.type === "dayGridMonth";
+  if (!isDayGrid) {
+    return undefined;
+  }
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        minWidth: 0,
+        width: "100%",
+        overflow: "hidden",
+      }}
+    >
+      {arg.timeText && (
+        <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+          {arg.timeText}
+        </span>
+      )}
+      <span
+        style={{
+          flex: "1 1 auto",
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {arg.event.title}
+      </span>
+    </div>
+  );
+}
 
 interface AdminCalendarProps {
   events: EventInput[];
@@ -65,11 +101,7 @@ export default function AdminCalendar({
 
   return (
     <div
-      className={[
-        "admin-calendar",
-        `admin-calendar--${theme}`,
-        className,
-      ]
+      className={["admin-calendar", `admin-calendar--${theme}`, className]
         .filter(Boolean)
         .join(" ")}
     >
@@ -92,6 +124,7 @@ export default function AdminCalendar({
           minute: "2-digit",
           meridiem: "short",
         }}
+        eventContent={renderEventContent}
         slotMinTime="00:00:00"
         slotMaxTime="24:00:00"
         scrollTime="07:00:00"
