@@ -92,13 +92,13 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
               </button>
 
               <div className="text-center mt-2">
-                <Link href="/login" className="text-[#1F2E3B] font-bold hover:underline">
+                <Link href="/login" className="text-[#1F2E3B] font-bold hover:underline inline-flex items-center min-h-11 md:min-h-0 px-2 -mx-2">
                   Back to Login
                 </Link>
               </div>

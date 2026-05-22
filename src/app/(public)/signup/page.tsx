@@ -217,7 +217,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3 -m-3"
                   >
                     <EyeIcon variant={showPassword ? "open" : "closed"} />
                   </button>
@@ -238,7 +238,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3 -m-3"
                   >
                     <EyeIcon
                       variant={showConfirmPassword ? "open" : "closed"}
@@ -287,7 +287,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {isSubmitting ? "Creating Account..." : "Create an Account"}
               </button>
@@ -295,7 +295,7 @@ export default function SignupPage() {
               <div className="text-center mt-2">
                 <p className="text-[#1F2E3B]">
                   Already have an account?{" "}
-                  <Link href="/login" className="font-bold hover:underline">
+                  <Link href="/login" className="font-bold hover:underline inline-flex items-center min-h-11 md:min-h-0 px-2 -mx-2">
                     Login
                   </Link>
                 </p>

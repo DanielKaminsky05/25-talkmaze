@@ -97,7 +97,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3 -m-3"
                 >
                   <EyeIcon variant={showPassword ? "open" : "closed"} />
                 </button>
@@ -114,7 +114,7 @@ export default function LoginPage() {
               <div className="flex justify-end -mt-2">
                 <Link
                   href="/forgot-password"
-                  className="text-[16px] text-[#1F2E3B]/60 hover:text-[#65CFAD] transition-colors font-medium"
+                  className="text-[16px] text-[#1F2E3B]/60 hover:text-[#65CFAD] transition-colors font-medium inline-flex items-center min-h-11 md:min-h-0 px-2 -mx-2"
                 >
                   Forgot password?
                 </Link>
@@ -122,14 +122,14 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
               >
                 Login
               </button>
 
               <Link
                 href="/signup"
-                className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity flex items-center justify-center"
+                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity flex items-center justify-center"
               >
                 Create an Account
               </Link>

@@ -100,7 +100,7 @@ export function CheckoutForm({
 
   return (
     <>
-      <header className="bg-[#2b4257] px-8 py-5 flex items-center">
+      <header className="bg-[#2b4257] px-4 sm:px-8 py-5 flex items-center">
         <button
           type="button"
           onClick={() => router.back()}
@@ -111,7 +111,7 @@ export function CheckoutForm({
         </button>
       </header>
 
-      <div className="mx-8 mb-10 px-4 flex-1 grid grid-cols-1 lg:grid-cols-[5fr_5fr] gap-6">
+      <div className="mx-3 sm:mx-8 mb-10 px-0 sm:px-4 flex-1 grid grid-cols-1 lg:grid-cols-[5fr_5fr] gap-6">
         <OverviewPanel
           planName={planName}
           amountDisplay={amountDisplay}
@@ -121,7 +121,7 @@ export function CheckoutForm({
 
         <form
           onSubmit={handleSubmit}
-          className="bg-[#b1e7d6] rounded-[20px] p-10 text-[#111827] shadow-[0_10px_25px_rgba(0,0,0,0.2)]"
+          className="bg-[#b1e7d6] rounded-[20px] p-4 sm:p-10 text-[#111827] shadow-[0_10px_25px_rgba(0,0,0,0.2)]"
         >
           <ContactInfoSection
             phone={phone}
