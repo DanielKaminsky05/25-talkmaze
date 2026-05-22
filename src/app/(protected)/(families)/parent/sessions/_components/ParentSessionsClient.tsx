@@ -58,11 +58,11 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
 
   return (
     <>
-      <div className="flex w-full h-full px-[clamp(12px,1.5vw,24px)] py-[clamp(12px,1.5vw,24px)] overflow-x-hidden">
-        <div className="h-full min-h-0 max-w-[1512px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,800px)_clamp(300px,30vw,402px)] gap-[clamp(12px,1.2vw,20px)]">
+      <div className="flex w-full h-full px-[clamp(12px,1.5vw,24px)] py-[clamp(12px,1.5vw,24px)] overflow-x-hidden overflow-y-auto">
+        <div className="w-full lg:h-full min-h-0 max-w-[1512px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,800px)_clamp(300px,30vw,402px)] gap-[clamp(12px,1.2vw,20px)]">
           {/* Calendar */}
-          <section className="min-h-0 min-w-0 flex flex-col items-center self-center">
-            <div className="w-full max-w-[800px] bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)]">
+          <section className="min-h-0 min-w-0 flex flex-col items-center lg:self-center">
+            <div className="w-full max-w-[800px] bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)] overflow-x-auto">
               <AdminCalendar
                 events={calendarEvents}
                 initialView="dayGridMonth"
@@ -82,8 +82,8 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
             </div>
           </section>
 
-          <section className="min-h-0 flex flex-col items-end gap-3 self-center">
-            <div className="w-full h-[clamp(520px,calc(100vh-290px),760px)]">
+          <section className="min-h-0 flex flex-col items-stretch lg:items-end gap-3 lg:self-center">
+            <div className="w-full h-[400px] lg:h-[clamp(520px,calc(100vh-290px),760px)]">
               <SessionsPanel
                 students={students}
                 selectedStudent={selectedStudent}
