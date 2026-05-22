@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3 -m-3"
                 >
                   <EyeIcon variant={showPassword ? "open" : "closed"} />
                 </button>
@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {isSubmitting ? "Updating..." : "Update Password"}
               </button>
