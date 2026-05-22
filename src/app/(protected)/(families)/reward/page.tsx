@@ -12,8 +12,9 @@ import { createClient } from "@/src/services/supabase/client";
 
 // Display this many tokens when tokens section is not expanded
 const INITIAL_COUNT = 16;
-// Keep badges grid visually stable; always rendering at least this many badges
-const MIN_BADGE_SLOTS = 10;
+// Keep badges grid visually stable; always rendering at least this many badges.
+// Lower count avoids 5+ rows of LOCKED placeholders on mobile.
+const MIN_BADGE_SLOTS = 6;
 
 const colors = {
   greenLight: "#B1E7D6",
@@ -155,7 +156,7 @@ export default function RewardPage() {
             Badges
           </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 pb-24">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 justify-items-center pb-24 max-w-2xl mx-auto w-full">
             {badgeSlots.map((badge, index) => {
               if (!badge) return <LockedBadge key={`placeholder-${index}`} />;
 
