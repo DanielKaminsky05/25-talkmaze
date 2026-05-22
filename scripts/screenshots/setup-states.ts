@@ -181,6 +181,33 @@ async function seedRichData(
   // Coach <-> student link
   await linkCoachToStudent(coach, student);
 
+  // Extra students assigned to the coach so /coach/students paginates.
+  // Each needs its own auth account because students.account_id is NOT NULL.
+  const extraFirstNames = [
+    "Alex",
+    "Beth",
+    "Cole",
+    "Dani",
+    "Emma",
+    "Finn",
+    "Gail",
+    "Hugo",
+    "Ivy",
+    "Jude",
+    "Kara",
+    "Leo",
+    "Mira",
+    "Noah",
+  ];
+  for (const firstName of extraFirstNames) {
+    const extraAcct = await createAccount({ role: 1 });
+    const extraStudent = await createStudent(extraAcct, {
+      first_name: firstName,
+      last_name: "Demo",
+    });
+    await linkCoachToStudent(coach, extraStudent);
+  }
+
   // Conversation between coach and parent profile + 2 messages
   const { data: convo, error: cvErr } = await db
     .from("conversations")
