@@ -42,7 +42,12 @@ export const BREAKPOINTS = [
 export type BreakpointName = (typeof BREAKPOINTS)[number]["name"];
 
 const APP_URL = process.env.SCREENSHOT_APP_URL ?? "http://localhost:3000";
-const STATES_DIR = resolve(__dirname, "../../tests/screenshots/states");
+// SCREENSHOT_STATES_DIR lets a worktree-based agent point at the main
+// worktree's seeded states (storageState files are gitignored, so a fresh
+// worktree won't have them).
+const STATES_DIR =
+  process.env.SCREENSHOT_STATES_DIR ??
+  resolve(__dirname, "../../tests/screenshots/states");
 const OUTPUT_DIR = resolve(__dirname, "../../tests/screenshots/output");
 
 export interface ScreenshotOptions {

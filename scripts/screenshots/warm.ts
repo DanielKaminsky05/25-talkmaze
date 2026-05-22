@@ -22,7 +22,9 @@ type Role = "parent" | "student" | "coach" | "admin";
 type WarmEntry = { role: Role; path: string };
 
 const APP_URL = process.env.SCREENSHOT_APP_URL ?? "http://localhost:3000";
-const STATES_DIR = resolve(__dirname, "../../tests/screenshots/states");
+const STATES_DIR =
+  process.env.SCREENSHOT_STATES_DIR ??
+  resolve(__dirname, "../../tests/screenshots/states");
 
 function statePathFor(role: Role): string {
   const p = resolve(STATES_DIR, `${role}.json`);
