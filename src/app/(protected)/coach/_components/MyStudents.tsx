@@ -162,28 +162,34 @@ export default function MyStudents({
             </div>
           ) : (
             <>
-              <ul className="divide-y divide-gray-100">
-                {currentPageStudents.map((student) => (
-                  <StudentListItem
-                    key={student.id}
-                    student={student}
-                    isActive={student.id === activeStudentId}
-                    onSelect={(s) => onStudentClick?.(s)}
-                    onMessage={(s) => onMessageClick?.(s)}
-                    onLessonSpace={handleLessonSpace}
-                    onAssignCourse={(s) => {
-                      setAssigningStudent(s);
-                      setIsAssigningCourse(true);
-                    }}
-                    isLaunchingLessonSpace={
-                      launchingLessonSpaceId === student.id
-                    }
-                  />
-                ))}
-              </ul>
+              {/* Scrollable list region. The pagination row below is sticky-
+                  bottom so it stays reachable even when the parent flex
+                  container is short (e.g. mobile-sm with the list capped at
+                  ~1/3 of the viewport). */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <ul className="divide-y divide-gray-100">
+                  {currentPageStudents.map((student) => (
+                    <StudentListItem
+                      key={student.id}
+                      student={student}
+                      isActive={student.id === activeStudentId}
+                      onSelect={(s) => onStudentClick?.(s)}
+                      onMessage={(s) => onMessageClick?.(s)}
+                      onLessonSpace={handleLessonSpace}
+                      onAssignCourse={(s) => {
+                        setAssigningStudent(s);
+                        setIsAssigningCourse(true);
+                      }}
+                      isLaunchingLessonSpace={
+                        launchingLessonSpaceId === student.id
+                      }
+                    />
+                  ))}
+                </ul>
+              </div>
 
               {filteredStudents.length > STUDENTS_PER_PAGE && (
-                <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="shrink-0 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-xs text-gray-400">
                     {(currentPage - 1) * STUDENTS_PER_PAGE + 1}–
                     {Math.min(

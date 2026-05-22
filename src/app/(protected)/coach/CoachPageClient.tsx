@@ -69,8 +69,11 @@ export default function CoachPageClient({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-hidden">
-      {/* Left panel: students list */}
-      <div className="xl:w-[360px] xl:flex-shrink-0 flex flex-col ">
+      {/* Left panel: students list.
+          On mobile (flex-col): flex-1 grows but the right panel has flex-[2] so
+          the student list gets ~1/3 of the viewport, leaving ~2/3 for details.
+          On xl: fixed-width sidebar, flex-initial. */}
+      <div className="xl:w-[360px] xl:flex-shrink-0 flex flex-col flex-1 xl:flex-initial min-h-0">
         {selectionNotice === "student-unavailable" && (
           <p className="text-sm text-[#1F2E3B] bg-[#B1E7D6] px-4 py-2.5 mb-4">
             That student is unavailable for your account. Showing your first
@@ -86,8 +89,9 @@ export default function CoachPageClient({
         />
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4 p-4 xl:p-6">
+      {/* Right panel — flex-[2] on mobile so details get 2x the height of the
+          student list. xl:flex-1 restores equal grow inside the row layout. */}
+      <div className="flex-[2] xl:flex-1 min-h-0 overflow-hidden flex flex-col gap-4 p-4 xl:p-6">
         {/* Tab bar — only shown when a student is selected */}
         {selectedStudentId && (
           <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1 self-start">
