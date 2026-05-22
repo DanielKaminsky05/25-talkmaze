@@ -95,9 +95,9 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
 
             <button
               onClick={() => setShowAvailability(true)}
-              className="px-5 py-2 rounded-xl bg-[#65CFAD] text-[#1F2E3B] text-sm font-semibold hover:bg-[#4fbfa0] transition-colors cursor-pointer"
+              className="px-5 py-2 rounded-lg bg-[#65CFAD] text-[#1F2E3B] text-sm font-semibold hover:bg-[#4fbfa0] transition-colors cursor-pointer"
             >
-              Edit Availability
+              Edit Student Availability
             </button>
           </section>
         </div>

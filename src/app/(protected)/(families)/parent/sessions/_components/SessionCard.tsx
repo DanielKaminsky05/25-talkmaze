@@ -5,7 +5,7 @@ export default function SessionCard({ session }: { session: SessionProp }) {
   const durationMin = getDurationMin(session.start_time, session.end_time);
 
   return (
-    <div className="w-full min-h-[66px] xl:min-h-[72px] px-3 py-3 xl:px-4 xl:py-4 border-[0.5px] rounded-xl font-semibold border-[#4E4C4C] shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] flex items-center justify-between gap-2 xl:gap-3 bg-white text-[#2B4257]">
+    <div className="w-full min-h-[66px] xl:min-h-[72px] px-3 py-3 xl:px-4 xl:py-4 border-[0.5px] rounded-xl font-semibold border-[#4E4C4C] shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] flex items-center justify-between gap-2 xl:gap-3 bg-white text-[#2B4257] hover:shadow-md transition-shadow">
       <div className="min-w-0">
         <p className="leading-tight text-sm xl:text-base">
           {formatDate(session.start_time)}
