@@ -83,8 +83,8 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 | `/student/profile` | `student` | `form` | no | |
 | `/lessons` | `student` | `body` | yes | Empty without `lessons` rows |
 | `/lessons/[slug]` | `student` | `.ProseMirror, body` | yes | Tiptap editor mounts here; `.ProseMirror` is its rendered root |
-| `/message` | `student` | `body` | yes | Conversation list — empty without seeded `conversations` |
-| `/message/[id]` | `student` | `body` | yes | Needs a real conversation id |
+| `/message` | `student` | `body` | yes | Conversation list — the contacts dropdown is focus-triggered (clicking the search bar opens it), so screenshots without interaction show only "Select a contact" |
+| `/message/[id]` | `student` | `body` | yes | `[id]` is the **coach's `account_id`** (not the `conversation.id`). Resolve via `SELECT account_id FROM coaches LIMIT 1`. Visiting as a different profile than the seeded conversation auto-creates a new empty conversation rather than showing the seeded messages — by design |
 | `/reward` | `student` | `body` | yes | Token/reward UI — looks blank without `tokens`/`student_tokens` rows |
 
 ---
