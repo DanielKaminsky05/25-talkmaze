@@ -97,7 +97,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3 -m-3"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1F2E3B] hover:text-[#65CFAD] transition-colors p-3"
                 >
                   <EyeIcon variant={showPassword ? "open" : "closed"} />
                 </button>
