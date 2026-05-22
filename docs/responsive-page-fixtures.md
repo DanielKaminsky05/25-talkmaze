@@ -17,12 +17,23 @@ supabase start
 npm run screenshots:dev     # not `npm run dev` (that uses .env.local → remote DB)
 npm run screenshots:setup   # writes tests/screenshots/states/{parent,student,coach,admin}.json
 
+# pre-warm Next dev's lazy route compilation (one-time per dev session)
+MSYS_NO_PATHCONV=1 npm run screenshots:warm -- --routes=tests/screenshots/routes.example.json
+
 # per route (Windows Git Bash: prepend MSYS_NO_PATHCONV=1 so /coach doesn't get
 # mangled into C:/Program Files/Git/coach)
 MSYS_NO_PATHCONV=1 npm run screenshots:page -- --role=coach --path=/coach --ready=body
+
+# only some breakpoints (useful for mobile-only fixes)
+MSYS_NO_PATHCONV=1 npm run screenshots:page -- --role=coach --path=/coach --ready=body --breakpoints=mobile-sm,mobile-lg
+
+# batch: capture N routes in ONE browser process (much faster than N invocations)
+MSYS_NO_PATHCONV=1 npm run screenshots:batch -- --routes=tests/screenshots/routes.example.json
 ```
 
 `screenshots:dev` runs `dotenv -e .env.test -- next dev` so the dev server reads the local Supabase keys. Your normal `npm run dev` is unchanged and still points at remote.
+
+`screenshots:warm` and `screenshots:batch` both read the same JSON format: an array of `{ role, path, ready?, breakpoints?, settleMs? }`. See `tests/screenshots/routes.example.json` for a starter — copy and trim to your slice.
 
 ---
 

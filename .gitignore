@@ -48,6 +48,7 @@ next-env.d.ts
 
 #local claude settings
 .claude/settings.local.json
+.claude/worktrees/
 
 # screenshot infra — storage states contain real session tokens, never commit
 tests/screenshots/states/*.json

@@ -61,6 +61,12 @@ For the named page (or each page in a small group, one at a time):
 
 ### 1. Audit at all five breakpoints
 
+**Performance tip — use the right tool for the job:**
+- One-off: `npm run screenshots:page -- --role=X --path=/Y --ready=body`
+- Mobile-only verification (e.g. after a `sm:` fix): add `--breakpoints=mobile-sm,mobile-lg` to skip the 3 widths that can't have changed
+- Multiple routes in one go: write a `routes.json` (same shape as `tests/screenshots/routes.example.json`) and run `npm run screenshots:batch -- --routes=routes.json` — reuses ONE browser process, ~3s/route faster than invoking page mode N times
+- At the START of your work, warm Next's lazy route compiler: `npm run screenshots:warm -- --routes=<your routes file>`. Saves 5-10s on the *first* screenshot of each route.
+
 The five widths are `375`, `640`, `768`, `1024`, `1440` (height 800 for all). For each:
 
 - Note the failure(s) against the §3 done criteria:

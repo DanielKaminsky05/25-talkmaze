@@ -15,7 +15,9 @@
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
     "screenshots:dev": "dotenv -e .env.test -- next dev",
     "screenshots:setup": "tsx --env-file=.env.test scripts/screenshots/setup-states.ts",
-    "screenshots:page": "tsx scripts/screenshots/capture.ts"
+    "screenshots:page": "tsx scripts/screenshots/capture.ts",
+    "screenshots:batch": "tsx scripts/screenshots/capture.ts",
+    "screenshots:warm": "tsx scripts/screenshots/warm.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
