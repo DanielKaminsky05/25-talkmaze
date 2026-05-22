@@ -94,10 +94,10 @@ export default function ParentDashboardClient({
           ))}
         </div>
       )}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.3fr] gap-6 h-full min-h-0">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.3fr] gap-6 xl:h-full min-h-0">
         {/* Left column */}
-        <div className="flex flex-col gap-[22px] h-full min-h-0">
-          <div className="flex-3 min-h-0">
+        <div className="flex flex-col gap-[22px] xl:h-full min-h-0">
+          <div className="flex-3 min-h-[280px] xl:min-h-0">
             <StudentProfileCard
               name={
                 currentStudent.first_name ||
@@ -116,11 +116,11 @@ export default function ParentDashboardClient({
             />
           </div>
 
-          <div className="flex-2 min-h-0">
+          <div className="flex-2 min-h-[140px] xl:min-h-0">
             <StudentPostLessonTaskSettings studentId={currentStudent.id} />
           </div>
 
-          <div className="flex-2 min-h-0">
+          <div className="flex-2 min-h-[180px] xl:min-h-0">
             <StudentAttendanceDetails
               streak={streakByStudent[currentStudent.id] ?? 0}
               attendance={
@@ -142,7 +142,7 @@ export default function ParentDashboardClient({
             subscriptionStatus={currentStudent.status}
           />
 
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-[200px] xl:min-h-0">
             <ScheduleList
               schedule={schedule.filter(
                 (s) => s.student_id === currentStudent.id,
