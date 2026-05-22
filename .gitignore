@@ -55,3 +55,7 @@ tests/screenshots/states/*.json
 tests/screenshots/output/
 # transient per-agent routes files (only routes.example.json is committed)
 tests/screenshots/routes-*.json
+# user-shared screenshots dropped into repo root
+/image*.png
+/screenshot*.png
+/Screenshot*.png
