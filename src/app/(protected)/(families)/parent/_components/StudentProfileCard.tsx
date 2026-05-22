@@ -42,18 +42,19 @@ export default function StudentProfileCard({
       }}
     >
       {/* Green header bar */}
-      <div className="bg-[#65CFAD] h-[51px] w-full flex items-center justify-between px-4 absolute top-0 left-0 right-0 z-10">
-        <div className="flex items-baseline gap-3">
+      <div className="bg-[#65CFAD] min-h-[51px] w-full flex items-center justify-between gap-2 px-4 absolute top-0 left-0 right-0 z-10 py-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
           <h2
-            className="font-bold text-[#1F2E3B] text-[22px] leading-none"
+            className="font-bold text-[#1F2E3B] text-base sm:text-lg md:text-[22px] leading-none"
             style={{ fontFamily: "Inter, sans-serif" }}
           >
             TalkMaze Student {totalStudents > 1 ? "Profiles" : "Profile"}
           </h2>
           {totalStudents > 1 && (
-            <div className="flex items-center gap-1.5 bg-[#1F2E3B]/10 px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 bg-[#1F2E3B]/10 px-2 py-1 rounded-full shrink-0">
               <button
                 onClick={onPrev}
+                aria-label="Previous student"
                 className="w-5 h-5 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all active:scale-95"
               >
                 <ChevronLeftIcon />
@@ -63,6 +64,7 @@ export default function StudentProfileCard({
               </span>
               <button
                 onClick={onNext}
+                aria-label="Next student"
                 className="w-5 h-5 rounded-full bg-[#1F2E3B] text-white flex items-center justify-center hover:bg-[#2B4257] transition-all active:scale-95"
               >
                 <ChevronRightIcon />
@@ -71,7 +73,7 @@ export default function StudentProfileCard({
           )}
         </div>
         <button
-          className="bg-[#1F2E3B] text-white text-[10px] font-semibold px-3 py-1 rounded flex items-center gap-1"
+          className="bg-[#1F2E3B] text-white text-[10px] font-semibold px-3 py-1 rounded flex items-center gap-1 shrink-0"
           style={{ borderRadius: "5px" }}
         >
           <EditIcon />
@@ -81,10 +83,9 @@ export default function StudentProfileCard({
 
       {/* Avatar — overlaps header */}
       <div
-        className="absolute left-6 top-[51px] z-20 flex flex-col items-center"
-        style={{ top: "74px" }}
+        className="absolute left-4 sm:left-6 top-[74px] z-20 flex flex-col items-center"
       >
-        <div className="w-[153px] h-[153px] overflow-hidden rounded-full">
+        <div className="w-[96px] h-[96px] sm:w-[120px] sm:h-[120px] xl:w-[153px] xl:h-[153px] overflow-hidden rounded-full">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -113,7 +114,7 @@ export default function StudentProfileCard({
       </div>
 
       {/* Right info section */}
-      <div className="absolute left-[197px] right-4 top-[51px] bottom-4 flex flex-col">
+      <div className="absolute left-[120px] sm:left-[148px] xl:left-[197px] right-4 top-[60px] bottom-4 flex flex-col">
         {/* Location */}
         <div className="flex items-center gap-1 my-1">
           <LocationPinFilledIcon />
