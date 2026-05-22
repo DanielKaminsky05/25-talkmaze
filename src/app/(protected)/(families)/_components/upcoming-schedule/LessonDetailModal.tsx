@@ -30,9 +30,10 @@ export default function LessonDetailModal({ lesson, onClose }: LessonDetailModal
                 {/* Header */}
                 <div className="bg-[#B1E7D6] p-6 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-[#2B4257]">{lesson.title}</h2>
-                    <button 
+                    <button
                         onClick={onClose}
-                        className="text-[#2B4257] hover:opacity-70 transition-opacity text-2xl font-bold"
+                        aria-label="Close"
+                        className="text-[#2B4257] hover:opacity-70 transition-opacity text-2xl font-bold w-11 h-11 flex items-center justify-center"
                     >
                         ×
                     </button>

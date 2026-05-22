@@ -34,10 +34,8 @@ export default function TokenBar({
 
   return (
     <div
-      className="relative bg-white rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] box-border"
+      className="relative bg-white rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] box-border w-full max-w-full sm:max-w-none sm:w-[402px] sm:shrink-0"
       style={{
-        width: "402px",
-        flexShrink: 0,
         outline: "7px solid var(--talkmaze_green_light, #B1E7D6)",
         outlineOffset: "-7px",
       }}
