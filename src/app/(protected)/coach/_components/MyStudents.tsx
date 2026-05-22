@@ -118,7 +118,7 @@ export default function MyStudents({
   return (
     <>
       <div className=" bg-white shadow-sm overflow-hidden flex flex-col flex-1">
-        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
+        <div className="px-5 py-3 md:py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
           <h2 className="text-base font-semibold text-[#1F2E3B]">
             My Students
           </h2>
