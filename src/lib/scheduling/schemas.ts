@@ -1,6 +1,19 @@
 import { z } from "zod";
 
 /**
+ * Body for POST /api/parent/sessions/[id]/reschedule-request. Both fields are
+ * ISO 8601 datetime strings; cross-field ordering (end > start) and future-
+ * dating are enforced server-side inside createRescheduleRequest so the error
+ * messages can include the offending values.
+ */
+export const createRescheduleRequestBodySchema = z
+  .object({
+    requested_start_time: z.string().datetime(),
+    requested_end_time: z.string().datetime(),
+  })
+  .strict();
+
+/**
  * One time-range slot, with "HH:mm" strings.
  * The refinement enforces end > start.
  */
@@ -15,8 +28,8 @@ export const availabilitySlotSchema = z
   });
 
 /**
- * A full weekly availability map (day name -> slots). Considered valid only if 
- * at least one day has at least one fully-filled slot, so we never accept an 
+ * A full weekly availability map (day name -> slots). Considered valid only if
+ * at least one day has at least one fully-filled slot, so we never accept an
  * empty schedule.
  */
 export const weeklyAvailabilitySchema = z
@@ -32,7 +45,7 @@ export const weeklyAvailabilitySchema = z
 
 /**
  * Top-level form schema for surfaces that submit availability together with the
- * student's timezone. 
+ * student's timezone.
  */
 export const availabilityFormSchema = z.object({
   availability: weeklyAvailabilitySchema,

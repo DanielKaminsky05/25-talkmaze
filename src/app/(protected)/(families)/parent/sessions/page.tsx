@@ -50,6 +50,7 @@ export default async function ParentSessionsPage() {
       .from("sessions")
       .select(
         `id, start_time, end_time, student_id,
+         requested_start_time, requested_end_time, reschedule_status,
          students(first_name, last_name),
          coaches(first_name, last_name)`,
       )
@@ -93,6 +94,9 @@ export default async function ParentSessionsPage() {
         coachName: s.coaches
           ? `${s.coaches.first_name ?? ""} ${s.coaches.last_name ?? ""}`.trim()
           : "",
+        requested_start_time: s.requested_start_time ?? null,
+        requested_end_time: s.requested_end_time ?? null,
+        reschedule_status: s.reschedule_status === "pending" ? "pending" : null,
       }));
   }
 

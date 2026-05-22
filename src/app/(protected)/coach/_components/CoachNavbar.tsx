@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, RotateCcw } from "lucide-react";
 import { signOut } from "@/src/lib/auth/actions/signOut";
 
 function getPageTitle(pathname: string): string {
   if (pathname.includes("/lessons/")) return "Lesson Details";
   if (pathname.startsWith("/coach/calendar")) return "Calendar";
+  if (pathname.startsWith("/coach/reschedule-requests"))
+    return "Reschedule Requests";
   return "Coach Dashboard";
 }
 
@@ -50,8 +52,15 @@ export default function CoachNavbar() {
         </p>
       </div>
 
-      {/* Right: Calendar button + avatar dropdown */}
+      {/* Right: Reschedule + Calendar buttons + avatar dropdown */}
       <div className="flex items-center gap-3 md:gap-4">
+        <Link
+          href="/coach/reschedule-requests"
+          className="inline-flex items-center gap-2 text-sm md:text-base md:font-semibold text-white bg-[#1F2E3B] border border-[#1F2E3B] rounded-[15px] px-4 py-1.5 md:px-5 md:py-2.5 shadow-[0_4px_4px_rgba(0,0,0,0.25)] hover:brightness-110 transition-all whitespace-nowrap"
+        >
+          <RotateCcw size={16} className="md:w-5 md:h-5" />
+          <span className="hidden sm:inline">Requests</span>
+        </Link>
         <Link
           href="/coach/calendar"
           className="inline-flex items-center gap-2 text-sm md:text-base md:font-semibold text-white bg-[#1F2E3B] border border-[#1F2E3B] rounded-[15px] px-4 py-1.5 md:px-5 md:py-2.5 shadow-[0_4px_4px_rgba(0,0,0,0.25)] hover:brightness-110 transition-all whitespace-nowrap"

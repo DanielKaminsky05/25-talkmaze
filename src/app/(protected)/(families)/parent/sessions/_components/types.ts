@@ -12,4 +12,7 @@ export interface SessionProp {
   student_id: string;
   studentName: string;
   coachName: string;
+  requested_start_time: string | null;
+  requested_end_time: string | null;
+  reschedule_status: "pending" | null;
 }

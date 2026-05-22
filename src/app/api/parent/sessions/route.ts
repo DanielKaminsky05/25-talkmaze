@@ -36,6 +36,9 @@ export async function GET() {
         weekday,
         student_id,
         coach_id,
+        requested_start_time,
+        requested_end_time,
+        reschedule_status,
         students (first_name, last_name),
         coaches (name)
       `,
