@@ -6,6 +6,26 @@ If a row is wrong, fix it here — agents read this table, not the code. If a ro
 
 ---
 
+## Running the screenshot pipeline
+
+```
+# one-time
+npx playwright install chromium
+supabase start
+
+# every session — dev server must use local Supabase, not .env.local's remote
+npm run screenshots:dev     # not `npm run dev` (that uses .env.local → remote DB)
+npm run screenshots:setup   # writes tests/screenshots/states/{parent,student,coach,admin}.json
+
+# per route (Windows Git Bash: prepend MSYS_NO_PATHCONV=1 so /coach doesn't get
+# mangled into C:/Program Files/Git/coach)
+MSYS_NO_PATHCONV=1 npm run screenshots:page -- --role=coach --path=/coach --ready=body
+```
+
+`screenshots:dev` runs `dotenv -e .env.test -- next dev` so the dev server reads the local Supabase keys. Your normal `npm run dev` is unchanged and still points at remote.
+
+---
+
 ## How to read this table
 
 | Column | Meaning |
@@ -23,15 +43,15 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 
 | Route | Role | Ready selector | Seed-sensitive | Notes |
 |---|---|---|---|---|
-| `/` | — | `main` | no | Landing page |
+| `/` | — | `body` | no | Landing page |
 | `/login` | — | `form` | no | Public |
 | `/signup` | — | `form` | no | Public |
 | `/forgot-password` | — | `form` | no | Public |
 | `/reset-password` | — | `form` | no | Reachable from email link only; layout still inspectable |
-| `/payments` | `student` | `main` | no | Student-without-sub lands here via middleware; using `student` state means an *active* sub, so this renders the paid view |
+| `/payments` | `student` | `body` | no | Student-without-sub lands here via middleware; using `student` state means an *active* sub, so this renders the paid view |
 | `/payments/checkout` | `student` | `[data-stripe-loaded], form` | yes | Stripe Elements iframe; readiness is approximate |
-| `/payments/success` | `student` | `main` | no | Post-checkout confirmation |
-| `/signup/account-created` | — | `main` | no | Post-signup confirmation |
+| `/payments/success` | `student` | `body` | no | Post-checkout confirmation |
+| `/signup/account-created` | — | `body` | no | Post-signup confirmation |
 
 ---
 
@@ -42,19 +62,19 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 | `/profiles` | `parent` | `[role=button], button` | no | Profile picker. Use `parent` state's pre-selectProfile cookie? **No** — capture this with a state that has the user logged in but no active profile (TODO: add `parent-unselected.json` if needed) |
 | `/profiles/add-student` | `parent` | `form` | no | |
 | `/profiles/new-user-setup` | `parent` | `form` | no | First-run flow |
-| `/onboarding` | `parent` | `main` | no | |
-| `/parent` | `parent` | `main` | no | Parent dashboard |
-| `/parent/lessons` | `parent` | `main` | yes | Empty without student/lessons |
-| `/parent/lessons/[studentId]` | `parent` | `main` | yes | Needs a real student id in URL |
+| `/onboarding` | `parent` | `body` | no | |
+| `/parent` | `parent` | `body` | no | Parent dashboard |
+| `/parent/lessons` | `parent` | `body` | yes | Empty without student/lessons |
+| `/parent/lessons/[studentId]` | `parent` | `body` | yes | Needs a real student id in URL |
 | `/parent/profile` | `parent` | `form` | no | |
-| `/parent/sessions` | `parent` | `main` | yes | Empty without `sessions` rows |
-| `/student` | `student` | `main` | no | Student dashboard. **Requires active subscription** — `student` state has one |
+| `/parent/sessions` | `parent` | `body` | yes | Empty without `sessions` rows |
+| `/student` | `student` | `body` | no | Student dashboard. **Requires active subscription** — `student` state has one |
 | `/student/profile` | `student` | `form` | no | |
-| `/lessons` | `student` | `main` | yes | Empty without `lessons` rows |
-| `/lessons/[slug]` | `student` | `.ProseMirror, main` | yes | Tiptap editor mounts here; `.ProseMirror` is its rendered root |
-| `/message` | `student` | `main` | yes | Conversation list — empty without seeded `conversations` |
-| `/message/[id]` | `student` | `main` | yes | Needs a real conversation id |
-| `/reward` | `student` | `main` | yes | Token/reward UI — looks blank without `tokens`/`student_tokens` rows |
+| `/lessons` | `student` | `body` | yes | Empty without `lessons` rows |
+| `/lessons/[slug]` | `student` | `.ProseMirror, body` | yes | Tiptap editor mounts here; `.ProseMirror` is its rendered root |
+| `/message` | `student` | `body` | yes | Conversation list — empty without seeded `conversations` |
+| `/message/[id]` | `student` | `body` | yes | Needs a real conversation id |
+| `/reward` | `student` | `body` | yes | Token/reward UI — looks blank without `tokens`/`student_tokens` rows |
 
 ---
 
@@ -62,11 +82,11 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 
 | Route | Role | Ready selector | Seed-sensitive | Notes |
 |---|---|---|---|---|
-| `/coach` | `coach` | `main` | no | Coach dashboard |
+| `/coach` | `coach` | `body` | no | Coach dashboard |
 | `/coach/calendar` | `coach` | `.fc-view-harness` | partly | FullCalendar root. Layout is testable without sessions, but empty events hide week/day overflow bugs |
-| `/coach/students/[studentId]` | `coach` | `main` | yes | Needs `coach_students` link + student id |
-| `/coach/students/[studentId]/lessons` | `coach` | `main` | yes | Needs lessons |
-| `/coach/students/[studentId]/lessons/[lessonId]` | `coach` | `.ProseMirror, main` | yes | Tiptap; needs lesson id |
+| `/coach/students/[studentId]` | `coach` | `body` | yes | Needs `coach_students` link + student id |
+| `/coach/students/[studentId]/lessons` | `coach` | `body` | yes | Needs lessons |
+| `/coach/students/[studentId]/lessons/[lessonId]` | `coach` | `.ProseMirror, body` | yes | Tiptap; needs lesson id |
 
 ---
 
@@ -74,13 +94,13 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 
 | Route | Role | Ready selector | Seed-sensitive | Notes |
 |---|---|---|---|---|
-| `/admin` | `admin` | `main` | no | |
-| `/admin/pending` | `admin` | `main` | yes | Lists pending `booked_slots` — empty by default |
-| `/admin/assignments` | `admin` | `main` | yes | |
-| `/admin/coaches` | `admin` | `main` | yes | Table is empty without `coaches` rows beyond the seed |
-| `/admin/courses` | `admin` | `main` | yes | |
-| `/admin/payment-plans` | `admin` | `main` | partly | Has the seeded plan; more rows show wrapping issues |
-| `/admin/students` | `admin` | `main` | yes | |
+| `/admin` | `admin` | `body` | no | |
+| `/admin/pending` | `admin` | `body` | yes | Lists pending `booked_slots` — empty by default |
+| `/admin/assignments` | `admin` | `body` | yes | |
+| `/admin/coaches` | `admin` | `body` | yes | Table is empty without `coaches` rows beyond the seed |
+| `/admin/courses` | `admin` | `body` | yes | |
+| `/admin/payment-plans` | `admin` | `body` | partly | Has the seeded plan; more rows show wrapping issues |
+| `/admin/students` | `admin` | `body` | yes | |
 
 ---
 
@@ -101,6 +121,6 @@ This document doesn't prescribe one — start with option 1, fall back to option
 
 1. Find the page file: `src/app/<group>/<path>/page.tsx`.
 2. Pick the lowest-privilege role that can reach it (per `src/middleware.ts`).
-3. Decide the readiness selector by reading the page — `main` is fine for simple pages, prefer something more specific if the page has async data, a calendar, or an editor.
+3. Decide the readiness selector by reading the page — `body` is the safe default; prefer something more specific (`.fc-view-harness`, `.ProseMirror`, a data-attribute on a known mount point) if the page has async data, a calendar, or an editor. Note that `<main>` is NOT reliably present — several shells render a `<div>` root instead.
 4. Add a row to the right table above. One line, no prose.
 5. Run `npm run screenshots:page -- --role=X --path=/Y --ready=Z` to confirm it captures correctly.

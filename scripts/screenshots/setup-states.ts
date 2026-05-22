@@ -49,13 +49,13 @@ async function login(
 ): Promise<void> {
   const page = await ctx.newPage();
   await page.goto(`${APP_URL}/login`, { waitUntil: "networkidle" });
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
+  await page.getByPlaceholder(/email/i).fill(email);
+  await page.getByPlaceholder(/password/i).fill(password);
   await Promise.all([
     page.waitForURL((url) => !url.pathname.startsWith("/login"), {
-      timeout: 15_000,
+      timeout: 20_000,
     }),
-    page.getByRole("button", { name: /log ?in|sign ?in/i }).click(),
+    page.getByRole("button", { name: "Login", exact: true }).click(),
   ]);
   await page.close();
 }
@@ -72,10 +72,15 @@ async function selectProfile(
 ): Promise<void> {
   const page = await ctx.newPage();
   await page.goto(`${APP_URL}/profiles`, { waitUntil: "networkidle" });
-  await page.getByText(displayName, { exact: false }).first().click();
+  // ProfileCard renders the profile name inside a <button type="submit"> that
+  // submits the wrapping <form action={selectProfile}>.
+  await page
+    .getByRole("button", { name: new RegExp(displayName, "i") })
+    .first()
+    .click();
   await page.waitForURL(
     (url) => !url.pathname.startsWith("/profiles"),
-    { timeout: 15_000 },
+    { timeout: 20_000 },
   );
   await page.close();
 }

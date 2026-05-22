@@ -13,6 +13,7 @@
     "test:unit": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
+    "screenshots:dev": "dotenv -e .env.test -- next dev",
     "screenshots:setup": "tsx --env-file=.env.test scripts/screenshots/setup-states.ts",
     "screenshots:page": "tsx scripts/screenshots/capture.ts"
   },
@@ -53,6 +54,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.6",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.6",
     "msw": "^2.14.6",
