@@ -10,11 +10,11 @@ import LockedBadge from "./_components/LockedBadge";
 import PageSpinner from "@/src/components/ui/PageSpinner";
 import { createClient } from "@/src/services/supabase/client";
 
-// Display this many tokens when tokens section is not expanded
-const INITIAL_COUNT = 16;
-// Keep badges grid visually stable; always rendering at least this many badges.
-// Lower count avoids 5+ rows of LOCKED placeholders on mobile.
-const MIN_BADGE_SLOTS = 6;
+// Display this many tokens when tokens section is not expanded.
+// One row on tablet/desktop; about two on mobile-sm.
+const INITIAL_COUNT = 8;
+// Keep badges grid visually stable; always rendering at least this many badges
+const MIN_BADGE_SLOTS = 10;
 
 const colors = {
   greenLight: "#B1E7D6",
@@ -106,7 +106,7 @@ export default function RewardPage() {
             Tokens
           </h2>
 
-          <div className="flex flex-wrap gap-4 px-2">
+          <div className="flex flex-wrap justify-center gap-4 px-2">
             {visibleTokens.map((token) => {
               const earned = earnedTokenIds.has(token.id);
               return (
@@ -156,7 +156,7 @@ export default function RewardPage() {
             Badges
           </h2>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 justify-items-center pb-24 max-w-2xl mx-auto w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 pb-24">
             {badgeSlots.map((badge, index) => {
               if (!badge) return <LockedBadge key={`placeholder-${index}`} />;
 
