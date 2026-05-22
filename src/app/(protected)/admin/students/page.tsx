@@ -230,7 +230,7 @@ export default function StudentsPage() {
               </div>
               <button
                 onClick={() => setEditingStudent(true)}
-                className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+                className="shrink-0 min-h-[44px] md:min-h-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
               >
                 Edit
               </button>

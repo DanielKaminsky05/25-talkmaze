@@ -236,7 +236,7 @@ export default function CoachesPage() {
               </div>
               <button
                 onClick={() => setEditingEmployee(true)}
-                className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-xl transition-colors"
+                className="shrink-0 min-h-[44px] md:min-h-0 px-3.5 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-xl transition-colors"
               >
                 Edit
               </button>
