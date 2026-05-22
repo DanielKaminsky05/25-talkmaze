@@ -130,7 +130,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
         {/* Pull tab */}
         <button
           onClick={onToggle}
-          className="self-center w-[27px] h-[188px] bg-[#2B4257] rounded-tr-[15px] rounded-br-[15px] flex items-center justify-center cursor-pointer"
+          className="self-center w-11 h-[188px] bg-[#2B4257] rounded-tr-[15px] rounded-br-[15px] flex items-center justify-center cursor-pointer"
           aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         >
           <Image
