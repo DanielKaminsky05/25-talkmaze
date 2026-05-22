@@ -199,7 +199,7 @@ export default function LessonsTable({
             placeholder="Search lessons…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 w-44"
+            className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 w-full sm:w-44"
           />
         </div>
       </div>
@@ -317,7 +317,7 @@ export default function LessonsTable({
                                 Number(e.target.value),
                               )
                             }
-                            className="border border-gray-200 rounded-md text-xs py-1 px-2 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 disabled:opacity-50 cursor-pointer"
+                            className="border border-gray-200 rounded-md text-xs py-1 px-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 disabled:opacity-50 cursor-pointer"
                           >
                             <option value={1}>Not Started</option>
                             <option value={2}>In Progress</option>
@@ -343,7 +343,7 @@ export default function LessonsTable({
                         <Link
                           href={`/coach/students/${studentId}/lessons/${lesson.id}`}
                           title="View lesson details"
-                          className="inline-flex items-center justify-center w-7 h-7 text-[#2B4257] hover:text-[#2B4257]/70 border border-[#2B4257]/25 rounded-md hover:bg-[#2B4257]/5 transition-colors"
+                          className="inline-flex items-center justify-center w-11 h-11 md:w-7 md:h-7 text-[#2B4257] hover:text-[#2B4257]/70 border border-[#2B4257]/25 rounded-md hover:bg-[#2B4257]/5 transition-colors"
                         >
                           <ChevronRight size={15} />
                         </Link>

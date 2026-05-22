@@ -103,7 +103,7 @@ export default function StudentSchedule({
                     key={status}
                     disabled={isSubmitting}
                     onClick={() => onMarkAttendance(s, status)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
+                    className={`min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
                       currentStatus === status
                         ? activeClass
                         : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"

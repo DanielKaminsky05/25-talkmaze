@@ -137,7 +137,7 @@ export default function MyStudents({
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search students..."
               aria-label="Search students"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
             />
             {panelMessage && (
               <p
@@ -196,7 +196,7 @@ export default function MyStudents({
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       Prev
                     </button>
@@ -205,7 +205,7 @@ export default function MyStudents({
                         setCurrentPage((p) => Math.min(p + 1, pageCount))
                       }
                       disabled={currentPage === pageCount}
-                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       Next
                     </button>
