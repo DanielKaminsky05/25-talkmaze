@@ -73,7 +73,7 @@ export default function RescheduleRequestsClient() {
         </div>
         <button
           onClick={loadRequests}
-          className="shrink-0 px-3.5 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+          className="shrink-0 min-h-11 px-4 py-2.5 md:min-h-0 md:px-3.5 md:py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
         >
           Refresh
         </button>
@@ -163,14 +163,14 @@ export default function RescheduleRequestsClient() {
                 <button
                   onClick={() => handleDecision("decline")}
                   disabled={decisionLoading !== null}
-                  className="flex-1 py-2.5 rounded-xl border border-white/20 text-sm text-white font-medium hover:bg-white/5 disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 py-2.5 rounded-xl border border-white/20 text-sm text-white font-medium hover:bg-white/5 disabled:opacity-50 transition-colors"
                 >
                   {decisionLoading === "decline" ? "Declining…" : "Decline"}
                 </button>
                 <button
                   onClick={() => handleDecision("approve")}
                   disabled={decisionLoading !== null}
-                  className="flex-1 py-2.5 rounded-xl bg-[#65CFAD] text-sm text-[#1F2E3B] font-semibold hover:bg-[#50bfa0] disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 py-2.5 rounded-xl bg-[#65CFAD] text-sm text-[#1F2E3B] font-semibold hover:bg-[#50bfa0] disabled:opacity-50 transition-colors"
                 >
                   {decisionLoading === "approve" ? "Approving…" : "Approve"}
                 </button>

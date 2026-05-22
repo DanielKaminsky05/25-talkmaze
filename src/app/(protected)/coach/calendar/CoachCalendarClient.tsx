@@ -238,14 +238,14 @@ export default function CoachCalendarClient() {
                   <button
                     onClick={() => handleDecision("decline")}
                     disabled={busy}
-                    className="flex-1 py-2 rounded-lg border border-[#2B4257]/20 text-sm text-[#2B4257] font-medium hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-2 rounded-lg border border-[#2B4257]/20 text-sm text-[#2B4257] font-medium hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
                   >
                     {decisionLoading === "decline" ? "Declining…" : "Decline"}
                   </button>
                   <button
                     onClick={() => handleDecision("approve")}
                     disabled={busy}
-                    className="flex-1 py-2 rounded-lg bg-[#65CFAD] text-sm text-[#1F2E3B] font-semibold hover:bg-[#50bfa0] disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-2 rounded-lg bg-[#65CFAD] text-sm text-[#1F2E3B] font-semibold hover:bg-[#50bfa0] disabled:opacity-50 transition-colors"
                   >
                     {decisionLoading === "approve" ? "Approving…" : "Approve"}
                   </button>
@@ -254,14 +254,14 @@ export default function CoachCalendarClient() {
                   <button
                     onClick={() => setSelected(null)}
                     disabled={busy}
-                    className="flex-1 py-2 rounded-lg border border-[#2B4257]/20 text-xs text-[#2B4257]/70 hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-2 rounded-lg border border-[#2B4257]/20 text-xs text-[#2B4257]/70 hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
                   >
                     Close
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={busy}
-                    className="flex-1 py-2 rounded-lg bg-[#2B4257] text-xs text-white font-medium hover:bg-[#2B4257]/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-2 rounded-lg bg-[#2B4257] text-xs text-white font-medium hover:bg-[#2B4257]/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? "Saving…" : "Save Current Times Instead"}
                   </button>
@@ -272,14 +272,14 @@ export default function CoachCalendarClient() {
                 <button
                   onClick={() => setSelected(null)}
                   disabled={busy}
-                  className="flex-1 py-2 rounded-lg border border-[#2B4257]/20 text-sm text-[#2B4257] hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 py-2 rounded-lg border border-[#2B4257]/20 text-sm text-[#2B4257] hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={busy}
-                  className="flex-1 py-2 rounded-lg bg-[#2B4257] text-sm text-white font-medium hover:bg-[#2B4257]/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 py-2 rounded-lg bg-[#2B4257] text-sm text-white font-medium hover:bg-[#2B4257]/90 disabled:opacity-50 transition-colors"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
