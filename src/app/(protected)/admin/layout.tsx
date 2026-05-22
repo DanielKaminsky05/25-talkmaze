@@ -63,7 +63,8 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
             {hasDetail && (
               <button
                 onClick={() => router.back()}
-                className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Back"
+                className="md:hidden -ml-1 w-11 h-11 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -86,7 +87,7 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
           </div>
           <button
             onClick={() => setIsCreateAdminModalOpen(true)}
-            className="bg-[#B1E7D6] text-[#1F2E3B] font-semibold text-xs px-3.5 py-2 rounded-xl hover:bg-[#9ed4c1] transition-colors shadow-[0_4px_12px_rgba(177,231,214,0.2)]"
+            className="bg-[#B1E7D6] text-[#1F2E3B] font-semibold text-xs px-3.5 py-2 min-h-11 rounded-xl hover:bg-[#9ed4c1] transition-colors shadow-[0_4px_12px_rgba(177,231,214,0.2)]"
           >
             + Admin
           </button>
@@ -128,7 +129,7 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
             <Link
               key={key}
               href={href}
-              className={`flex-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition-colors text-center ${
+              className={`flex-1 min-h-11 py-3 flex items-center justify-center text-[10px] font-semibold uppercase tracking-wide transition-colors text-center ${
                 isActive
                   ? "text-[#B1E7D6]"
                   : "text-white/35 hover:text-white/60"
