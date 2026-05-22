@@ -107,40 +107,40 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+      className="fixed inset-0 bg-black/70 flex items-center justify-center p-0 sm:p-4 z-50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-[#1F2E3B] rounded-2xl border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-[#1F2E3B] rounded-none sm:rounded-2xl border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-[#1F2E3B] border-b border-white/10 px-6 py-4 flex justify-between items-center rounded-t-2xl z-10">
-          <div>
+        <div className="sticky top-0 bg-[#1F2E3B] border-b border-white/10 px-6 py-4 flex flex-wrap justify-between items-center gap-2 rounded-t-2xl z-10">
+          <div className="min-w-0">
             <h2 className="text-white font-bold text-lg">
               {isEditing ? (editForm.name ?? course.name) : course.name}
             </h2>
             <p className="text-[#B1E7D6] text-xs opacity-60 mt-0.5">Course #{course.id}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!isEditing ? (
               <>
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="px-4 py-1.5 text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50"
+                  className="min-h-[44px] md:min-h-0 px-4 py-1.5 text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting…" : "Delete"}
                 </button>
                 <button
                   onClick={() => { setEditForm({ ...course }); setIsEditing(true); }}
-                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-lg transition-colors"
+                  className="min-h-[44px] md:min-h-0 px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-lg transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-lg"
+                  className="w-11 h-11 md:w-8 md:h-8 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-lg"
                 >
                   ×
                 </button>
@@ -150,13 +150,13 @@ export default function CourseDetailModal({ course, students, onClose, onUpdate,
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-lg transition-colors disabled:opacity-50"
+                  className="min-h-[44px] md:min-h-0 px-4 py-1.5 text-xs font-semibold text-[#1F2E3B] bg-[#65CFAD] hover:bg-[#50bfa0] rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isSaving ? "Saving…" : "Save"}
                 </button>
                 <button
                   onClick={() => { setEditForm({}); setIsEditing(false); }}
-                  className="px-4 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-lg transition-colors"
+                  className="min-h-[44px] md:min-h-0 px-4 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>

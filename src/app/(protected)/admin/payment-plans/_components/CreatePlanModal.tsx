@@ -127,20 +127,20 @@ export default function CreatePlanModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#1F2E3B] rounded-2xl border border-white/8 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full h-full sm:h-auto sm:max-w-md bg-[#1F2E3B] rounded-none sm:rounded-2xl border border-white/8 shadow-2xl overflow-hidden flex flex-col sm:block">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <h3 className="text-white font-bold text-base">Add payment plan</h3>
           <button
             onClick={handleClose}
-            className="w-7 h-7 flex items-center justify-center text-white/35 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+            className="w-11 h-11 md:w-7 md:h-7 flex items-center justify-center text-white/35 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 space-y-4 flex-1 sm:flex-none sm:max-h-[70vh] overflow-y-auto">
           {/* Step 1: Stripe Price ID */}
           <div>
             <label className="text-white/50 text-xs mb-1 block">
@@ -161,7 +161,7 @@ export default function CreatePlanModal({
               <button
                 onClick={handleFetch}
                 disabled={fetching || !priceId.trim()}
-                className="shrink-0 px-3 py-2 text-xs font-semibold bg-white/10 hover:bg-white/15 text-white rounded-xl transition-colors disabled:opacity-40"
+                className="shrink-0 min-h-[44px] md:min-h-0 px-3 py-2 text-xs font-semibold bg-white/10 hover:bg-white/15 text-white rounded-xl transition-colors disabled:opacity-40"
               >
                 {fetching ? "…" : "Fetch"}
               </button>
@@ -271,7 +271,7 @@ export default function CreatePlanModal({
         <div className="px-5 py-4 border-t border-white/5 flex gap-2 justify-end">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
+            className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
           >
             Cancel
           </button>
@@ -279,7 +279,7 @@ export default function CreatePlanModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 text-xs font-semibold bg-[#B1E7D6] text-[#1F2E3B] rounded-xl hover:bg-[#9ed4c1] transition-colors disabled:opacity-50"
+              className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold bg-[#B1E7D6] text-[#1F2E3B] rounded-xl hover:bg-[#9ed4c1] transition-colors disabled:opacity-50"
             >
               {saving ? "Creating…" : "Create plan"}
             </button>

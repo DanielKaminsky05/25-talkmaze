@@ -49,11 +49,11 @@ export default function CreateCourseModal({ isOpen, onClose, onSuccess }: Create
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={handleClose}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-0 sm:p-4 z-50" onClick={handleClose}>
+      <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <h2 className="text-base font-bold text-gray-900">Create Course</h2>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+          <button onClick={handleClose} className="w-11 h-11 md:w-auto md:h-auto flex items-center justify-center text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
         </div>
         <div className="px-6 py-4 space-y-3">
           {error && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded">{error}</p>}
@@ -79,8 +79,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSuccess }: Create
           </div>
         </div>
         <div className="border-t border-gray-200 px-6 py-3 flex justify-end gap-2">
-          <button onClick={handleClose} className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors">Cancel</button>
-          <button onClick={handleSubmit} disabled={isSubmitting} className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:opacity-50">
+          <button onClick={handleClose} className="min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors">Cancel</button>
+          <button onClick={handleSubmit} disabled={isSubmitting} className="min-h-[44px] md:min-h-0 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:opacity-50">
             {isSubmitting ? "Creating..." : "Create Course"}
           </button>
         </div>
