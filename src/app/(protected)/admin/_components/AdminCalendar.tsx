@@ -11,36 +11,56 @@ type FullCalendarProps = ComponentProps<typeof FullCalendar>;
 
 function renderEventContent(arg: EventContentArg) {
   const isDayGrid = arg.view.type === "dayGridMonth";
-  if (!isDayGrid) {
-    return undefined;
+  if (isDayGrid) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          minWidth: 0,
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
+        {arg.timeText && (
+          <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+            {arg.timeText}
+          </span>
+        )}
+        <span
+          style={{
+            flex: "1 1 auto",
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {arg.event.title}
+        </span>
+      </div>
+    );
   }
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "center",
-        gap: "4px",
+        flexDirection: "column",
         minWidth: 0,
         width: "100%",
-        overflow: "hidden",
+        padding: "1px 3px",
+        lineHeight: 1.2,
       }}
     >
       {arg.timeText && (
-        <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+        <span style={{ whiteSpace: "nowrap", opacity: 0.9 }}>
           {arg.timeText}
         </span>
       )}
-      <span
-        style={{
-          flex: "1 1 auto",
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {arg.event.title}
-      </span>
+      {arg.event.title && (
+        <span style={{ wordBreak: "break-word" }}>{arg.event.title}</span>
+      )}
     </div>
   );
 }
