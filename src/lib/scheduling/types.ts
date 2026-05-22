@@ -64,6 +64,24 @@ export type PendingBookingForm = {
 
 export type GeneratedSession = TablesInsert<"sessions">;
 
+/**
+ * Day-of-week names in the order shown to users (Monday-first).
+ *
+ * Note: this differs from the DB's numeric `weekday` column, which follows the
+ * JS convention (Sunday = 0 … Saturday = 6). Conversions live with the callers.
+ */
+export const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
+
+export type Weekday = (typeof WEEKDAYS)[number];
+
 export const TIME_ZONES = [
   "America/St_Johns",
   "America/Halifax",

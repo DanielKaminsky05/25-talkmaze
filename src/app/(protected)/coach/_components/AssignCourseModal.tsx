@@ -90,7 +90,7 @@ export default function AssignCourseModal({
           <button
             onClick={() => setIsAssigningCourse(false)}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
+            className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 inline-flex items-center justify-center p-1.5 rounded-lg text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -152,7 +152,7 @@ export default function AssignCourseModal({
                 <button
                   disabled={assigningCourseId != null}
                   onClick={() => assignStudent(course)}
-                  className="mt-3 w-full bg-[#2B4257] text-white text-xs font-medium py-2 rounded-lg hover:bg-[#2B4257]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-3 w-full min-h-11 md:min-h-0 bg-[#2B4257] text-white text-xs font-medium py-2 rounded-lg hover:bg-[#2B4257]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {assigningCourseId === course.id
                     ? "Assigning..."

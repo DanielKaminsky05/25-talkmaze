@@ -63,12 +63,21 @@ export default function CurrentLessonBanner({
         <SlideshowViewer url={lesson.slideShowUrl} thumbnailMode />
       ) : (
         <div
-          className="w-full h-full"
+          className="w-full h-full flex items-center justify-center px-6"
           style={{
             background:
               "linear-gradient(135deg, #6b3fa0 0%, #2b4257 60%, #1f2e3b 100%)",
           }}
-        />
+        >
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-[#B1E7D6]/80 text-xs sm:text-sm font-semibold uppercase tracking-widest">
+              Continue lesson {lesson.lessonNumber}
+            </p>
+            <p className="text-white text-lg sm:text-2xl xl:text-3xl font-extrabold line-clamp-2">
+              {lesson.title}
+            </p>
+          </div>
+        </div>
       )}
     </button>
   );

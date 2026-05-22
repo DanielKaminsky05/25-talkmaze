@@ -127,17 +127,18 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           </nav>
         </div>
 
-        {/* Pull tab */}
+        {/* Pull tab — visible strip is narrow, tap area expanded via `before:` */}
         <button
           onClick={onToggle}
-          className="self-center w-[27px] h-[188px] bg-[#2B4257] rounded-tr-[15px] rounded-br-[15px] flex items-center justify-center cursor-pointer"
+          className="self-center w-6 h-[96px] bg-[#2B4257] rounded-tr-[15px] rounded-br-[15px] flex items-center justify-center cursor-pointer relative
+            before:content-[''] before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-2 before:w-11 before:h-11"
           aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         >
           <Image
             src="/images/icons/caret.png"
             alt=""
-            width={18}
-            height={17}
+            width={14}
+            height={13}
             className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
           />
         </button>

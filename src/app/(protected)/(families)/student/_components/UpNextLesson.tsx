@@ -14,7 +14,7 @@ export default function NextLessonCard({
   return (
     <div
       onClick={onClick}
-      className="relative rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden cursor-pointer w-full h-[244px]"
+      className="relative rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] overflow-hidden cursor-pointer w-full h-[160px] sm:h-[200px] xl:h-[244px]"
       style={{
         backgroundImage: "url('/images/backgrounds/lesson-card-bg.png')",
         backgroundSize: "cover",
@@ -34,8 +34,8 @@ export default function NextLessonCard({
       </div>
 
       {/* Bottom green bar */}
-      <div className="absolute bottom-0 left-0 w-full h-20 bg-[#65CFAD] flex items-center justify-center">
-        <span className="text-white text-[20px] font-semibold text-center px-4">
+      <div className="absolute bottom-0 left-0 w-full h-14 sm:h-16 xl:h-20 bg-[#65CFAD] flex items-center justify-center">
+        <span className="text-white text-base sm:text-lg xl:text-[20px] font-semibold text-center px-4 line-clamp-1">
           {title}
         </span>
       </div>

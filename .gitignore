@@ -42,6 +42,23 @@ next-env.d.ts
 
 #mcp
 .context
+.vscode/mcp.json
+*.mcp.json
+.mcp.json
 
 #local claude settings
 .claude/settings.local.json
+.claude/worktrees/
+
+# screenshot infra — storage states contain real session tokens, never commit
+tests/screenshots/states/*.json
+tests/screenshots/output/
+# transient per-agent routes files (only routes.example.json is committed)
+tests/screenshots/routes-*.json
+# user-shared screenshots dropped into repo root
+/image*.png
+/screenshot*.png
+/Screenshot*.png
+
+# transient logs from `npm run test:* > tmp/...`
+/tmp/

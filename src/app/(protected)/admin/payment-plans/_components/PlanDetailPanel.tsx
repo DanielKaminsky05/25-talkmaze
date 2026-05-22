@@ -119,7 +119,7 @@ export default function PlanDetailPanel({
               resetForm();
               setEditing(true);
             }}
-            className="shrink-0 px-3.5 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
+            className="shrink-0 min-h-[44px] md:min-h-0 px-3.5 py-1.5 text-xs font-semibold text-white/70 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
           >
             Edit
           </button>
@@ -222,7 +222,7 @@ export default function PlanDetailPanel({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 text-xs font-semibold bg-[#B1E7D6] text-[#1F2E3B] rounded-xl hover:bg-[#9ed4c1] transition-colors disabled:opacity-50"
+              className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold bg-[#B1E7D6] text-[#1F2E3B] rounded-xl hover:bg-[#9ed4c1] transition-colors disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -231,7 +231,7 @@ export default function PlanDetailPanel({
                 setEditing(false);
                 setError(null);
               }}
-              className="px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
+              className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
             >
               Cancel
             </button>
@@ -288,13 +288,13 @@ export default function PlanDetailPanel({
                 <button
                   onClick={handleArchive}
                   disabled={archiving}
-                  className="px-4 py-2 text-xs font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl transition-colors disabled:opacity-50"
+                  className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-xl transition-colors disabled:opacity-50"
                 >
                   {archiving ? "Archiving…" : "Yes, archive"}
                 </button>
                 <button
                   onClick={() => setConfirmArchive(false)}
-                  className="px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
+                  className="min-h-[44px] md:min-h-0 px-4 py-2 text-xs font-semibold text-white/50 bg-white/10 hover:bg-white/15 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -303,7 +303,7 @@ export default function PlanDetailPanel({
           ) : (
             <button
               onClick={() => setConfirmArchive(true)}
-              className="text-xs font-semibold text-white/35 hover:text-red-400 transition-colors"
+              className="min-h-[44px] md:min-h-0 text-xs font-semibold text-white/35 hover:text-red-400 transition-colors"
             >
               Archive this plan
             </button>

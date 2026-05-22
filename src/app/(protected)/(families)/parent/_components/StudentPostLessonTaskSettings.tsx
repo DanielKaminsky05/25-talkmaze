@@ -70,8 +70,8 @@ export default function StudentPostLessonTaskSettings({ studentId }: { studentId
         </button>
       </div>
 
-      <div className="flex items-center gap-[22px]">
-        <p className="font-semibold text-[16px] text-[#1F2E3B] whitespace-nowrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-[22px]">
+        <p className="font-semibold text-[16px] text-[#1F2E3B] min-w-0">
           How many days of post-lesson tasks?
         </p>
         <div

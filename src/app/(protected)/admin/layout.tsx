@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { signOut } from "@/src/lib/auth/actions/signOut";
 import CreateAdminModal from "./_components/CreateAdminModal";
 import {
   AdminMobileDetailProvider,
@@ -63,7 +64,8 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
             {hasDetail && (
               <button
                 onClick={() => router.back()}
-                className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Back"
+                className="md:hidden -ml-1 w-11 h-11 flex items-center justify-center text-white/50 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -84,12 +86,36 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
               Admin Dashboard
             </h1>
           </div>
-          <button
-            onClick={() => setIsCreateAdminModalOpen(true)}
-            className="bg-[#B1E7D6] text-[#1F2E3B] font-semibold text-xs px-3.5 py-2 rounded-xl hover:bg-[#9ed4c1] transition-colors shadow-[0_4px_12px_rgba(177,231,214,0.2)]"
-          >
-            + Admin
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCreateAdminModalOpen(true)}
+              className="bg-[#B1E7D6] text-[#1F2E3B] font-semibold text-xs px-3.5 py-2 min-h-11 rounded-xl hover:bg-[#9ed4c1] transition-colors shadow-[0_4px_12px_rgba(177,231,214,0.2)]"
+            >
+              + Admin
+            </button>
+            <form action={signOut}>
+              <button
+                type="submit"
+                aria-label="Sign out"
+                className="text-white/70 hover:text-white hover:bg-white/10 font-semibold text-xs px-3.5 py-2 min-h-11 min-w-11 rounded-xl transition-colors flex items-center justify-center"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                <span className="sr-only sm:not-sr-only sm:ml-1.5">Sign out</span>
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -128,7 +154,7 @@ function AdminLayoutInner({ children }: { children: ReactNode }) {
             <Link
               key={key}
               href={href}
-              className={`flex-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition-colors text-center ${
+              className={`flex-1 min-h-11 py-3 flex items-center justify-center text-[10px] font-semibold uppercase tracking-wide transition-colors text-center ${
                 isActive
                   ? "text-[#B1E7D6]"
                   : "text-white/35 hover:text-white/60"

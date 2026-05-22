@@ -10,8 +10,9 @@ import LockedBadge from "./_components/LockedBadge";
 import PageSpinner from "@/src/components/ui/PageSpinner";
 import { createClient } from "@/src/services/supabase/client";
 
-// Display this many tokens when tokens section is not expanded
-const INITIAL_COUNT = 16;
+// Display this many tokens when tokens section is not expanded.
+// One row on tablet/desktop; about two on mobile-sm.
+const INITIAL_COUNT = 8;
 // Keep badges grid visually stable; always rendering at least this many badges
 const MIN_BADGE_SLOTS = 10;
 
@@ -105,7 +106,7 @@ export default function RewardPage() {
             Tokens
           </h2>
 
-          <div className="flex flex-wrap gap-4 px-2">
+          <div className="flex flex-wrap justify-center gap-4 px-2">
             {visibleTokens.map((token) => {
               const earned = earnedTokenIds.has(token.id);
               return (

@@ -17,6 +17,8 @@ interface MyStudentsProps {
   coachId: string;
 }
 
+const STUDENTS_PER_PAGE = 6;
+
 export default function MyStudents({
   students,
   activeStudentId,
@@ -31,7 +33,15 @@ export default function MyStudents({
   const [assigningStudent, setAssigningStudent] = useState<Student | null>(
     null,
   );
-  const [currentPage, setCurrentPage] = useState(1);
+  // Default to the page containing the active student so route navigations
+  // (clicking a student calls router.push, which re-mounts this component)
+  // don't reset back to page 1.
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (!activeStudentId) return 1;
+    const index = students.findIndex((s) => s.id === activeStudentId);
+    if (index < 0) return 1;
+    return Math.floor(index / STUDENTS_PER_PAGE) + 1;
+  });
   const [search, setSearch] = useState("");
   const [launchingLessonSpaceId, setLaunchingLessonSpaceId] = useState<
     string | null
@@ -40,8 +50,6 @@ export default function MyStudents({
     type: "error" | "success";
     text: string;
   } | null>(null);
-
-  const STUDENTS_PER_PAGE = 6;
 
   useEffect(() => {
     fetch("/api/coach/courses")
@@ -60,9 +68,15 @@ export default function MyStudents({
       .finally(() => setCoursesLoading(false));
   }, []);
 
-  useEffect(() => {
+  // Reset to page 1 when the search query is changed by the user (not on
+  // mount). Previously this was a `useEffect(..., [search])` which fired
+  // its first invocation on every mount — including the remount that
+  // happens after router.push to a new student URL — and clobbered the
+  // useState initializer's computed page.
+  const handleSearchChange = (next: string) => {
+    setSearch(next);
     setCurrentPage(1);
-  }, [search]);
+  };
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -118,7 +132,7 @@ export default function MyStudents({
   return (
     <>
       <div className=" bg-white shadow-sm overflow-hidden flex flex-col flex-1">
-        <div className="px-5 py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
+        <div className="px-5 py-3 md:py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
           <h2 className="text-base font-semibold text-[#1F2E3B]">
             My Students
           </h2>
@@ -134,10 +148,10 @@ export default function MyStudents({
             <input
               type="search"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Search students..."
               aria-label="Search students"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
             />
             {panelMessage && (
               <p
@@ -162,28 +176,34 @@ export default function MyStudents({
             </div>
           ) : (
             <>
-              <ul className="divide-y divide-gray-100">
-                {currentPageStudents.map((student) => (
-                  <StudentListItem
-                    key={student.id}
-                    student={student}
-                    isActive={student.id === activeStudentId}
-                    onSelect={(s) => onStudentClick?.(s)}
-                    onMessage={(s) => onMessageClick?.(s)}
-                    onLessonSpace={handleLessonSpace}
-                    onAssignCourse={(s) => {
-                      setAssigningStudent(s);
-                      setIsAssigningCourse(true);
-                    }}
-                    isLaunchingLessonSpace={
-                      launchingLessonSpaceId === student.id
-                    }
-                  />
-                ))}
-              </ul>
+              {/* Scrollable list region. The pagination row below is sticky-
+                  bottom so it stays reachable even when the parent flex
+                  container is short (e.g. mobile-sm with the list capped at
+                  ~1/3 of the viewport). */}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <ul className="divide-y divide-gray-100">
+                  {currentPageStudents.map((student) => (
+                    <StudentListItem
+                      key={student.id}
+                      student={student}
+                      isActive={student.id === activeStudentId}
+                      onSelect={(s) => onStudentClick?.(s)}
+                      onMessage={(s) => onMessageClick?.(s)}
+                      onLessonSpace={handleLessonSpace}
+                      onAssignCourse={(s) => {
+                        setAssigningStudent(s);
+                        setIsAssigningCourse(true);
+                      }}
+                      isLaunchingLessonSpace={
+                        launchingLessonSpaceId === student.id
+                      }
+                    />
+                  ))}
+                </ul>
+              </div>
 
               {filteredStudents.length > STUDENTS_PER_PAGE && (
-                <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="shrink-0 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-xs text-gray-400">
                     {(currentPage - 1) * STUDENTS_PER_PAGE + 1}–
                     {Math.min(
@@ -196,7 +216,7 @@ export default function MyStudents({
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       Prev
                     </button>
@@ -205,7 +225,7 @@ export default function MyStudents({
                         setCurrentPage((p) => Math.min(p + 1, pageCount))
                       }
                       disabled={currentPage === pageCount}
-                      className="px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       Next
                     </button>

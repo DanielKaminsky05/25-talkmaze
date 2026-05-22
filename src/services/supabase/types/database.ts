@@ -768,6 +768,10 @@ export type Database = {
           created_at: string
           end_time: string | null
           id: number
+          requested_at: string | null
+          requested_end_time: string | null
+          requested_start_time: string | null
+          reschedule_status: string | null
           start_time: string | null
           student_id: string | null
           weekday: number | null
@@ -777,6 +781,10 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           id?: number
+          requested_at?: string | null
+          requested_end_time?: string | null
+          requested_start_time?: string | null
+          reschedule_status?: string | null
           start_time?: string | null
           student_id?: string | null
           weekday?: number | null
@@ -786,6 +794,10 @@ export type Database = {
           created_at?: string
           end_time?: string | null
           id?: number
+          requested_at?: string | null
+          requested_end_time?: string | null
+          requested_start_time?: string | null
+          reschedule_status?: string | null
           start_time?: string | null
           student_id?: string | null
           weekday?: number | null

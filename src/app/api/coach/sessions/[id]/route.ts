@@ -36,9 +36,7 @@ export async function PATCH(
     );
   }
 
-  const parsedBody = BodySchema.safeParse(
-    await req.json().catch(() => ({})),
-  );
+  const parsedBody = BodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsedBody.success) {
     return NextResponse.json(
       {
@@ -56,11 +54,17 @@ export async function PATCH(
 
   // Stage 4: EXECUTE
   try {
+    // Also null any pending parent reschedule request — coach's unilateral
+    // edit wins anbd the previous request becomes meaningless.
     const { error } = await supabase
       .from("sessions")
       .update({
         start_time: parsedBody.data.start_time,
         end_time: parsedBody.data.end_time,
+        requested_start_time: null,
+        requested_end_time: null,
+        reschedule_status: null,
+        requested_at: null,
       })
       .eq("id", parsedParams.data.id);
     if (error) {

@@ -82,7 +82,7 @@ export default function CoachAttendanceSection({
                   key={status}
                   disabled={isSubmitting}
                   onClick={() => onMarkAttendance(session, status)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors disabled:opacity-60 ${
+                  className={`min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors disabled:opacity-60 ${
                     current === status
                       ? activeClass
                       : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"

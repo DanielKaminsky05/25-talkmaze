@@ -148,7 +148,7 @@ export default function SuccessClient() {
 
       {/* MAIN CONTENT BOX */}
       <div
-        className="relative z-10 w-full max-w-[60%] min-w-[300px] text-white rounded-2xl p-6 flex flex-col shadow-2xl border border-white/20"
+        className="relative z-10 w-full max-w-full sm:max-w-[60%] sm:min-w-[300px] text-white rounded-2xl p-4 sm:p-6 flex flex-col shadow-2xl border border-white/20"
         style={{
           background: "rgba(64, 119, 102, 0.71)",
           backdropFilter: "blur(30px)",

@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     let query = supabase
       .from("sessions")
       .select(
-        "id, start_time, end_time, weekday, student_id, students(first_name, last_name)",
+        "id, start_time, end_time, weekday, student_id, requested_start_time, requested_end_time, reschedule_status, students(first_name, last_name)",
       )
       .eq("coach_id", coach.id)
       .order("start_time", { ascending: true });

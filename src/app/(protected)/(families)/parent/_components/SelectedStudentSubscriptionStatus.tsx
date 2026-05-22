@@ -25,15 +25,13 @@ export default function SelectedStudentSubscriptionStatus({
 
   return (
     <div
-      className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] border-4 border-[#B1E7D6] flex flex-row"
-      style={{ height: "178px" }}
+      className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] border-4 border-[#B1E7D6] flex flex-col sm:flex-row min-h-[178px] sm:h-[178px]"
     >
       {subscriptionStatus === "active" ? (
         <>
           {/* Left — donut chart on white bg */}
           <div
-            className="flex items-center justify-center"
-            style={{ width: "225px", flexShrink: 0 }}
+            className="flex items-center justify-center w-full sm:w-[225px] sm:shrink-0"
           >
             <SessionsRemainingDonutChart
               sessionsRemaining={sessionsLeft ?? 0}
@@ -42,9 +40,9 @@ export default function SelectedStudentSubscriptionStatus({
           </div>
 
           {/* Right — green section */}
-          <div className="bg-[#B1E7D6] flex-1 flex flex-col items-end justify-center gap-6 pr-6 rounded-r-xl">
+          <div className="bg-[#B1E7D6] flex-1 flex flex-col items-center sm:items-end justify-center gap-3 sm:gap-6 p-4 sm:pr-6 sm:p-0 rounded-r-xl">
             <p
-              className="font-semibold text-[20px] text-[#2B4257] whitespace-nowrap"
+              className="font-semibold text-[20px] text-[#2B4257] text-center sm:text-right"
               style={{ fontFamily: "Roboto, sans-serif" }}
             >
               <span className="text-[#D55B40]">{sessionsLeft ?? 0}</span>

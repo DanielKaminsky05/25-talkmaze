@@ -38,7 +38,7 @@ export default function StudentListItem({
 
   return (
     <li
-      className={`px-4 py-3.5 transition-all cursor-pointer ${
+      className={`px-4 py-2 md:py-3.5 transition-all cursor-pointer ${
         isActive ? "bg-[#65CFAD]/10" : "hover:bg-gray-50"
       }`}
     >
@@ -74,7 +74,7 @@ export default function StudentListItem({
             onClick={() => onMessage(student)}
             aria-label={`Message ${studentFullName}`}
             title={`Message ${studentFullName}`}
-            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
+            className="h-11 w-11 md:h-8 md:w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
           >
             <MessageCircleIcon size={16} />
           </button>
@@ -91,7 +91,7 @@ export default function StudentListItem({
             onClick={() => onAssignCourse(student)}
             aria-label={`Assign course to ${studentFullName}`}
             title={`Assign course to ${studentFullName}`}
-            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
+            className="h-11 w-11 md:h-8 md:w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
           >
             <BookOpen size={16} />
           </button>

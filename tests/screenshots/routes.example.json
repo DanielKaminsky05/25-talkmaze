@@ -1,0 +1,21 @@
+[
+  { "role": "parent", "path": "/parent", "ready": "body" },
+  { "role": "parent", "path": "/parent/sessions", "ready": "body" },
+  { "role": "parent", "path": "/parent/profile", "ready": "body" },
+  { "role": "parent", "path": "/profiles", "ready": "body" },
+  { "role": "student", "path": "/student", "ready": "body" },
+  { "role": "student", "path": "/student/profile", "ready": "body" },
+  { "role": "student", "path": "/lessons", "ready": "body" },
+  { "role": "student", "path": "/message", "ready": "body" },
+  { "role": "student", "path": "/reward", "ready": "body" },
+  { "role": "coach", "path": "/coach", "ready": "body" },
+  { "role": "coach", "path": "/coach/calendar", "ready": ".fc-view-harness" },
+  { "role": "coach", "path": "/coach/reschedule-requests", "ready": "body" },
+  { "role": "admin", "path": "/admin", "ready": "body" },
+  { "role": "admin", "path": "/admin/students", "ready": "body" },
+  { "role": "admin", "path": "/admin/coaches", "ready": "body" },
+  { "role": "admin", "path": "/admin/courses", "ready": "body" },
+  { "role": "admin", "path": "/admin/assignments", "ready": "body" },
+  { "role": "admin", "path": "/admin/payment-plans", "ready": "body" },
+  { "role": "admin", "path": "/admin/pending", "ready": "body" }
+]

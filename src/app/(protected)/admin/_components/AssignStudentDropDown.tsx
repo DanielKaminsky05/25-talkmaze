@@ -61,7 +61,7 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
             <div
               key={student.id}
               onClick={() => onStudentClick(student)}
-              className="px-3 py-2 text-xs text-gray-800 hover:bg-blue-100 cursor-pointer flex justify-between"
+              className="px-3 py-2 min-h-11 text-xs text-gray-800 hover:bg-blue-100 cursor-pointer flex justify-between items-center"
             >
               <span>{displayName(student)}</span>
               <span className="text-gray-400">
@@ -94,7 +94,7 @@ export default function AssignStudentDropDown({ courseId }: StudentProps) {
                 <button
                   type="button"
                   onClick={() => removeSelectedStudent(student.id)}
-                  className="text-xs text-red-500 hover:text-red-700"
+                  className="text-xs text-red-500 hover:text-red-700 min-h-11 px-2"
                 >
                   Remove
                 </button>

@@ -45,7 +45,7 @@ export default function AvatarIcon({ profileType, avatarUrl }: Props) {
         aria-label="Profile menu"
         className="flex items-center gap-1.5 text-white cursor-pointer"
       >
-        <div className="rounded-full w-[43px] h-[43px] md:w-[66px] md:h-[66px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden relative">
+        <div className="rounded-full w-11 h-11 md:w-[66px] md:h-[66px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden relative">
           <Image
             src={avatarUrl ?? PROFILE_IMAGE[profileType]}
             alt="Profile"

@@ -15,10 +15,10 @@ export default function ScheduleList({
 
   return (
     <div className="w-full h-full max-h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3 overflow-hidden">
-      <h3 className="font-semibold text-[#1F2E3B]">Upcoming Sessions</h3>
+      <h3 className="font-semibold text-[#1F2E3B]">Schedule</h3>
 
       {/* Session list or empty state */}
-      <div className="flex flex-col gap-3 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-col gap-3 overflow-y-auto flex-1 no-scrollbar">
         {schedule.length === 0 ? (
           <div className="flex-1 flex items-center justify-center h-full">
             <p className="text-[#2B4257] text-sm font-medium opacity-60">

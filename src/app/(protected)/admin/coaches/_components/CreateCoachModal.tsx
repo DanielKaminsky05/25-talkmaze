@@ -62,12 +62,12 @@ export default function CreateCoachModal({ isOpen, onClose, onSuccess }: CreateC
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-0 sm:p-4 z-50"
       onClick={handleClose}
     >
-      <div 
-        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+      <div
+        className="bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
@@ -75,7 +75,7 @@ export default function CreateCoachModal({ isOpen, onClose, onSuccess }: CreateC
           <button
             onClick={handleClose}
             disabled={loading}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none disabled:opacity-50"
+            className="w-11 h-11 md:w-auto md:h-auto flex items-center justify-center text-gray-400 hover:text-gray-600 text-2xl leading-none disabled:opacity-50"
           >
             ×
           </button>
@@ -161,14 +161,14 @@ export default function CreateCoachModal({ isOpen, onClose, onSuccess }: CreateC
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-h-[44px] md:min-h-0 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 border border-transparent rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-h-[44px] md:min-h-0 px-4 py-2 border border-transparent rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creating..." : "Create Coach"}
             </button>
