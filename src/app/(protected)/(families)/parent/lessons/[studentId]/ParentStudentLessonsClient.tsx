@@ -35,9 +35,9 @@ export default function ParentStudentLessonsClient({
   const [selectedLesson, setSelectedLesson] = useState<LessonProp | null>(null);
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-6 md:p-12 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 md:p-12 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Link
           href="/parent/lessons"
           className="flex items-center gap-1 text-white/70 hover:text-white transition-colors text-sm font-medium"
@@ -68,7 +68,7 @@ export default function ParentStudentLessonsClient({
       </div>
 
       {lessons.length === 0 ? (
-        <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center gap-4 border border-[#B1E7D6]/20">
+        <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-6 sm:p-12 flex flex-col items-center text-center gap-4 border border-[#B1E7D6]/20">
           <h2 className="text-2xl font-bold text-white">No Course Assigned</h2>
           <p className="text-[#B1E7D6] opacity-80 max-w-md">
             {studentName} hasn&apos;t been assigned to a course yet.
@@ -84,7 +84,7 @@ export default function ParentStudentLessonsClient({
           />
 
           {/* Lesson grid */}
-          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))] pb-12">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] pb-12">
             {lessons.map((lesson) => (
               <LessonCard
                 key={lesson.id}
