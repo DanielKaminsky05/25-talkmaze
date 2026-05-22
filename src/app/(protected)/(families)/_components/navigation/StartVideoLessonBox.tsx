@@ -16,7 +16,7 @@ export default function StartVideoLessonBox() {
     <button
       onClick={handleClick}
       aria-label="Start Video Lesson"
-      className="text-[12px] md:text-[16px] md:font-semibold h-11 w-11 sm:w-[172px] md:w-[272.29px] md:h-[51px] border-[0.5px] rounded-[15px] bg-[#1F2E3B] border-[#1F2E3B] shadow-[0_4px_4px_rgba(0,0,0,0.25)] text-white flex justify-center items-center gap-2.5 shrink-0"
+      className="text-[12px] md:text-[16px] md:font-semibold h-11 w-[120px] sm:w-[172px] md:w-[272.29px] md:h-[51px] border-[0.5px] rounded-[15px] bg-[#1F2E3B] border-[#1F2E3B] shadow-[0_4px_4px_rgba(0,0,0,0.25)] text-white flex justify-center items-center gap-2 sm:gap-2.5 shrink-0"
     >
       <svg
         width="16"
@@ -30,6 +30,7 @@ export default function StartVideoLessonBox() {
           fill="white"
         />
       </svg>
+      <span className="sm:hidden">Join Lesson</span>
       <span className="hidden sm:inline">Start Video Lesson</span>
     </button>
   );
