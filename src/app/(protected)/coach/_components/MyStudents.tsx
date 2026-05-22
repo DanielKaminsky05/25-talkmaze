@@ -17,6 +17,8 @@ interface MyStudentsProps {
   coachId: string;
 }
 
+const STUDENTS_PER_PAGE = 6;
+
 export default function MyStudents({
   students,
   activeStudentId,
@@ -31,7 +33,15 @@ export default function MyStudents({
   const [assigningStudent, setAssigningStudent] = useState<Student | null>(
     null,
   );
-  const [currentPage, setCurrentPage] = useState(1);
+  // Default to the page containing the active student so route navigations
+  // (clicking a student calls router.push, which re-mounts this component)
+  // don't reset back to page 1.
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (!activeStudentId) return 1;
+    const index = students.findIndex((s) => s.id === activeStudentId);
+    if (index < 0) return 1;
+    return Math.floor(index / STUDENTS_PER_PAGE) + 1;
+  });
   const [search, setSearch] = useState("");
   const [launchingLessonSpaceId, setLaunchingLessonSpaceId] = useState<
     string | null
@@ -40,8 +50,6 @@ export default function MyStudents({
     type: "error" | "success";
     text: string;
   } | null>(null);
-
-  const STUDENTS_PER_PAGE = 6;
 
   useEffect(() => {
     fetch("/api/coach/courses")
