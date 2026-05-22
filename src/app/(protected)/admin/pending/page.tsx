@@ -46,7 +46,7 @@ export default function PendingPage() {
         </div>
         <button
           onClick={fetchPendingBookings}
-          className="shrink-0 px-3.5 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
+          className="shrink-0 min-h-[44px] md:min-h-0 px-3.5 py-2 text-xs font-semibold text-[#1F2E3B] bg-[#B1E7D6] hover:bg-[#9ed4c1] rounded-xl transition-colors"
         >
           Refresh
         </button>
