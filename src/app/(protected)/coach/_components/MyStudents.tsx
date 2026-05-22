@@ -68,9 +68,15 @@ export default function MyStudents({
       .finally(() => setCoursesLoading(false));
   }, []);
 
-  useEffect(() => {
+  // Reset to page 1 when the search query is changed by the user (not on
+  // mount). Previously this was a `useEffect(..., [search])` which fired
+  // its first invocation on every mount — including the remount that
+  // happens after router.push to a new student URL — and clobbered the
+  // useState initializer's computed page.
+  const handleSearchChange = (next: string) => {
+    setSearch(next);
     setCurrentPage(1);
-  }, [search]);
+  };
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -142,7 +148,7 @@ export default function MyStudents({
             <input
               type="search"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Search students..."
               aria-label="Search students"
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
