@@ -1,0 +1,8 @@
+[
+  { "role": "coach", "path": "/coach", "ready": "body" },
+  { "role": "coach", "path": "/coach/calendar", "ready": ".fc-view-harness" },
+  { "role": "coach", "path": "/coach/reschedule-requests", "ready": "body" },
+  { "role": "coach", "path": "/coach/students/d1a191a4-29a2-4f8f-bc48-5188cfde05c3", "ready": "body" },
+  { "role": "coach", "path": "/coach/students/d1a191a4-29a2-4f8f-bc48-5188cfde05c3/lessons", "ready": "body" },
+  { "role": "coach", "path": "/coach/students/d1a191a4-29a2-4f8f-bc48-5188cfde05c3/lessons/00000000-0000-0000-0000-000000000000", "ready": "body" }
+]

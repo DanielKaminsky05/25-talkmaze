@@ -51,6 +51,16 @@ export default function CoachCalendarClient() {
   >(null);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
+  // §4 — calendar defaults to day view below md (week/month don't fit).
+  const [isBelowMd, setIsBelowMd] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsBelowMd(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsBelowMd(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   const loadSessions = useCallback(async () => {
     const res = await fetch("/api/coach/sessions");
@@ -143,7 +153,7 @@ export default function CoachCalendarClient() {
       <div className="bg-[#1F2E3B] rounded-2xl p-4 border border-white/5">
         <AdminCalendar
           events={events}
-          initialView="dayGridMonth"
+          initialView={isBelowMd ? "timeGridDay" : "dayGridMonth"}
           loading={loading}
           offsetPx={250}
           onEventClick={handleEventClick}
