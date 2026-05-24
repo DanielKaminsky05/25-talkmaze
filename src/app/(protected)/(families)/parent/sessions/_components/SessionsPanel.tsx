@@ -9,6 +9,9 @@ interface Props {
   onSelectStudent: (id: string | null) => void;
   sessions: SessionProp[];
   onShowAllStudents: () => void;
+  selectedSessionId: string | null;
+  onSelectSession: (id: string) => void;
+  onReschedule: () => void;
 }
 
 export default function SessionsPanel({
@@ -17,7 +20,12 @@ export default function SessionsPanel({
   onSelectStudent,
   sessions,
   onShowAllStudents,
+  selectedSessionId,
+  onSelectSession,
+  onReschedule,
 }: Props) {
+  const hasSelection = selectedSessionId !== null;
+
   return (
     <div className="w-full h-full min-h-0 p-3.5 xl:p-5 rounded-[20px] bg-[#B1E7D6] flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5 xl:mb-4">
@@ -50,16 +58,35 @@ export default function SessionsPanel({
           </div>
         ) : (
           sessions.map((session) => (
-            <SessionCard key={session.id} session={session} />
+            <SessionCard
+              key={session.id}
+              session={session}
+              selected={session.id === selectedSessionId}
+              onSelect={onSelectSession}
+            />
           ))
         )}
       </div>
 
       {sessions.length > 0 && (
-        <p className="text-xs text-[#2B4257] text-right mt-3">
-          {sessions.length} session
-          {sessions.length !== 1 ? "s" : ""} scheduled
-        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-[#2B4257]">
+            {sessions.length} session
+            {sessions.length !== 1 ? "s" : ""} scheduled
+          </p>
+          <button
+            type="button"
+            onClick={onReschedule}
+            disabled={!hasSelection}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              hasSelection
+                ? "bg-[#2B4257] text-white hover:bg-[#24394a] cursor-pointer"
+                : "bg-[#2B4257]/30 text-white/70 cursor-not-allowed"
+            }`}
+          >
+            Reschedule
+          </button>
+        </div>
       )}
     </div>
   );

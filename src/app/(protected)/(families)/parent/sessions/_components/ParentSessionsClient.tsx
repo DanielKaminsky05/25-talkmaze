@@ -23,11 +23,20 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
   const [selectedSession, setSelectedSession] = useState<SessionProp | null>(
     null,
   );
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    null,
+  );
 
   const filteredSessions = useMemo(() => {
     if (!selectedStudent) return sessions;
     return sessions.filter((session) => session.student_id === selectedStudent);
   }, [sessions, selectedStudent]);
+
+  const handleSelectStudent = (id: string | null) => {
+    setSelectedStudent(id);
+    setSelectedSessionId(null);
+  };
 
   const calendarEvents = useMemo<EventInput[]>(
     () =>
@@ -52,8 +61,21 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
       null;
 
     if (matched) {
+      setModalMode("view");
       setSelectedSession(matched);
     }
+  };
+
+  const handleReschedule = () => {
+    const session = filteredSessions.find((s) => s.id === selectedSessionId);
+    if (!session) return;
+    setModalMode(session.reschedule_status === "pending" ? "view" : "edit");
+    setSelectedSession(session);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedSession(null);
+    setModalMode("view");
   };
 
   return (
@@ -62,7 +84,7 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
         <div className="w-full lg:h-full min-h-0 max-w-[1512px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,800px)_clamp(300px,30vw,402px)] lg:grid-rows-[1fr] gap-[clamp(12px,1.2vw,20px)] justify-center">
           {/* Calendar */}
           <section className="min-h-0 min-w-0 flex flex-col items-center lg:self-center">
-            <div className="w-full max-w-[800px] bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)]">
+            <div className="w-full max-w-[800px] bg-white rounded-[20px] p-3 lg:p-4 border border-[#DCE8E5] shadow-[0_8px_20px_rgba(31,46,59,0.08)] overflow-x-auto">
               <AdminCalendar
                 events={calendarEvents}
                 initialView="dayGridMonth"
@@ -87,9 +109,12 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
               <SessionsPanel
                 students={students}
                 selectedStudent={selectedStudent}
-                onSelectStudent={setSelectedStudent}
+                onSelectStudent={handleSelectStudent}
                 sessions={filteredSessions}
-                onShowAllStudents={() => setSelectedStudent(null)}
+                onShowAllStudents={() => handleSelectStudent(null)}
+                selectedSessionId={selectedSessionId}
+                onSelectSession={setSelectedSessionId}
+                onReschedule={handleReschedule}
               />
             </div>
 
@@ -114,7 +139,8 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
       {selectedSession && (
         <SessionDetailsModal
           session={selectedSession}
-          onClose={() => setSelectedSession(null)}
+          onClose={handleCloseModal}
+          initialMode={modalMode}
         />
       )}
     </>
