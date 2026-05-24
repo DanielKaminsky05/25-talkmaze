@@ -9,9 +9,9 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 /**
  * Chatbox client displaying messages between this user and the contact they
  * want to send messages to.
- * 
+ *
  * Establishes a connection to the websocket of the conversation channel
- * 
+ *
  * @param conversation conversation between this user and selected contact
  * @param user the current user
  * @param messages message history between this user and selected contact
@@ -58,7 +58,9 @@ export function ConversationClient({
   return (
     <div
       className="flex flex-col gap-4 w-full h-full min-h-0 overflow-hidden
-       bg-[#c0f7e5] px-3 py-5 rounded-xl
+       bg-[#B1E7D6] bg-[url('/images/backgrounds/pipes-pattern-bg.png')]
+       bg-size-[400px_400px] bg-repeat bg-blend-multiply
+       px-3 lg:px-6 xl:px-12 py-5 rounded-xl
        shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]"
     >
       {/* Messages Display Container */}
@@ -72,7 +74,12 @@ export function ConversationClient({
             <ConversationMessage
               key={message.id}
               {...message}
-              status={"status" in message ? (message as { status: "pending" | "error" | "success" }).status : undefined}
+              status={
+                "status" in message
+                  ? (message as { status: "pending" | "error" | "success" })
+                      .status
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -96,13 +103,13 @@ export function ConversationClient({
         onSuccessfulSend={(message) => {
           setSentMessages((prev) =>
             prev.map((m) =>
-              m.id === message.id ? { ...message, status: "success" } : m
-            )
+              m.id === message.id ? { ...message, status: "success" } : m,
+            ),
           );
         }}
         onErrorSend={(id) => {
           setSentMessages((prev) =>
-            prev.map((m) => (m.id === id ? { ...m, status: "error" } : m))
+            prev.map((m) => (m.id === id ? { ...m, status: "error" } : m)),
           );
         }}
       />
@@ -115,12 +122,7 @@ export function ConversationClient({
  * Listen to broadcasts that are triggered when a message is added to Supabase
  * messages table.
  */
-function useRealtimeChat({
-  roomId,
-}: {
-  roomId: string;
-  userId: string;
-}) {
+function useRealtimeChat({ roomId }: { roomId: string; userId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
