@@ -23,6 +23,7 @@ import {
 import {
   createAccount,
   createCoach,
+  createParent,
   createStudent,
   linkCoachToStudent,
 } from "@tests/helpers/factories";
@@ -44,7 +45,13 @@ async function seedCoachAndStudent() {
   const student = await createStudent(familyAccount);
   await linkCoachToStudent(coach, student);
   const cookies = await signSessionFor(coachAccount);
-  return { coachAccount, coach, student, cookies };
+  return { coachAccount, coach, familyAccount, student, cookies };
+}
+
+async function seedCoachStudentAndParent() {
+  const seeded = await seedCoachAndStudent();
+  const parent = await createParent(seeded.familyAccount);
+  return { ...seeded, parent };
 }
 
 // Q1
@@ -81,6 +88,24 @@ describe("GET /api/coach/conversation — ownership", () => {
       query: { contactId: student.id },
     });
     expect(res.status).toBe(200);
+  });
+
+  it("returns 200 when assigned coach opens conversation with the student's parent", async () => {
+    const { cookies, parent } = await seedCoachStudentAndParent();
+    const res = await call(conversationGET, {
+      cookies,
+      query: { contactId: parent.id },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it("returns 404 when contactId is a valid UUID but not a student/parent contact", async () => {
+    const { cookies } = await seedCoachAndStudent();
+    const res = await call(conversationGET, {
+      cookies,
+      query: { contactId: "11111111-1111-4111-8111-111111111111" },
+    });
+    expect(res.status).toBe(404);
   });
 });
 
@@ -156,6 +181,21 @@ describe("GET /api/coach/conversation — side effects", () => {
     const a = await first.json<{ conversationId: string }>();
     const b = await second.json<{ conversationId: string }>();
     expect(b.conversationId).toBe(a.conversationId);
+  });
+
+  it("creates a parent conversation with profile_type='parent'", async () => {
+    const { cookies, coach, parent } = await seedCoachStudentAndParent();
+
+    await call(conversationGET, {
+      cookies,
+      query: { contactId: parent.id },
+    });
+
+    const row = await expectRowExists("conversations", {
+      coach_id: coach.id,
+      profile_id: parent.id,
+    });
+    expect(row.profile_type).toBe("parent");
   });
 });
 
