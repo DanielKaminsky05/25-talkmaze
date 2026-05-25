@@ -1,6 +1,5 @@
 "use server";
 import { ReactNode } from "react";
-import Bookmarks from "./_components/Bookmarks";
 import Contacts from "./_components/Contacts";
 import { createClient } from "@/src/services/supabase/server";
 import { Contact } from "@/src/lib/messaging/types";
@@ -19,8 +18,6 @@ export default async function Layout({ children }: { children: ReactNode }) {
       <div className="flex flex-col max-w-[384px] md:basis-1/3">
         {/* Contacts filter bar*/}
         <Contacts contacts={contacts} />
-        {/* Bookmarks */}
-        <Bookmarks />
       </div>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">{children}</div>
@@ -51,10 +48,16 @@ async function getContacts(): Promise<Contact[]> {
   const { data: coaches } =
     coachAccountIds.length > 0
       ? await supabase
-        .from("coaches")
-        .select("account_id, first_name, last_name")
-        .in("account_id", coachAccountIds)
-      : { data: [] as { account_id: string; first_name: string | null; last_name: string | null }[] };
+          .from("coaches")
+          .select("account_id, first_name, last_name")
+          .in("account_id", coachAccountIds)
+      : {
+          data: [] as {
+            account_id: string;
+            first_name: string | null;
+            last_name: string | null;
+          }[],
+        };
 
   const coachNameMap = new Map(
     (coaches ?? []).map((c) => [

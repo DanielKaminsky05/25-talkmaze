@@ -9,4 +9,5 @@ export { LocationPinFilledIcon } from "./LocationPinFilledIcon";
 export { MessageCircleIcon } from "./MessageCircleIcon";
 export { MissedIcon } from "./MissedIcon";
 export { RewardsIcon } from "./RewardsIcon";
+export { SearchIcon } from "./SearchIcon";
 export { TokenMysteryStar } from "./TokenMysteryStar";

@@ -9,6 +9,7 @@ import { formatDateTime, getDurationMin } from "./sessionDateUtils";
 interface Props {
   session: SessionProp;
   onClose: () => void;
+  initialMode?: Mode;
 }
 
 type Mode = "view" | "edit";
@@ -19,12 +20,16 @@ function toDatetimeLocal(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function SessionDetailsModal({ session, onClose }: Props) {
+export default function SessionDetailsModal({
+  session,
+  onClose,
+  initialMode = "view",
+}: Props) {
   const router = useRouter();
   const durationMin = getDurationMin(session.start_time, session.end_time);
   const isPending = session.reschedule_status === "pending";
 
-  const [mode, setMode] = useState<Mode>("view");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [startVal, setStartVal] = useState(toDatetimeLocal(session.start_time));
   const [endVal, setEndVal] = useState(
     session.end_time ? toDatetimeLocal(session.end_time) : "",

@@ -224,7 +224,7 @@ body {
 
 /* ── FullCalendar light theme (white-first surface) ── */
 .admin-calendar.admin-calendar--light .fc {
-  --fc-border-color: #dce8e5;
+  --fc-border-color: #c8d7d2;
   --fc-button-bg-color: #ffffff;
   --fc-button-border-color: #c8d7d2;
   --fc-button-hover-bg-color: #f2f8f6;
@@ -269,7 +269,7 @@ body {
 .admin-calendar.admin-calendar--light .fc-scrollgrid,
 .admin-calendar.admin-calendar--light .fc-scrollgrid td,
 .admin-calendar.admin-calendar--light .fc-scrollgrid th {
-  border-color: #dce8e5 !important;
+  border-color: #c8d7d2 !important;
 }
 .admin-calendar.admin-calendar--light .fc-timegrid-slot-label-cushion {
   color: rgba(31, 46, 59, 0.56) !important;

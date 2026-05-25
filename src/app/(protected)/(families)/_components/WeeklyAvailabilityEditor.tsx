@@ -84,7 +84,7 @@ export default function WeeklyAvailabilityEditor({
           <label className="text-sm text-[#A8A8A8]">Time Zone</label>
           <div className="relative h-[52px]">
             <select
-              value={timezone}
+              value={timezone ?? ""}
               onChange={(e) => onTimezoneChange(e.target.value)}
               className={`w-full h-full px-4 text-[18px] text-[#1F2E3B] border bg-white appearance-none cursor-pointer rounded-lg ${errors?.timeZone ? "border-red-500" : "border-[#1F2E3B]/20"}`}
             >
