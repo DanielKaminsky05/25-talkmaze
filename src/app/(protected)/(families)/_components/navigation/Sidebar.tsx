@@ -63,6 +63,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
 
   // Pick the correct nav list for the active profile type (student or parent)
   const items = NAV_ITEMS[profileType];
+  const homeLink = profileType === "parent" ? "/parent" : "/student";
 
   // Highlight the nav item whose link matches the current URL
   useEffect(() => {
@@ -104,13 +105,19 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           className="bg-[#2B4257] flex flex-col pt-[26px] px-2 overflow-hidden"
           style={{ width: "var(--panel-w)" }}
         >
-          <Image
-            src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
-            alt="Talk Maze Logo"
+          <Link
+            href={homeLink}
+            onClick={onToggle}
             className="self-center mb-4"
-            width={80}
-            height={36}
-          />
+            aria-label="Go to home"
+          >
+            <Image
+              src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
+              alt="Talk Maze Logo"
+              width={80}
+              height={36}
+            />
+          </Link>
           <nav className="flex flex-col gap-6">
             {items.map((item) => (
               <Link
@@ -156,13 +163,15 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           logo scales inside but the 68px area never shrinks 
         */}
         <div className="h-[68px] flex items-center justify-center mb-[13px]">
-          <Image
-            src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
-            alt="Talk Maze Logo"
-            width={150}
-            height={68}
-            style={{ width: "clamp(100px, 10.5vw, 150px)", height: "auto" }}
-          />
+          <Link href={homeLink} aria-label="Go to home">
+            <Image
+              src="/images/logos/talkmaze-logo-horizontal-inverse.svg"
+              alt="Talk Maze Logo"
+              width={150}
+              height={68}
+              style={{ width: "clamp(100px, 10.5vw, 150px)", height: "auto" }}
+            />
+          </Link>
         </div>
         <nav className="flex flex-col gap-[18px]">
           {/* Sidebar items list. Renders different list for parent vs student */}
