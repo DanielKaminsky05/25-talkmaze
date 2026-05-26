@@ -1,10 +1,7 @@
 "use client";
 import Link from "next/link";
-
-export type Contact = {
-  id: string;
-  name: string;
-};
+import Image from "next/image";
+import { Contact } from "@/src/lib/messaging/types";
 
 export type ContactsListProps = {
   contacts?: Contact[];
@@ -12,7 +9,11 @@ export type ContactsListProps = {
   onContactClick?: (contactId: string) => void;
 };
 
-export default function ContactsList({ contacts = [], filter = "", onContactClick }: ContactsListProps) {
+export default function ContactsList({
+  contacts = [],
+  filter = "",
+  onContactClick,
+}: ContactsListProps) {
   const filterString = filter.trim().toLowerCase();
   const visible = filterString
     ? contacts.filter((c) => c.name.toLowerCase().includes(filterString))
@@ -24,16 +25,38 @@ export default function ContactsList({ contacts = [], filter = "", onContactClic
         <Link
           key={c.id}
           href={`/message/${c.id}`}
-          onMouseDown={(e) => { e.preventDefault(); onContactClick?.(c.id); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onContactClick?.(c.id);
+          }}
           className="flex items-center w-full h-13 px-3 py-1.5
                      rounded-lg bg-white cursor-pointer"
         >
-          <div className="bg-[#1F2E3B] h-full w-9 rounded-md flex justify-center items-center">
-            {/* SVG icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B1E7D6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+          <div className="relative bg-[#1F2E3B] h-full w-9 rounded-md flex justify-center items-center overflow-hidden">
+            {c.avatar_url ? (
+              <Image
+                src={c.avatar_url}
+                alt={c.name}
+                fill
+                sizes="36px"
+                className="object-cover"
+              />
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#B1E7D6"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            )}
           </div>
           <p className="ml-3 text-[#1f2e3b]">{c.name}</p>
         </Link>
@@ -42,10 +65,14 @@ export default function ContactsList({ contacts = [], filter = "", onContactClic
   );
 }
 
-{/* Unread messages */}
-          {/* <div
+{
+  /* Unread messages */
+}
+{
+  /* <div
             className="w-6 h-6 rounded-full border-2 border-[#1F2E3B]
            text-[#1F2E3B] text-center ml-auto"
           >
             1
-          </div> */}
+          </div> */
+}
