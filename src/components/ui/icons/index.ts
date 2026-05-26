@@ -6,6 +6,7 @@ export { EyeIcon } from "./EyeIcon";
 export { HomeIcon } from "./HomeIcon";
 export { LessonsIcon } from "./LessonsIcon";
 export { LocationPinFilledIcon } from "./LocationPinFilledIcon";
+export { LocationPinOutlineIcon } from "./LocationPinOutlineIcon";
 export { MessageCircleIcon } from "./MessageCircleIcon";
 export { MissedIcon } from "./MissedIcon";
 export { RewardsIcon } from "./RewardsIcon";
