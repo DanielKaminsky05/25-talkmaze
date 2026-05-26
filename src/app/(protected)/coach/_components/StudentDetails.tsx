@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import { fullName } from "@/src/utils/formatName";
 import { ConversationClient } from "@/src/app/(protected)/(families)/message/[id]/_client";
@@ -8,6 +8,8 @@ import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
 import CoachAttendanceSection from "./student-details/CoachAttendanceSection";
 import AssignCourseModal from "./AssignCourseModal";
+import RescheduleSessionModal from "./RescheduleSessionModal";
+import Pagination from "@/src/components/common/Pagination";
 import type { Message } from "@/src/lib/messaging/types";
 import type { Database } from "@/src/services/supabase/types/database";
 
@@ -16,11 +18,16 @@ type Course = Database["public"]["Tables"]["courses"]["Row"];
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled";
 
-interface CoachSession {
+const PAGE_SIZE = 5;
+
+export interface CoachSession {
   id: number;
   weekday: number;
   start_time: string;
   end_time: string;
+  requested_start_time: string | null;
+  requested_end_time: string | null;
+  reschedule_status: "pending" | null;
 }
 
 interface AttendanceResponseRecord {
@@ -68,6 +75,11 @@ export default function StudentDetails({
   );
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(true);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [rescheduleTarget, setRescheduleTarget] = useState<CoachSession | null>(
+    null,
+  );
 
   const [isAssignCourseOpen, setIsAssignCourseOpen] = useState(false);
   const [launchingLessonSpace, setLaunchingLessonSpace] = useState(false);
@@ -89,6 +101,9 @@ export default function StudentDetails({
     setAttendanceMessage(null);
     setIsScheduleOpen(true);
     setIsAttendanceOpen(true);
+    setUpcomingPage(1);
+    setAttendancePage(1);
+    setRescheduleTarget(null);
     setIsAssignCourseOpen(false);
     setActionMessage(null);
   }, [student?.id]);
@@ -119,33 +134,38 @@ export default function StudentDetails({
   }, [autoOpenChatTarget, autoOpenChatKey, lastAutoOpenKey, student?.id]);
 
   // Fetch all sessions + existing attendance records together
+  const loadSessionsAndAttendance = useCallback(async (studentId: string) => {
+    setLoadingSchedule(true);
+    try {
+      const [sessionsData, attendanceData] = await Promise.all([
+        fetch(`/api/coach/sessions?student_id=${studentId}`).then((r) =>
+          r.ok ? r.json() : { sessions: [] as CoachSession[] },
+        ),
+        fetch(`/api/attendance?student_id=${studentId}`).then((r) =>
+          r.ok ? r.json() : { attendance: [] as AttendanceResponseRecord[] },
+        ),
+      ]);
+      setAllSessions((sessionsData.sessions ?? []) as CoachSession[]);
+
+      const map: Record<number, AttendanceStatus> = {};
+      for (const record of (attendanceData.attendance ??
+        []) as AttendanceResponseRecord[]) {
+        if (record.session_id != null) {
+          map[record.session_id] = record.status as AttendanceStatus;
+        }
+      }
+      setAttendanceBySessionId(map);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!student) return;
-    setLoadingSchedule(true);
-
-    Promise.all([
-      fetch(`/api/coach/sessions?student_id=${student.id}`).then((r) =>
-        r.ok ? r.json() : { sessions: [] as CoachSession[] },
-      ),
-      fetch(`/api/attendance?student_id=${student.id}`).then((r) =>
-        r.ok ? r.json() : { attendance: [] as AttendanceResponseRecord[] },
-      ),
-    ])
-      .then(([sessionsData, attendanceData]) => {
-        setAllSessions((sessionsData.sessions ?? []) as CoachSession[]);
-
-        const map: Record<number, AttendanceStatus> = {};
-        for (const record of (attendanceData.attendance ??
-          []) as AttendanceResponseRecord[]) {
-          if (record.session_id != null) {
-            map[record.session_id] = record.status as AttendanceStatus;
-          }
-        }
-        setAttendanceBySessionId(map);
-      })
-      .catch(console.error)
-      .finally(() => setLoadingSchedule(false));
-  }, [student?.id]);
+    loadSessionsAndAttendance(student.id);
+  }, [student?.id, loadSessionsAndAttendance]);
 
   async function handleMarkAttendance(
     session: AttendanceMarkableSession,
@@ -217,8 +237,28 @@ export default function StudentDetails({
       if (!s.start_time) return false;
       return s.start_time < now || attendanceBySessionId[s.id] != null;
     })
-    .sort((a, b) => (a.start_time < b.start_time ? 1 : -1))
-    .slice(0, 10);
+    .sort((a, b) => (a.start_time < b.start_time ? 1 : -1));
+
+  const upcomingTotalPages = Math.max(
+    1,
+    Math.ceil(upcomingSessions.length / PAGE_SIZE),
+  );
+  const attendanceTotalPages = Math.max(
+    1,
+    Math.ceil(attendanceSessions.length / PAGE_SIZE),
+  );
+  // Clamp the current page when totals shrink (e.g. after marking the last
+  // upcoming row attended → that row moves to attendance).
+  const clampedUpcomingPage = Math.min(upcomingPage, upcomingTotalPages);
+  const clampedAttendancePage = Math.min(attendancePage, attendanceTotalPages);
+  const visibleUpcoming = upcomingSessions.slice(
+    (clampedUpcomingPage - 1) * PAGE_SIZE,
+    clampedUpcomingPage * PAGE_SIZE,
+  );
+  const visibleAttendance = attendanceSessions.slice(
+    (clampedAttendancePage - 1) * PAGE_SIZE,
+    clampedAttendancePage * PAGE_SIZE,
+  );
 
   async function openChat(
     type: "student" | "parent",
@@ -461,15 +501,22 @@ export default function StudentDetails({
                       {attendanceMessage}
                     </p>
                   )}
-                  <div className="max-h-52 overflow-y-auto pr-1">
-                    <StudentSchedule
-                      sessions={upcomingSessions}
-                      loading={loadingSchedule}
-                      attendanceBySessionId={attendanceBySessionId}
-                      onMarkAttendance={handleMarkAttendance}
-                      submittingSessionId={submittingSessionId}
-                    />
-                  </div>
+                  <StudentSchedule
+                    sessions={visibleUpcoming}
+                    loading={loadingSchedule}
+                    attendanceBySessionId={attendanceBySessionId}
+                    onMarkAttendance={handleMarkAttendance}
+                    submittingSessionId={submittingSessionId}
+                    onReschedule={setRescheduleTarget}
+                  />
+                  <Pagination
+                    currentPage={clampedUpcomingPage}
+                    totalPages={upcomingTotalPages}
+                    totalItems={upcomingSessions.length}
+                    itemsPerPage={PAGE_SIZE}
+                    onPageChange={setUpcomingPage}
+                    variant="light"
+                  />
                 </>
               )}
             </div>
@@ -490,13 +537,23 @@ export default function StudentDetails({
                 />
               </button>
               {isAttendanceOpen && (
-                <CoachAttendanceSection
-                  sessions={attendanceSessions}
-                  loading={loadingSchedule}
-                  attendanceBySessionId={attendanceBySessionId}
-                  onMarkAttendance={handleMarkAttendance}
-                  submittingSessionId={submittingSessionId}
-                />
+                <>
+                  <CoachAttendanceSection
+                    sessions={visibleAttendance}
+                    loading={loadingSchedule}
+                    attendanceBySessionId={attendanceBySessionId}
+                    onMarkAttendance={handleMarkAttendance}
+                    submittingSessionId={submittingSessionId}
+                  />
+                  <Pagination
+                    currentPage={clampedAttendancePage}
+                    totalPages={attendanceTotalPages}
+                    totalItems={attendanceSessions.length}
+                    itemsPerPage={PAGE_SIZE}
+                    onPageChange={setAttendancePage}
+                    variant="light"
+                  />
+                </>
               )}
             </div>
           </div>
@@ -510,6 +567,27 @@ export default function StudentDetails({
           coursesError={coursesError}
           setIsAssigningCourse={setIsAssignCourseOpen}
           onAssignedMessage={(message) => setActionMessage(message)}
+        />
+      )}
+      {rescheduleTarget && (
+        <RescheduleSessionModal
+          session={{
+            id: rescheduleTarget.id,
+            start_time: rescheduleTarget.start_time,
+            end_time: rescheduleTarget.end_time,
+            requested_start_time: rescheduleTarget.requested_start_time,
+            requested_end_time: rescheduleTarget.requested_end_time,
+            reschedule_status: rescheduleTarget.reschedule_status,
+            students: {
+              first_name: student.first_name,
+              last_name: student.last_name,
+            },
+          }}
+          onClose={() => setRescheduleTarget(null)}
+          onSaved={async () => {
+            setRescheduleTarget(null);
+            await loadSessionsAndAttendance(student.id);
+          }}
         />
       )}
     </div>

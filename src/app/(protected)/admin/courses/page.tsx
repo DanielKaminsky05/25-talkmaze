@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import CourseListItem from "./_components/CourseListItem";
 import Avatar from "../_components/Avatar";
 import EmptyDetail from "../_components/EmptyDetail";
-import Pagination from "../_components/Pagination";
+import Pagination from "@/src/components/common/Pagination";
 import CourseDetailModal from "./_components/CourseDetailModal";
 import CreateCourseModal from "./_components/CreateCourseModal";
 import CourseLessonsPanel from "./_components/CourseLessonPanel";

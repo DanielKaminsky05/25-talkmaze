@@ -1,6 +1,6 @@
 "use client";
 
-import Pagination from "../_components/Pagination";
+import Pagination from "@/src/components/common/Pagination";
 import { usePendingBookings, ITEMS_PER_PAGE } from "./_hooks/usePendingBookings";
 import PendingBookingCard from "./_components/PendingBookingCard";
 import PendingBookingDetail from "./_components/PendingBookingDetail";
