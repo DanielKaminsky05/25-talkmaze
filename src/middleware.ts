@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
   // here via a Supabase email link.
   const isPublicAuthPage =
     pathname === "/" ||
-    pathname.startsWith("/signup") ||
+    pathname === "/signup" ||
     pathname.startsWith("/forgot-password");
 
   if (user && isPublicAuthPage) {
