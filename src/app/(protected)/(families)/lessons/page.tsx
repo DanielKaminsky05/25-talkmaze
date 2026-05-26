@@ -6,8 +6,11 @@ import PageSpinner from "@/src/components/ui/PageSpinner";
 import ProgressCard from "./_components/ProgressCard";
 import TokensRow from "./_components/TokensRow";
 import LessonCard from "./_components/LessonCard";
+import CoursePicker from "@/src/components/common/CoursePicker";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 export default function LessonsPage() {
+  const profile = useActiveProfile();
   const {
     lessons,
     loading,
@@ -19,6 +22,9 @@ export default function LessonsPage() {
     hasCourse,
     isSetupComplete,
     navigateToLesson,
+    assignments,
+    activeCourseId,
+    reload,
   } = useLessons();
 
   const firstIncompleteIdx = lessons.findIndex(
@@ -92,6 +98,15 @@ export default function LessonsPage() {
 
   return (
     <div className="w-full max-w-[1400px] p-6 md:p-12 flex flex-col gap-8 mx-auto text-white">
+      {profile?.type === "student" && assignments.length > 1 && (
+        <CoursePicker
+          studentId={profile.id}
+          options={assignments}
+          activeCourseId={activeCourseId}
+          persist
+          onChange={reload}
+        />
+      )}
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         <div className="grow">
           <ProgressCard

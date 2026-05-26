@@ -36,6 +36,9 @@ interface Session {
   weekday: number;
   start_time: string;
   end_time: string;
+  requested_start_time: string | null;
+  requested_end_time: string | null;
+  reschedule_status: "pending" | null;
 }
 
 interface StudentScheduleProps {
@@ -44,6 +47,7 @@ interface StudentScheduleProps {
   attendanceBySessionId?: Record<number, AttendanceStatus>;
   onMarkAttendance?: (session: Session, status: AttendanceStatus) => void;
   submittingSessionId?: number | null;
+  onReschedule?: (session: Session) => void;
 }
 
 export default function StudentSchedule({
@@ -52,6 +56,7 @@ export default function StudentSchedule({
   attendanceBySessionId = {},
   onMarkAttendance,
   submittingSessionId,
+  onReschedule,
 }: StudentScheduleProps) {
   if (loading) {
     return (
@@ -74,6 +79,7 @@ export default function StudentSchedule({
       {sessions.map((s) => {
         const currentStatus = attendanceBySessionId[s.id];
         const isSubmitting = submittingSessionId === s.id;
+        const isPending = s.reschedule_status === "pending";
 
         return (
           <div
@@ -81,13 +87,18 @@ export default function StudentSchedule({
             className="bg-white border border-[#2B4257]/10 rounded-lg px-3 py-2.5 text-xs shadow-sm"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-wrap">
                 <span className="font-semibold text-[#2B4257]/70 shrink-0">
                   {fmtLocalDate(s.start_time)}
                 </span>
                 <span className="text-gray-500 shrink-0">
                   {fmtLocalTime(s.start_time)} – {fmtLocalTime(s.end_time)}
                 </span>
+                {isPending && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold uppercase tracking-wide">
+                    ↻ Pending
+                  </span>
+                )}
               </div>
               {currentStatus && (
                 <span
@@ -96,22 +107,31 @@ export default function StudentSchedule({
               )}
             </div>
 
-            {onMarkAttendance && (
+            {(onMarkAttendance || onReschedule) && (
               <div className="mt-2.5 flex gap-1.5 flex-wrap">
-                {STATUS_BUTTONS.map(({ status, label, activeClass }) => (
+                {onMarkAttendance &&
+                  STATUS_BUTTONS.map(({ status, label, activeClass }) => (
+                    <button
+                      key={status}
+                      disabled={isSubmitting}
+                      onClick={() => onMarkAttendance(s, status)}
+                      className={`min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
+                        currentStatus === status
+                          ? activeClass
+                          : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                {onReschedule && (
                   <button
-                    key={status}
-                    disabled={isSubmitting}
-                    onClick={() => onMarkAttendance(s, status)}
-                    className={`min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium rounded border transition-colors disabled:opacity-60 ${
-                      currentStatus === status
-                        ? activeClass
-                        : "border-[#2B4257]/20 text-gray-500 hover:border-[#2B4257]/40 hover:text-gray-700"
-                    }`}
+                    onClick={() => onReschedule(s)}
+                    className="min-h-11 md:min-h-0 px-2.5 py-1 text-xs font-medium rounded border border-[#2B4257]/40 text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 transition-colors"
                   >
-                    {label}
+                    Reschedule
                   </button>
-                ))}
+                )}
               </div>
             )}
           </div>

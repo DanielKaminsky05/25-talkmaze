@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
+import type { CoursePickerOption } from "@/src/components/common/CoursePicker";
 
 type LessonSummary = {
   id: string;
@@ -42,6 +43,10 @@ export function useHomeData() {
   const [courseTokens, setCourseTokens] = useState<TokenRow[]>([]);
   const [earnedTokenIds, setEarnedTokenIds] = useState(new Set<string>());
   const [courseBadgeUrl, setCourseBadgeUrl] = useState<string | null>(null);
+  const [assignments, setAssignments] = useState<CoursePickerOption[]>([]);
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     async function load() {
@@ -55,7 +60,7 @@ export function useHomeData() {
 
         const { data: studentData } = await supabase
           .from("students")
-          .select("is_setup_complete")
+          .select("is_setup_complete, active_course_id")
           .eq("id", profile.id)
           .single();
 
@@ -103,14 +108,27 @@ export function useHomeData() {
             })),
         );
 
-        const { data: assignment } = await supabase
-          .from("course_assignment")
-          .select("course_id")
-          .eq("student_id", profile.id)
-          .limit(1)
-          .maybeSingle();
+        const courseId = studentData?.active_course_id ?? null;
+        setActiveCourseId(courseId);
 
-        if (!assignment?.course_id) {
+        // Fetch the student's active assignments (for the course picker).
+        const { data: assignmentsRaw } = await supabase
+          .from("course_assignment")
+          .select("course_id, courses(id, title)")
+          .eq("student_id", profile.id)
+          .eq("isActive", true);
+        const opts: CoursePickerOption[] = (assignmentsRaw ?? [])
+          .map((a: any) => {
+            const cid = a.course_id;
+            const title = a.courses?.title;
+            return cid && title
+              ? { course_id: cid, course_title: title }
+              : null;
+          })
+          .filter(Boolean) as CoursePickerOption[];
+        setAssignments(opts);
+
+        if (!courseId) {
           setLoading(false);
           return;
         }
@@ -124,12 +142,12 @@ export function useHomeData() {
           supabase
             .from("courses")
             .select("head_lesson_id")
-            .eq("id", assignment.course_id)
+            .eq("id", courseId)
             .single(),
           supabase
             .from("lessons")
             .select("id, title, slug, next_lesson, slide_show_url")
-            .eq("course_id", assignment.course_id),
+            .eq("course_id", courseId),
           supabase
             .from("lesson_progress")
             .select("lesson_id, status")
@@ -137,7 +155,7 @@ export function useHomeData() {
           supabase
             .from("badges")
             .select("image_url")
-            .eq("course_id", assignment.course_id)
+            .eq("course_id", courseId)
             .maybeSingle(),
         ]);
 
@@ -156,9 +174,16 @@ export function useHomeData() {
         // Fallback if head is not set or list is broken
         const lessons: LessonSummary[] =
           orderedLessons.length > 0 ? orderedLessons : (lessonsRaw ?? []);
+        // Restrict completions to lessons in the active course — soft-deleted
+        // assignments leave behind lesson_progress rows that would otherwise
+        // inflate the count.
+        const courseLessonIds = new Set(lessons.map((l) => l.id));
         const completedIds = new Set(
           (progressData ?? [])
-            .filter((r: any) => r.status === 3)
+            .filter(
+              (r: any) =>
+                r.status === 3 && courseLessonIds.has(r.lesson_id as string),
+            )
             .map((r: any) => r.lesson_id as string),
         );
 
@@ -239,7 +264,7 @@ export function useHomeData() {
     }
 
     load();
-  }, [profile, router]);
+  }, [profile, router, reloadKey]);
 
   return {
     loading,
@@ -252,5 +277,8 @@ export function useHomeData() {
     courseTokens,
     earnedTokenIds,
     courseBadgeUrl,
+    assignments,
+    activeCourseId,
+    reload,
   };
 }

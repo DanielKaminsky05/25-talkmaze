@@ -8,7 +8,7 @@ import type { EventInput } from "@fullcalendar/core";
 import StudentListItem from "./_components/StudentListItem";
 import EmptyDetail from "../_components/EmptyDetail";
 import AdminCalendar from "../_components/AdminCalendar";
-import Pagination from "../_components/Pagination";
+import Pagination from "@/src/components/common/Pagination";
 import StudentDetailModal from "./_components/StudentDetailModal";
 import type { Student } from "../_types";
 import { useAdminMobileDetail } from "../_context/AdminMobileDetailContext";

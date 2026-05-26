@@ -8,7 +8,7 @@ import type { EventInput } from "@fullcalendar/core";
 import CoachListItem from "./_components/CoachListItem";
 import EmptyDetail from "../_components/EmptyDetail";
 import AdminCalendar from "../_components/AdminCalendar";
-import Pagination from "../_components/Pagination";
+import Pagination from "@/src/components/common/Pagination";
 import EmployeeDetailModal from "./_components/EmployeeDetailModal";
 import CreateCoachModal from "./_components/CreateCoachModal";
 import type { Coach } from "../_types";

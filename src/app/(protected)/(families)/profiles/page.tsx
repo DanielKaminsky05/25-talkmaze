@@ -1,9 +1,11 @@
 import { createClient } from "@/src/services/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import ProfileCard from "./_components/ProfileCard";
 import AddProfileCard from "./_components/AddProfileCard";
 import { selectProfile } from "@/src/lib/profiles/actions/selectProfile";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
+import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 
 // Profile to select as the "active profile"
 type Profile = {
@@ -109,18 +111,42 @@ export default async function ProfilesPage({
 
   if (!user) redirect("/login");
 
+  const active = await getActiveProfile();
+  const homeLink =
+    active?.type === "parent"
+      ? "/parent"
+      : active?.type === "student"
+        ? "/student"
+        : null;
+
+  const logoContent = (
+    <>
+      <img
+        src="/images/logos/talkmaze-logo-mark.png"
+        alt="TalkMaze Logo"
+        className="w-[clamp(36px,3.4vw,52px)] h-[clamp(36px,3.4vw,52px)] object-contain"
+      />
+      <span className="text-[clamp(16px,1.3vw,20px)] font-semibold">
+        <span className="text-[#65cfad]">Talk</span>
+        <span className="text-white">Maze</span>
+      </span>
+    </>
+  );
+
   return (
     <div className="min-h-screen w-full bg-[#2b4257] font-[Roboto,sans-serif]">
       <header className="absolute left-[clamp(16px,1.5vw,24px)] top-[clamp(15px,2vw,30px)] flex items-center gap-1">
-        <img
-          src="/images/logos/talkmaze-logo-mark.png"
-          alt="TalkMaze Logo"
-          className="w-[clamp(36px,3.4vw,52px)] h-[clamp(36px,3.4vw,52px)] object-contain"
-        />
-        <span className="text-[clamp(16px,1.3vw,20px)] font-semibold">
-          <span className="text-[#65cfad]">Talk</span>
-          <span className="text-white">Maze</span>
-        </span>
+        {homeLink ? (
+          <Link
+            href={homeLink}
+            aria-label="Go to home"
+            className="flex items-center gap-1"
+          >
+            {logoContent}
+          </Link>
+        ) : (
+          logoContent
+        )}
       </header>
 
       <main className="min-h-screen flex flex-col items-center justify-center px-4">

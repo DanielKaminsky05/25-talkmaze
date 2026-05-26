@@ -1,24 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import { fullName } from "@/src/utils/formatName";
 import { ConversationClient } from "@/src/app/(protected)/(families)/message/[id]/_client";
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
 import CoachAttendanceSection from "./student-details/CoachAttendanceSection";
+import AssignCourseModal from "./AssignCourseModal";
+import RescheduleSessionModal from "./RescheduleSessionModal";
+import Pagination from "@/src/components/common/Pagination";
 import type { Message } from "@/src/lib/messaging/types";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
+type Course = Pick<
+  Database["public"]["Tables"]["courses"]["Row"],
+  "id" | "title" | "description" | "created_at"
+>;
+
+export interface CoachCourseListItem extends Course {
+  assignment: {
+    id: string;
+    isActive: boolean;
+    assigned_at: string;
+    progress: number;
+  } | null;
+}
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled";
 
-interface CoachSession {
+const PAGE_SIZE = 5;
+
+export interface CoachSession {
   id: number;
   weekday: number;
   start_time: string;
   end_time: string;
+  requested_start_time: string | null;
+  requested_end_time: string | null;
+  reschedule_status: "pending" | null;
 }
 
 interface AttendanceResponseRecord {
@@ -66,6 +87,21 @@ export default function StudentDetails({
   );
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(true);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [rescheduleTarget, setRescheduleTarget] = useState<CoachSession | null>(
+    null,
+  );
+
+  const [isAssignCourseOpen, setIsAssignCourseOpen] = useState(false);
+  const [launchingLessonSpace, setLaunchingLessonSpace] = useState(false);
+  const [courses, setCourses] = useState<CoachCourseListItem[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
 
   // Reset state when student changes
   useEffect(() => {
@@ -77,7 +113,40 @@ export default function StudentDetails({
     setAttendanceMessage(null);
     setIsScheduleOpen(true);
     setIsAttendanceOpen(true);
+    setUpcomingPage(1);
+    setAttendancePage(1);
+    setRescheduleTarget(null);
+    setIsAssignCourseOpen(false);
+    setActionMessage(null);
   }, [student?.id]);
+
+  const loadCourses = useCallback(async (studentId: string) => {
+    setCoursesLoading(true);
+    setCoursesError(null);
+    try {
+      const res = await fetch(
+        `/api/coach/courses?student_id=${studentId}`,
+      );
+      if (!res.ok) throw new Error("Failed to load courses");
+      const data = await res.json();
+      setCourses(
+        Array.isArray(data?.courses)
+          ? (data.courses as CoachCourseListItem[])
+          : [],
+      );
+    } catch (err: unknown) {
+      setCoursesError(
+        err instanceof Error ? err.message : "Failed to load courses",
+      );
+    } finally {
+      setCoursesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!student) return;
+    loadCourses(student.id);
+  }, [student?.id, loadCourses]);
 
   // Auto-open chat when requested by URL action or list action.
   useEffect(() => {
@@ -88,33 +157,38 @@ export default function StudentDetails({
   }, [autoOpenChatTarget, autoOpenChatKey, lastAutoOpenKey, student?.id]);
 
   // Fetch all sessions + existing attendance records together
+  const loadSessionsAndAttendance = useCallback(async (studentId: string) => {
+    setLoadingSchedule(true);
+    try {
+      const [sessionsData, attendanceData] = await Promise.all([
+        fetch(`/api/coach/sessions?student_id=${studentId}`).then((r) =>
+          r.ok ? r.json() : { sessions: [] as CoachSession[] },
+        ),
+        fetch(`/api/attendance?student_id=${studentId}`).then((r) =>
+          r.ok ? r.json() : { attendance: [] as AttendanceResponseRecord[] },
+        ),
+      ]);
+      setAllSessions((sessionsData.sessions ?? []) as CoachSession[]);
+
+      const map: Record<number, AttendanceStatus> = {};
+      for (const record of (attendanceData.attendance ??
+        []) as AttendanceResponseRecord[]) {
+        if (record.session_id != null) {
+          map[record.session_id] = record.status as AttendanceStatus;
+        }
+      }
+      setAttendanceBySessionId(map);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!student) return;
-    setLoadingSchedule(true);
-
-    Promise.all([
-      fetch(`/api/coach/sessions?student_id=${student.id}`).then((r) =>
-        r.ok ? r.json() : { sessions: [] as CoachSession[] },
-      ),
-      fetch(`/api/attendance?student_id=${student.id}`).then((r) =>
-        r.ok ? r.json() : { attendance: [] as AttendanceResponseRecord[] },
-      ),
-    ])
-      .then(([sessionsData, attendanceData]) => {
-        setAllSessions((sessionsData.sessions ?? []) as CoachSession[]);
-
-        const map: Record<number, AttendanceStatus> = {};
-        for (const record of (attendanceData.attendance ??
-          []) as AttendanceResponseRecord[]) {
-          if (record.session_id != null) {
-            map[record.session_id] = record.status as AttendanceStatus;
-          }
-        }
-        setAttendanceBySessionId(map);
-      })
-      .catch(console.error)
-      .finally(() => setLoadingSchedule(false));
-  }, [student?.id]);
+    loadSessionsAndAttendance(student.id);
+  }, [student?.id, loadSessionsAndAttendance]);
 
   async function handleMarkAttendance(
     session: AttendanceMarkableSession,
@@ -140,7 +214,7 @@ export default function StudentDetails({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               student_id: student.id,
-              session_date: session.start_time,
+              session_date: session.start_time.slice(0, 10),
               session_id: session.id,
             }),
           })
@@ -149,7 +223,7 @@ export default function StudentDetails({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               student_id: student.id,
-              session_date: session.start_time,
+              session_date: session.start_time.slice(0, 10),
               session_id: session.id,
               status,
             }),
@@ -186,8 +260,28 @@ export default function StudentDetails({
       if (!s.start_time) return false;
       return s.start_time < now || attendanceBySessionId[s.id] != null;
     })
-    .sort((a, b) => (a.start_time < b.start_time ? 1 : -1))
-    .slice(0, 10);
+    .sort((a, b) => (a.start_time < b.start_time ? 1 : -1));
+
+  const upcomingTotalPages = Math.max(
+    1,
+    Math.ceil(upcomingSessions.length / PAGE_SIZE),
+  );
+  const attendanceTotalPages = Math.max(
+    1,
+    Math.ceil(attendanceSessions.length / PAGE_SIZE),
+  );
+  // Clamp the current page when totals shrink (e.g. after marking the last
+  // upcoming row attended → that row moves to attendance).
+  const clampedUpcomingPage = Math.min(upcomingPage, upcomingTotalPages);
+  const clampedAttendancePage = Math.min(attendancePage, attendanceTotalPages);
+  const visibleUpcoming = upcomingSessions.slice(
+    (clampedUpcomingPage - 1) * PAGE_SIZE,
+    clampedUpcomingPage * PAGE_SIZE,
+  );
+  const visibleAttendance = attendanceSessions.slice(
+    (clampedAttendancePage - 1) * PAGE_SIZE,
+    clampedAttendancePage * PAGE_SIZE,
+  );
 
   async function openChat(
     type: "student" | "parent",
@@ -205,7 +299,9 @@ export default function StudentDetails({
       let clientId = student.id;
 
       if (type === "parent") {
-        const parentRes = await fetch(`/api/coach/students/${student.id}/parent`);
+        const parentRes = await fetch(
+          `/api/coach/students/${student.id}/parent`,
+        );
         if (!parentRes.ok) throw new Error("Could not fetch parent");
         const body = await parentRes.json();
         clientId = body?.parent?.id ?? body?.id;
@@ -222,7 +318,9 @@ export default function StudentDetails({
         `/api/coach/conversation/message?conversationId=${convId}`,
       );
       const msgsBody = msgsRes.ok ? await msgsRes.json() : null;
-      const msgs = (Array.isArray(msgsBody?.messages) ? msgsBody.messages : []) as Message[];
+      const msgs = (
+        Array.isArray(msgsBody?.messages) ? msgsBody.messages : []
+      ) as Message[];
 
       setConversationId(convId);
       setMessages(msgs);
@@ -231,6 +329,33 @@ export default function StudentDetails({
       console.error(err);
     } finally {
       setLoadingChat(false);
+    }
+  }
+
+  async function handleLessonSpace() {
+    if (!student) return;
+    setActionMessage(null);
+    setLaunchingLessonSpace(true);
+    try {
+      const res = await fetch(
+        `/api/coach/lessonspace/${currentUserId}/${student.id}`,
+      );
+      if (!res.ok) {
+        setActionMessage({
+          type: "error",
+          text: "Could not open Lesson Space. Please try again.",
+        });
+        return;
+      }
+      const { client_url } = await res.json();
+      window.open(client_url, "_blank", "noopener,noreferrer");
+    } catch {
+      setActionMessage({
+        type: "error",
+        text: "Could not open Lesson Space. Please try again.",
+      });
+    } finally {
+      setLaunchingLessonSpace(false);
     }
   }
 
@@ -329,15 +454,43 @@ export default function StudentDetails({
         ) : (
           <div className="p-6 flex-1 overflow-y-auto">
             {/* Student header */}
-            <div className="flex items-center gap-4 mb-6">
-              <StudentAvatar
-                firstName={student.first_name}
-                lastName={student.last_name}
-              />
-              <h3 className="text-xl font-bold text-gray-900">
-                {studentFullName}
-              </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <StudentAvatar
+                  firstName={student.first_name}
+                  lastName={student.last_name}
+                />
+                <h3 className="text-xl font-bold text-gray-900">
+                  {studentFullName}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
+                <button
+                  onClick={() => setIsAssignCourseOpen(true)}
+                  className="min-h-11 md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5 transition-colors"
+                >
+                  Assign Course
+                </button>
+                <button
+                  onClick={handleLessonSpace}
+                  disabled={launchingLessonSpace}
+                  className="min-h-11 md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2B4257] text-white hover:bg-[#2B4257]/80 transition-colors disabled:opacity-50"
+                >
+                  {launchingLessonSpace ? "Opening..." : "Start Video Lesson"}
+                </button>
+              </div>
             </div>
+            {actionMessage && (
+              <p
+                className={`-mt-3 mb-4 text-xs ${
+                  actionMessage.type === "error"
+                    ? "text-red-600"
+                    : "text-emerald-700"
+                }`}
+              >
+                {actionMessage.text}
+              </p>
+            )}
 
             {/* Schedule section */}
             <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-4">
@@ -371,15 +524,22 @@ export default function StudentDetails({
                       {attendanceMessage}
                     </p>
                   )}
-                  <div className="max-h-52 overflow-y-auto pr-1">
-                    <StudentSchedule
-                      sessions={upcomingSessions}
-                      loading={loadingSchedule}
-                      attendanceBySessionId={attendanceBySessionId}
-                      onMarkAttendance={handleMarkAttendance}
-                      submittingSessionId={submittingSessionId}
-                    />
-                  </div>
+                  <StudentSchedule
+                    sessions={visibleUpcoming}
+                    loading={loadingSchedule}
+                    attendanceBySessionId={attendanceBySessionId}
+                    onMarkAttendance={handleMarkAttendance}
+                    submittingSessionId={submittingSessionId}
+                    onReschedule={setRescheduleTarget}
+                  />
+                  <Pagination
+                    currentPage={clampedUpcomingPage}
+                    totalPages={upcomingTotalPages}
+                    totalItems={upcomingSessions.length}
+                    itemsPerPage={PAGE_SIZE}
+                    onPageChange={setUpcomingPage}
+                    variant="light"
+                  />
                 </>
               )}
             </div>
@@ -400,18 +560,60 @@ export default function StudentDetails({
                 />
               </button>
               {isAttendanceOpen && (
-                <CoachAttendanceSection
-                  sessions={attendanceSessions}
-                  loading={loadingSchedule}
-                  attendanceBySessionId={attendanceBySessionId}
-                  onMarkAttendance={handleMarkAttendance}
-                  submittingSessionId={submittingSessionId}
-                />
+                <>
+                  <CoachAttendanceSection
+                    sessions={visibleAttendance}
+                    loading={loadingSchedule}
+                    attendanceBySessionId={attendanceBySessionId}
+                    onMarkAttendance={handleMarkAttendance}
+                    submittingSessionId={submittingSessionId}
+                  />
+                  <Pagination
+                    currentPage={clampedAttendancePage}
+                    totalPages={attendanceTotalPages}
+                    totalItems={attendanceSessions.length}
+                    itemsPerPage={PAGE_SIZE}
+                    onPageChange={setAttendancePage}
+                    variant="light"
+                  />
+                </>
               )}
             </div>
           </div>
         )}
       </div>
+      {isAssignCourseOpen && (
+        <AssignCourseModal
+          student={student}
+          courses={courses}
+          coursesLoading={coursesLoading}
+          coursesError={coursesError}
+          setIsAssigningCourse={setIsAssignCourseOpen}
+          onAssignedMessage={(message) => setActionMessage(message)}
+          onAssigned={() => loadCourses(student.id)}
+        />
+      )}
+      {rescheduleTarget && (
+        <RescheduleSessionModal
+          session={{
+            id: rescheduleTarget.id,
+            start_time: rescheduleTarget.start_time,
+            end_time: rescheduleTarget.end_time,
+            requested_start_time: rescheduleTarget.requested_start_time,
+            requested_end_time: rescheduleTarget.requested_end_time,
+            reschedule_status: rescheduleTarget.reschedule_status,
+            students: {
+              first_name: student.first_name,
+              last_name: student.last_name,
+            },
+          }}
+          onClose={() => setRescheduleTarget(null)}
+          onSaved={async () => {
+            setRescheduleTarget(null);
+            await loadSessionsAndAttendance(student.id);
+          }}
+        />
+      )}
     </div>
   );
 }

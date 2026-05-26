@@ -12,7 +12,9 @@ export default async function ParentLessons() {
   // Fetch all students for this account
   const { data: studentsRaw } = await supabase
     .from("students")
-    .select("id, first_name, last_name, avatar_url, is_setup_complete")
+    .select(
+      "id, first_name, last_name, avatar_url, is_setup_complete, active_course_id",
+    )
     .eq("account_id", user.id);
 
   const students = studentsRaw ?? [];
@@ -30,11 +32,12 @@ export default async function ParentLessons() {
 
   const studentIds = students.map((s) => s.id);
 
-  // Fetch course assignments for all students
+  // Fetch active course assignments for all students
   const { data: assignmentsRaw } = await supabase
     .from("course_assignment")
     .select("student_id, course_id, courses(id, title)")
-    .in("student_id", studentIds);
+    .in("student_id", studentIds)
+    .eq("isActive", true);
 
   const assignments = assignmentsRaw ?? [];
 
@@ -91,8 +94,15 @@ export default async function ParentLessons() {
 
   // Assemble per-student data
   const studentCards = students.map((student) => {
-    // Take the first course assignment for this student
-    const assignment = assignments.find((a) => a.student_id === student.id);
+    // Prefer the student's active_course_id when present, otherwise fall
+    // back to the first active assignment.
+    const studentAssignments = assignments.filter(
+      (a) => a.student_id === student.id,
+    );
+    const assignment =
+      studentAssignments.find(
+        (a) => a.course_id === student.active_course_id,
+      ) ?? studentAssignments[0];
     const courseId = assignment?.course_id ?? null;
     const courseInfo = assignment?.courses as any;
     const courseName = courseInfo?.title ?? null;

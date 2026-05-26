@@ -47,6 +47,27 @@ body {
   padding: 0px;
 }
 
+:where(
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href]:not([aria-disabled="true"]),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  summary
+) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+a[href][aria-disabled="true"],
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled {
+  cursor: not-allowed;
+}
+
 /* Subtle scrollbar -thin thumb only, no track or arrows */
 ::-webkit-scrollbar {
   width: 6px;

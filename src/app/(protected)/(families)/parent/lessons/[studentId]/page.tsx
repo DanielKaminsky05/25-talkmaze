@@ -7,10 +7,15 @@ import ParentStudentLessonsClient, {
 
 interface PageProps {
   params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ course_id?: string }>;
 }
 
-export default async function ParentStudentLessonsPage({ params }: PageProps) {
+export default async function ParentStudentLessonsPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { studentId } = await params;
+  const { course_id: courseIdParam } = await searchParams;
   const supabase = await createClient();
 
   const user = await getCurrentUser();
@@ -19,7 +24,9 @@ export default async function ParentStudentLessonsPage({ params }: PageProps) {
   // Verify the student belongs to this parent's account
   const { data: student } = await supabase
     .from("students")
-    .select("id, first_name, last_name, avatar_url, account_id")
+    .select(
+      "id, first_name, last_name, avatar_url, account_id, active_course_id",
+    )
     .eq("id", studentId)
     .single();
 
@@ -33,17 +40,22 @@ export default async function ParentStudentLessonsPage({ params }: PageProps) {
       .filter(Boolean)
       .join(" ") || "Student";
 
-  // Fetch active course assignment
-  const { data: courseAssignment } = await supabase
+  // Fetch all active assignments so we know what the parent can pick from.
+  const { data: assignmentsRaw } = await supabase
     .from("course_assignment")
-    .select("course_id")
+    .select("course_id, courses(id, title)")
     .eq("student_id", studentId)
-    .limit(1)
-    .maybeSingle();
+    .eq("isActive", true);
 
-  if (!courseAssignment?.course_id) {
+  const activeAssignments = (assignmentsRaw ?? []).filter(
+    (a): a is { course_id: string; courses: { id: string; title: string } | null } =>
+      !!a.course_id,
+  );
+
+  if (activeAssignments.length === 0) {
     return (
       <ParentStudentLessonsClient
+        studentId={studentId}
         studentName={studentName}
         courseName={null}
         lessons={[]}
@@ -52,7 +64,23 @@ export default async function ParentStudentLessonsPage({ params }: PageProps) {
     );
   }
 
-  const courseId = courseAssignment.course_id as string;
+  const courseOptions = activeAssignments
+    .map((a) =>
+      a.courses
+        ? { course_id: a.course_id, course_title: a.courses.title }
+        : null,
+    )
+    .filter((o): o is { course_id: string; course_title: string } => o !== null);
+
+  // Parent's URL ?course_id wins if it points to one of the active
+  // assignments; otherwise default to the student's own active_course_id;
+  // otherwise the first active assignment.
+  const courseId =
+    activeAssignments.find((a) => a.course_id === courseIdParam)?.course_id ??
+    activeAssignments.find(
+      (a) => a.course_id === (student as any).active_course_id,
+    )?.course_id ??
+    activeAssignments[0].course_id;
 
   // Fetch course info and all lessons in parallel
   const [courseResult, lessonsResult] = await Promise.all([
@@ -152,10 +180,13 @@ export default async function ParentStudentLessonsPage({ params }: PageProps) {
 
   return (
     <ParentStudentLessonsClient
+      studentId={studentId}
       studentName={studentName}
       courseName={course?.title ?? null}
       lessons={lessons}
       progress={{ completed: completedCount, total: lessons.length }}
+      courseOptions={courseOptions}
+      activeCourseId={courseId}
     />
   );
 }

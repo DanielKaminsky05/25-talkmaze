@@ -1027,6 +1027,7 @@ export type Database = {
       students: {
         Row: {
           account_id: string
+          active_course_id: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -1049,6 +1050,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          active_course_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1071,6 +1073,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          active_course_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1097,6 +1100,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_active_course_id_fkey"
+            columns: ["active_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]

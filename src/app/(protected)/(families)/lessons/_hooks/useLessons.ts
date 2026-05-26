@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { LessonRow, TokenRow } from "../types";
 import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
+import type { CoursePickerOption } from "@/src/components/common/CoursePicker";
 
 /**
  * Fetches all data needed for the /lessons grid page.
@@ -26,6 +27,10 @@ export function useLessons() {
   // hasCourse is false when the student exists but has no assigned course
   const [hasCourse, setHasCourse] = useState(true);
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
+  const [assignments, setAssignments] = useState<CoursePickerOption[]>([]);
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   // Load the student's lessons and tokens on page mount
   useEffect(() => {
@@ -41,7 +46,7 @@ export function useLessons() {
 
         const { data: student, error: studentError } = await supabase
           .from("students")
-          .select("id, is_setup_complete")
+          .select("id, is_setup_complete, active_course_id")
           .eq("id", profile.id)
           .single();
 
@@ -53,16 +58,30 @@ export function useLessons() {
 
         setIsSetupComplete(student.is_setup_complete);
 
-        // course_assignment links a student to their enrolled course
-        const { data: course } = await supabase
+        // students.active_course_id points to the student's currently
+        // selected course (set on first assignment, switchable via picker).
+        const courseId = student.active_course_id;
+        setActiveCourseId(courseId);
+
+        // Active assignments for the course picker.
+        const { data: assignmentsRaw } = await supabase
           .from("course_assignment")
-          .select("course_id")
+          .select("course_id, courses(id, title)")
           .eq("student_id", student.id)
-          .limit(1)
-          .maybeSingle();
+          .eq("isActive", true);
+        const opts: CoursePickerOption[] = (assignmentsRaw ?? [])
+          .map((a: any) => {
+            const cid = a.course_id;
+            const title = a.courses?.title;
+            return cid && title
+              ? { course_id: cid, course_title: title }
+              : null;
+          })
+          .filter(Boolean) as CoursePickerOption[];
+        setAssignments(opts);
 
         // If student exists but no course, show the "no course assigned" state
-        if (!course) {
+        if (!courseId) {
           setHasCourse(false);
           return;
         }
@@ -74,14 +93,14 @@ export function useLessons() {
           supabase
             .from("courses")
             .select("head_lesson_id")
-            .eq("id", course.course_id as string)
+            .eq("id", courseId)
             .single(),
           supabase
             .from("lessons")
             .select(
               "id, course_id, created_at, description, title, slug, next_lesson",
             )
-            .eq("course_id", course.course_id as string),
+            .eq("course_id", courseId),
         ]);
 
         if (lessonsError) console.error("Lessons fetch error:", lessonsError);
@@ -142,7 +161,7 @@ export function useLessons() {
     }
 
     load();
-  }, [profile, router]);
+  }, [profile, router, reloadKey]);
 
   // Once lessons are loaded, fetch which ones the student has completed
   useEffect(() => {
@@ -160,8 +179,13 @@ export function useLessons() {
         .select("lesson_id, status")
         .eq("student_id", profile.id);
 
+      // Restrict the count to the current course's lessons — students may
+      // have lesson_progress rows from soft-deleted assignments to other
+      // courses, and those must not leak into this course's progress bar.
+      const currentCourseLessonIds = new Set(lessons.map((l) => l.id));
       const completedRows = (progressRows ?? []).filter(
-        (row: any) => row.status === 3,
+        (row: any) =>
+          row.status === 3 && currentCourseLessonIds.has(row.lesson_id),
       );
 
       setCompletedLessonIds(
@@ -192,5 +216,8 @@ export function useLessons() {
     hasCourse,
     isSetupComplete,
     navigateToLesson,
+    assignments,
+    activeCourseId,
+    reload,
   };
 }

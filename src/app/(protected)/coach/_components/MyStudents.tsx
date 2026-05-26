@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AssignCourseModal from "./AssignCourseModal";
+import type { CoachCourseListItem } from "./StudentDetails";
 import StudentListItem from "./students-list/StudentListItem";
 import { fullName } from "@/src/utils/formatName";
 import type { Database } from "@/src/services/supabase/types/database";
 
-type Course = Database["public"]["Tables"]["courses"]["Row"];
 type Student = Database["public"]["Tables"]["students"]["Row"];
 
 interface MyStudentsProps {
@@ -26,8 +26,8 @@ export default function MyStudents({
   onMessageClick,
   coachId,
 }: MyStudentsProps) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [courses, setCourses] = useState<CoachCourseListItem[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [isAssigningCourse, setIsAssigningCourse] = useState(false);
   const [assigningStudent, setAssigningStudent] = useState<Student | null>(
@@ -51,22 +51,33 @@ export default function MyStudents({
     text: string;
   } | null>(null);
 
-  useEffect(() => {
-    fetch("/api/coach/courses")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to load courses");
-        return r.json();
-      })
-      .then((coursesData) =>
-        setCourses(Array.isArray(coursesData?.courses) ? coursesData.courses : []),
-      )
-      .catch((err: unknown) =>
-        setCoursesError(
-          err instanceof Error ? err.message : "Failed to load courses",
-        ),
-      )
-      .finally(() => setCoursesLoading(false));
+  const loadCourses = useCallback(async (studentId: string) => {
+    setCoursesLoading(true);
+    setCoursesError(null);
+    try {
+      const res = await fetch(
+        `/api/coach/courses?student_id=${studentId}`,
+      );
+      if (!res.ok) throw new Error("Failed to load courses");
+      const data = await res.json();
+      setCourses(
+        Array.isArray(data?.courses)
+          ? (data.courses as CoachCourseListItem[])
+          : [],
+      );
+    } catch (err: unknown) {
+      setCoursesError(
+        err instanceof Error ? err.message : "Failed to load courses",
+      );
+    } finally {
+      setCoursesLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!assigningStudent) return;
+    loadCourses(assigningStudent.id);
+  }, [assigningStudent, loadCourses]);
 
   // Reset to page 1 when the search query is changed by the user (not on
   // mount). Previously this was a `useEffect(..., [search])` which fired
@@ -245,6 +256,7 @@ export default function MyStudents({
           coursesError={coursesError}
           setIsAssigningCourse={setIsAssigningCourse}
           onAssignedMessage={(message) => setPanelMessage(message)}
+          onAssigned={() => loadCourses(assigningStudent.id)}
         />
       )}
     </>
