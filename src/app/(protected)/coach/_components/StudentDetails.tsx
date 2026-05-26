@@ -14,7 +14,19 @@ import type { Message } from "@/src/lib/messaging/types";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
-type Course = Database["public"]["Tables"]["courses"]["Row"];
+type Course = Pick<
+  Database["public"]["Tables"]["courses"]["Row"],
+  "id" | "title" | "description" | "created_at"
+>;
+
+export interface CoachCourseListItem extends Course {
+  assignment: {
+    id: string;
+    isActive: boolean;
+    assigned_at: string;
+    progress: number;
+  } | null;
+}
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled";
 
@@ -83,8 +95,8 @@ export default function StudentDetails({
 
   const [isAssignCourseOpen, setIsAssignCourseOpen] = useState(false);
   const [launchingLessonSpace, setLaunchingLessonSpace] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [courses, setCourses] = useState<CoachCourseListItem[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{
     type: "error" | "success";
@@ -108,22 +120,33 @@ export default function StudentDetails({
     setActionMessage(null);
   }, [student?.id]);
 
-  useEffect(() => {
-    fetch("/api/coach/courses")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to load courses");
-        return r.json();
-      })
-      .then((data) =>
-        setCourses(Array.isArray(data?.courses) ? data.courses : []),
-      )
-      .catch((err: unknown) =>
-        setCoursesError(
-          err instanceof Error ? err.message : "Failed to load courses",
-        ),
-      )
-      .finally(() => setCoursesLoading(false));
+  const loadCourses = useCallback(async (studentId: string) => {
+    setCoursesLoading(true);
+    setCoursesError(null);
+    try {
+      const res = await fetch(
+        `/api/coach/courses?student_id=${studentId}`,
+      );
+      if (!res.ok) throw new Error("Failed to load courses");
+      const data = await res.json();
+      setCourses(
+        Array.isArray(data?.courses)
+          ? (data.courses as CoachCourseListItem[])
+          : [],
+      );
+    } catch (err: unknown) {
+      setCoursesError(
+        err instanceof Error ? err.message : "Failed to load courses",
+      );
+    } finally {
+      setCoursesLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!student) return;
+    loadCourses(student.id);
+  }, [student?.id, loadCourses]);
 
   // Auto-open chat when requested by URL action or list action.
   useEffect(() => {
@@ -567,6 +590,7 @@ export default function StudentDetails({
           coursesError={coursesError}
           setIsAssigningCourse={setIsAssignCourseOpen}
           onAssignedMessage={(message) => setActionMessage(message)}
+          onAssigned={() => loadCourses(student.id)}
         />
       )}
       {rescheduleTarget && (

@@ -63,36 +63,40 @@ export function useLessonDetail(slug: string) {
 
         const studentId = profile.id;
 
-        // Fetch the student's course assignment to scope the lesson lookup
-        const { data: course } = await supabase
+        // Scope: lessons under any of the student's actively-assigned
+        // courses. With multi-course support the student may have more than
+        // one active assignment, so we no longer pre-pick a single course.
+        const { data: assignments } = await supabase
           .from("course_assignment")
           .select("course_id")
           .eq("student_id", studentId)
-          .limit(1)
-          .maybeSingle();
+          .eq("isActive", true);
 
-        // If no course assigned send back to the lessons list
-        if (!course) {
+        const enrolledCourseIds = (assignments ?? [])
+          .map((a) => a.course_id)
+          .filter((id): id is string => !!id);
+
+        if (enrolledCourseIds.length === 0) {
           router.push("/lessons");
           return;
         }
 
-        const courseId = course.course_id!;
-
-        // Lookup lesson by slug, fall back to id for lessons without a slug
+        // Resolve the lesson by slug first (then id), then take its
+        // course_id. Keeps lesson URLs stable even when the student switches
+        // their active course mid-view.
         let { data: lessonData } = await supabase
           .from("lessons")
           .select(LESSON_SELECT)
-          .eq("course_id", courseId)
           .eq("slug", slug)
+          .in("course_id", enrolledCourseIds)
           .maybeSingle();
 
         if (!lessonData) {
           const { data: byId } = await supabase
             .from("lessons")
             .select(LESSON_SELECT)
-            .eq("course_id", courseId)
             .eq("id", slug)
+            .in("course_id", enrolledCourseIds)
             .maybeSingle();
           lessonData = byId;
         }
@@ -102,6 +106,7 @@ export function useLessonDetail(slug: string) {
           return;
         }
 
+        const courseId = lessonData.course_id as string;
         setLesson(lessonData as LessonDetailRow);
 
         // Resolve slideshow URL
@@ -210,9 +215,17 @@ export function useLessonDetail(slug: string) {
           thisLessonProgress?.improvement_feedback ?? null,
         );
 
+        // Restrict completions to lessons in this course — soft-deleted
+        // assignments leave behind lesson_progress rows that would otherwise
+        // inflate the count and corrupt the "first incomplete" lock logic.
+        const courseLessonIds = new Set(lessons.map((l) => l.id));
         const completedIds = new Set(
           (progressRows ?? [])
-            .filter((row: any) => row.status === 3)
+            .filter(
+              (row: any) =>
+                row.status === 3 &&
+                courseLessonIds.has(row.lesson_id as string),
+            )
             .map((row: any) => row.lesson_id as string),
         );
         const completed = completedIds.size;

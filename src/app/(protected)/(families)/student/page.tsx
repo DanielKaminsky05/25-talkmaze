@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import PageSpinner from "@/src/components/ui/PageSpinner";
 import LessonProgressBar from "@/src/app/(protected)/(families)/_components/LessonProgressBar";
 import TokenBar from "@/src/app/(protected)/(families)/_components/TokensBar";
+import CoursePicker from "@/src/components/common/CoursePicker";
+import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 import ReviewLessonCard from "./_components/ReviewLesson";
 import NextLessonCard from "./_components/UpNextLesson";
 import ScheduleList from "../_components/upcoming-schedule/ScheduleList";
@@ -16,6 +18,7 @@ function lessonPath(lesson: { slug: string | null; id: string }) {
 
 export default function Home() {
   const router = useRouter();
+  const profile = useActiveProfile();
   const {
     loading,
     isSetupComplete,
@@ -27,6 +30,9 @@ export default function Home() {
     courseTokens,
     earnedTokenIds,
     courseBadgeUrl,
+    assignments,
+    activeCourseId,
+    reload,
   } = useHomeData();
 
   if (loading) {
@@ -35,6 +41,17 @@ export default function Home() {
 
   return (
     <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 2xl:px-24 mx-auto">
+      {profile?.type === "student" && assignments.length > 1 && (
+        <div className="mb-4">
+          <CoursePicker
+            studentId={profile.id}
+            options={assignments}
+            activeCourseId={activeCourseId}
+            persist
+            onChange={reload}
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 w-full xl:h-full">
         <div className="flex flex-col gap-6 w-full xl:h-full min-h-0">
           <LessonProgressBar

@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import LessonCard from "@/src/app/(protected)/(families)/lessons/_components/LessonCard";
 import ProgressCard from "@/src/app/(protected)/(families)/lessons/_components/ProgressCard";
 import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
+import CoursePicker, {
+  type CoursePickerOption,
+} from "@/src/components/common/CoursePicker";
 
 export interface LessonProp {
   id: string;
@@ -20,18 +24,26 @@ export interface LessonProp {
 }
 
 interface Props {
+  studentId: string;
   studentName: string;
   courseName: string | null;
   lessons: LessonProp[];
   progress: { completed: number; total: number };
+  courseOptions?: CoursePickerOption[];
+  activeCourseId?: string | null;
 }
 
 export default function ParentStudentLessonsClient({
+  studentId,
   studentName,
   courseName,
   lessons,
   progress,
+  courseOptions = [],
+  activeCourseId = null,
 }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [selectedLesson, setSelectedLesson] = useState<LessonProp | null>(null);
 
   return (
@@ -59,13 +71,24 @@ export default function ParentStudentLessonsClient({
         <span className="text-white/30">/</span>
         <h1 className="text-white text-xl font-bold">
           {studentName}&apos;s Lessons
-          {courseName && (
+          {courseName && courseOptions.length <= 1 && (
             <span className="ml-2 text-sm font-normal text-white/50">
               {courseName}
             </span>
           )}
         </h1>
       </div>
+
+      {courseOptions.length > 1 && (
+        <CoursePicker
+          studentId={studentId}
+          options={courseOptions}
+          activeCourseId={activeCourseId}
+          onChange={(courseId) =>
+            router.push(`${pathname}?course_id=${courseId}`)
+          }
+        />
+      )}
 
       {lessons.length === 0 ? (
         <div className="bg-[#2B4257]/40 backdrop-blur-md rounded-3xl p-6 sm:p-12 flex flex-col items-center text-center gap-4 border border-[#B1E7D6]/20">
