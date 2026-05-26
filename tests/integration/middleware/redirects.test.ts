@@ -20,7 +20,7 @@ import {
   createSubscription,
   createPlan,
 } from "@tests/helpers/factories";
-import { signSessionFor, ANON } from "@tests/helpers/auth";
+import { signSessionFor } from "@tests/helpers/auth";
 import { middleware } from "@/src/middleware";
 
 // ── Request builder ───────────────────────────────────────────────────────────
@@ -362,26 +362,36 @@ describe("/payments accessibility", () => {
 });
 
 // ── Cross-profile-type access ─────────────────────────────────────────────────
-// The middleware checks the subscription gate for /student when profile type is
-// "student", but it does not currently block a student profile from hitting
-// /parent or vice versa. These tests document the current pass-through behaviour.
-// If cross-profile access should be blocked, add explicit checks here.
+// Family users can switch between parent/student profiles, but the active
+// profile type must match the route namespace currently being visited.
 
-describe("cross-profile-type access (currently unguarded)", () => {
-  it("student profile type can reach /parent (middleware does not block cross-profile access)", async () => {
+describe("cross-profile-type access", () => {
+  it("redirects student profile type away from /parent to /student", async () => {
     const cookies = withProfile(regularCookies, studentId, "student");
     const res = await middleware(makeReq("/parent", cookies));
-    // No redirect expected — middleware has no cross-profile guard today
-    expect(res.headers.get("location") ?? "").not.toContain("/student");
-    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/student");
   });
 
-  it("parent profile type can reach /student (middleware does not block cross-profile access)", async () => {
+  it("redirects student profile type away from nested /parent routes to /student", async () => {
+    const cookies = withProfile(regularCookies, studentId, "student");
+    const res = await middleware(makeReq("/parent/sessions", cookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/student");
+  });
+
+  it("redirects parent profile type away from /student to /parent", async () => {
     const cookies = withProfile(regularCookies, studentId, "parent");
     const res = await middleware(makeReq("/student", cookies));
-    // Subscription gate only fires for profile type "student", so parent passes through
-    expect(res.headers.get("location") ?? "").not.toContain("/payments");
-    expect(res.headers.get("location") ?? "").not.toContain("/profiles");
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/parent");
+  });
+
+  it("redirects parent profile type away from nested /student routes to /parent", async () => {
+    const cookies = withProfile(regularCookies, studentId, "parent");
+    const res = await middleware(makeReq("/student/profile", cookies));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/parent");
   });
 });
 

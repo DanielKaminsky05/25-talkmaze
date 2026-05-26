@@ -16,7 +16,9 @@ import { createServerClient } from "@supabase/ssr";
  *   5. Profile-locked routes: regular users without an active profile cookie
  *      are routed to /profiles. /profiles, /onboarding, /payments, and
  *      /reset-password are carved out (reachable without a profile cookie).
- *   6. Subscription gate: student profile without active subscription →
+ *   6. Profile-type gate: student profiles stay under /student; parent
+ *      profiles stay under /parent.
+ *   7. Subscription gate: student profile without active subscription →
  *      /payments.
  */
 export async function middleware(request: NextRequest) {
@@ -45,6 +47,10 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/_next") &&
     pathname !== "/";
+  const isParentRoute =
+    pathname === "/parent" || pathname.startsWith("/parent/");
+  const isStudentRoute =
+    pathname === "/student" || pathname.startsWith("/student/");
 
   // Create Supabase client (used by all subsequent role/profile checks).
   const supabase = createServerClient(
@@ -128,11 +134,21 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Active profile type must match the family route namespace.
+    if (activeProfileType === "student" && isParentRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/student";
+      return NextResponse.redirect(url);
+    }
+
+    if (activeProfileType === "parent" && isStudentRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/parent";
+      return NextResponse.redirect(url);
+    }
+
     // Subscription gate for student profiles on /student/**.
-    if (
-      activeProfileType === "student" &&
-      pathname.startsWith("/student")
-    ) {
+    if (activeProfileType === "student" && isStudentRoute) {
       const { data: subscriptions } = await supabase
         .from("student_subscriptions")
         .select("id")
