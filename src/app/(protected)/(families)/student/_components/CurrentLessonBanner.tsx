@@ -7,6 +7,7 @@ interface CurrentLessonBannerProps {
   lesson: HomeLesson | null;
   courseBadgeUrl?: string | null;
   isSetupComplete?: boolean | null;
+  hasCourse?: boolean;
   onClick?: () => void;
 }
 
@@ -14,6 +15,7 @@ export default function CurrentLessonBanner({
   lesson,
   courseBadgeUrl,
   isSetupComplete,
+  hasCourse,
   onClick,
 }: CurrentLessonBannerProps) {
   if (!lesson) {
@@ -27,6 +29,22 @@ export default function CurrentLessonBanner({
             <p className="text-[#B1E7D6]/80 font-medium text-sm max-w-sm">
               Ask your parent to enter the parent dashboard and complete your
               profile setup so we can match you with a coach.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!hasCourse) {
+      return (
+        <div className="w-full h-full rounded-2xl bg-[#7564C0] flex items-center justify-center gap-8 px-10">
+          <div className="flex flex-col gap-2 text-center">
+            <p className="text-white font-extrabold text-3xl tracking-wide">
+              No Course Assigned
+            </p>
+            <p className="text-white/80 font-medium text-sm max-w-sm">
+              Your coach hasn&apos;t assigned a course yet. Check back soon — it
+              will appear here once it&apos;s ready.
             </p>
           </div>
         </div>

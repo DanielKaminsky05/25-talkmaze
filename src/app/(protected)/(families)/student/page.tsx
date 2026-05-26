@@ -64,6 +64,7 @@ export default function Home() {
               lesson={currentLesson}
               courseBadgeUrl={courseBadgeUrl}
               isSetupComplete={isSetupComplete}
+              hasCourse={Boolean(activeCourseId)}
               onClick={
                 currentLesson
                   ? () => router.push(lessonPath(currentLesson))
