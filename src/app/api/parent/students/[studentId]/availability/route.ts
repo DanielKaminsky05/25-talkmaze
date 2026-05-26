@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/src/lib/auth/server/requireRole";
 import { assertOwnsStudent } from "@/src/lib/auth/server/ownership";
+import { timeZoneSchema } from "@/src/lib/scheduling/schemas";
 
 const DAY_MAP: Record<string, number> = {
   Sunday: 0,
@@ -21,7 +22,7 @@ const PutBodySchema = z
       z.string(),
       z.array(z.object({ start: z.string(), end: z.string() })),
     ),
-    timezone: z.string(),
+    timezone: timeZoneSchema,
   })
   .strict();
 

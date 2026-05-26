@@ -5,6 +5,11 @@ import { X } from "lucide-react";
 import type { StudentProp } from "./ParentSessionsClient";
 import { WEEKDAYS } from "@/src/lib/scheduling/types";
 import { availabilityFormSchema } from "@/src/lib/scheduling/schemas";
+import {
+  DEFAULT_TIME_ZONE,
+  detectBrowserTimeZone,
+  normalizeTimeZone,
+} from "@/src/lib/scheduling/timezones";
 import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
 import WeeklyAvailabilityEditor, {
   WeeklyAvailabilityValue,
@@ -33,7 +38,7 @@ export default function AvailabilityModal({
     initialStudentId ?? students[0]?.id ?? "",
   );
   const [availability, setAvailability] = useState<WeeklyAvailabilityValue>({});
-  const [timezone, setTimezone] = useState("America/Toronto");
+  const [timezone, setTimezone] = useState(DEFAULT_TIME_ZONE);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -42,42 +47,64 @@ export default function AvailabilityModal({
 
   useEffect(() => {
     if (!selectedStudentId) return;
-    setLoading(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-    setErrors({});
 
-    fetch(`/api/parent/students/${selectedStudentId}/availability`)
-      .then((r) => r.json())
-      .then(
-        (body: {
-          availability?: {
-            weekday: number;
-            start_time: string;
-            end_time: string;
-            timezone: string;
-          }[];
-        }) => {
-          const rows = Array.isArray(body?.availability)
-            ? body.availability
-            : [];
-          const mapped: WeeklyAvailabilityValue = {};
-          rows.forEach(({ weekday, start_time, end_time, timezone: tz }) => {
-            // DB stores weekday Sunday-first (0..6); WEEKDAYS is Monday-first.
-            // Shift by +6 mod 7 to translate: Sun(0)→idx 6, Mon(1)→idx 0, etc.
-            const day = WEEKDAYS[(weekday + 6) % 7];
-            // start_time/end_time are ISO timestamps like "1970-01-01T14:30:00Z";
-            // slice out just the "HH:mm" portion that <input type="time"> expects.
-            const start = start_time.slice(11, 16);
-            const end = end_time.slice(11, 16);
-            if (!mapped[day]) mapped[day] = [];
-            mapped[day].push({ start, end });
-            setTimezone(tz);
-          });
-          setAvailability(mapped);
-        },
-      )
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      setLoading(true);
+      setSaveError(null);
+      setSaveSuccess(false);
+      setErrors({});
+
+      fetch(`/api/parent/students/${selectedStudentId}/availability`)
+        .then((r) => r.json())
+        .then(
+          (body: {
+            availability?: {
+              weekday: number;
+              start_time: string;
+              end_time: string;
+              timezone: string;
+            }[];
+          }) => {
+            if (cancelled) return;
+
+            const rows = Array.isArray(body?.availability)
+              ? body.availability
+              : [];
+            const mapped: WeeklyAvailabilityValue = {};
+            const savedTimeZone = rows.reduce<string | null>(
+              (found, row) => found ?? normalizeTimeZone(row.timezone),
+              null,
+            );
+
+            setTimezone(savedTimeZone ?? detectBrowserTimeZone());
+
+            rows.forEach(({ weekday, start_time, end_time }) => {
+              // DB stores weekday Sunday-first (0..6); WEEKDAYS is Monday-first.
+              // Shift by +6 mod 7 to translate: Sun(0)→idx 6, Mon(1)→idx 0, etc.
+              const day = WEEKDAYS[(weekday + 6) % 7];
+              // start_time/end_time are ISO timestamps like "1970-01-01T14:30:00Z";
+              // slice out just the "HH:mm" portion that <input type="time"> expects.
+              const start = start_time.slice(11, 16);
+              const end = end_time.slice(11, 16);
+              if (!mapped[day]) mapped[day] = [];
+              mapped[day].push({ start, end });
+            });
+            setAvailability(mapped);
+          },
+        )
+        .catch(() => {
+          // Keep the existing quiet failure behavior; the save path surfaces errors.
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [selectedStudentId]);
 
   /**
@@ -104,6 +131,8 @@ export default function AvailabilityModal({
       return;
     }
     setErrors({});
+    const timeZoneToSave = parsed.data.timeZone;
+    setTimezone(timeZoneToSave);
     setSaving(true);
 
     const res = await fetch(
@@ -111,7 +140,7 @@ export default function AvailabilityModal({
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availability, timezone }),
+        body: JSON.stringify({ availability, timezone: timeZoneToSave }),
       },
     );
 

@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { assignCoachToStudent } from "@/src/lib/scheduling/server/matchmaking";
-import { OnboardingTimeZone } from "@/src/lib/scheduling/types";
+import { normalizeTimeZone } from "@/src/lib/scheduling/timezones";
 import { buildAvailabilityRows } from "@/src/lib/scheduling/server/availability";
 import { setProfileCookies } from "@/src/lib/profiles/server/profileCookies";
 
@@ -13,7 +13,7 @@ export async function completeStudentSetup(
   studentId: string,
   grade: number,
   notes: string,
-  timezone: OnboardingTimeZone,
+  timezone: string,
   weeklyAvailability: Record<string, { start: string; end: string }[]>,
   destination: "parent" | "student" = "parent",
   avatarUrl?: string,
@@ -32,6 +32,11 @@ export async function completeStudentSetup(
 
   if (!student) {
     return { success: false, error: "Student not found" };
+  }
+
+  const normalizedTimeZone = normalizeTimeZone(timezone);
+  if (!normalizedTimeZone) {
+    return { success: false, error: "Invalid time zone" };
   }
 
   // Update student profile fields and mark setup as complete
@@ -59,7 +64,7 @@ export async function completeStudentSetup(
   const availabilityRows = buildAvailabilityRows({
     studentId,
     weeklyAvailability,
-    timeZone: timezone,
+    timeZone: normalizedTimeZone,
   });
 
   if (availabilityRows.length > 0) {

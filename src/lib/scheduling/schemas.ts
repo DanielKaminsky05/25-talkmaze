@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidTimeZone, normalizeTimeZone } from "./timezones";
 
 /**
  * Body for POST /api/parent/sessions/[id]/reschedule-request. Both fields are
@@ -43,11 +44,20 @@ export const weeklyAvailabilitySchema = z
     { message: "Please ensure all selected days have valid time slots" },
   );
 
+export const timeZoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Time zone is required")
+  .refine((value) => isValidTimeZone(value), {
+    message: "Please select a valid time zone",
+  })
+  .transform((value) => normalizeTimeZone(value) ?? value);
+
 /**
  * Top-level form schema for surfaces that submit availability together with the
  * student's timezone.
  */
 export const availabilityFormSchema = z.object({
   availability: weeklyAvailabilitySchema,
-  timeZone: z.string().min(1, "Time zone is required"),
+  timeZone: timeZoneSchema,
 });

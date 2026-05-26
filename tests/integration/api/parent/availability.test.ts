@@ -18,7 +18,6 @@ import {
   afterAll,
   beforeEach,
 } from "vitest";
-import { createClient } from "@supabase/supabase-js";
 import {
   createAccount,
   createStudent,
@@ -169,6 +168,17 @@ describe("PUT /api/parent/students/[studentId]/availability — input validation
     });
     expect(res.status).toBe(400);
   });
+
+  it("returns 400 when timezone is not a valid IANA name", async () => {
+    const { cookies, student } = await seedOwnerWithStudent();
+    const res = await call(PUT, {
+      method: "PUT",
+      cookies,
+      params: { studentId: student.id },
+      body: { ...VALID_PUT_BODY, timezone: "Mars/Base" },
+    });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("PUT /api/parent/students/[studentId]/availability — response + side effects", () => {
@@ -199,5 +209,23 @@ describe("PUT /api/parent/students/[studentId]/availability — response + side 
       weekday: 1, // Monday
     });
     expect(row).toBeTruthy();
+  });
+
+  it("accepts and persists a valid global IANA timezone", async () => {
+    const { cookies, student } = await seedOwnerWithStudent();
+    const res = await call(PUT, {
+      method: "PUT",
+      cookies,
+      params: { studentId: student.id },
+      body: { ...VALID_PUT_BODY, timezone: "Europe/London" },
+    });
+
+    expect(res.status).toBe(200);
+
+    const row = await expectRowExists("student_availabilities", {
+      student_id: student.id,
+      weekday: 1,
+    });
+    expect(row.timezone).toBe("Europe/London");
   });
 });
