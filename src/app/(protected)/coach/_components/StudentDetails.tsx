@@ -7,10 +7,12 @@ import { ConversationClient } from "@/src/app/(protected)/(families)/message/[id
 import StudentAvatar from "./student-details/StudentAvatar";
 import StudentSchedule from "./student-details/StudentSchedule";
 import CoachAttendanceSection from "./student-details/CoachAttendanceSection";
+import AssignCourseModal from "./AssignCourseModal";
 import type { Message } from "@/src/lib/messaging/types";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];
+type Course = Database["public"]["Tables"]["courses"]["Row"];
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled";
 
@@ -67,6 +69,16 @@ export default function StudentDetails({
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(true);
 
+  const [isAssignCourseOpen, setIsAssignCourseOpen] = useState(false);
+  const [launchingLessonSpace, setLaunchingLessonSpace] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
   // Reset state when student changes
   useEffect(() => {
     setActiveChat(null);
@@ -77,7 +89,26 @@ export default function StudentDetails({
     setAttendanceMessage(null);
     setIsScheduleOpen(true);
     setIsAttendanceOpen(true);
+    setIsAssignCourseOpen(false);
+    setActionMessage(null);
   }, [student?.id]);
+
+  useEffect(() => {
+    fetch("/api/coach/courses")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load courses");
+        return r.json();
+      })
+      .then((data) =>
+        setCourses(Array.isArray(data?.courses) ? data.courses : []),
+      )
+      .catch((err: unknown) =>
+        setCoursesError(
+          err instanceof Error ? err.message : "Failed to load courses",
+        ),
+      )
+      .finally(() => setCoursesLoading(false));
+  }, []);
 
   // Auto-open chat when requested by URL action or list action.
   useEffect(() => {
@@ -140,7 +171,7 @@ export default function StudentDetails({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               student_id: student.id,
-              session_date: session.start_time,
+              session_date: session.start_time.slice(0, 10),
               session_id: session.id,
             }),
           })
@@ -149,7 +180,7 @@ export default function StudentDetails({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               student_id: student.id,
-              session_date: session.start_time,
+              session_date: session.start_time.slice(0, 10),
               session_id: session.id,
               status,
             }),
@@ -205,7 +236,9 @@ export default function StudentDetails({
       let clientId = student.id;
 
       if (type === "parent") {
-        const parentRes = await fetch(`/api/coach/students/${student.id}/parent`);
+        const parentRes = await fetch(
+          `/api/coach/students/${student.id}/parent`,
+        );
         if (!parentRes.ok) throw new Error("Could not fetch parent");
         const body = await parentRes.json();
         clientId = body?.parent?.id ?? body?.id;
@@ -222,7 +255,9 @@ export default function StudentDetails({
         `/api/coach/conversation/message?conversationId=${convId}`,
       );
       const msgsBody = msgsRes.ok ? await msgsRes.json() : null;
-      const msgs = (Array.isArray(msgsBody?.messages) ? msgsBody.messages : []) as Message[];
+      const msgs = (
+        Array.isArray(msgsBody?.messages) ? msgsBody.messages : []
+      ) as Message[];
 
       setConversationId(convId);
       setMessages(msgs);
@@ -231,6 +266,33 @@ export default function StudentDetails({
       console.error(err);
     } finally {
       setLoadingChat(false);
+    }
+  }
+
+  async function handleLessonSpace() {
+    if (!student) return;
+    setActionMessage(null);
+    setLaunchingLessonSpace(true);
+    try {
+      const res = await fetch(
+        `/api/coach/lessonspace/${currentUserId}/${student.id}`,
+      );
+      if (!res.ok) {
+        setActionMessage({
+          type: "error",
+          text: "Could not open Lesson Space. Please try again.",
+        });
+        return;
+      }
+      const { client_url } = await res.json();
+      window.open(client_url, "_blank", "noopener,noreferrer");
+    } catch {
+      setActionMessage({
+        type: "error",
+        text: "Could not open Lesson Space. Please try again.",
+      });
+    } finally {
+      setLaunchingLessonSpace(false);
     }
   }
 
@@ -329,15 +391,43 @@ export default function StudentDetails({
         ) : (
           <div className="p-6 flex-1 overflow-y-auto">
             {/* Student header */}
-            <div className="flex items-center gap-4 mb-6">
-              <StudentAvatar
-                firstName={student.first_name}
-                lastName={student.last_name}
-              />
-              <h3 className="text-xl font-bold text-gray-900">
-                {studentFullName}
-              </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <StudentAvatar
+                  firstName={student.first_name}
+                  lastName={student.last_name}
+                />
+                <h3 className="text-xl font-bold text-gray-900">
+                  {studentFullName}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
+                <button
+                  onClick={() => setIsAssignCourseOpen(true)}
+                  className="min-h-11 md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#2B4257]/25 text-[#2B4257] hover:bg-[#2B4257]/5 transition-colors"
+                >
+                  Assign Course
+                </button>
+                <button
+                  onClick={handleLessonSpace}
+                  disabled={launchingLessonSpace}
+                  className="min-h-11 md:min-h-0 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2B4257] text-white hover:bg-[#2B4257]/80 transition-colors disabled:opacity-50"
+                >
+                  {launchingLessonSpace ? "Opening..." : "Start Video Lesson"}
+                </button>
+              </div>
             </div>
+            {actionMessage && (
+              <p
+                className={`-mt-3 mb-4 text-xs ${
+                  actionMessage.type === "error"
+                    ? "text-red-600"
+                    : "text-emerald-700"
+                }`}
+              >
+                {actionMessage.text}
+              </p>
+            )}
 
             {/* Schedule section */}
             <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-4">
@@ -412,6 +502,16 @@ export default function StudentDetails({
           </div>
         )}
       </div>
+      {isAssignCourseOpen && (
+        <AssignCourseModal
+          student={student}
+          courses={courses}
+          coursesLoading={coursesLoading}
+          coursesError={coursesError}
+          setIsAssigningCourse={setIsAssignCourseOpen}
+          onAssignedMessage={(message) => setActionMessage(message)}
+        />
+      )}
     </div>
   );
 }
