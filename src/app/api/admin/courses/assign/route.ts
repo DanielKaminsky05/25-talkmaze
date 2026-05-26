@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         { status: result.status },
       );
     }
-    return NextResponse.json({ success: true, action: result.action });
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("courses/assign error", err);
     return NextResponse.json(
