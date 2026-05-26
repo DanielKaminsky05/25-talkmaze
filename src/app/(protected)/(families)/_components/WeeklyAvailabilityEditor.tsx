@@ -1,6 +1,7 @@
 "use client";
 
-import { TIME_ZONES, WEEKDAYS } from "@/src/lib/scheduling/types";
+import { WEEKDAYS } from "@/src/lib/scheduling/types";
+import TimeZoneSelect from "./TimeZoneSelect";
 
 /** Single contiguous availability window within a day, in "HH:mm" localtime. */
 export type AvailabilitySlot = { start: string; end: string };
@@ -80,40 +81,11 @@ export default function WeeklyAvailabilityEditor({
     <div className="flex flex-col gap-4">
       {/* Timezone picker */}
       {onTimezoneChange && (
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-[#A8A8A8]">Time Zone</label>
-          <div className="relative h-[52px]">
-            <select
-              value={timezone ?? ""}
-              onChange={(e) => onTimezoneChange(e.target.value)}
-              className={`w-full h-full px-4 text-[18px] text-[#1F2E3B] border bg-white appearance-none cursor-pointer rounded-lg ${errors?.timeZone ? "border-red-500" : "border-[#1F2E3B]/20"}`}
-            >
-              {TIME_ZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
-              <svg
-                className="w-4 h-4 text-[#1F2E3B]/60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </div>
-          {errors?.timeZone && (
-            <p className="text-red-500 text-xs">{errors.timeZone}</p>
-          )}
-        </div>
+        <TimeZoneSelect
+          value={timezone}
+          onChange={onTimezoneChange}
+          error={errors?.timeZone}
+        />
       )}
 
       {/* Validation error display */}

@@ -2,6 +2,7 @@ export type Contact = {
   id: string;
   name: string;
   email: string;
+  avatar_url: string | null;
 };
 
 export type Message = {

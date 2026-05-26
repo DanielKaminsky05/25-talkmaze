@@ -1,13 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import Image from "next/image";
 import { completeStudentSetup } from "../actions";
-import { OnboardingTimeZone, TIME_ZONES } from "@/src/lib/scheduling/types";
-import { weeklyAvailabilitySchema } from "@/src/lib/scheduling/schemas";
+import {
+  timeZoneSchema,
+  weeklyAvailabilitySchema,
+} from "@/src/lib/scheduling/schemas";
+import {
+  DEFAULT_TIME_ZONE,
+  detectBrowserTimeZone,
+} from "@/src/lib/scheduling/timezones";
 import { createClient } from "@/src/services/supabase/client";
+import TimeZoneSelect from "../../_components/TimeZoneSelect";
 import WeeklyAvailabilityEditor, {
   WeeklyAvailabilityValue,
 } from "../../_components/WeeklyAvailabilityEditor";
@@ -26,7 +33,7 @@ interface Props {
  */
 const setupSchema = z.object({
   grade: z.number().min(1, "Please select a grade"),
-  timeZone: z.string().min(1, "Time zone is required"),
+  timeZone: timeZoneSchema,
   availability: weeklyAvailabilitySchema,
 });
 
@@ -47,13 +54,20 @@ export default function StudentSetupForm({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [grade, setGrade] = useState<number>(1);
-  const [timeZone, setTimeZone] =
-    useState<OnboardingTimeZone>("America/Toronto");
+  const [timeZone, setTimeZone] = useState(DEFAULT_TIME_ZONE);
   const [notes, setNotes] = useState("");
   const [weeklyAvailability, setWeeklyAvailability] =
     useState<WeeklyAvailabilityValue>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setTimeZone(detectBrowserTimeZone());
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const validatePage1 = () => {
     const result = setupSchema
@@ -219,48 +233,19 @@ export default function StudentSetupForm({
               )}
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-[#A8A8A8]">Time Zone</label>
-              <div className="relative h-[52px]">
-                <select
-                  value={timeZone}
-                  onChange={(e) => {
-                    setTimeZone(e.target.value as OnboardingTimeZone);
-                    if (errors.timeZone)
-                      setErrors((p) => {
-                        const n = { ...p };
-                        delete n.timeZone;
-                        return n;
-                      });
-                  }}
-                  className={`w-full h-full px-4 text-[18px] text-[#1F2E3B] border bg-white appearance-none cursor-pointer rounded-lg ${errors.timeZone ? "border-red-500" : "border-[#1F2E3B]/20"}`}
-                >
-                  {TIME_ZONES.map((tz) => (
-                    <option key={tz} value={tz}>
-                      {tz}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
-                  <svg
-                    className="w-4 h-4 text-[#1F2E3B]/60"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-              {errors.timeZone && (
-                <p className="text-red-500 text-xs">{errors.timeZone}</p>
-              )}
-            </div>
+            <TimeZoneSelect
+              value={timeZone}
+              onChange={(next) => {
+                setTimeZone(next);
+                if (errors.timeZone)
+                  setErrors((p) => {
+                    const n = { ...p };
+                    delete n.timeZone;
+                    return n;
+                  });
+              }}
+              error={errors.timeZone}
+            />
 
             <div className="flex flex-col gap-1">
               <label className="text-sm text-[#A8A8A8]">
