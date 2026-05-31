@@ -135,7 +135,7 @@ function useRealtimeChat({ roomId }: { roomId: string; userId: string }) {
 
       newChannel = supabase.channel(`room:${roomId}:messages`, {
         config: {
-          private: false, // TODO: implement so that it works with private channels
+          private: true,
         },
       });
 
