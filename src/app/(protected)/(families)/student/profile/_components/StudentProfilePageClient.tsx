@@ -5,6 +5,7 @@ import Image from "next/image";
 import { createClient } from "@/src/services/supabase/client";
 import { updateStudentInfo } from "../actions";
 import { CaretIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 
 type StudentData = {
   id: string;
@@ -34,13 +35,12 @@ export default function StudentProfilePageClient({
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col">
       <header className="top-0 z-10 bg-[#2b4257] px-8 py-5 flex items-center">
-        <a
-          href="/student"
-          className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
-        >
-          <CaretIcon direction="left" />
-          Return to Dashboard
-        </a>
+        <Button asChild variant="dark" size="lg" rounded="full" shadow>
+          <a href="/student">
+            <CaretIcon direction="left" />
+            Return to Dashboard
+          </a>
+        </Button>
       </header>
 
       <main className="bg-[#1f2e3b] rounded-3xl mx-8 mb-10 flex-1 px-10 py-8 xl:px-16">
@@ -231,20 +231,12 @@ function LeftPanel({ student }: { student: StudentData }) {
               Use this photo?
             </p>
             <div className="flex gap-2 w-full">
-              <button
-                onClick={handleCancelPreview}
-                disabled={uploading}
-                className="flex-1 text-gray-400 hover:text-white text-sm py-1.5 border border-gray-600 rounded-lg transition-colors disabled:opacity-50"
-              >
+              <Button variant="outline" size="sm" onClick={handleCancelPreview} disabled={uploading} className="flex-1">
                 Cancel
-              </button>
-              <button
-                onClick={handleConfirmUpload}
-                disabled={uploading}
-                className="flex-1 bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm py-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="default" size="sm" onClick={handleConfirmUpload} disabled={uploading} className="flex-1">
                 {uploading ? "Uploading…" : "Confirm"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -260,28 +252,17 @@ function LeftPanel({ student }: { student: StudentData }) {
           <span className="text-white font-semibold text-sm">About</span>
           {editing ? (
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleCancel}
-                disabled={saving}
-                className="text-gray-400 hover:text-white text-sm px-3 py-1 transition-colors disabled:opacity-50"
-              >
+              <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving} className="text-white/50 hover:text-white">
                 Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm px-4 py-1 hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
+              </Button>
+              <Button variant="default" size="sm" onClick={handleSave} disabled={saving}>
                 {saving ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="text-[#B1E7D6] hover:text-white text-sm font-medium transition-colors"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
               Edit
-            </button>
+            </Button>
           )}
         </div>
 
@@ -542,28 +523,17 @@ function SectionCard({
         <h2 className="text-white font-semibold text-base">{title}</h2>
         {editing ? (
           <div className="flex items-center gap-2">
-            <button
-              onClick={onCancel}
-              disabled={saving}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 transition-colors disabled:opacity-50"
-            >
+            <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving} className="text-white/50 hover:text-white">
               Cancel
-            </button>
-            <button
-              onClick={onSave}
-              disabled={saving}
-              className="bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm px-4 py-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
+            </Button>
+            <Button variant="default" size="sm" onClick={onSave} disabled={saving}>
               {saving ? "Saving…" : "Save"}
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            onClick={onEdit}
-            className="text-[#B1E7D6] hover:text-white text-sm font-medium transition-colors"
-          >
+          <Button variant="ghost" size="sm" onClick={onEdit}>
             Edit
-          </button>
+          </Button>
         )}
       </div>
 

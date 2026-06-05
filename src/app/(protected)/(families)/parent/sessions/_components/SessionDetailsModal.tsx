@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import type { SessionProp } from "./types";
+import { Button } from "@/src/components/ui/button";
 import { formatDateTime, getDurationMin } from "./sessionDateUtils";
 
 interface Props {
@@ -199,12 +200,9 @@ export default function SessionDetailsModal({
                   Request Reschedule
                 </button>
               )}
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-[#2B4257] text-white text-sm font-medium hover:bg-[#24394a] transition-colors cursor-pointer"
-              >
+              <Button variant="secondary" size="sm" onClick={onClose}>
                 Close
-              </button>
+              </Button>
             </div>
           </>
         ) : (
@@ -251,13 +249,9 @@ export default function SessionDetailsModal({
               >
                 Cancel
               </button>
-              <button
-                onClick={handleSubmitRequest}
-                disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-[#2B4257] text-white text-sm font-medium hover:bg-[#24394a] disabled:opacity-50 transition-colors cursor-pointer"
-              >
+              <Button variant="secondary" size="sm" onClick={handleSubmitRequest} disabled={submitting}>
                 {submitting ? "Submitting…" : "Submit request"}
-              </button>
+              </Button>
             </div>
           </>
         )}

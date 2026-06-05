@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 import { signUpNewUser } from "./actions";
 import { useRouter } from "next/navigation";
 
@@ -284,13 +285,15 @@ export default function SignupPage() {
                 You can add more students later from your account.
               </p>
 
-              <button
+              <Button
                 type="submit"
+                variant="accent"
+                size="lg"
                 disabled={isSubmitting}
-                className="w-full h-11 md:h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] mt-2 text-[20px]"
               >
                 {isSubmitting ? "Creating Account..." : "Create an Account"}
-              </button>
+              </Button>
 
               <div className="text-center mt-2">
                 <p className="text-[#1F2E3B]">

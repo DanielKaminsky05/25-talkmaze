@@ -8,6 +8,7 @@ import ClaimedBadge, { ClaimBadgeModal } from "./_components/ClaimedBadge";
 import GlowingBadge from "./_components/GlowingBadge";
 import LockedBadge from "./_components/LockedBadge";
 import PageSpinner from "@/src/components/ui/PageSpinner";
+import { Button } from "@/src/components/ui/button";
 import { createClient } from "@/src/services/supabase/client";
 
 // Display this many tokens when tokens section is not expanded.
@@ -19,7 +20,6 @@ const MIN_BADGE_SLOTS = 10;
 const colors = {
   greenLight: "#B1E7D6",
   turquoise: "#2B4257",
-  darkNavy: "#1F2E3B",
 };
 
 export default function RewardPage() {
@@ -175,23 +175,20 @@ export default function RewardPage() {
           </div>
 
           <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
-            <button
+            <Button
               onClick={() => {
                 if (firstClaimableBadge) {
                   setClaimingBadge(firstClaimableBadge);
                 }
               }}
               disabled={!firstClaimableBadge}
-              className="pointer-events-auto px-16 py-4 rounded-2xl shadow-xl transform transition-transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100 disabled:cursor-not-allowed"
-              style={{ backgroundColor: colors.darkNavy }}
+              variant="dark"
+              size="xl"
+              shadow
+              className="pointer-events-auto text-accent text-xl font-bold transition-transform hover:scale-105 active:scale-95 disabled:hover:scale-100"
             >
-              <span
-                className="text-xl font-bold"
-                style={{ color: colors.greenLight }}
-              >
-                Redeem
-              </span>
-            </button>
+              Redeem
+            </Button>
           </div>
         </section>
 

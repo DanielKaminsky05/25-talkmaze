@@ -1,4 +1,5 @@
 import type { EarnedBadge } from "../_hooks/useRewardData";
+import { Button } from "@/src/components/ui/button";
 
 type ClaimedBadgeProps = {
   badge: EarnedBadge;
@@ -60,12 +61,14 @@ export function ClaimBadgeModal({
           >
             Later
           </button>
-          <button
+          <Button
             onClick={onRedeem}
-            className="w-full h-11 inline-flex items-center justify-center bg-[#1F2E3B] text-[#B1E7D6] font-bold rounded-xl hover:scale-105 transition-transform"
+            variant="dark"
+            size="lg"
+            className="w-full text-accent font-bold transition-transform hover:scale-105"
           >
             Redeem
-          </button>
+          </Button>
         </div>
       </div>
     </div>

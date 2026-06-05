@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
 
 type Props = {
   studentId?: string;
@@ -62,16 +63,14 @@ export default function CancelSubscriptionButton({
 
   if (state === "idle") {
     return (
-      <button
+      <Button
+        variant={refundOnly ? "destructive" : "secondary"}
+        size="md"
+        rounded="full"
         onClick={handleInitialClick}
-        className={
-          refundOnly
-            ? "bg-red-600 text-white rounded-full px-6 py-2 text-sm font-semibold shadow-md hover:bg-red-700 transition-colors cursor-pointer border-0"
-            : "bg-[#2b4257] text-white rounded-full px-16 py-3 text-sm font-semibold shadow-md hover:bg-[#1f2e3b] transition-colors cursor-pointer border-0"
-        }
       >
         {refundOnly ? "Cancel & get full refund" : "Cancel plan"}
-      </button>
+      </Button>
     );
   }
 
@@ -129,12 +128,16 @@ export default function CancelSubscriptionButton({
           payment will be refunded.
         </p>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="destructive"
+            size="md"
+            rounded="full"
             onClick={() => submit(true)}
-            className="bg-red-600 text-white rounded-full px-6 py-3 text-sm font-semibold shadow-md hover:bg-red-700 transition-colors cursor-pointer border-0"
           >
             Yes, cancel and refund
-          </button>
+          </Button>
+          {/* Light-surface secondary action — kept raw (dark-UI outline variant
+              would render white-on-white here) */}
           <button
             onClick={() => setState("choosing")}
             className="bg-white text-[#2b4257] rounded-full px-6 py-3 text-sm font-semibold shadow-md hover:bg-gray-100 transition-colors cursor-pointer border border-[#2b4257]"
@@ -152,12 +155,15 @@ export default function CancelSubscriptionButton({
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <p className="text-sm text-[#2b4257] font-medium">Are you sure?</p>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="md"
+            rounded="full"
             onClick={() => submit(false)}
-            className="bg-[#2b4257] text-white rounded-full px-16 py-3 text-sm font-semibold shadow-md hover:bg-[#1f2e3b] transition-colors cursor-pointer border-0"
           >
             Confirm cancel
-          </button>
+          </Button>
+          {/* Light-surface secondary action — kept raw (see note above) */}
           <button
             onClick={() => setState(isEligibleForRefund ? "choosing" : "idle")}
             className="bg-white text-[#2b4257] rounded-full px-6 py-3 text-sm font-semibold shadow-md hover:bg-gray-100 transition-colors cursor-pointer border border-[#2b4257]"
@@ -171,11 +177,8 @@ export default function CancelSubscriptionButton({
 
   // loading state
   return (
-    <button
-      disabled
-      className="bg-[#2b4257] text-white rounded-full px-16 py-3 text-sm font-semibold shadow-md opacity-50 cursor-not-allowed border-0"
-    >
+    <Button variant="secondary" size="md" rounded="full" disabled>
       Cancelling...
-    </button>
+    </Button>
   );
 }

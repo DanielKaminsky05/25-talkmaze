@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
 
 export default function CancelScheduleButton({
   studentId,
@@ -40,13 +41,15 @@ export default function CancelScheduleButton({
   return (
     <div className="flex flex-col items-start gap-1">
       {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button
+      <Button
+        variant="secondary"
+        size="md"
+        rounded="full"
         onClick={handleCancel}
         disabled={loading}
-        className="bg-[#2b4257] text-white rounded-full px-6 py-2.5 text-sm font-semibold shadow-md hover:bg-[#1f2e3b] transition-colors cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Cancelling..." : "Cancel plan change"}
-      </button>
+      </Button>
     </div>
   );
 }

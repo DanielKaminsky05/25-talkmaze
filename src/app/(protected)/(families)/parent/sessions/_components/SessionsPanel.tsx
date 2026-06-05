@@ -1,5 +1,6 @@
 import { CalendarDays } from "lucide-react";
 import type { SessionProp, StudentProp } from "./types";
+import { Button } from "@/src/components/ui/button";
 import SessionCard from "./SessionCard";
 import StudentFilter from "./StudentFilter";
 
@@ -74,18 +75,9 @@ export default function SessionsPanel({
             {sessions.length} session
             {sessions.length !== 1 ? "s" : ""} scheduled
           </p>
-          <button
-            type="button"
-            onClick={onReschedule}
-            disabled={!hasSelection}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              hasSelection
-                ? "bg-[#2B4257] text-white hover:bg-[#24394a] cursor-pointer"
-                : "bg-[#2B4257]/30 text-white/70 cursor-not-allowed"
-            }`}
-          >
+          <Button variant="secondary" size="md" onClick={onReschedule} disabled={!hasSelection}>
             Reschedule
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import AvailabilityModal from "./AvailabilityModal";
 import SessionDetailsModal from "./SessionDetailsModal";
 import SessionsPanel from "./SessionsPanel";
 import type { SessionProp, StudentProp } from "./types";
+import { Button } from "@/src/components/ui/button";
 
 const CALENDAR_HEIGHT = "clamp(520px, calc(100vh - 290px), 610px)";
 
@@ -118,12 +119,9 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
               />
             </div>
 
-            <button
-              onClick={() => setShowAvailability(true)}
-              className="px-5 py-2 rounded-lg bg-[#65CFAD] text-[#1F2E3B] text-sm font-semibold hover:bg-[#4fbfa0] transition-colors cursor-pointer"
-            >
+            <Button variant="default" size="md" onClick={() => setShowAvailability(true)}>
               Edit Student Availability
-            </button>
+            </Button>
           </section>
         </div>
       </div>

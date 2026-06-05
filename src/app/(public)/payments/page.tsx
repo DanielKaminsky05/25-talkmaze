@@ -3,6 +3,7 @@ import { PackageRenewaloptionsContainer } from "./_components/PackageRenewalOpti
 import CurrentSubscription from "./_components/CurrentSubscription";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { CaretIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 
 interface Plan {
   id: string;
@@ -107,13 +108,12 @@ export default async function PaymentPage({
     <div className="bg-[#2b4257] min-h-screen flex flex-col ">
       {/* Header - Contains back to dashboard button*/}
       <header className="top-0 z-10 bg-[#2b4257] px-4 sm:px-8 py-5 flex items-center">
-        <a
-          href={backLink}
-          className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
-        >
-          <CaretIcon direction="left" />
-          {backLabel}
-        </a>
+        <Button asChild variant="dark" size="lg" rounded="full" shadow>
+          <a href={backLink}>
+            <CaretIcon direction="left" />
+            {backLabel}
+          </a>
+        </Button>
       </header>
 
       {/* Main Content */}

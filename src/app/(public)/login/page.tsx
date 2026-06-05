@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 import { logInUser } from "./actions";
 import { useRouter } from "next/navigation";
 
@@ -120,19 +121,23 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+                variant="accent"
+                size="lg"
+                className="w-full h-11 md:h-[38px] text-[20px] "
               >
                 Login
-              </button>
+              </Button>
 
-              <Link
-                href="/signup"
-                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity flex items-center justify-center"
+              <Button
+                asChild
+                variant="accent"
+                size="lg"
+                className="w-full h-11 md:h-[38px] text-[20px]"
               >
-                Create an Account
-              </Link>
+                <Link href="/signup">Create an Account</Link>
+              </Button>
             </form>
 
             <div className="relative h-[20px] w-full flex items-center justify-center my-2">

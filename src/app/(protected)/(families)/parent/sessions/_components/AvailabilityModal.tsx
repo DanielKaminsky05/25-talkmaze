@@ -11,6 +11,7 @@ import {
   normalizeTimeZone,
 } from "@/src/lib/scheduling/timezones";
 import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
+import { Button } from "@/src/components/ui/button";
 import WeeklyAvailabilityEditor, {
   WeeklyAvailabilityValue,
 } from "../../../_components/WeeklyAvailabilityEditor";
@@ -232,13 +233,9 @@ export default function AvailabilityModal({
             )}
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="px-5 py-2 text-sm font-semibold bg-[#B1E7D6] text-[#1F2E3B] rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          >
+          <Button variant="default" size="md" rounded="xl" onClick={handleSave} disabled={saving || loading}>
             {saving ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

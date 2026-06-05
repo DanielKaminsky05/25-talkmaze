@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import SessionsRemainingDonutChart from "@/src/components/common/charts/SessionsRemainingDonutChart";
+import { Button } from "@/src/components/ui/button";
 
 interface SelectedStudentSubscriptionStatusProps {
   sessionsLeft?: number;
@@ -48,18 +49,9 @@ export default function SelectedStudentSubscriptionStatus({
               <span className="text-[#D55B40]">{sessionsLeft ?? 0}</span>
               {" Sessions Left in Payment Package"}
             </p>
-            <Link href={paymentHref}>
-              <button
-                className="bg-[#1F2E3B] text-white font-semibold text-[16px] rounded-xl hover:bg-[#2B4257] transition-colors"
-                style={{
-                  width: "147px",
-                  height: "39px",
-                  fontFamily: "Roboto, sans-serif",
-                }}
-              >
-                Renew Now
-              </button>
-            </Link>
+            <Button asChild variant="dark" rounded="xl" className="w-36.75 h-9.75 text-base">
+              <Link href={paymentHref}>Renew Now</Link>
+            </Button>
           </div>
         </>
       ) : (
@@ -79,18 +71,9 @@ export default function SelectedStudentSubscriptionStatus({
               Subscribe to book coaching sessions
             </p>
           </div>
-          <Link href={paymentHref}>
-            <button
-              className="bg-[#1F2E3B] text-white font-semibold text-[16px] rounded-xl hover:bg-[#2B4257] transition-colors"
-              style={{
-                width: "147px",
-                height: "39px",
-                fontFamily: "Roboto, sans-serif",
-              }}
-            >
-              Subscribe Now
-            </button>
-          </Link>
+          <Button asChild variant="dark" rounded="xl" className="w-36.75 h-9.75 text-base">
+            <Link href={paymentHref}>Subscribe Now</Link>
+          </Button>
         </div>
       )}
     </div>
