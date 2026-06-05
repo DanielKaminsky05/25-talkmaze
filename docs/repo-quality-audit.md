@@ -87,7 +87,7 @@ These accept `studentId` from query/body and act on it after only checking that 
 - `src/app/api/coach/sessions/route.ts` (GET, when `student_id` filter is provided)
 - `src/app/api/coach/conversation/route.ts` and `.../message/route.ts` — fetches conversation by `contactId`/`conversationId` without verifying it belongs to the calling coach.
 
-The check is one query: `coach_students` must contain `(coach_id, student_id)`. Add it as a helper in `src/lib/coach/server/`.
+The check is one query: `coach_students` must contain `(coach_id, student_id)`. This is now centralized as `assertCoachAssignedToStudent()` in `src/lib/auth/server/ownership.ts`.
 
 ---
 

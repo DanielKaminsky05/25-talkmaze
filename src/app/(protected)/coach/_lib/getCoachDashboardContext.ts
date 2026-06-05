@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { createClient } from "@/src/services/supabase/server";
 import type { Database } from "@/src/services/supabase/types/database";
@@ -46,15 +48,14 @@ export async function getCoachDashboardContext(): Promise<CoachDashboardContext>
   // pagination snap to a different page on every navigation (e.g. clicking
   // a student would seem to "reset" the list because the same student now
   // lives at a different index, and therefore a different page).
-  const students = ((assignments ?? [])
-    .map((row) => row.students)
-    .filter(Boolean) as Student[])
-    .sort((a, b) => {
-      const aName = `${a.first_name ?? ""} ${a.last_name ?? ""}`.toLowerCase();
-      const bName = `${b.first_name ?? ""} ${b.last_name ?? ""}`.toLowerCase();
-      if (aName !== bName) return aName < bName ? -1 : 1;
-      return a.id < b.id ? -1 : 1;
-    });
+  const students = (
+    (assignments ?? []).map((row) => row.students).filter(Boolean) as Student[]
+  ).sort((a, b) => {
+    const aName = `${a.first_name ?? ""} ${a.last_name ?? ""}`.toLowerCase();
+    const bName = `${b.first_name ?? ""} ${b.last_name ?? ""}`.toLowerCase();
+    if (aName !== bName) return aName < bName ? -1 : 1;
+    return a.id < b.id ? -1 : 1;
+  });
 
   return {
     account: {

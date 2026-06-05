@@ -11,8 +11,10 @@ The codebase uses route-level collocation for UI and route-only logic, with shar
 	- `_components/` for route-only UI pieces
 	- `_hooks/` for route-only hooks
 	- `_context/` for route-only context
+	- `_lib/` for route-only non-component logic, data loaders, and helpers
 	- `_types/` or `types.ts` for route-only types
 	- `actions.ts` for route-scoped server actions
+- Keep `_lib/` flat while it is small. Split into `_lib/server/`, `_lib/utils/`, etc. once a route accumulates enough helpers for the distinction to clarify ownership.
 
 ### API Routes
 
@@ -23,7 +25,7 @@ The codebase uses route-level collocation for UI and route-only logic, with shar
 ### Shared Code
 
 - `src/components/` holds reusable UI used across multiple routes.
-- `src/lib/` holds shared, app-specific domain logic grouped by feature.
+- `src/lib/` holds shared, app-specific domain logic grouped by feature. Keep route-specific logic in that route's `_lib/` until it is reused across route areas or APIs.
 	- Example domains: `lessons/`, `messaging/`, `scheduling/`, `profiles/`, `users/`, `payments/`, `rewards/`, `auth/`.
 	- A domain folder is organized into subfolders:
 		- `actions/` - named server action files (e.g. `signOut.ts`, `sendMessage.ts`)

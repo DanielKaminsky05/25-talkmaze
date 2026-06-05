@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import CoachPageClient from "./CoachPageClient";
-import { getCoachDashboardContext } from "@/src/lib/coach/server/getCoachDashboardContext";
+import { getCoachDashboardContext } from "./_lib/getCoachDashboardContext";
 
 export default async function CoachPage() {
   const { account, students } = await getCoachDashboardContext();

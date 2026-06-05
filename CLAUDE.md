@@ -35,7 +35,7 @@ CI runs both test suites automatically on every push and PR via `.github/workflo
   - `admin/`, `coach/` — role-specific dashboards.
 - `api/` — REST handlers grouped by audience (`admin/`, `coach/`, `parent/`, `user/`, `profiles/`, `attendance/`, `checkout/`, `subscriptions/`, `lesson-progress/`, `webhooks/{stripe,lessonspace}`).
 
-Route collocation conventions (underscore-prefixed = route-private, not routed by Next): `_components/`, `_hooks/`, `_context/`, `_types/`, plus `actions.ts` for route-scoped server actions, and Next's standard `loading.tsx` (always renders `<PageSpinner />`). Full convention also in `README.md`.
+Route collocation conventions (underscore-prefixed = route-private, not routed by Next): `_components/`, `_hooks/`, `_context/`, `_lib/`, `_types/`, plus `actions.ts` for route-scoped server actions, and Next's standard `loading.tsx` (always renders `<PageSpinner />`). Keep `_lib/` flat while small; split into `_lib/server/`, `_lib/utils/`, etc. once a route accumulates enough helpers for the distinction to clarify ownership. Full convention also in `README.md`.
 
 ### Auth + access control (`src/middleware.ts` is critical)
 
@@ -73,7 +73,7 @@ Domains: `auth`, `coach`, `lessons`, `lessonspace`, `messaging`, `payments`, `pr
 - `server/` — server-only helpers that aren't actions.
 - `types.ts`, `schemas.ts` — per-domain types and Zod schemas (Zod is installed but currently used in only one schema file; expand its usage rather than reinventing validation).
 
-Business workflows live here and call into `src/services/*`. Don't reverse the direction. `getCurrentUser()` in `src/lib/auth/server/` is `cache()`-wrapped, returns the raw Supabase `User` (not enriched), and is the standard auth entry point inside routes/actions.
+Business workflows live here and call into `src/services/*`. Don't reverse the direction. Route-specific loaders/helpers should stay colocated in that route's `_lib/` until they are reused across route areas or APIs. `getCurrentUser()` in `src/lib/auth/server/` is `cache()`-wrapped, returns the raw Supabase `User` (not enriched), and is the standard auth entry point inside routes/actions.
 
 ### Domain flows (read these before touching the related code)
 
