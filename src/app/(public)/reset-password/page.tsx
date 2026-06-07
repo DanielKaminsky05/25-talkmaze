@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 import { updatePassword } from "./actions";
 
 const inter = Inter({
@@ -114,13 +115,15 @@ export default function ResetPasswordPage() {
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="accent"
+                size="lg"
                 disabled={isSubmitting}
-                className="w-full h-11 md:h-[38px] bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] text-[20px]"
               >
                 {isSubmitting ? "Updating..." : "Update Password"}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

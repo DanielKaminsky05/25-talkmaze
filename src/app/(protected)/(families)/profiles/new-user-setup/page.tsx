@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Inter } from "next/font/google";
 import { z } from "zod";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 import { completeNewUserSetup } from "./actions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -141,13 +142,15 @@ export default function NewUserSetupPage() {
               <p className="text-red-600 text-sm text-center">{serverError}</p>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="accent"
+              size="lg"
               disabled={isSubmitting}
-              className="w-full h-12 mt-2 bg-[#B1E7D6] rounded-xl text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full h-12 mt-2 text-[20px]"
             >
               {isSubmitting ? "Saving..." : "Set PIN"}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

@@ -10,6 +10,7 @@ import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
 import PageSpinner from "@/src/components/ui/PageSpinner";
 import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
+import { Button } from "@/src/components/ui/button";
 
 export default function LessonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -78,12 +79,14 @@ export default function LessonDetailPage() {
           <p className="text-[#B1E7D6]/80">
             Complete your current lesson before unlocking this one.
           </p>
-          <button
+          <Button
+            variant="accent"
+            rounded="xl"
             onClick={() => router.push("/lessons")}
-            className="mt-2 px-6 py-2.5 bg-[#B1E7D6] text-[#2B4257] font-semibold rounded-xl hover:bg-[#9ddbc8] transition-colors"
+            className="mt-2"
           >
             Back to Lessons
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -128,7 +131,7 @@ export default function LessonDetailPage() {
             </span>
             {(slidePptxUrl || slideShowUrl) && (
               <a
-                href={`${(slidePptxUrl ?? slideShowUrl)}?download=`}
+                href={`${slidePptxUrl ?? slideShowUrl}?download=`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium transition-colors"
@@ -161,7 +164,7 @@ export default function LessonDetailPage() {
           )}
         </div>
 
-        {/* Only rendered when a coach has saved at least one feedback section for this lesson */}
+        {/* Coach Feedback */}
         {(positiveFeedback || improvementFeedback) && (
           <div className="mt-8 flex flex-col gap-4">
             <RichTextDisplay

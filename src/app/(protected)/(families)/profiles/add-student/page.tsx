@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { z } from "zod";
+import { Button } from "@/src/components/ui/button";
 import { addStudent } from "./actions";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -80,9 +81,7 @@ export default function AddStudentPage() {
           </div>
 
           <div className="text-center mb-2">
-            <h1 className="text-2xl font-bold text-[#1F2E3B]">
-              Add a Student
-            </h1>
+            <h1 className="text-2xl font-bold text-[#1F2E3B]">Add a Student</h1>
             <p className="text-sm text-[#1F2E3B]/60 mt-2">
               Enter the student&apos;s name to continue to payment.
             </p>
@@ -119,13 +118,15 @@ export default function AddStudentPage() {
               <p className="text-red-600 text-sm text-center">{serverError}</p>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="accent"
+              size="lg"
               disabled={isSubmitting}
-              className="w-full h-12 mt-2 bg-[#B1E7D6] rounded-xl text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full h-12 mt-2 text-[20px]"
             >
               {isSubmitting ? "Continuing..." : "Continue to Payment"}
-            </button>
+            </Button>
           </form>
 
           <Link

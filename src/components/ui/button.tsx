@@ -10,9 +10,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        accent: "bg-accent text-accent-foreground hover:bg-accent/90",
         secondary: "bg-secondary text-secondary-foreground hover:bg-[#24394a]",
         dark: "bg-[#1F2E3B] text-white hover:bg-[#162230]",
-        accent: "bg-accent text-accent-foreground hover:bg-accent/90",
         outline:
           "border border-white/20 text-white/60 bg-transparent hover:text-white hover:border-white/40",
         ghost:
@@ -32,7 +32,6 @@ const buttonVariants = cva(
         full: "rounded-full",
         xl: "rounded-xl",
       },
-      // Elevation is orthogonal to size
       shadow: {
         true: "shadow-[var(--shadow-button)]",
         false: "",

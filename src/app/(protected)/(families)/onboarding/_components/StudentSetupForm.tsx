@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import Image from "next/image";
 import { completeStudentSetup } from "../actions";
+import { Button } from "@/src/components/ui/button";
 import {
   timeZoneSchema,
   weeklyAvailabilitySchema,
@@ -259,12 +260,14 @@ export default function StudentSetupForm({
               />
             </div>
 
-            <button
+            <Button
               type="submit"
-              className="w-full h-[48px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[18px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity"
+              variant="accent"
+              size="lg"
+              className="w-full h-12 mt-2 text-[18px]"
             >
               Next: Set Availability
-            </button>
+            </Button>
 
             <button
               type="button"
@@ -295,10 +298,12 @@ export default function StudentSetupForm({
               errors={errors}
             />
 
-            <button
+            <Button
               type="submit"
+              variant="accent"
+              size="lg"
               disabled={isSubmitting}
-              className="w-full h-[48px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[18px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-12 mt-2 text-[18px]"
             >
               {isSubmitting ? (
                 <>
@@ -326,7 +331,7 @@ export default function StudentSetupForm({
               ) : (
                 "Next: Profile Picture"
               )}
-            </button>
+            </Button>
 
             <button
               type="button"
@@ -398,11 +403,13 @@ export default function StudentSetupForm({
               This step is optional. You can always add a photo later!
             </p>
 
-            <button
+            <Button
               type="button"
+              variant="accent"
+              size="lg"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="w-full h-[48px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[18px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-12 mt-2 text-[18px]"
             >
               {isSubmitting ? (
                 <>
@@ -430,7 +437,7 @@ export default function StudentSetupForm({
               ) : (
                 "Complete Onboarding"
               )}
-            </button>
+            </Button>
 
             <button
               type="button"
