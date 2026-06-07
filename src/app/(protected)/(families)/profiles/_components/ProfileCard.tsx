@@ -61,7 +61,7 @@ export default function ProfileCard({
               name="pin"
               placeholder="PIN"
               onClick={(e) => e.stopPropagation()} // Prevent click event from bubbling and submitting <form>
-              className="w-[clamp(80px,8vw,120px)] h-[clamp(32px,3vw,44px)] bg-white border-[0.5px] border-[#1f2e3b] rounded-lg px-2 text-sm"
+              className="w-[clamp(80px,8vw,120px)] h-[clamp(32px,3vw,44px)] bg-white border-[0.5px] border-[#1f2e3b] rounded-lg px-2 text-sm text-[#1f2e3b] placeholder-[#1f2e3b]/60"
             />
           </div>
         )}

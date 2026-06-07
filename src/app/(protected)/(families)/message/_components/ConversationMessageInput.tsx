@@ -85,8 +85,8 @@ export default function ConversationMessageInput({
         }}
         rows={1}
         placeholder="Type a message"
-        className="grow resize-none overflow-y-auto max-h-40 leading-6 p-2 
-        bg-transparent outline-none"
+        className="grow resize-none overflow-y-auto max-h-40 leading-6 p-2
+        bg-transparent outline-none text-[#1f2e3b] placeholder-[#1f2e3b]/60"
       />
 
       {/* Submit button */}
