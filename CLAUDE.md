@@ -88,7 +88,8 @@ Business workflows live here and call into `src/services/*`. Don't reverse the d
 - **Date/time:** `src/utils/formatDateTime.ts` exposes `fmtUtcTime/Date` for UTC sources (DB ISO strings) and `fmtLocalTime/Date` for client display. Recurring availability is stored as `weekday` + `HH:mm:ss` + `timezone` (not UTC); reinterpret per-date when materialising.
 - **Names:** `fullName(first, last, fallback)` in `src/utils/formatName.ts`. First-last order, no titles.
 - **Rich text:** Tiptap with `StarterKit` (`bold`, `bullet`/`ordered` lists only — no headings/blockquotes/code). Storage is raw HTML; render via `RichTextDisplay` which runs DOMPurify. Both live in `src/components/common/rich-text/`. `immediatelyRender: false` is required for SSR.
-- **UI styling:** Tailwind v4 CSS-only config (`@import "tailwindcss"` in `globals.css`). Custom palette is in CSS variables — primary `#2B4257`, content bg `#1f2e3b`, accent `#B1E7D6`. Font is **Roboto** via `next/font` (the `next/image` allowlist in `next.config.ts` covers the Supabase storage host only).
+- **UI styling:** Tailwind v4 CSS-only config (`@import "tailwindcss"` in `globals.css`). Colours use a two-tier token system — Tier-1 raw brand palette (`--talkmaze-*`) → Tier-2 semantic shadcn tokens (`--primary`, `--accent`, `--card`, …). Font is **Roboto** via `next/font` (the `next/image` allowlist in `next.config.ts` covers the Supabase storage host only).
+- **Components/UI:** shadcn (Radix) primitives in `src/components/ui/` built with `cva` + `cn` (`@/src/utils/cn`). Architecture, variant rules (orthogonal axes), tokens, atomic-design placement, and the shadcn workflow are canonical in **`docs/component-architecture.md` — read it before adding a component, variant, or colour.**
 - **Loading:** `loading.tsx` files return `<PageSpinner />`; no skeleton pattern.
 - **Calendars:** FullCalendar (dayGrid + timeGrid + interaction). Wrappers force remount with `key={`${initialView}-${initialDate}`}` to work around plugin state issues.
 - **Icons:** Local SVGs barreled from `src/components/ui/icons/index.ts`. `lucide-react` is also available and used sparingly.
@@ -147,6 +148,7 @@ Canonical (read these before editing):
 - `docs/api-ownership.md` — `assertOwns*` helpers, 404-vs-403 rule.
 
 Domain references:
+- `docs/component-architecture.md` — UI component architecture: primitives, variant rules, two-tier tokens, atomic-design placement, shadcn workflow.
 - `docs/data-model.md` — full table inventory and entity graph.
 - `docs/payments-flow.md` — Stripe checkout → invoice → schedule lifecycle.
 - `docs/matchmaking.md` — coach/student matching algorithm.
