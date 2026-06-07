@@ -6,6 +6,8 @@ import { createClient } from "@/src/services/supabase/client";
 import { updateParentInfo, updateParentPin } from "../actions";
 import { CaretIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 
 type ParentData = {
   id: string;
@@ -301,13 +303,15 @@ function LeftPanel({ parent }: { parent: ParentData }) {
             <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
               Bio
             </label>
-            <textarea
+            <Textarea
+              variant="dark"
+              size="sm"
+              className="bg-secondary"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={300}
               placeholder="Tell us a little about yourself…"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors resize-none"
             />
             <p className="text-gray-600 text-xs mt-1 text-right">
               {bio.length}/300
@@ -323,11 +327,13 @@ function LeftPanel({ parent }: { parent: ParentData }) {
             <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
               Location
             </label>
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="City, Province"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors"
+              className="bg-secondary"
             />
           </div>
         ) : (
@@ -401,10 +407,11 @@ function PersonalSection({ parent }: { parent: ParentData }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="First Name">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className={inputClass}
               placeholder="First name"
             />
           ) : (
@@ -413,10 +420,11 @@ function PersonalSection({ parent }: { parent: ParentData }) {
         </Field>
         <Field label="Last Name">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className={inputClass}
               placeholder="Last name"
             />
           ) : (
@@ -494,10 +502,11 @@ function ContactSection({
         </Field>
         <Field label="Phone Number">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className={inputClass}
               placeholder="+1 (555) 000-0000"
               type="tel"
             />
@@ -507,10 +516,11 @@ function ContactSection({
         </Field>
         <Field label="Billing Email">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={billingEmail}
               onChange={(e) => setBillingEmail(e.target.value)}
-              className={inputClass}
               placeholder="billing@example.com"
               type="email"
             />
@@ -583,19 +593,21 @@ function SecuritySection({
       <Field label="Profile Access PIN">
         {editing ? (
           <div className="flex flex-col gap-3">
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
-              className={inputClass}
               placeholder="New PIN (leave blank to remove)"
               type="password"
               maxLength={6}
             />
             {newPin && (
-              <input
+              <Input
+                variant="dark"
+                size="sm"
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
-                className={inputClass}
                 placeholder="Confirm PIN"
                 type="password"
                 maxLength={6}
@@ -732,6 +744,3 @@ function LocationIcon() {
     </svg>
   );
 }
-
-const inputClass =
-  "w-full bg-[#1f2e3b] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors";

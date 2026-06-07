@@ -6,6 +6,8 @@ import { createClient } from "@/src/services/supabase/client";
 import { updateStudentInfo } from "../actions";
 import { CaretIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 
 type StudentData = {
   id: string;
@@ -272,13 +274,15 @@ function LeftPanel({ student }: { student: StudentData }) {
             <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
               Bio
             </label>
-            <textarea
+            <Textarea
+              variant="dark"
+              size="sm"
+              className="bg-secondary"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={300}
               placeholder="Tell us a little about yourself…"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors resize-none"
             />
             <p className="text-gray-600 text-xs mt-1 text-right">
               {bio.length}/300
@@ -294,11 +298,13 @@ function LeftPanel({ student }: { student: StudentData }) {
             <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
               Location
             </label>
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="City, Province"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors"
+              className="bg-secondary"
             />
           </div>
         ) : (
@@ -373,10 +379,11 @@ function PersonalSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="First Name">
             {editing ? (
-              <input
+              <Input
+                variant="dark"
+                size="sm"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className={inputClass}
                 placeholder="First name"
               />
             ) : (
@@ -385,10 +392,11 @@ function PersonalSection({
           </Field>
           <Field label="Last Name">
             {editing ? (
-              <input
+              <Input
+                variant="dark"
+                size="sm"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className={inputClass}
                 placeholder="Last name"
               />
             ) : (
@@ -465,10 +473,11 @@ function AcademicSection({ student }: { student: StudentData }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Grade">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className={inputClass}
               placeholder="e.g. 3"
             />
           ) : (
@@ -477,11 +486,12 @@ function AcademicSection({ student }: { student: StudentData }) {
         </Field>
         <Field label="Date of Birth">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className={inputClass}
             />
           ) : (
             <ValueText>{dateOfBirth ? formatDate(dateOfBirth) : "—"}</ValueText>
@@ -598,6 +608,3 @@ function LocationIcon() {
     </svg>
   );
 }
-
-const inputClass =
-  "w-full bg-[#1f2e3b] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors";

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { z } from "zod";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { addStudent } from "./actions";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -24,11 +25,6 @@ const schema = z.object({
 });
 
 type FormErrors = Partial<Record<"firstName" | "lastName", string[]>>;
-
-const inputClass = (hasError: boolean) =>
-  `w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${
-    hasError ? "border-red-500" : "border-[#1F2E3B]"
-  } rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`;
 
 const ErrorMsg = ({ msg }: { msg?: string[] }) =>
   msg?.length ? (
@@ -89,26 +85,30 @@ export default function AddStudentPage() {
 
           <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-1">
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
+                  error={!!errors.firstName}
                   type="text"
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className={inputClass(!!errors.firstName)}
                 />
               </div>
               <ErrorMsg msg={errors.firstName} />
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
+                  error={!!errors.lastName}
                   type="text"
                   placeholder="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className={inputClass(!!errors.lastName)}
                 />
               </div>
               <ErrorMsg msg={errors.lastName} />

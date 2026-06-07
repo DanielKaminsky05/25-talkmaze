@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import { z } from "zod";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { completeNewUserSetup } from "./actions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -22,10 +23,6 @@ const schema = z
 
 type FormErrors = Partial<Record<"pin" | "confirmPin", string[]>>;
 
-const inputClass = (hasError: boolean) =>
-  `w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${
-    hasError ? "border-red-500" : "border-[#1F2E3B]"
-  } rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`;
 
 const ErrorMsg = ({ msg }: { msg?: string[] }) =>
   msg?.length ? (
@@ -92,15 +89,17 @@ export default function NewUserSetupPage() {
           <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
             {/* PIN */}
             <div className="flex flex-col gap-1">
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
+                  error={!!errors.pin}
                   type={showPin ? "text" : "password"}
                   placeholder="Parent access PIN (4 digits)"
                   maxLength={4}
                   inputMode="numeric"
                   value={pin}
                   onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                  className={inputClass(!!errors.pin)}
                 />
                 <button
                   type="button"
@@ -115,8 +114,11 @@ export default function NewUserSetupPage() {
 
             {/* Confirm PIN */}
             <div className="flex flex-col gap-1">
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
+                  error={!!errors.confirmPin}
                   type={showConfirmPin ? "text" : "password"}
                   placeholder="Confirm PIN"
                   maxLength={4}
@@ -125,7 +127,6 @@ export default function NewUserSetupPage() {
                   onChange={(e) =>
                     setConfirmPin(e.target.value.replace(/\D/g, ""))
                   }
-                  className={inputClass(!!errors.confirmPin)}
                 />
                 <button
                   type="button"

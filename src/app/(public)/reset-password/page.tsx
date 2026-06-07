@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { updatePassword } from "./actions";
 
 const inter = Inter({
@@ -86,14 +87,15 @@ export default function ResetPasswordPage() {
             )}
 
             <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="New Password"
                   required
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
                 />
                 <button
                   type="button"
@@ -104,14 +106,15 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
 
-              <div className="relative h-[58px]">
-                <input
+              <div className="relative">
+                <Input
+                  variant="light"
+                  size="lg"
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm New Password"
                   required
-                  className="w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] border-[#1F2E3B] rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors"
                 />
               </div>
 
