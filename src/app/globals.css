@@ -51,6 +51,34 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Figma grey ramp (grey 1 = lightest) text-grey-1, bg-grey-3, etc. */
+  --color-grey-1: var(--talkmaze-grey-1);
+  --color-grey-2: var(--talkmaze-grey-2);
+  --color-grey-3: var(--talkmaze-grey-3);
+  --color-grey-4: var(--talkmaze-grey-4);
+  --color-grey-5: var(--talkmaze-grey-5);
+
+  /* Figma typography scale  */
+  --text-h1: 2rem; /* 32 Bold */
+  --text-h1--font-weight: 700;
+  --text-h1--line-height: 1;
+  --text-h2: 2rem; /* 32 Regular */
+  --text-h2--font-weight: 400;
+  --text-h2--line-height: 1;
+  --text-h3: 1.375rem; /* 22 Bold */
+  --text-h3--font-weight: 700;
+  --text-h3--line-height: 1;
+  --text-b1: 1.25rem; /* 20 SemiBold */
+  --text-b1--font-weight: 600;
+  --text-b2: 1.25rem; /* 20 Regular */
+  --text-b2--font-weight: 400;
+  --text-b3: 1rem; /* 16 SemiBold */
+  --text-b3--font-weight: 600;
+  --text-b4: 1rem; /* 16 Regular */
+  --text-b4--font-weight: 400;
+  --text-b6: 0.875rem; /* 14 Regular */
+  --text-b6--font-weight: 400;
 }
 
 :root {
@@ -64,6 +92,12 @@
   --talkmaze-green-light: #b1e7d6; /* light mint: accent surfaces, badges */
   /* Unofficial shade - selected / active state */
   --talkmaze-mint-dark: #4db89a;
+
+  /* Figma grey ramp */
+  --talkmaze-grey-2: #bbbbbb;
+  --talkmaze-grey-3: #7b7b7b;
+  --talkmaze-grey-4: #4e4c4c;
+  --talkmaze-grey-5: #2e2e2e;
 
   /* semantic tokens (shadcn) */
   --background: var(--talkmaze-turquoise);
