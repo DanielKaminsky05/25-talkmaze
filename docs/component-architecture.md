@@ -27,6 +27,7 @@ Canonical axes already in use:
 |---|---|---|---|
 | `Button` | colour/role | dimensions (padding+height+text+radius) | `rounded` (shape), `shadow` (elevation) |
 | `Input` / `Textarea` | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
+| `Select` (trigger) | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
 
 **Anti-pattern (do not do this):** baking size into a colour variant, e.g. a
 `dark` variant that is also smaller/tighter. Colour and size are independent —
@@ -260,6 +261,24 @@ dedicated token at that opacity, or use a hex literal **for that single
 declaration** — the one documented exception to rule 1 (e.g.
 `placeholder-[#1F2E3B]/60` in the `light` input variant).
 
+### Greys & typography (Figma scale)
+
+Two token families mirror the Figma file (added 2026-06), registered in the
+`@theme inline` block of `globals.css`:
+
+- **Grey ramp** — `--talkmaze-grey-1..5` (`#f0f0f0 #bbbbbb #7b7b7b #4e4c4c
+  #2e2e2e`, light→dark) exposed as `text-grey-3` / `bg-grey-1` / `border-grey-2`.
+- **Type scale** — Figma's `Heading H1/H2/H3` and `Body B1–B6` are Tailwind text
+  tokens bundling size + weight + line-height: `text-h1` (32/700), `text-h2`
+  (32/400), `text-h3` (22/700), `text-b1` (20/600), `text-b2` (20/400), `text-b3`
+  (16/600), `text-b4` (16/400), `text-b6` (14/400). H3 is `Inter` in Figma but
+  maps to Roboto here (the app font). `B5-U`/`B6-I` are the underline/italic
+  modifiers — use `underline`/`italic`, not a token. There is no 12px Figma token;
+  keep `text-xs` for micro-copy (field errors/hints).
+
+These are **tokens only** — there is no `Text`/`Heading` component; use the
+utilities directly when refactoring.
+
 ---
 
 ## 7. shadcn workflow
@@ -346,7 +365,21 @@ migration (auth + profile forms) followed exactly this.
 
 ## 12. Primitive roadmap
 
-- **Done:** `Button`, `Input`, `Textarea` (+ `cn`, two-tier tokens).
-- **Next (highest dup first):** `Label`/`FormField`, `SectionCard` (duplicated
-  across both profile pages), `Select` (model on existing `TimeZoneSelect`),
-  `Badge` (status pills), `Modal`/`Dialog` shell, `NavItem` (active-state nav).
+- **Done:** `Button`, `Input`, `Textarea`; shadcn **`Field`** (+ `Label`,
+  `Separator`) and Radix **`Select`** (both adapted with a `light`/`dark` surface
+  variant and our tokens); typography + grey tokens; `cn`, two-tier tokens.
+  - Forms compose `Field` + `FieldLabel`/`FieldError` + a control
+    (`Input`/`Textarea`/`Select`). `Field` is form-library-agnostic; pass Zod
+    errors to `FieldError` (`errors={[{ message }]}`) or as children. We do **not**
+    use shadcn `Form`/react-hook-form — validation stays `useState` + Zod (§9).
+  - Stack ≥2 vertical `Field`s in a **`FieldGroup`** — one place for inter-field
+    spacing (`gap-5`) plus an `@container` so `Field orientation="responsive"`
+    works. Don't wrap containers that interleave non-field content (headers,
+    read-mode text, `editing ?` ternaries) — leave those as bespoke layout.
+- **Next (highest dup first):** `SectionCard`/`Card` (the biggest remaining dup —
+  ~44 surfaces, incl. both profile pages), `Badge` (status pills), `Modal`/`Dialog`
+  shell, `NavItem` (active-state nav).
+- **Adopt-when-needed (shadcn):** `InputGroup` for input *adornments* (search
+  icon, password-eye toggle, `$`-prefix) — not a field wrapper. A `DetailRow` /
+  description-list for read-only term→value pairs (lesson/session detail modals);
+  those are **not** `Field`s and stay raw until then.

@@ -6,6 +6,20 @@ import { z } from "zod";
 import Image from "next/image";
 import { completeStudentSetup } from "../actions";
 import { Button } from "@/src/components/ui/button";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/src/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   timeZoneSchema,
   weeklyAvailabilitySchema,
@@ -191,13 +205,13 @@ export default function StudentSetupForm({
               if (validatePage1()) setPage(2);
             }}
           >
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-[#A8A8A8]">Grade</label>
-              <div className="relative h-[52px]">
-                <select
-                  value={grade}
-                  onChange={(e) => {
-                    setGrade(Number(e.target.value));
+            <FieldGroup>
+              <Field data-invalid={errors.grade ? true : undefined}>
+                <FieldLabel htmlFor="grade-select">Grade</FieldLabel>
+                <Select
+                  value={String(grade)}
+                  onValueChange={(val) => {
+                    setGrade(Number(val));
                     if (errors.grade)
                       setErrors((p) => {
                         const n = { ...p };
@@ -205,60 +219,52 @@ export default function StudentSetupForm({
                         return n;
                       });
                   }}
-                  className={`w-full h-full px-4 text-[18px] border bg-white appearance-none cursor-pointer rounded-lg ${errors.grade ? "border-red-500" : "border-[#1F2E3B]/20"} text-[#1F2E3B]`}
                 >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
-                    <option key={g} value={g}>
-                      Grade {g}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
-                  <svg
-                    className="w-4 h-4 text-[#1F2E3B]/60"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <SelectTrigger
+                    id="grade-select"
+                    size="lg"
+                    error={!!errors.grade}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-              {errors.grade && (
-                <p className="text-red-500 text-xs">{errors.grade}</p>
-              )}
-            </div>
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                      <SelectItem key={g} value={String(g)}>
+                        Grade {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.grade && <FieldError>{errors.grade}</FieldError>}
+              </Field>
 
-            <TimeZoneSelect
-              value={timeZone}
-              onChange={(next) => {
-                setTimeZone(next);
-                if (errors.timeZone)
-                  setErrors((p) => {
-                    const n = { ...p };
-                    delete n.timeZone;
-                    return n;
-                  });
-              }}
-              error={errors.timeZone}
-            />
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-[#A8A8A8]">
-                Additional notes (optional)
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any context that would help the coach..."
-                className="w-full h-[100px] px-4 py-3 text-[16px] text-[#1F2E3B] placeholder-[#1F2E3B]/40 border border-[#1F2E3B]/20 rounded-lg resize-none"
+              <TimeZoneSelect
+                value={timeZone}
+                onChange={(next) => {
+                  setTimeZone(next);
+                  if (errors.timeZone)
+                    setErrors((p) => {
+                      const n = { ...p };
+                      delete n.timeZone;
+                      return n;
+                    });
+                }}
+                error={errors.timeZone}
               />
-            </div>
+
+              <Field>
+                <FieldLabel htmlFor="notes">
+                  Additional notes (optional)
+                </FieldLabel>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any context that would help the coach..."
+                  className="h-25"
+                />
+              </Field>
+            </FieldGroup>
 
             <Button
               type="submit"

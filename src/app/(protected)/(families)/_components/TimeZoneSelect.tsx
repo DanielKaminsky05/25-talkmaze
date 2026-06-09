@@ -6,6 +6,16 @@ import {
   normalizeTimeZone,
   PRIMARY_TIME_ZONES,
 } from "@/src/lib/scheduling/timezones";
+import { Field, FieldError, FieldLabel } from "@/src/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 
 interface Props {
   value: string;
@@ -38,57 +48,45 @@ export default function TimeZoneSelect({
   }, []);
 
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-[#A8A8A8]">{label}</label>
-      <div className="relative h-[52px]">
-        <select
-          value={normalizedValue}
-          onChange={(e) => onChange(normalizeTimeZone(e.target.value) ?? "")}
-          aria-invalid={!!error}
-          className={`w-full h-full px-4 text-[18px] text-[#1F2E3B] border bg-white appearance-none cursor-pointer rounded-lg ${error ? "border-red-500" : "border-[#1F2E3B]/20"}`}
-        >
-          <option value="" disabled>
-            Select time zone
-          </option>
-          <optgroup label="Canada and North America">
+    <Field data-invalid={error ? true : undefined}>
+      <FieldLabel htmlFor="timezone-select">{label}</FieldLabel>
+      <Select
+        value={normalizedValue || undefined}
+        onValueChange={(next) => onChange(normalizeTimeZone(next) ?? "")}
+      >
+        <SelectTrigger id="timezone-select" size="lg" error={!!error}>
+          <SelectValue placeholder="Select time zone" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Canada and North America</SelectLabel>
             {PRIMARY_TIME_ZONES.map((timeZone) => (
-              <option key={timeZone} value={timeZone}>
+              <SelectItem key={timeZone} value={timeZone}>
                 {timeZone}
-              </option>
+              </SelectItem>
             ))}
-          </optgroup>
+          </SelectGroup>
           {needsSelectedOption && (
-            <optgroup label="Selected">
-              <option value={normalizedValue}>{normalizedValue}</option>
-            </optgroup>
+            <SelectGroup>
+              <SelectLabel>Selected</SelectLabel>
+              <SelectItem value={normalizedValue}>
+                {normalizedValue}
+              </SelectItem>
+            </SelectGroup>
           )}
           {secondaryTimeZones.length > 0 && (
-            <optgroup label="Other time zones">
+            <SelectGroup>
+              <SelectLabel>Other time zones</SelectLabel>
               {secondaryTimeZones.map((timeZone) => (
-                <option key={timeZone} value={timeZone}>
+                <SelectItem key={timeZone} value={timeZone}>
                   {timeZone}
-                </option>
+                </SelectItem>
               ))}
-            </optgroup>
+            </SelectGroup>
           )}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
-          <svg
-            className="w-4 h-4 text-[#1F2E3B]/60"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-      </div>
-      {error && <p className="text-red-500 text-xs">{error}</p>}
-    </div>
+        </SelectContent>
+      </Select>
+      {error && <FieldError>{error}</FieldError>}
+    </Field>
   );
 }

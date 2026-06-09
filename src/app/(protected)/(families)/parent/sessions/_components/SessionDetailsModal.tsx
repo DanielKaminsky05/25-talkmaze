@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import type { SessionProp } from "./types";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Field, FieldError, FieldLabel } from "@/src/components/ui/field";
 import { formatDateTime, getDurationMin } from "./sessionDateUtils";
 
 interface Props {
@@ -213,29 +215,27 @@ export default function SessionDetailsModal({
                 {session.coachName || "their coach"}. Your coach will be asked
                 to approve before anything changes.
               </p>
-              <div>
-                <label className="block text-sm font-medium text-[#2B4257] mb-1">
-                  Start
-                </label>
-                <input
+              <Field>
+                <FieldLabel htmlFor="reschedule-start">Start</FieldLabel>
+                <Input
+                  id="reschedule-start"
                   type="datetime-local"
+                  size="sm"
                   value={startVal}
                   onChange={(e) => setStartVal(e.target.value)}
-                  className="w-full border border-[#2B4257]/20 rounded-lg px-3 py-2 text-sm text-[#2B4257] focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#2B4257] mb-1">
-                  End
-                </label>
-                <input
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="reschedule-end">End</FieldLabel>
+                <Input
+                  id="reschedule-end"
                   type="datetime-local"
+                  size="sm"
                   value={endVal}
                   onChange={(e) => setEndVal(e.target.value)}
-                  className="w-full border border-[#2B4257]/20 rounded-lg px-3 py-2 text-sm text-[#2B4257] focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
                 />
-              </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              </Field>
+              {error && <FieldError>{error}</FieldError>}
             </div>
 
             <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">

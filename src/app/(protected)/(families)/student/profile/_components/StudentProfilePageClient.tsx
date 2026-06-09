@@ -8,6 +8,7 @@ import { CaretIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import { FieldLabel } from "@/src/components/ui/field";
 
 type StudentData = {
   id: string;
@@ -270,10 +271,7 @@ function LeftPanel({ student }: { student: StudentData }) {
 
         {/* Bio */}
         {editing ? (
-          <div>
-            <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
-              Bio
-            </label>
+          <Field label="Bio">
             <Textarea
               variant="dark"
               size="sm"
@@ -287,17 +285,14 @@ function LeftPanel({ student }: { student: StudentData }) {
             <p className="text-gray-600 text-xs mt-1 text-right">
               {bio.length}/300
             </p>
-          </div>
+          </Field>
         ) : (
           bio && <p className="text-white text-sm">{bio}</p>
         )}
 
         {/* Location */}
         {editing ? (
-          <div>
-            <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
-              Location
-            </label>
+          <Field label="Location">
             <Input
               variant="dark"
               size="sm"
@@ -306,7 +301,7 @@ function LeftPanel({ student }: { student: StudentData }) {
               placeholder="City, Province"
               className="bg-secondary"
             />
-          </div>
+          </Field>
         ) : (
           location && (
             <div className="flex items-center gap-1.5 text-white text-sm">
@@ -567,9 +562,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
+      <FieldLabel className="mb-1.5 block w-full text-[#B1E7D6] text-xs font-medium uppercase tracking-wide">
         {label}
-      </label>
+      </FieldLabel>
       {children}
     </div>
   );
