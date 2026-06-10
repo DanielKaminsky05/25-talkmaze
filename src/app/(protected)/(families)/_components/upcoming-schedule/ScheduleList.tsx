@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 import LessonDetailModal from "./LessonDetailModal";
+import { Card } from "@/src/components/ui/card";
 
 export default function ScheduleList({
   schedule,
@@ -14,7 +15,12 @@ export default function ScheduleList({
   );
 
   return (
-    <div className="w-full h-full max-h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3 overflow-hidden">
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="w-full h-full max-h-full p-5 gap-3 overflow-hidden"
+    >
       <h3 className="font-semibold text-[#1F2E3B]">Schedule</h3>
 
       {/* Session list or empty state */}
@@ -72,6 +78,6 @@ export default function ScheduleList({
           onClose={() => setSelectedLesson(null)}
         />
       )}
-    </div>
+    </Card>
   );
 }

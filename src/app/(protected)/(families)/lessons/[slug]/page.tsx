@@ -6,6 +6,7 @@ import { useLessonDetail } from "../_hooks/useLessonDetail";
 import { usePageTitle } from "../../_context/PageTitleContext";
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
+import { Card } from "@/src/components/ui/card";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
 import PageSpinner from "@/src/components/ui/PageSpinner";
@@ -107,7 +108,12 @@ export default function LessonDetailPage() {
       </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
-        <div className="bg-[#B1E7D6] rounded-3xl p-6 md:p-8 flex flex-col gap-6">
+        <Card
+          variant="accent"
+          shadow="none"
+          padding="none"
+          className="rounded-3xl p-6 md:p-8 gap-6"
+        >
           <div className="font-semibold text-[#1f2e3b] text-lg">Task Cards</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TaskCard
@@ -122,7 +128,7 @@ export default function LessonDetailPage() {
               richDescription={postLessonDesc}
             />
           </div>
-        </div>
+        </Card>
 
         <div className="mt-8 w-full">
           <div className="bg-linear-to-r from-[#9b72cb] to-[#8659c2] rounded-t-3xl flex items-center justify-between px-12 h-[60px]">

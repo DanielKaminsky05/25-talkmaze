@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { TokenRow } from "../types";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
 import { TokenMysteryStar } from "@/src/components/ui/icons";
+import { Card } from "@/src/components/ui/card";
 
 type Props = {
   courseTokens: TokenRow[];
@@ -19,7 +20,12 @@ export default function TokensRow({ courseTokens, earnedTokenIds }: Props) {
   const hasMore = courseTokens.length > COLS;
 
   return (
-    <div className="border-[#B1E7D6] border-6 bg-white rounded-xl shadow-lg px-3 py-2 w-full h-full">
+    <Card
+      variant="light"
+      shadow="lg"
+      padding="none"
+      className="border-6 border-[#B1E7D6] rounded-xl px-3 py-2 w-full h-full"
+    >
       <p className="text-[#2b4257] font-semibold text-xs mb-1">Tokens</p>
       <div className="grid grid-cols-7 gap-1">
         {visibleTokens.map((token) => {
@@ -54,6 +60,6 @@ export default function TokensRow({ courseTokens, earnedTokenIds }: Props) {
           {expanded ? "Show less" : `Show all (${courseTokens.length})`}
         </button>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import { Card } from "@/src/components/ui/card";
 
 type Props = {
   completed: number; // number of lessons the student has completed
@@ -23,8 +24,10 @@ const ProgressCard = memo(function ProgressCard({
   );
 
   return (
-    <div
-      className={`bg-white text-[#1f2e3b] rounded-lg p-6 md:px-8 md:py-6 h-[100px] flex flex-col justify-center shadow-lg ${width}`}
+    <Card
+      variant="light"
+      shadow="lg"
+      className={`h-25 justify-center rounded-lg md:px-8 md:py-6 ${width ?? ""}`}
     >
       {/* "Lesson Progress (completed/total) */}
       <div className="flex justify-between items-center font-bold text-sm mb-3">
@@ -41,7 +44,7 @@ const ProgressCard = memo(function ProgressCard({
           style={{ width: `${percent}%` }}
         />
       </div>
-    </div>
+    </Card>
   );
 });
 

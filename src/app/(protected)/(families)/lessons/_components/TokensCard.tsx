@@ -4,6 +4,7 @@ import { memo } from "react";
 import type { TokenRow } from "../types";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
 import { TokenMysteryStar } from "@/src/components/ui/icons";
+import { Card } from "@/src/components/ui/card";
 
 interface TokensCardProps {
   courseTokens: TokenRow[];
@@ -12,7 +13,12 @@ interface TokensCardProps {
 
 const TokensCard = memo(function TokensCard({ courseTokens, earnedTokenIds }: TokensCardProps) {
   return (
-    <div className="bg-[#B1E7D6] rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] py-4 px-8 w-full">
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="rounded-xl py-4 px-8 w-full"
+    >
       <p className="text-[#2b4257] font-semibold text-sm mb-3">Tokens</p>
       <div className="grid grid-cols-12 gap-3">
         {courseTokens.map((token) => {
@@ -46,7 +52,7 @@ const TokensCard = memo(function TokensCard({ courseTokens, earnedTokenIds }: To
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 });
 

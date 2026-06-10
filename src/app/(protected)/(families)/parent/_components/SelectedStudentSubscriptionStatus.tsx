@@ -3,6 +3,7 @@
 import Link from "next/link";
 import SessionsRemainingDonutChart from "@/src/components/common/charts/SessionsRemainingDonutChart";
 import { Button } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
 
 interface SelectedStudentSubscriptionStatusProps {
   sessionsLeft?: number;
@@ -25,12 +26,15 @@ export default function SelectedStudentSubscriptionStatus({
     : "/payments";
 
   return (
-    <div
-      className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] border-4 border-[#B1E7D6] flex flex-col sm:flex-row min-h-[178px] sm:h-[178px]"
+    <Card
+      variant="light"
+      shadow="md"
+      padding="none"
+      className="rounded-2xl overflow-hidden border-4 border-[#B1E7D6] sm:flex-row min-h-44.5 sm:h-44.5"
     >
       {subscriptionStatus === "active" ? (
         <>
-          {/* Left — donut chart on white bg */}
+          {/* Left section - Donut Chart */}
           <div
             className="flex items-center justify-center w-full sm:w-[225px] sm:shrink-0"
           >
@@ -40,8 +44,8 @@ export default function SelectedStudentSubscriptionStatus({
             />
           </div>
 
-          {/* Right — green section */}
-          <div className="bg-[#B1E7D6] flex-1 flex flex-col items-center sm:items-end justify-center gap-3 sm:gap-6 p-4 sm:pr-6 sm:p-0 rounded-r-xl">
+          {/* Right section */}
+          <div className="bg-accent flex-1 flex flex-col items-center sm:items-end justify-center gap-3 sm:gap-6 p-4 sm:pr-6 sm:p-0 rounded-r-xl">
             <p
               className="font-semibold text-[20px] text-[#2B4257] text-center sm:text-right"
               style={{ fontFamily: "Roboto, sans-serif" }}
@@ -56,7 +60,7 @@ export default function SelectedStudentSubscriptionStatus({
         </>
       ) : (
         /* Full-width green section — no donut chart */
-        <div className="bg-[#B1E7D6] flex-1 flex flex-col items-start justify-center gap-4 pl-8 rounded-xl">
+        <div className="bg-accent flex-1 flex flex-col items-start justify-center gap-4 pl-8 rounded-xl">
           <div>
             <p
               className="font-semibold text-[20px] text-[#2B4257]"
@@ -76,6 +80,6 @@ export default function SelectedStudentSubscriptionStatus({
           </Button>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { MapPin } from "lucide-react";
+import { Card } from "@/src/components/ui/card";
 
 export type AssignedCoach = {
   first_name: string | null;
@@ -32,7 +33,12 @@ export default function CoachProfileCard({ coach, forStudentName }: Props) {
       .join("") || "?";
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] flex flex-col">
+    <Card
+      variant="light"
+      padding="none"
+      shadow="md"
+      className="rounded-xl overflow-hidden"
+    >
       <div className="relative z-10 flex justify-center items-start gap-6 bg-[#65CFAD] text-[#2b4257] px-6 pt-4 pb-2 shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]">
         {/* Coach Avatar */}
         <div className="relative w-16 h-16 xl:w-18 xl:h-18 2xl:w-20 2xl:h-20 rounded-full overflow-hidden bg-[#2b4257] shrink-0">
@@ -76,6 +82,6 @@ export default function CoachProfileCard({ coach, forStudentName }: Props) {
           </p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

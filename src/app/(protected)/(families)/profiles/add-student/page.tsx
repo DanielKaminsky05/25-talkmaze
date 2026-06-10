@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import { z } from "zod";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Card } from "@/src/components/ui/card";
 import { addStudent } from "./actions";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -63,7 +64,12 @@ export default function AddStudentPage() {
     <div
       className={`${inter.className} w-full min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
     >
-      <div className="w-full max-w-[480px] bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] py-12 px-8">
+      <Card
+        variant="light"
+        shadow="md"
+        padding="none"
+        className="w-full max-w-120 rounded-xl py-12 px-8"
+      >
         <div className="w-full flex flex-col gap-[18px]">
           <div className="flex flex-col items-center mb-4">
             <Image
@@ -77,7 +83,9 @@ export default function AddStudentPage() {
           </div>
 
           <div className="text-center mb-2">
-            <h1 className="text-2xl font-bold text-[#1F2E3B]">Add a Student</h1>
+            <h1 className="text-2xl font-bold text-[#1F2E3B]">
+              Add a Student
+            </h1>
             <p className="text-sm text-[#1F2E3B]/60 mt-2">
               Enter the student&apos;s name to continue to payment.
             </p>
@@ -136,7 +144,7 @@ export default function AddStudentPage() {
             Back to profiles
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

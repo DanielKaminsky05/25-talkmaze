@@ -28,6 +28,7 @@ Canonical axes already in use:
 | `Button` | colour/role | dimensions (padding+height+text+radius) | `rounded` (shape), `shadow` (elevation) |
 | `Input` / `Textarea` | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
 | `Select` (trigger) | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
+| `Card` | colour/surface (`light`/`dark`/`accent`/`secondary`) | `padding` (none/sm/md/lg) | `shadow` (none/sm/md/lg), `border` (bool) |
 
 **Anti-pattern (do not do this):** baking size into a colour variant, e.g. a
 `dark` variant that is also smaller/tighter. Colour and size are independent —
@@ -134,6 +135,19 @@ should be**, not as folders.
 - a **light-surface outline/secondary** button where the dark-UI `outline`
   variant would be invisible — until an `outline-light` variant exists.
 
+> **`Card` is the surface primitive.** Reach for `<Card variant … padding … shadow …
+> border>` for *any* styled surface — box, panel, sidebar tile, form shell — not just
+> things that look like "cards." That's deliberate (it's shadcn's own idiom), not a
+> misnamed component. **Real/structured cards with bespoke headers** (full-bleed
+> coloured bars, overlapping avatars) are **domain composites** in a route's
+> `_components/` that *compose* `Card` (`padding="none"` + their own header/body
+> markup) — e.g. `lessons/_components/TaskCard.tsx`,
+> `parent/_components/StudentProfileCard.tsx`. The sub-components
+> (`CardHeader`/`CardTitle`/`CardDescription`/`CardAction`/`CardContent`/`CardFooter`)
+> are **optional** helpers for shadcn-style title+description+footer cards (expected
+> in coach/admin dashboards); they carry **no padding of their own** — they live
+> inside the Card's padding.
+
 ---
 
 ## 4. The primitive recipe
@@ -212,7 +226,9 @@ Keep axis meanings consistent across all primitives so they compose predictably:
 - **State booleans**: `error`, `shadow`, `disabled` (native). One concern each.
 
 Elevation: a single `--shadow-button` token, opted into via `shadow` on Button —
-not baked into `size` (§1.1).
+not baked into `size` (§1.1). Cards use the same idea: `--shadow-card` is the `md`
+tier of Card's `shadow` axis (`none`/`sm`/`md`/`lg`), so a card can be flat or
+elevated independently of its colour/padding.
 
 ---
 
@@ -367,7 +383,9 @@ migration (auth + profile forms) followed exactly this.
 
 - **Done:** `Button`, `Input`, `Textarea`; shadcn **`Field`** (+ `Label`,
   `Separator`) and Radix **`Select`** (both adapted with a `light`/`dark` surface
-  variant and our tokens); typography + grey tokens; `cn`, two-tier tokens.
+  variant and our tokens); shadcn **`Card`** (surface `variant`
+  light/dark/accent/secondary + `padding`/`shadow`/`border` axes, `--shadow-card`
+  token); typography + grey tokens; `cn`, two-tier tokens.
   - Forms compose `Field` + `FieldLabel`/`FieldError` + a control
     (`Input`/`Textarea`/`Select`). `Field` is form-library-agnostic; pass Zod
     errors to `FieldError` (`errors={[{ message }]}`) or as children. We do **not**
@@ -376,9 +394,15 @@ migration (auth + profile forms) followed exactly this.
     spacing (`gap-5`) plus an `@container` so `Field orientation="responsive"`
     works. Don't wrap containers that interleave non-field content (headers,
     read-mode text, `editing ?` ternaries) — leave those as bespoke layout.
-- **Next (highest dup first):** `SectionCard`/`Card` (the biggest remaining dup —
-  ~44 surfaces, incl. both profile pages), `Badge` (status pills), `Modal`/`Dialog`
-  shell, `NavItem` (active-state nav).
+  - `Card` uses a full-box `padding` axis (a bare `<Card>` is padded); cards with
+    full-bleed coloured headers/images use `padding="none"` + inner sections, and
+    `CardHeader`/`Title`/`Description`/`Content`/`Footer` are layout-only (no padding
+    of their own). **Leave raw** (don't wrap in `Card`): selectable / `<Link>` /
+    full-tile-clickable cards (need pressed/active/nav state), bespoke glass/gradient
+    panels, status banners/alerts, and `<main>`/page-layout shells.
+- **Next (highest dup first):** `Badge` (status pills), `Modal`/`Dialog` shell (modal
+  boxes + `fixed inset-0` backdrops), `Alert` (amber/red/emerald status banners),
+  `SelectableCard`/`NavItem` (the pressed/active/link cards left raw above).
 - **Adopt-when-needed (shadcn):** `InputGroup` for input *adornments* (search
   icon, password-eye toggle, `$`-prefix) — not a field wrapper. A `DetailRow` /
   description-list for read-only term→value pairs (lesson/session detail modals);

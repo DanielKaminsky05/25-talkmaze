@@ -5,6 +5,7 @@ import {
   AttendedIcon,
   MissedIcon,
 } from "@/src/components/ui/icons";
+import { Card } from "@/src/components/ui/card";
 
 export type AttendanceStatus = "attended" | "missed" | "cancelled" | "future";
 
@@ -36,9 +37,10 @@ export default function StudentAttendanceDetails({
   attendance,
 }: StudentAttendanceDetailsProps) {
   return (
-    <div
-      className="bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)]
-      p-6 flex items-center justify-center h-full"
+    <Card
+      variant="accent"
+      shadow="md"
+      className="items-center justify-center h-full"
     >
       <div className="flex flex-col gap-4 items-start px-6 w-full">
         {/* Streak number */}
@@ -110,6 +112,6 @@ export default function StudentAttendanceDetails({
           })}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Card } from "@/src/components/ui/card";
 import { completeNewUserSetup } from "./actions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -22,7 +23,6 @@ const schema = z
   });
 
 type FormErrors = Partial<Record<"pin" | "confirmPin", string[]>>;
-
 
 const ErrorMsg = ({ msg }: { msg?: string[] }) =>
   msg?.length ? (
@@ -64,7 +64,12 @@ export default function NewUserSetupPage() {
     <div
       className={`${inter.className} w-full min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
     >
-      <div className="w-full max-w-[480px] bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] py-12 px-8">
+      <Card
+        variant="light"
+        shadow="md"
+        padding="none"
+        className="w-full max-w-120 rounded-xl py-12 px-8"
+      >
         <div className="w-full flex flex-col gap-[18px]">
           <div className="flex flex-col items-center mb-4">
             <Image
@@ -154,7 +159,7 @@ export default function NewUserSetupPage() {
             </Button>
           </form>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

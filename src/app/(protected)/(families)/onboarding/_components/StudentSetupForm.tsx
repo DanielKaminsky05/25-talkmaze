@@ -6,6 +6,7 @@ import { z } from "zod";
 import Image from "next/image";
 import { completeStudentSetup } from "../actions";
 import { Button } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
   Field,
@@ -172,7 +173,7 @@ export default function StudentSetupForm({
 
   return (
     <div className="w-full max-w-[520px] mx-auto p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] p-8">
+      <Card variant="light" shadow="md" padding="lg" className="rounded-2xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#2B4257]">
             Complete {firstName} {lastName}&apos;s Profile
@@ -463,7 +464,7 @@ export default function StudentSetupForm({
             </button>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

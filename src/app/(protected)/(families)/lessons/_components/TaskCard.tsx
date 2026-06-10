@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import DOMPurify from "dompurify";
+import { Card } from "@/src/components/ui/card";
 
 type Props = {
   title: string;
@@ -19,8 +20,13 @@ const TaskCard = memo(function TaskCard({
   const hasRichDesc = richDescription && richDescription !== "<p></p>";
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-lg flex flex-col h-full min-h-[300px]">
-      <div className="bg-[#2B4257] text-white p-4 font-semibold text-sm tracking-wide">
+    <Card
+      variant="light"
+      shadow="lg"
+      padding="none"
+      className="overflow-hidden h-full min-h-75"
+    >
+      <div className="bg-secondary text-white p-4 font-semibold text-sm tracking-wide">
         {title}{optional ? " (Optional)" : ""}
       </div>
 
@@ -47,7 +53,7 @@ const TaskCard = memo(function TaskCard({
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 });
 

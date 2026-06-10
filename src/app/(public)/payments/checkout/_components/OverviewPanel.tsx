@@ -1,3 +1,5 @@
+import { Card } from "@/src/components/ui/card";
+
 export function OverviewPanel({
   planName,
   amountDisplay,
@@ -12,9 +14,14 @@ export function OverviewPanel({
   const isSchedule = mode === "schedule";
 
   return (
-    <div className="flex flex-col w-full gap-5 bg-[#1f2e3b] rounded-xl border-[0.5px] border-black shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-4 sm:p-8 text-white">
+    <Card
+      variant="dark"
+      shadow="md"
+      padding="none"
+      className="w-full gap-5 rounded-xl border-[0.5px] border-black p-4 sm:p-8"
+    >
       <h1 className="text-2xl font-bold mb-0">Overview</h1>
-      <div className="flex flex-col self-center w-full max-w-[500px] relative bg-[#b1e7d6] rounded-xl p-4 sm:p-6 text-[#1f2e3b]">
+      <div className="flex flex-col self-center w-full max-w-[500px] relative bg-accent rounded-xl p-4 sm:p-6 text-[#1f2e3b]">
         <h2 className="text-2xl font-bold mt-0 mb-2.5 text-[#1f2e3b]">
           {isSchedule ? "TalkMaze Plan Change:" : "TalkMaze Package Renewal:"}
         </h2>
@@ -39,6 +46,6 @@ export function OverviewPanel({
           <span className="font-normal text-[#666] text-xs">expand</span>
         </span>
       </div>
-    </div>
+    </Card>
   );
 }

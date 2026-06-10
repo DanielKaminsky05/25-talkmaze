@@ -1,6 +1,7 @@
 "use client";
 
 import { EditIcon, LocationPinFilledIcon } from "@/src/components/ui/icons";
+import { Card } from "@/src/components/ui/card";
 
 interface StudentProfileCardProps {
   name: string;
@@ -31,12 +32,14 @@ export default function StudentProfileCard({
   totalStudents = 1,
 }: StudentProfileCardProps) {
   return (
-    <div
-      className="rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] relative"
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="rounded-2xl overflow-hidden relative h-full"
       style={{
-        height: "100%",
-        backgroundColor: "#B1E7D6",
-        backgroundImage: "url('/images/backgrounds/student-profile-card-bg.png')",
+        backgroundImage:
+          "url('/images/backgrounds/student-profile-card-bg.png')",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
       }}
@@ -82,9 +85,7 @@ export default function StudentProfileCard({
       </div>
 
       {/* Avatar — overlaps header */}
-      <div
-        className="absolute left-4 sm:left-6 top-[74px] z-20 flex flex-col items-center"
-      >
+      <div className="absolute left-4 sm:left-6 top-[74px] z-20 flex flex-col items-center">
         <div className="w-[96px] h-[96px] sm:w-[120px] sm:h-[120px] xl:w-[153px] xl:h-[153px] overflow-hidden rounded-full">
           {imageUrl ? (
             <img
@@ -155,7 +156,7 @@ export default function StudentProfileCard({
           <p>{description}</p>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
