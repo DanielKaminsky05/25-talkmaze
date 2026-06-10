@@ -1,5 +1,6 @@
 import type { SessionProp } from "./types";
 import { formatDate, formatTime, getDurationMin } from "./sessionDateUtils";
+import { Badge } from "@/src/components/ui/badge";
 
 interface Props {
   session: SessionProp;
@@ -31,9 +32,12 @@ export default function SessionCard({ session, selected, onSelect }: Props) {
         <p className="leading-tight text-sm xl:text-base flex items-center gap-2 flex-wrap">
           <span>{formatDate(session.start_time)}</span>
           {isPending && (
-            <span className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+            <Badge
+              variant="warning"
+              className="text-[10px] uppercase tracking-wide xl:text-[11px]"
+            >
               Reschedule pending
-            </span>
+            </Badge>
           )}
         </p>
         <p

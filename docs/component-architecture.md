@@ -29,6 +29,7 @@ Canonical axes already in use:
 | `Input` / `Textarea` | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
 | `Select` (trigger) | colour/surface (`light`/`dark`) | dimensions | `error` (state) |
 | `Card` | colour/surface (`light`/`dark`/`accent`/`secondary`) | `padding` (none/sm/md/lg) | `shadow` (none/sm/md/lg), `border` (bool) |
+| `Badge` | colour/role (`accent`/`secondary`/`light`/`warning`/`destructive`/`outline`) | dimensions (`sm`/`md`) | — |
 
 **Anti-pattern (do not do this):** baking size into a colour variant, e.g. a
 `dark` variant that is also smaller/tighter. Colour and size are independent —
@@ -400,7 +401,15 @@ migration (auth + profile forms) followed exactly this.
     of their own). **Leave raw** (don't wrap in `Card`): selectable / `<Link>` /
     full-tile-clickable cards (need pressed/active/nav state), bespoke glass/gradient
     panels, status banners/alerts, and `<main>`/page-layout shells.
-- **Next (highest dup first):** `Badge` (status pills), `Modal`/`Dialog` shell (modal
+  - shadcn **`Badge`** (text status pill): `variant` (surface/role —
+    `accent`/`secondary`/`light`/`warning`/`destructive`/`outline`, default
+    `secondary`) × `size` (`sm`/`md`), pill shape, `asChild`. Use for short
+    status/metadata labels ("Current plan", "Setup Required"); **not** for the
+    gamification artwork badges (`ClaimedBadge`/`GlowingBadge`), which are images.
+    The `warning` variant introduced a `--warning` semantic token aliased to the
+    brand coral (`--talkmaze-coral`) — solid coral stays for emphasis figures; the
+    pill uses a soft tint (`bg-warning/10` + `text-warning`).
+- **Next (highest dup first):** `Modal`/`Dialog` shell (modal
   boxes + `fixed inset-0` backdrops), `Alert` (amber/red/emerald status banners),
   `SelectableCard`/`NavItem` (the pressed/active/link cards left raw above).
 - **Adopt-when-needed (shadcn):** `InputGroup` for input *adornments* (search

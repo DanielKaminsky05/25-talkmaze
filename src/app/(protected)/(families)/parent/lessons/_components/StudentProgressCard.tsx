@@ -3,6 +3,7 @@ import Image from "next/image";
 import LessonProgressBar from "@/src/app/(protected)/(families)/_components/LessonProgressBar";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
 import { TokenMysteryStar } from "@/src/components/ui/icons";
+import { Badge } from "@/src/components/ui/badge";
 
 interface TokenProp {
   id: string;
@@ -42,7 +43,10 @@ export default function StudentProgressCard({
 
   if (isSetupComplete === false) {
     return (
-      <Link href={`/onboarding?studentId=${studentId}`} className="group block">
+      <Link
+        href={`/onboarding?studentId=${studentId}`}
+        className="group block"
+      >
         <div className="bg-white rounded-2xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] p-6 flex flex-col gap-5 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-xl">
           <div className="flex items-center gap-4">
             <div
@@ -73,9 +77,9 @@ export default function StudentProgressCard({
               >
                 {name}
               </h2>
-              <span className="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FFF8E6] text-[#F5A623] border border-[#F5A623]/30">
+              <Badge variant="warning" className="mt-1">
                 Setup Required
-              </span>
+              </Badge>
             </div>
           </div>
           <div

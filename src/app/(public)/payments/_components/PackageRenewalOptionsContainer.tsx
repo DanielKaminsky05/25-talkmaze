@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CaretIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/utils/cn";
 
 interface Plan {
@@ -118,14 +119,14 @@ export const PackageRenewaloptionsContainer = ({
               </h4>
 
               {isCurrent && (
-                <span className="rounded-full bg-[#2b4257] px-3 py-1 text-xs font-bold text-white">
+                <Badge variant="secondary" size="md" className="font-bold">
                   Current plan
-                </span>
+                </Badge>
               )}
               {isPending && !isCurrent && (
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2b4257]">
+                <Badge variant="light" size="md" className="font-bold">
                   Plan change scheduled
-                </span>
+                </Badge>
               )}
 
               <div className="bg-white rounded-xl px-5 py-4 flex flex-col items-center gap-0.5 w-full shadow-[inset_0_0_4px_2px_rgba(0,0,0,0.10)]">
