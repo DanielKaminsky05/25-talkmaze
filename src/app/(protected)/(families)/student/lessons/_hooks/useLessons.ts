@@ -200,7 +200,7 @@ export function useLessons() {
   // Navigate to the detail page using slug if available
   const navigateToLesson = useCallback(
     (lesson: LessonRow) => {
-      router.push(`/lessons/${lesson.slug ?? lesson.id}`);
+      router.push(`/student/lessons/${lesson.slug ?? lesson.id}`);
     },
     [router],
   );

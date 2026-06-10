@@ -77,7 +77,7 @@ export function useLessonDetail(slug: string) {
           .filter((id): id is string => !!id);
 
         if (enrolledCourseIds.length === 0) {
-          router.push("/lessons");
+          router.push("/student/lessons");
           return;
         }
 
@@ -102,7 +102,7 @@ export function useLessonDetail(slug: string) {
         }
 
         if (!lessonData) {
-          router.push("/lessons");
+          router.push("/student/lessons");
           return;
         }
 

@@ -13,7 +13,7 @@ import CurrentLessonBanner from "./_components/CurrentLessonBanner";
 import { useHomeData } from "./_hooks/useHomeData";
 
 function lessonPath(lesson: { slug: string | null; id: string }) {
-  return `/lessons/${lesson.slug ?? lesson.id}`;
+  return `/student/lessons/${lesson.slug ?? lesson.id}`;
 }
 
 export default function Home() {

@@ -1,7 +1,7 @@
 "use client";
 
 import type { HomeLesson } from "../_hooks/useHomeData";
-import SlideshowViewer from "../../lessons/_components/SlideshowViewer";
+import SlideshowViewer from "../lessons/_components/SlideshowViewer";
 
 interface CurrentLessonBannerProps {
   lesson: HomeLesson | null;

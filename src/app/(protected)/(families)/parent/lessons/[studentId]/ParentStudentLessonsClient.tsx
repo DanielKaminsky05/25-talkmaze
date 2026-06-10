@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import LessonCard from "@/src/app/(protected)/(families)/lessons/_components/LessonCard";
-import ProgressCard from "@/src/app/(protected)/(families)/lessons/_components/ProgressCard";
+import LessonCard from "@/src/app/(protected)/(families)/student/lessons/_components/LessonCard";
+import ProgressCard from "@/src/app/(protected)/(families)/student/lessons/_components/ProgressCard";
 import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
 import CoursePicker, {
   type CoursePickerOption,

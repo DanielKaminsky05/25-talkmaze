@@ -164,12 +164,12 @@ describe("student profile", () => {
     const fd = makeFormData({
       profileId: studentId,
       profileType: "student",
-      destination: "/lessons",
+      destination: "/student/lessons",
     });
 
     const dest = await expectRedirect(() => selectProfile(fd));
 
-    expect(dest).toBe("/lessons");
+    expect(dest).toBe("/student/lessons");
     expect(setProfileCookies).toHaveBeenCalledOnce();
   });
 });

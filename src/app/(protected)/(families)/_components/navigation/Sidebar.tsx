@@ -22,9 +22,9 @@ import {
 const NAV_ITEMS = {
   student: [
     { id: 0, name: "Home", link: "/student", icon: <HomeIcon /> },
-    { id: 1, name: "Lessons", link: "/lessons", icon: <LessonsIcon /> },
+    { id: 1, name: "Lessons", link: "/student/lessons", icon: <LessonsIcon /> },
     { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
-    { id: 3, name: "Rewards", link: "/reward", icon: <RewardsIcon /> },
+    { id: 3, name: "Rewards", link: "/student/reward", icon: <RewardsIcon /> },
   ],
   parent: [
     { id: 0, name: "Home", link: "/parent", icon: <HomeIcon /> },

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLessonDetail } from "../_hooks/useLessonDetail";
-import { usePageTitle } from "../../_context/PageTitleContext";
+import { usePageTitle } from "@/src/app/(protected)/(families)/_context/PageTitleContext";
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import { Card } from "@/src/components/ui/card";
@@ -83,7 +83,7 @@ export default function LessonDetailPage() {
           <Button
             variant="accent"
             rounded="xl"
-            onClick={() => router.push("/lessons")}
+            onClick={() => router.push("/student/lessons")}
             className="mt-2"
           >
             Back to Lessons
