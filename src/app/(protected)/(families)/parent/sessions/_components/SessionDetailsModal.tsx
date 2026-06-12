@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
 import type { SessionProp } from "./types";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/src/components/ui/field";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { formatDateTime, getDurationMin } from "./sessionDateUtils";
 
 interface Props {
@@ -92,24 +99,29 @@ export default function SessionDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
-        <div className="px-5 py-4 flex items-center justify-between border-b border-gray-200">
-          <h2 className="text-[#1F2E3B] text-lg font-semibold">
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent variant="light" size="md">
+        <DialogHeader>
+          <DialogTitle>
             {mode === "edit" ? "Request Reschedule" : "Session Details"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-[#2B4257]/70 hover:text-[#2B4257] transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "edit"
+              ? `Pick a new time for ${session.studentName}'s session with ${
+                  session.coachName || "their coach"
+                }. Your coach will be asked to approve before anything changes.`
+              : "Review the details for this session."}
+          </DialogDescription>
+        </DialogHeader>
 
         {mode === "view" ? (
           <>
-            <div className="px-5 py-4 space-y-3 text-sm text-[#2B4257]">
+            <div className="space-y-3 text-sm text-[#2B4257]">
               <div>
                 <p className="text-xs uppercase tracking-wide text-[#2B4257]/60">
                   Student
@@ -182,39 +194,36 @@ export default function SessionDetailsModal({
               {error && <p className="text-red-500 text-sm">{error}</p>}
             </div>
 
-            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
+            <DialogFooter>
               {isPending ? (
-                <button
+                <Button
+                  variant="outline-light"
+                  size="md"
                   onClick={handleWithdraw}
                   disabled={submitting}
-                  className="px-4 py-2 rounded-lg border border-amber-300 text-amber-800 text-sm font-medium hover:bg-amber-50 disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {submitting ? "Withdrawing…" : "Withdraw request"}
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
+                  variant="outline-light"
+                  size="md"
                   onClick={() => {
                     setError("");
                     setMode("edit");
                   }}
-                  className="px-4 py-2 rounded-lg border border-[#2B4257]/20 text-[#2B4257] text-sm font-medium hover:bg-[#2B4257]/5 transition-colors cursor-pointer"
                 >
                   Request Reschedule
-                </button>
+                </Button>
               )}
-              <Button variant="secondary" size="sm" onClick={onClose}>
+              <Button variant="secondary" size="md" onClick={onClose}>
                 Close
               </Button>
-            </div>
+            </DialogFooter>
           </>
         ) : (
           <>
-            <div className="px-5 py-4 space-y-4 text-sm text-[#2B4257]">
-              <p className="text-xs text-[#2B4257]/60">
-                Pick a new time for {session.studentName}&apos;s session with{" "}
-                {session.coachName || "their coach"}. Your coach will be asked
-                to approve before anything changes.
-              </p>
+            <div className="space-y-4 text-sm text-[#2B4257]">
               <Field>
                 <FieldLabel htmlFor="reschedule-start">Start</FieldLabel>
                 <Input
@@ -238,24 +247,30 @@ export default function SessionDetailsModal({
               {error && <FieldError>{error}</FieldError>}
             </div>
 
-            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
-              <button
+            <DialogFooter>
+              <Button
+                variant="outline-light"
+                size="md"
                 onClick={() => {
                   setError("");
                   setMode("view");
                 }}
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg border border-[#2B4257]/20 text-[#2B4257] text-sm font-medium hover:bg-[#2B4257]/5 disabled:opacity-50 transition-colors cursor-pointer"
               >
                 Cancel
-              </button>
-              <Button variant="secondary" size="sm" onClick={handleSubmitRequest} disabled={submitting}>
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleSubmitRequest}
+                disabled={submitting}
+              >
                 {submitting ? "Submitting…" : "Submit request"}
               </Button>
-            </div>
+            </DialogFooter>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

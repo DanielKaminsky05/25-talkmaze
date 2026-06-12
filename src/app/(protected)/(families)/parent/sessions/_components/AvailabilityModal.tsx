@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
 import type { StudentProp } from "./ParentSessionsClient";
 import { WEEKDAYS } from "@/src/lib/scheduling/types";
 import { availabilityFormSchema } from "@/src/lib/scheduling/schemas";
@@ -12,23 +11,27 @@ import {
 } from "@/src/lib/scheduling/timezones";
 import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
 import { Button } from "@/src/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import WeeklyAvailabilityEditor, {
   WeeklyAvailabilityValue,
 } from "../../../_components/WeeklyAvailabilityEditor";
 
 interface Props {
   students: StudentProp[];
-  /** Pre-select a specific student; null falls back to the first in the list. */
+  // Pre-select a specific student; null falls back to the first in the list. 
   initialStudentId: string | null;
   onClose: () => void;
 }
 
 /**
  * Parent-facing modal for editing a student's recurring weekly availability.
- *
- * Owns the modal chrome (header, student switcher, footer save/error feedback)
- * and the network calls; the day/slot UI is delegated to WeeklyAvailabilityEditor
- * so the look-and-feel matches the onboarding flow.
  */
 export default function AvailabilityModal({
   students,
@@ -159,56 +162,58 @@ export default function AvailabilityModal({
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F2E3B]/10">
-          <div className="flex items-center gap-3">
-            <h2 className="text-[#2B4257] font-semibold text-base">
-              Edit Availability
-            </h2>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent
+        variant="light"
+        size="lg"
+        className="flex max-h-[90vh] flex-col"
+      >
+        <DialogHeader>
+          <DialogTitle>Edit Availability</DialogTitle>
+          <DialogDescription>
+            Edit the available times for this student, so that the coach and
+            system can schedule optimal timeslots.
+          </DialogDescription>
+        </DialogHeader>
 
-            {students.length > 1 && (
-              <Dropdown
-                label={
-                  [selectedStudent?.first_name, selectedStudent?.last_name]
-                    .filter(Boolean)
-                    .join(" ") || "Student"
-                }
-                align="left"
-              >
-                {({ close }) => (
-                  <>
-                    {students.map((s) => (
-                      <DropdownItem
-                        key={s.id}
-                        active={selectedStudentId === s.id}
-                        onClick={() => {
-                          setSelectedStudentId(s.id);
-                          close();
-                        }}
-                      >
-                        {[s.first_name, s.last_name]
-                          .filter(Boolean)
-                          .join(" ") || "Student"}
-                      </DropdownItem>
-                    ))}
-                  </>
-                )}
-              </Dropdown>
-            )}
+        {students.length > 1 && (
+          <div className="flex justify-end">
+            <Dropdown
+              label={
+                [selectedStudent?.first_name, selectedStudent?.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "Student"
+              }
+              align="left"
+            >
+              {({ close }) => (
+                <>
+                  {students.map((s) => (
+                    <DropdownItem
+                      key={s.id}
+                      active={selectedStudentId === s.id}
+                      onClick={() => {
+                        setSelectedStudentId(s.id);
+                        close();
+                      }}
+                    >
+                      {[s.first_name, s.last_name].filter(Boolean).join(" ") ||
+                        "Student"}
+                    </DropdownItem>
+                  ))}
+                </>
+              )}
+            </Dropdown>
           </div>
-
-          <button
-            onClick={onClose}
-            className="text-[#2B4257]/60 hover:text-[#2B4257] transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="-mx-6 flex-1 overflow-y-auto px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <p className="text-[#2B4257]/60 text-sm">Loading…</p>
@@ -224,8 +229,7 @@ export default function AvailabilityModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#1F2E3B]/10 flex items-center justify-between">
+        <DialogFooter className="sm:items-center sm:justify-between">
           <div className="text-xs">
             {saveError && <span className="text-red-500">{saveError}</span>}
             {saveSuccess && (
@@ -233,11 +237,16 @@ export default function AvailabilityModal({
             )}
           </div>
 
-          <Button variant="default" size="md" rounded="xl" onClick={handleSave} disabled={saving || loading}>
+          <Button
+            variant="default"
+            size="md"
+            onClick={handleSave}
+            disabled={saving || loading}
+          >
             {saving ? "Saving…" : "Save"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

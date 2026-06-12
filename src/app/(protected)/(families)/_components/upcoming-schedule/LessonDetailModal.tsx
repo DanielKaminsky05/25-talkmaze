@@ -2,6 +2,14 @@
 
 import React from "react";
 import { Button } from "@/src/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 
 interface LessonDetailModalProps {
@@ -26,25 +34,21 @@ export default function LessonDetailModal({
   const timeStr = `${startDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${endDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#1f2e3b]/80 backdrop-blur-sm">
-      <div
-        className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-[#B1E7D6] p-6 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-[#2B4257]">{lesson.title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-[#2B4257] hover:opacity-70 transition-opacity text-2xl font-bold w-11 h-11 flex items-center justify-center"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent variant="light" size="lg">
+        <DialogHeader>
+          <DialogTitle>{lesson.title}</DialogTitle>
+          <DialogDescription>
+            {dateStr} · {timeStr}
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Content */}
-        <div className="p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-semibold text-[#2B4257]/60">
               Student
@@ -65,21 +69,6 @@ export default function LessonDetailModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-[#2B4257]/60">
-                Date
-              </label>
-              <p className="text-[#2B4257]">{dateStr}</p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold text-[#2B4257]/60">
-                Time
-              </label>
-              <p className="text-[#2B4257] font-bold">{timeStr}</p>
-            </div>
-          </div>
-
           {lesson.description && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-[#2B4257]/60">
@@ -94,22 +83,12 @@ export default function LessonDetailModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 pt-0 flex flex-col gap-3">
-          <Button
-            variant="secondary"
-            size="lg"
-            rounded="xl"
-            onClick={onClose}
-            className="w-full"
-          >
+        <DialogFooter>
+          <Button variant="secondary" size="md" onClick={onClose}>
             Close
           </Button>
-        </div>
-      </div>
-
-      {/* Backdrop click to close */}
-      <div className="absolute inset-0 -z-10" onClick={onClose}></div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -31,6 +31,7 @@ Canonical axes already in use:
 | `Card` | colour/surface (`light`/`dark`/`accent`/`secondary`) | `padding` (none/sm/md/lg) | `shadow` (none/sm/md/lg), `border` (bool) |
 | `Badge` | colour/role (`accent`/`secondary`/`light`/`warning`/`destructive`/`outline`) | dimensions (`sm`/`md`) | — |
 | `Avatar` | fallback surface (`navy`/`teal`) | dimensions + fallback text (`sm`/`md`/`lg`/`xl`) | `shape` (`circle`/`square`) |
+| `Dialog` (content) | colour/surface (`light`/`dark`) | max-width (`sm`/`md`/`lg`/`xl`) | — |
 
 **Anti-pattern (do not do this):** baking size into a colour variant, e.g. a
 `dark` variant that is also smaller/tighter. Colour and size are independent —
@@ -133,9 +134,13 @@ should be**, not as folders.
   `NavItem`, not `Button`;
 - a **full-tile clickable** (banner/card-as-link);
 - a **genuine one-off** with no reuse and a bespoke style (e.g. the white "Sign in
-  with Google" button, the white Stripe "Purchase" button on the mint form);
-- a **light-surface outline/secondary** button where the dark-UI `outline`
-  variant would be invisible — until an `outline-light` variant exists.
+  with Google" button, the white Stripe "Purchase" button on the mint form).
+
+> **Light-surface secondary buttons** use Button's **`outline-light`** variant
+> (`border-[#1F2E3B]/20`, dark text, subtle hover) — the dark-UI `outline` variant is
+> invisible on white. Use it for the secondary action in a `light` Dialog footer
+> (Cancel / Request Reschedule), paired with a `default`/`secondary` primary at the same
+> `size`.
 
 > **`Card` is the surface primitive.** Reach for `<Card variant … padding … shadow …
 > border>` for *any* styled surface — box, panel, sidebar tile, form shell — not just
@@ -421,8 +426,28 @@ migration (auth + profile forms) followed exactly this.
     renders initials (use `initials()` from `src/utils/formatName.ts`) or a default
     `lucide` user icon when given no children. Non-square / off-palette one-offs
     (e.g. the gray chat-bubble avatar in `ConversationMessage`) stay raw.
-- **Next (highest dup first):** `Modal`/`Dialog` shell (modal
-  boxes + `fixed inset-0` backdrops), `Alert` (amber/red/emerald status banners),
+  - Radix **`Dialog`** (modal shell): compound API
+    (`Dialog`/`DialogTrigger`/`DialogContent`/`DialogHeader`/`DialogFooter`/`DialogTitle`/`DialogDescription`/`DialogClose`)
+    on the unified `radix-ui` package. `DialogContent` carries two axes — `variant`
+    (surface — `light` white box default, `dark` navy `bg-card`) × `size` (max-width
+    `sm`/`md`/`lg`/`xl`) — plus a `showCloseButton` boolean (default `true`) for the
+    built-in top-right close-×. Radix gives focus-trap, Esc, scroll-lock, `role="dialog"`
+    + `aria-modal`, and portal for free (the hand-rolled `fixed inset-0` modals had
+    **none** of these). **Styling tracks stock shadcn** (`rounded-lg`, `shadow-lg`,
+    `bg-black/50` overlay) and **opens instantly — no enter/exit animation, no
+    `backdrop-blur`** (the blur caused a visible open-lag over busy pages; the zoom/fade
+    read as sluggish). **Keep dialogs uniform:** plain stacked `DialogHeader` (title +
+    short `DialogDescription`) on the default `p-6 gap-4` content; **no full-bleed
+    coloured header bars** (the mint/navy bars were removed for consistency).
+    `DialogHeader`/`DialogFooter` are layout-only (mirror Card's sub-components). Footer
+    actions are real `<Button>`s at one `size` — primary `default`/`secondary` + secondary
+    `outline-light` (the white-surface outline variant) — so heights match. Migrations keep
+    each modal's existing `onClose` prop: render `<Dialog open onOpenChange={(o) => { if
+    (!o) onClose(); }}>` internally so parent call-sites (`{show && <Modal onClose=… />}`)
+    are untouched. Scrollable bodies use `DialogContent className="flex max-h-[NNvh]
+    flex-col"` + a `flex-1 overflow-y-auto` body. Non-dialog overlays (mobile drawer
+    backdrop, full-screen page states, loading overlays) stay raw — they are not modals.
+- **Next (highest dup first):** `Alert` (amber/red/emerald status banners),
   `SelectableCard`/`NavItem` (the pressed/active/link cards left raw above).
 - **Adopt-when-needed (shadcn):** `InputGroup` for input *adornments* (search
   icon, password-eye toggle, `$`-prefix) — not a field wrapper. A `DetailRow` /
