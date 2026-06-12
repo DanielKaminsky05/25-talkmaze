@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { formatDateTime, getDurationMin } from "../_lib/sessionDateUtils";
+import { toDatetimeLocalValue } from "@/src/utils/formatDateTime";
 
 interface Props {
   session: SessionProp;
@@ -28,12 +29,6 @@ interface Props {
 }
 
 type Mode = "view" | "edit";
-
-function toDatetimeLocal(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export default function SessionRescheduleModal({
   session,
@@ -46,10 +41,10 @@ export default function SessionRescheduleModal({
 
   const [mode, setMode] = useState<Mode>(initialMode);
   const [startVal, setStartVal] = useState(
-    toDatetimeLocal(session.start_time),
+    toDatetimeLocalValue(session.start_time),
   );
   const [endVal, setEndVal] = useState(
-    session.end_time ? toDatetimeLocal(session.end_time) : "",
+    session.end_time ? toDatetimeLocalValue(session.end_time) : "",
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
