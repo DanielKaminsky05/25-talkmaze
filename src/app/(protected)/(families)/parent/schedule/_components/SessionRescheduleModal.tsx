@@ -7,6 +7,11 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/src/components/ui/field";
 import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "@/src/components/ui/alert";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -40,7 +45,9 @@ export default function SessionRescheduleModal({
   const isPending = session.reschedule_status === "pending";
 
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [startVal, setStartVal] = useState(toDatetimeLocal(session.start_time));
+  const [startVal, setStartVal] = useState(
+    toDatetimeLocal(session.start_time),
+  );
   const [endVal, setEndVal] = useState(
     session.end_time ? toDatetimeLocal(session.end_time) : "",
   );
@@ -164,31 +171,35 @@ export default function SessionRescheduleModal({
               {isPending &&
                 session.requested_start_time &&
                 session.requested_end_time && (
-                  <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                    <p className="text-xs uppercase tracking-wide font-semibold text-amber-800">
+                  <Alert
+                    variant="warning"
+                    size="sm"
+                    className="mt-2 rounded-xl p-3"
+                  >
+                    <AlertTitle className="uppercase tracking-wide">
                       Reschedule pending
-                    </p>
-                    <p className="text-xs text-amber-900/80 mt-1">
-                      Waiting for your coach to respond. We&apos;ll show the new
-                      time here once they approve.
-                    </p>
-                    <div className="mt-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between gap-3">
-                        <span className="text-amber-900/70">
-                          Requested start
-                        </span>
-                        <span className="font-medium text-amber-900 text-right">
-                          {formatDateTime(session.requested_start_time)}
-                        </span>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <p className="mt-1">
+                        Waiting for your coach to respond. We&apos;ll show the
+                        new time here once they approve.
+                      </p>
+                      <div className="mt-3 space-y-1.5">
+                        <div className="flex justify-between gap-3">
+                          <span className="opacity-70">Requested start</span>
+                          <span className="font-medium text-right">
+                            {formatDateTime(session.requested_start_time)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="opacity-70">Requested end</span>
+                          <span className="font-medium text-right">
+                            {formatDateTime(session.requested_end_time)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between gap-3">
-                        <span className="text-amber-900/70">Requested end</span>
-                        <span className="font-medium text-amber-900 text-right">
-                          {formatDateTime(session.requested_end_time)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
               {error && <p className="text-red-500 text-sm">{error}</p>}

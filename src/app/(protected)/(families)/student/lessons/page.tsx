@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
 import PageSpinner from "@/src/components/ui/PageSpinner";
+import { Alert } from "@/src/components/ui/alert";
 import ProgressCard from "./_components/ProgressCard";
 import TokensRow from "./_components/TokensRow";
 import LessonCard from "./_components/LessonCard";
@@ -56,9 +57,9 @@ export default function LessonsPage() {
   if (error) {
     return (
       <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white">
-        <div className="rounded-2xl bg-red-500/20 text-red-200 p-6">
+        <Alert variant="destructive" className="rounded-2xl p-6">
           Error loading lessons: {error}
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -72,9 +73,9 @@ export default function LessonsPage() {
               Setup Required
             </h2>
             <p className="text-[#B1E7D6] text-lg max-w-md mx-auto opacity-80">
-              Your profile hasn&apos;t been set up yet. Ask your parent to enter
-              the parent dashboard and complete your profile setup so we can
-              match you with a coach.
+              Your profile hasn&apos;t been set up yet. Ask your parent to
+              enter the parent dashboard and complete your profile setup so we
+              can match you with a coach.
             </p>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Alert } from "@/src/components/ui/alert";
 import { updatePassword } from "./actions";
 
 const inter = Inter({
@@ -81,9 +82,12 @@ export default function ResetPasswordPage() {
             </div>
 
             {error && (
-              <div className="p-4 rounded-[10px] text-sm font-medium bg-red-50 text-red-600">
+              <Alert
+                variant="destructive"
+                className="rounded-[10px] font-medium"
+              >
                 {error}
-              </div>
+              </Alert>
             )}
 
             <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>

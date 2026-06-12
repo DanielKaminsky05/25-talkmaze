@@ -7,6 +7,7 @@ import { usePageTitle } from "@/src/app/(protected)/(families)/_context/PageTitl
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import { Card } from "@/src/components/ui/card";
+import { Alert } from "@/src/components/ui/alert";
 import TokensCard from "../_components/TokensCard";
 import SlideshowViewer from "../_components/SlideshowViewer";
 import PageSpinner from "@/src/components/ui/PageSpinner";
@@ -50,9 +51,9 @@ export default function LessonDetailPage() {
   if (error || !lesson) {
     return (
       <div className="w-full max-w-[1400px] p-6 md:p-12 mx-auto text-white">
-        <div className="rounded-2xl bg-red-500/20 text-red-200 p-6">
+        <Alert variant="destructive" className="rounded-2xl p-6">
           {error ?? "Lesson not found."}
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -114,7 +115,9 @@ export default function LessonDetailPage() {
           padding="none"
           className="rounded-3xl p-6 md:p-8 gap-6"
         >
-          <div className="font-semibold text-[#1f2e3b] text-lg">Task Cards</div>
+          <div className="font-semibold text-[#1f2e3b] text-lg">
+            Task Cards
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TaskCard
               title="Pre-Lesson Work"

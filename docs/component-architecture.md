@@ -447,8 +447,26 @@ migration (auth + profile forms) followed exactly this.
     are untouched. Scrollable bodies use `DialogContent className="flex max-h-[NNvh]
     flex-col"` + a `flex-1 overflow-y-auto` body. Non-dialog overlays (mobile drawer
     backdrop, full-screen page states, loading overlays) stay raw — they are not modals.
-- **Next (highest dup first):** `Alert` (amber/red/emerald status banners),
-  `SelectableCard`/`NavItem` (the pressed/active/link cards left raw above).
+  - shadcn **`Alert`** (block-level status banner — a tinted, rounded callout for
+    page/section status): `variant` (colour/role — `default` neutral `bg-card`,
+    `destructive` soft red, `warning` soft coral) × `size` (`sm` = `px-3 py-2
+    text-xs`, `md` = `px-4 py-3 text-sm`, default `md`), `role="alert"`. Compound API
+    `Alert`/`AlertTitle`/`AlertDescription`/`AlertAction` (sub-components layout-only,
+    mirror Card/Dialog); single-line banners pass text as a direct child (inherits the
+    variant colour); structured banners use `AlertTitle` + `AlertDescription` (the
+    description is auto-dimmed via `*:data-[slot=alert-description]`). Optional leading
+    `lucide` icon as the first child (grid layout shifts to `auto_1fr`). **Backgrounds
+    are soft tints** (`bg-destructive/10`/`bg-warning/10`) for visual parity with the
+    old hand-rolled banners — `destructive`/`warning` reuse the existing
+    `--destructive`/`--warning` (coral) tokens, **no new token**. **`success`/emerald is
+    deferred** behind a future `--success` token — the trigger is the dual success/error
+    status banner on `forgot-password` (left raw until then; migrating only its error
+    half would split one element). Use for short page/section status; **leave raw**:
+    inline `text-red-*` field validation (that's `FieldError`), the full-screen emerald
+    `payments/success` state, and per-message error-bubble styling (`ConversationMessage`).
+- **Next (highest dup first):** `SelectableCard`/`NavItem` (the pressed/active/link
+  cards left raw above); `Alert`'s `success` variant + `--success` token when
+  `forgot-password` is migrated.
 - **Adopt-when-needed (shadcn):** `InputGroup` for input *adornments* (search
   icon, password-eye toggle, `$`-prefix) — not a field wrapper. A `DetailRow` /
   description-list for read-only term→value pairs (lesson/session detail modals);

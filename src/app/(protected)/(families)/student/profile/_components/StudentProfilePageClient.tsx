@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { FieldLabel } from "@/src/components/ui/field";
+import { Alert } from "@/src/components/ui/alert";
 
 type StudentData = {
   id: string;
@@ -339,9 +340,9 @@ function LeftPanel({ student }: { student: StudentData }) {
         )}
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500/40 text-red-300 px-3 py-2 rounded-lg text-xs">
+          <Alert variant="destructive" size="sm">
             {error}
-          </div>
+          </Alert>
         )}
       </div>
     </div>
@@ -583,9 +584,9 @@ function SectionCard({
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-900/30 border border-red-500/40 text-red-300 px-4 py-2 rounded-lg text-sm">
+        <Alert variant="destructive" className="mb-4">
           {error}
-        </div>
+        </Alert>
       )}
 
       {children}
