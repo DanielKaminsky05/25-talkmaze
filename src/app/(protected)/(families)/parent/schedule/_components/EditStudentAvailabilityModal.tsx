@@ -33,7 +33,7 @@ interface Props {
 /**
  * Parent-facing modal for editing a student's recurring weekly availability.
  */
-export default function AvailabilityModal({
+export default function EditStudentAvailabilityModal({
   students,
   initialStudentId,
   onClose,

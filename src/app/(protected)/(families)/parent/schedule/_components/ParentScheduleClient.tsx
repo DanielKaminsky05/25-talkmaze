@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import AdminCalendar from "../../../../admin/_components/AdminCalendar";
-import AvailabilityModal from "./AvailabilityModal";
-import SessionDetailsModal from "./SessionDetailsModal";
+import EditStudentAvailabilityModal from "./EditStudentAvailabilityModal";
+import SessionRescheduleModal from "./SessionRescheduleModal";
 import SchedulePanel from "./SchedulePanel";
 import type { SessionProp, StudentProp } from "./types";
 import { Button } from "@/src/components/ui/button";
@@ -127,7 +127,7 @@ export default function ParentScheduleClient({ students, sessions }: Props) {
       </div>
 
       {showAvailability && (
-        <AvailabilityModal
+        <EditStudentAvailabilityModal
           students={students}
           initialStudentId={selectedStudent}
           onClose={() => setShowAvailability(false)}
@@ -135,7 +135,7 @@ export default function ParentScheduleClient({ students, sessions }: Props) {
       )}
 
       {selectedSession && (
-        <SessionDetailsModal
+        <SessionRescheduleModal
           session={selectedSession}
           onClose={handleCloseModal}
           initialMode={modalMode}

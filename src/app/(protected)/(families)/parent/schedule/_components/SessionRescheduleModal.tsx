@@ -30,7 +30,7 @@ function toDatetimeLocal(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function SessionDetailsModal({
+export default function SessionRescheduleModal({
   session,
   onClose,
   initialMode = "view",

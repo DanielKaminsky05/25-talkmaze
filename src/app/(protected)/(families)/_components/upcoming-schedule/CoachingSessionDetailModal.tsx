@@ -12,17 +12,17 @@ import {
 } from "@/src/components/ui/dialog";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 
-interface LessonDetailModalProps {
-  lesson: CoachingSession;
+interface CoachingSessionDetailModalProps {
+  session: CoachingSession;
   onClose: () => void;
 }
 
-export default function LessonDetailModal({
-  lesson,
+export default function CoachingSessionDetailModal({
+  session,
   onClose,
-}: LessonDetailModalProps) {
-  const startDate = new Date(lesson.start_date);
-  const endDate = new Date(lesson.end_date);
+}: CoachingSessionDetailModalProps) {
+  const startDate = new Date(session.start_date);
+  const endDate = new Date(session.end_date);
 
   const dateStr = startDate.toLocaleDateString(undefined, {
     weekday: "long",
@@ -42,7 +42,7 @@ export default function LessonDetailModal({
     >
       <DialogContent variant="light" size="lg">
         <DialogHeader>
-          <DialogTitle>{lesson.title}</DialogTitle>
+          <DialogTitle>{session.title}</DialogTitle>
           <DialogDescription>
             {dateStr} · {timeStr}
           </DialogDescription>
@@ -54,29 +54,29 @@ export default function LessonDetailModal({
               Student
             </label>
             <p className="text-lg font-bold text-[#2B4257]">
-              {lesson.studentName}
+              {session.studentName}
             </p>
           </div>
 
-          {lesson.coachName && (
+          {session.coachName && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-[#2B4257]/60">
                 Coach
               </label>
               <p className="text-lg text-[#2B4257] font-medium">
-                {lesson.coachName}
+                {session.coachName}
               </p>
             </div>
           )}
 
-          {lesson.description && (
+          {session.description && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-[#2B4257]/60">
                 Meeting Description
               </label>
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <p className="text-[#2B4257] text-sm whitespace-pre-wrap">
-                  {lesson.description}
+                  {session.description}
                 </p>
               </div>
             </div>

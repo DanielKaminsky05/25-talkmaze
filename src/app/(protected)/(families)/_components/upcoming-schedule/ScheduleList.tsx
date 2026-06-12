@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
-import LessonDetailModal from "./LessonDetailModal";
+import CoachingSessionDetailModal from "./CoachingSessionDetailModal";
 import { Card } from "@/src/components/ui/card";
 
 export default function ScheduleList({
@@ -10,9 +10,8 @@ export default function ScheduleList({
 }: {
   schedule: CoachingSession[];
 }) {
-  const [selectedLesson, setSelectedLesson] = useState<CoachingSession | null>(
-    null,
-  );
+  const [selectedSession, setSelectedSession] =
+    useState<CoachingSession | null>(null);
 
   return (
     <Card
@@ -48,7 +47,7 @@ export default function ScheduleList({
             return (
               <div
                 key={item.id}
-                onClick={() => setSelectedLesson(item)}
+                onClick={() => setSelectedSession(item)}
                 className="w-full min-h-[72px] p-4 border-[0.5px] rounded-xl font-semibold border-[#4E4C4C] shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] flex justify-between items-center bg-white text-[#2B4257] cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div>
@@ -72,10 +71,10 @@ export default function ScheduleList({
         )}
       </div>
 
-      {selectedLesson && (
-        <LessonDetailModal
-          lesson={selectedLesson}
-          onClose={() => setSelectedLesson(null)}
+      {selectedSession && (
+        <CoachingSessionDetailModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
         />
       )}
     </Card>
