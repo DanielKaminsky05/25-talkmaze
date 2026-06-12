@@ -97,7 +97,7 @@ src/app/(public)/payments/_components/**     ← payments-only shared, fine for 
 /parent/profile                           .../parent/profile/page.tsx
 /parent/lessons                           .../parent/lessons/page.tsx
 /parent/lessons/[studentId]               .../parent/lessons/[studentId]/page.tsx
-/parent/sessions                          .../parent/sessions/page.tsx
+/parent/schedule                          .../parent/schedule/page.tsx
 ```
 
 (`/profiles` listed once — picker + add + setup all under `/profiles/`.)

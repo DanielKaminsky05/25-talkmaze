@@ -1,6 +1,6 @@
 [
   { "role": "parent", "path": "/parent", "ready": "body" },
-  { "role": "parent", "path": "/parent/sessions", "ready": "body" },
+  { "role": "parent", "path": "/parent/schedule", "ready": "body" },
   { "role": "parent", "path": "/parent/profile", "ready": "body" },
   { "role": "parent", "path": "/profiles", "ready": "body" },
   { "role": "student", "path": "/student", "ready": "body" },

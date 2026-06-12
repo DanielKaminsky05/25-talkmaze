@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { StudentProp } from "./ParentSessionsClient";
+import type { StudentProp } from "./ParentScheduleClient";
 import { WEEKDAYS } from "@/src/lib/scheduling/types";
 import { availabilityFormSchema } from "@/src/lib/scheduling/schemas";
 import {

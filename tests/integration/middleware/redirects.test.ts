@@ -375,7 +375,7 @@ describe("cross-profile-type access", () => {
 
   it("redirects student profile type away from nested /parent routes to /student", async () => {
     const cookies = withProfile(regularCookies, studentId, "student");
-    const res = await middleware(makeReq("/parent/sessions", cookies));
+    const res = await middleware(makeReq("/parent/schedule", cookies));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/student");
   });

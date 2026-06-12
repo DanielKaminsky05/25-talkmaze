@@ -78,7 +78,7 @@ The base seed from `setup-states.ts` gives you: 1 parent + 1 student (with activ
 | `/parent/lessons` | `parent` | `body` | yes | Empty without student/lessons |
 | `/parent/lessons/[studentId]` | `parent` | `body` | yes | Needs a real student id in URL |
 | `/parent/profile` | `parent` | `form` | no | |
-| `/parent/sessions` | `parent` | `body` | yes | Empty without `sessions` rows |
+| `/parent/schedule` | `parent` | `body` | yes | Empty without `sessions` rows |
 | `/student` | `student` | `body` | no | Student dashboard. **Requires active subscription** — `student` state has one |
 | `/student/profile` | `student` | `form` | no | |
 | `/lessons` | `student` | `body` | yes | Empty without `lessons` rows |

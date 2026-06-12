@@ -1,18 +1,18 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
-import ParentSessionsClient, {
+import ParentScheduleClient, {
   type StudentProp,
   type SessionProp,
-} from "./_components/ParentSessionsClient";
+} from "./_components/ParentScheduleClient";
 
 /**
- * /parent/sessions — Server Component
+ * /parent/schedule — Server Component
  *
  * Fetches all students for the logged-in parent and their upcoming sessions,
  * then passes the data to the client component for rendering and filtering.
  */
-export default async function ParentSessionsPage() {
+export default async function ParentSchedulePage() {
   const supabase = await createClient();
 
   const user = await getCurrentUser();
@@ -100,5 +100,5 @@ export default async function ParentSessionsPage() {
       }));
   }
 
-  return <ParentSessionsClient students={students} sessions={sessions} />;
+  return <ParentScheduleClient students={students} sessions={sessions} />;
 }

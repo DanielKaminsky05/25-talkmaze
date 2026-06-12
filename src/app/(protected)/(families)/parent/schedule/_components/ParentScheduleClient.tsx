@@ -5,7 +5,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import AdminCalendar from "../../../../admin/_components/AdminCalendar";
 import AvailabilityModal from "./AvailabilityModal";
 import SessionDetailsModal from "./SessionDetailsModal";
-import SessionsPanel from "./SessionsPanel";
+import SchedulePanel from "./SchedulePanel";
 import type { SessionProp, StudentProp } from "./types";
 import { Button } from "@/src/components/ui/button";
 
@@ -18,7 +18,7 @@ interface Props {
   sessions: SessionProp[];
 }
 
-export default function ParentSessionsClient({ students, sessions }: Props) {
+export default function ParentScheduleClient({ students, sessions }: Props) {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [showAvailability, setShowAvailability] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionProp | null>(
@@ -107,7 +107,7 @@ export default function ParentSessionsClient({ students, sessions }: Props) {
 
           <section className="min-h-0 flex flex-col items-stretch lg:items-end gap-3 lg:self-center">
             <div className="w-full h-[400px] lg:h-[clamp(520px,calc(100vh-290px),760px)]">
-              <SessionsPanel
+              <SchedulePanel
                 students={students}
                 selectedStudent={selectedStudent}
                 onSelectStudent={handleSelectStudent}

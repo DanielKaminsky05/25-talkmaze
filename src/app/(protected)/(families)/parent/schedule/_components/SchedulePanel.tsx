@@ -15,7 +15,7 @@ interface Props {
   onReschedule: () => void;
 }
 
-export default function SessionsPanel({
+export default function SchedulePanel({
   students,
   selectedStudent,
   onSelectStudent,

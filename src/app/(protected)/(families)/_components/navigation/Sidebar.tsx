@@ -37,7 +37,7 @@ const NAV_ITEMS = {
     {
       id: 2,
       name: "Schedule",
-      link: "/parent/sessions",
+      link: "/parent/schedule",
       icon: <CalendarDays size={20} />,
     },
     { id: 3, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
