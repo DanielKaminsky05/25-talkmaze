@@ -325,7 +325,7 @@ utilities directly when refactoring.
 - **shadcn-generated primitives** keep their **lowercase** filename
   (`button.tsx`, `input.tsx`, `textarea.tsx`) — matches the generator and avoids
   regen conflicts.
-- **All other components** are **PascalCase** (`Dropdown.tsx`, `PageSpinner.tsx`,
+- **All other components** are **PascalCase** (`PageSpinner.tsx`,
   `SectionCard.tsx`, every icon).
 - One component per file, named after the component; co-locate tiny sub-parts.
 - Icons are inline-SVG function components barreled from

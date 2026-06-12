@@ -9,7 +9,13 @@ import {
   detectBrowserTimeZone,
   normalizeTimeZone,
 } from "@/src/lib/scheduling/timezones";
-import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -25,7 +31,7 @@ import WeeklyAvailabilityEditor, {
 
 interface Props {
   students: StudentProp[];
-  // Pre-select a specific student; null falls back to the first in the list. 
+  // Pre-select a specific student; null falls back to the first in the list.
   initialStudentId: string | null;
   onClose: () => void;
 }
@@ -41,7 +47,9 @@ export default function EditStudentAvailabilityModal({
   const [selectedStudentId, setSelectedStudentId] = useState<string>(
     initialStudentId ?? students[0]?.id ?? "",
   );
-  const [availability, setAvailability] = useState<WeeklyAvailabilityValue>({});
+  const [availability, setAvailability] = useState<WeeklyAvailabilityValue>(
+    {},
+  );
   const [timezone, setTimezone] = useState(DEFAULT_TIME_ZONE);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -159,8 +167,6 @@ export default function EditStudentAvailabilityModal({
     }
   };
 
-  const selectedStudent = students.find((s) => s.id === selectedStudentId);
-
   return (
     <Dialog
       open
@@ -183,32 +189,22 @@ export default function EditStudentAvailabilityModal({
 
         {students.length > 1 && (
           <div className="flex justify-end">
-            <Dropdown
-              label={
-                [selectedStudent?.first_name, selectedStudent?.last_name]
-                  .filter(Boolean)
-                  .join(" ") || "Student"
-              }
-              align="left"
+            <Select
+              value={selectedStudentId}
+              onValueChange={setSelectedStudentId}
             >
-              {({ close }) => (
-                <>
-                  {students.map((s) => (
-                    <DropdownItem
-                      key={s.id}
-                      active={selectedStudentId === s.id}
-                      onClick={() => {
-                        setSelectedStudentId(s.id);
-                        close();
-                      }}
-                    >
-                      {[s.first_name, s.last_name].filter(Boolean).join(" ") ||
-                        "Student"}
-                    </DropdownItem>
-                  ))}
-                </>
-              )}
-            </Dropdown>
+              <SelectTrigger size="sm" className="w-auto">
+                <SelectValue placeholder="Student" />
+              </SelectTrigger>
+              <SelectContent>
+                {students.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {[s.first_name, s.last_name].filter(Boolean).join(" ") ||
+                      "Student"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 

@@ -1,5 +1,11 @@
 import { fullName } from "@/src/utils/formatName";
-import Dropdown, { DropdownItem } from "@/src/components/ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import type { StudentProp } from "./types";
 
 interface Props {
@@ -8,46 +14,34 @@ interface Props {
   onChange: (id: string | null) => void;
 }
 
-export default function StudentFilter({ students, selected, onChange }: Props) {
-  const selectedStudent = selected
-    ? students.find((s) => s.id === selected)
-    : null;
-  const label = selectedStudent
-    ? fullName(selectedStudent.first_name, selectedStudent.last_name, "Student")
-    : "All Students";
+// Radix Select disallows an empty-string item value, so the "no filter" state
+// is represented by this sentinel value
+const ALL = "all";
 
+export default function StudentFilter({
+  students,
+  selected,
+  onChange,
+}: Props) {
   return (
-    <Dropdown
-      label={label}
-      align="right"
-      triggerClassName="max-w-[min(220px,56vw)] xl:max-w-[min(240px,62vw)]"
-      menuClassName="min-w-[190px] max-w-[260px]"
+    <Select
+      value={selected ?? ALL}
+      onValueChange={(v) => onChange(v === ALL ? null : v)}
     >
-      {({ close }) => (
-        <>
-          <DropdownItem
-            active={selected === null}
-            onClick={() => {
-              onChange(null);
-              close();
-            }}
-          >
-            All Students
-          </DropdownItem>
-          {students.map((s) => (
-            <DropdownItem
-              key={s.id}
-              active={selected === s.id}
-              onClick={() => {
-                onChange(s.id);
-                close();
-              }}
-            >
-              {fullName(s.first_name, s.last_name, "Student")}
-            </DropdownItem>
-          ))}
-        </>
-      )}
-    </Dropdown>
+      <SelectTrigger
+        size="sm"
+        className="w-auto max-w-[min(220px,56vw)] xl:max-w-[min(240px,62vw)]"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="min-w-[190px] max-w-[260px]">
+        <SelectItem value={ALL}>All Students</SelectItem>
+        {students.map((s) => (
+          <SelectItem key={s.id} value={s.id}>
+            {fullName(s.first_name, s.last_name, "Student")}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
