@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { formatDateTime, getDurationMin } from "./sessionDateUtils";
+import { formatDateTime, getDurationMin } from "../_lib/sessionDateUtils";
 
 interface Props {
   session: SessionProp;

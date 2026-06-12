@@ -1,5 +1,6 @@
 import type { SessionProp } from "./types";
-import { formatDate, formatTime, getDurationMin } from "./sessionDateUtils";
+import { formatDate, getDurationMin } from "../_lib/sessionDateUtils";
+import { fmtLocalTime } from "@/src/utils/formatDateTime";
 import { Badge } from "@/src/components/ui/badge";
 
 interface Props {
@@ -54,7 +55,7 @@ export default function SessionCard({ session, selected, onSelect }: Props) {
       </div>
       <div className="text-right shrink-0 ml-1 xl:ml-3">
         <p className="leading-tight text-sm xl:text-base">
-          {formatTime(session.start_time)}
+          {fmtLocalTime(session.start_time)}
         </p>
         <p className={`text-[11px] font-normal ${subTextClass}`}>
           {durationMin !== null ? `${durationMin} min` : "—"}
