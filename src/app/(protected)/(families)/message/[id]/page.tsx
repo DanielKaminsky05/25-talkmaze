@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import { markConversationRead } from "@/src/lib/messaging/server/markConversationRead";
 import { ConversationClient } from "./_client";
 import { createClient } from "@/src/services/supabase/server";
 
@@ -23,14 +24,30 @@ export default async function CoachConversationPage({
   // Only scope conversations to the active profile for regular users (role=1)
   const profile = user.role === 1 ? await getActiveProfile() : null;
 
-  const conversationId = await getConversation(user.id, user.role, contactId, profile);
+  const conversationId = await getConversation(
+    user.id,
+    user.role,
+    contactId,
+    profile,
+  );
+
+  // Opening the conversation clears its unread count for the family viewer.
+  // The RPC authorizes via auth.uid(), so no profile id needs to be passed.
+  if (user.role === 1) {
+    await markConversationRead(conversationId);
+  }
+
   const messages = await getMessages(conversationId);
   const currentSender = await getCurrentSender(user.id, user.role, profile);
 
   return (
     <ConversationClient
       conversation={{ id: conversationId }}
-      user={{ id: user.id, name: currentSender.name, avatar_url: currentSender.avatar_url }}
+      user={{
+        id: user.id,
+        name: currentSender.name,
+        avatar_url: currentSender.avatar_url,
+      }}
       messages={messages}
     />
   );
@@ -56,7 +73,9 @@ async function getCurrentSender(
       .eq("id", profile.id)
       .single();
     return {
-      name: data ? `${data.first_name || ""} ${data.last_name || ""}`.trim() : "Unknown",
+      name: data
+        ? `${data.first_name || ""} ${data.last_name || ""}`.trim()
+        : "Unknown",
       avatar_url: data?.avatar_url ?? null,
     };
   }
@@ -68,7 +87,9 @@ async function getCurrentSender(
     .eq("account_id", userId)
     .single();
   return {
-    name: data ? `${data.first_name || ""} ${data.last_name || ""}`.trim() : "Unknown",
+    name: data
+      ? `${data.first_name || ""} ${data.last_name || ""}`.trim()
+      : "Unknown",
     avatar_url: data?.avatar_url ?? null,
   };
 }
@@ -108,7 +129,7 @@ async function getConversation(
   const supabase = await createClient();
 
   if (userRole === 1 && profile) {
-    // Regular user: contactId is a coach's account_id — resolve their coaches.id
+    // Regular user: contactId is a coach's account_id
     const { data: coach } = await supabase
       .from("coaches")
       .select("id")
@@ -128,7 +149,11 @@ async function getConversation(
 
     const { data: newConv, error } = await supabase
       .from("conversations")
-      .insert({ coach_id: coach.id, profile_id: profile.id, profile_type: profile.type })
+      .insert({
+        coach_id: coach.id,
+        profile_id: profile.id,
+        profile_type: profile.type,
+      })
       .select("id")
       .single();
 
@@ -156,7 +181,11 @@ async function getConversation(
     const { data: conv, error } = await supabase
       .from("conversations")
       .upsert(
-        { coach_id: coach.id, profile_id: contactId, profile_type: profileType },
+        {
+          coach_id: coach.id,
+          profile_id: contactId,
+          profile_type: profileType,
+        },
         { onConflict: "coach_id,profile_id" },
       )
       .select("id")
@@ -211,7 +240,9 @@ async function getMessages(conversationId: string) {
 
       if (coach && m.sender_id === coach.account_id) {
         // Sender is the coach
-        name = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
+        name =
+          `${coach.first_name || ""} ${coach.last_name || ""}`.trim() ||
+          "Unknown";
         avatar_url = coach.avatar_url ?? null;
       } else {
         // Sender is the user profile

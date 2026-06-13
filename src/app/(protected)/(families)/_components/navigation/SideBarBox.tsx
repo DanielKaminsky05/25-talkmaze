@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { ReactNode } from "react";
+import { Badge } from "@/src/components/ui/badge";
 
 type Props = {
   id: number;
@@ -9,6 +10,7 @@ type Props = {
   link: string;
   onSelect?: () => void;
   icon?: ReactNode;
+  badge?: number;
 };
 
 /**
@@ -22,6 +24,7 @@ export default function SideBarBox({
   link,
   onSelect,
   icon,
+  badge,
 }: Props) {
   const backgroundColor = state ? "bg-[#B1E7D6]" : "bg-[#1F2E3B]";
   const textColor = state ? "text-[#1F2E3B]" : "text-[#B1E7D6]";
@@ -38,7 +41,14 @@ export default function SideBarBox({
           rounded-lg lg:rounded-2xl font-semibold`}
         onClick={onSelect}
       >
-        <p className={`${textColor} text-center lg:ml-[clamp(8px,calc(-16px+2.4vw),24px)]`}>{name}</p>
+        <span className="flex items-center gap-2 lg:ml-[clamp(8px,calc(-16px+2.4vw),24px)]">
+          <p className={`${textColor} text-center`}>{name}</p>
+          {badge && badge > 0 ? (
+            <Badge variant="light" aria-label={`${badge} unread`}>
+              {badge > 9 ? "9+" : badge}
+            </Badge>
+          ) : null}
+        </span>
         <span className={textColor}>{icon}</span>
       </div>
     </Link>

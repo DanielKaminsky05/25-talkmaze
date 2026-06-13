@@ -5,6 +5,7 @@ import ConversationMessageInput from "../_components/ConversationMessageInput";
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/services/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useUnread } from "../../_context/UnreadContext";
 
 /**
  * Chatbox client displaying messages between this user and the contact they
@@ -44,6 +45,15 @@ export function ConversationClient({
     roomId: conversation.id,
     userId: user.id, // kept for hook signature compatibility
   });
+
+  // Tell the unread provider this conversation is on screen. While it is, the
+  // provider marks incoming messages read instead of counting them, so the
+  // sidebar badge doesn't tick up for messages the user is actively reading.
+  const { setOpenConversation } = useUnread();
+  useEffect(() => {
+    setOpenConversation(conversation.id);
+    return () => setOpenConversation(null);
+  }, [conversation.id, setOpenConversation]);
 
   // Optimistic rendering: track messages the user sends before server confirms
   const [sentMessages, setSentMessages] = useState<

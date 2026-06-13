@@ -11,6 +11,8 @@ import {
   MessageCircleIcon,
   RewardsIcon,
 } from "@/src/components/ui/icons";
+import { Badge } from "@/src/components/ui/badge";
+import { useUnread } from "../../_context/UnreadContext";
 
 /**
  * Role-specific navigation items.
@@ -60,6 +62,7 @@ type Props = {
 export default function SideBar({ profileType, isOpen, onToggle }: Props) {
   const pathname = usePathname();
   const [activeId, setActiveId] = useState(0);
+  const { unreadCount } = useUnread();
 
   // Pick the correct nav list for the active profile type (student or parent)
   const items = NAV_ITEMS[profileType];
@@ -129,6 +132,11 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               >
                 {item.icon}
                 {item.name}
+                {item.link === "/message" && unreadCount > 0 ? (
+                  <Badge variant="light" aria-label={`${unreadCount} unread`}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Badge>
+                ) : null}
               </Link>
             ))}
           </nav>
@@ -183,6 +191,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               state={activeId === item.id}
               link={item.link}
               icon={item.icon}
+              badge={item.link === "/message" ? unreadCount : undefined}
               onSelect={() => setActiveId(item.id)}
             />
           ))}
