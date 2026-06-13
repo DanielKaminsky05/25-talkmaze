@@ -58,7 +58,10 @@ export async function POST(req: Request) {
 
 ## Status codes
 
-These are the only status codes a route may return. Anything else is a bug.
+These are the approved status codes for application-authored API responses
+today. A route should not introduce a new status code unless this table, the
+route docs, and relevant contract tests are updated first. An undocumented
+status code is a bug.
 
 | Code | Meaning | Example |
 |---|---|---|
