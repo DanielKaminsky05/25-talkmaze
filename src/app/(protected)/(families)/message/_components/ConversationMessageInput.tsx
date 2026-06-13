@@ -9,11 +9,15 @@ export default function ConversationMessageInput({
   onSend,
   onSuccessfulSend,
   onErrorSend,
+  disabled = false,
+  placeholder = "Type a message",
 }: {
-  conversationId: string;
-  onSend: (message: { id: string; text: string }) => void;
-  onSuccessfulSend: (message: Message) => void;
-  onErrorSend: (id: string) => void;
+  conversationId?: string;
+  onSend?: (message: { id: string; text: string }) => void;
+  onSuccessfulSend?: (message: Message) => void;
+  onErrorSend?: (id: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -27,6 +31,7 @@ export default function ConversationMessageInput({
 
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
+    if (disabled || !conversationId || !onSend) return;
     const text = message.trim();
     if (!text) return;
     setMessage("");
@@ -37,9 +42,9 @@ export default function ConversationMessageInput({
     const result = await sendMessage({ id, text, conversationId });
     if (result.error) {
       console.error("Send error:", result.message);
-      onErrorSend(id);
+      onErrorSend?.(id);
     } else {
-      onSuccessfulSend(result.message);
+      onSuccessfulSend?.(result.message);
     }
   }
 
@@ -49,10 +54,14 @@ export default function ConversationMessageInput({
       onSubmit={handleSubmit}
     >
       {/* File attachment input (dummy) - TODO: implement file transfer */}
-      <input type="file" id="file-input" className="hidden" />
+      <input type="file" id="file-input" className="hidden" disabled={disabled} />
       <label
         htmlFor="file-input"
-        className="cursor-pointer flex items-center justify-center px-3"
+        className={`flex items-center justify-center px-3 ${
+          disabled
+            ? "opacity-50 cursor-not-allowed pointer-events-none"
+            : "cursor-pointer"
+        }`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -84,13 +93,19 @@ export default function ConversationMessageInput({
           // Shift+Enter falls through to insert a newline
         }}
         rows={1}
-        placeholder="Type a message"
+        disabled={disabled}
+        placeholder={placeholder}
         className="grow resize-none overflow-y-auto max-h-40 leading-6 p-2
-        bg-transparent outline-none text-[#1f2e3b] placeholder-[#1f2e3b]/60"
+        bg-transparent outline-none text-[#1f2e3b] placeholder-[#1f2e3b]/60
+        disabled:opacity-50 disabled:cursor-not-allowed"
       />
 
       {/* Submit button */}
-      <button type="submit" className="mr-6 cursor-pointer">
+      <button
+        type="submit"
+        disabled={disabled}
+        className="mr-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"

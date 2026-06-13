@@ -2,6 +2,7 @@
 import { Message } from "@/src/lib/messaging/types";
 import ConversationMessage from "../_components/ConversationMessage";
 import ConversationMessageInput from "../_components/ConversationMessageInput";
+import ConversationShell from "../_components/ConversationShell";
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/services/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -66,13 +67,7 @@ export function ConversationClient({
   );
 
   return (
-    <div
-      className="flex flex-col gap-4 w-full h-full min-h-0 overflow-hidden
-       bg-[#B1E7D6] bg-[url('/images/backgrounds/pipes-pattern-bg.png')]
-       bg-size-[400px_400px] bg-repeat bg-blend-multiply
-       px-3 lg:px-6 xl:px-12 py-5 rounded-xl
-       shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]"
-    >
+    <ConversationShell>
       {/* Messages Display Container */}
       <div
         className="flex flex-col-reverse flex-1 min-h-0 overflow-y-auto
@@ -123,7 +118,7 @@ export function ConversationClient({
           );
         }}
       />
-    </div>
+    </ConversationShell>
   );
 }
 
