@@ -16,6 +16,7 @@ type Props = {
   avatarUrl: string | null;
   activeProfile: ActiveProfile | null;
   initialUnread: number;
+  initialUnreadByContact: Record<string, number>;
   children: ReactNode;
 };
 
@@ -36,6 +37,7 @@ export default function FamiliesLayoutShell({
   avatarUrl,
   activeProfile,
   initialUnread,
+  initialUnreadByContact,
   children,
 }: Props) {
   const pathname = usePathname();
@@ -58,6 +60,7 @@ export default function FamiliesLayoutShell({
     <ActiveProfileProvider profile={activeProfile}>
       <UnreadProvider
         initialUnread={initialUnread}
+        initialUnreadByContact={initialUnreadByContact}
         profileId={activeProfile?.id ?? null}
         profileType={profileType}
       >

@@ -9,13 +9,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
 import { createClient } from "@/src/services/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { getUnreadCount } from "@/src/lib/messaging/actions/getUnreadCount";
+import { getUnreadState } from "@/src/lib/messaging/actions/getUnreadState";
 
 type UnreadContextValue = {
   unreadCount: number;
+  /**
+   * Per-contact unread counts, keyed by coach account id (`Contact.id`). Only
+   * contacts with at least one unread message are present.
+   */
+  unreadByContact: Record<string, number>;
   /**
    * Register (or clear with `null`) the conversation currently open in the
    * chatbox. Messages arriving in that conversation are on screen, so the
@@ -26,6 +30,7 @@ type UnreadContextValue = {
 
 const UnreadContext = createContext<UnreadContextValue>({
   unreadCount: 0,
+  unreadByContact: {},
   setOpenConversation: () => {},
 });
 
@@ -39,35 +44,48 @@ const UnreadContext = createContext<UnreadContextValue>({
  * count. When a coach sends a message, the DB trigger pings this channel and
  * we refetch the total via a server action.
  *
- * `initialUnread` seeds the count from the server render (no flash); the count
- * is then re-synced on mount/profile change, on each inbox ping, and after
- * navigating to a conversation (which marks it read server-side).
  */
 export function UnreadProvider({
   initialUnread,
+  initialUnreadByContact,
   profileId,
   profileType,
   children,
 }: {
   initialUnread: number;
+  initialUnreadByContact: Record<string, number>;
   profileId: string | null;
   profileType: "student" | "parent";
   children: ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(initialUnread);
-  const pathname = usePathname();
+  const [unreadByContact, setUnreadByContact] = useState(
+    initialUnreadByContact,
+  );
 
-  // The conversation currently visible in the chatbox 
-  const openConversationRef = useRef<string | null>(null);
-  const setOpenConversation = useCallback((conversationId: string | null) => {
-    openConversationRef.current = conversationId;
-  }, []);
-
+  /** Fetches the total number of unread messages and push into React state */
   const refetch = useCallback(() => {
-    getUnreadCount()
-      .then(setUnreadCount)
+    getUnreadState()
+      .then(({ total, byContact }) => {
+        setUnreadCount(total);
+        setUnreadByContact(byContact);
+      })
       .catch((err) => console.error("Failed to refresh unread count:", err));
   }, []);
+
+  // The conversation currently visible in the chatbox
+  const openConversationRef = useRef<string | null>(null);
+  const setOpenConversation = useCallback(
+    (conversationId: string | null) => {
+      openConversationRef.current = conversationId;
+      // Opening a conversation marks it read server-side during the page
+      // render that mounts the chatbox, and that commit lands before this
+      // client effect runs. Refetch so the now-read conversation drops out of
+      // the total and the per-contact unread map.
+      if (conversationId) refetch();
+    },
+    [refetch],
+  );
 
   // Subscribe to the active profile's inbox channel. Refetch on mount/profile
   // change (keeps the count correct across profile switches) and on each ping.
@@ -91,6 +109,7 @@ export function UnreadProvider({
           config: { private: true },
         });
 
+        // Refetch number unread messages on channel pings
         channel
           .on("broadcast", { event: "UNREAD" }, async (payload) => {
             const conversationId = payload.payload?.conversation_id as
@@ -98,7 +117,7 @@ export function UnreadProvider({
               | undefined;
 
             // If the ping is for the conversation the user is actively viewing
-            // the message is already on screen — mark it read first so it is
+            // the message is already on screen - mark it read first so it is
             // never counted as unread (avoids the badge briefly ticking up).
             if (
               conversationId &&
@@ -124,14 +143,10 @@ export function UnreadProvider({
     };
   }, [profileId, profileType, refetch]);
 
-  // Re-read after opening a conversation: mark-read runs server-side on that
-  // page load, so the count should drop.
-  useEffect(() => {
-    if (pathname?.startsWith("/message/")) refetch();
-  }, [pathname, refetch]);
-
   return (
-    <UnreadContext.Provider value={{ unreadCount, setOpenConversation }}>
+    <UnreadContext.Provider
+      value={{ unreadCount, unreadByContact, setOpenConversation }}
+    >
       {children}
     </UnreadContext.Provider>
   );

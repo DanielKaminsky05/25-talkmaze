@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import FamiliesLayoutShell from "./_components/FamiliesLayoutShell";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { getProfileUnreadTotal } from "@/src/lib/messaging/server/getProfileUnreadTotal";
+import { getProfileUnreadByContact } from "@/src/lib/messaging/server/getProfileUnreadByContact";
 import { createClient } from "@/src/services/supabase/server";
 
 /**
@@ -35,10 +36,14 @@ export default async function Layout({ children }: { children: ReactNode }) {
     avatarUrl = data?.avatar_url ?? null;
   }
 
-  // Seed the sidebar unread badge from the server so it renders without a flash
-  const initialUnread = activeProfile
-    ? await getProfileUnreadTotal(activeProfile.id, activeProfile.type)
-    : 0;
+  // Seed the sidebar unread badge and the message page's unread-contacts list
+  // from the server so they render without a flash
+  const [initialUnread, initialUnreadByContact] = activeProfile
+    ? await Promise.all([
+        getProfileUnreadTotal(activeProfile.id, activeProfile.type),
+        getProfileUnreadByContact(activeProfile.id, activeProfile.type),
+      ])
+    : [0, {}];
 
   return (
     <FamiliesLayoutShell
@@ -46,6 +51,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
       avatarUrl={avatarUrl}
       activeProfile={activeProfile}
       initialUnread={initialUnread}
+      initialUnreadByContact={initialUnreadByContact}
     >
       {children}
     </FamiliesLayoutShell>
