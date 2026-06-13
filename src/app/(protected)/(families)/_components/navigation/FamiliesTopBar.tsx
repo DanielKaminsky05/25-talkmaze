@@ -1,8 +1,10 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
+import TopBar from "@/src/components/common/navigation/TopBar";
+import ProfileMenu, {
+  type ProfileMenuItem,
+} from "@/src/components/common/navigation/ProfileMenu";
 import StartVideoLessonBox from "./StartVideoLessonBox";
-import AvatarIcon from "./AvatarIcon";
 import { signOut } from "@/src/lib/auth/actions/signOut";
 import { usePageTitle } from "../../_context/PageTitleContext";
 
@@ -27,14 +29,14 @@ type Props = {
   avatarUrl: string | null;
 };
 
-// Navigation Bar Component
-export default function NavigationBar({ profileType, avatarUrl }: Props) {
+/**
+ * Families adapter for the shared `TopBar`: computes the role/sub-page title
+ * and supplies the right-side actions (Start Video Lesson for students + the
+ * profile menu).
+ */
+export default function FamiliesTopBar({ profileType, avatarUrl }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-
-  function goBack() {
-    router.back();
-  }
 
   // Use a sub-page title if the current route matches, otherwise show the
   // role-appropriate dashboard title ("Student Dashboard" / "Parent Dashboard")
@@ -43,32 +45,24 @@ export default function NavigationBar({ profileType, avatarUrl }: Props) {
   const title =
     contextTitle ?? (page ? page.prefix : DASHBOARD_TITLE[profileType]);
 
+  const menuItems: ProfileMenuItem[] = [
+    {
+      label: "Manage Profile",
+      onSelect: () => router.push(`/${profileType}/profile`),
+    },
+    { label: "Switch Profiles", onSelect: () => router.push("/profiles") },
+    { label: "Sign Out", onSelect: () => signOut() },
+  ];
+
   return (
-    <div
-      className="flex flex-row gap-2 pl-3.5 pr-0 py-3 items-center justify-between
-      md:pl-8 md:pr-0 md:pt-[23px] md:pb-[15px]  lg:pl-0 max-w-full"
-    >
-      {/* Back Button */}
-      <div
-        className="flex flex-row items-center h-[66px] min-w-0 flex-1"
-        onClick={goBack}
-      >
-        <Image
-          src="/images/icons/caret.png"
-          alt="caret"
-          width={36}
-          height={34.88}
-          className="shrink-0"
-        />
-        <p className="text-white text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold ml-3 truncate min-w-0">
-          {title}
-        </p>
-      </div>
-      {/* Profile & Video Lesson Buttons */}
-      <div className="flex flex-row gap-2 sm:gap-4 md:gap-10 items-center shrink-0">
-        {profileType === "student" && <StartVideoLessonBox />}
-        <AvatarIcon profileType={profileType} avatarUrl={avatarUrl} />
-      </div>
-    </div>
+    <TopBar
+      title={title}
+      rightSlot={
+        <>
+          {profileType === "student" && <StartVideoLessonBox />}
+          <ProfileMenu avatarUrl={avatarUrl} items={menuItems} />
+        </>
+      }
+    />
   );
 }

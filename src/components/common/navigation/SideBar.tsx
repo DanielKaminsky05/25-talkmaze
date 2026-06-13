@@ -3,85 +3,43 @@ import SideBarBox from "./SideBarBox";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { CalendarDays } from "lucide-react";
-import {
-  HomeIcon,
-  LessonsIcon,
-  MessageCircleIcon,
-  RewardsIcon,
-} from "@/src/components/ui/icons";
 import { Badge } from "@/src/components/ui/badge";
-import { useUnread } from "../../_context/UnreadContext";
-
-/**
- * Role-specific navigation items.
- * To add/remove a nav item for a role, edit this config. No JSX changes needed.
- *
- * Parents don't have a Rewards page, and their Lessons/Home links point to
- * parent-specific routes rather than the shared student routes.
- */
-const NAV_ITEMS = {
-  student: [
-    { id: 0, name: "Home", link: "/student", icon: <HomeIcon /> },
-    {
-      id: 1,
-      name: "Lessons",
-      link: "/student/lessons",
-      icon: <LessonsIcon />,
-    },
-    { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
-    { id: 3, name: "Rewards", link: "/student/reward", icon: <RewardsIcon /> },
-  ],
-  parent: [
-    { id: 0, name: "Home", link: "/parent", icon: <HomeIcon /> },
-    {
-      id: 1,
-      name: "Lessons",
-      link: "/parent/lessons",
-      icon: <LessonsIcon />,
-    },
-    {
-      id: 2,
-      name: "Schedule",
-      link: "/parent/schedule",
-      icon: <CalendarDays size={20} />,
-    },
-    { id: 3, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
-  ],
-};
+import type { NavItem } from "./types";
 
 type Props = {
-  profileType: "student" | "parent";
+  /** Navigation entries to render, in order. The first item is the default
+   *  active item when no link matches the current path. */
+  navItems: NavItem[];
+  /** Where the logo links to (e.g. "/student", "/coach"). */
+  homeLink: string;
   isOpen: boolean;
   onToggle: () => void;
 };
 
 /**
- * Sidebar component, containing the navlinks for student and parent dashboards.
+ * Dashboard sidebar shared by the families and coach shells.
  *
- * On desktop (lg+) the sidebar is always visible.
- * On mobile/tablet (< lg) it renders as a fixed overlay that slides in from the
- * left.
+ * Purely presentational + navigation chrome: the caller supplies the nav
+ * config (including any live badge counts). On desktop (lg+) the sidebar is
+ * always visible; on mobile/tablet (< lg) it renders as a fixed overlay that
+ * slides in from the left.
  */
-export default function SideBar({ profileType, isOpen, onToggle }: Props) {
+export default function SideBar({
+  navItems,
+  homeLink,
+  isOpen,
+  onToggle,
+}: Props) {
   const pathname = usePathname();
-  const [activeId, setActiveId] = useState(0);
-  const { unreadCount } = useUnread();
+  const fallbackId = navItems[0]?.id ?? 0;
 
-  // Pick the correct nav list for the active profile type (student or parent)
-  const items = NAV_ITEMS[profileType];
-  const homeLink = profileType === "parent" ? "/parent" : "/student";
-
-  // Highlight the nav item whose link matches the current URL
-  useEffect(() => {
-    const match = [...items]
-      // .sort() so that the longer URL gets matched first before shorter one
-      // This matters for nested routes /parent/lessons should match over /parents
-      .sort((a, b) => b.link.length - a.link.length)
-      .find((item) => pathname.startsWith(item.link));
-    setActiveId(match ? match.id : 0);
-  }, [pathname, items]);
+  // The nav item whose link matches the current URL, derived during render.
+  // .sort() so the longer URL is matched first before the shorter one — this
+  // matters for nested routes: /parent/lessons should match over /parent.
+  const match = [...navItems]
+    .sort((a, b) => b.link.length - a.link.length)
+    .find((item) => pathname.startsWith(item.link));
+  const activeId = match ? match.id : fallbackId;
 
   return (
     <>
@@ -107,8 +65,8 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
             : "translateX(calc(-1 * var(--panel-w)))",
         }}
       >
-        {/* Sidebar panel - width comes from the CSS var, so itmatches the 
-        close sidebar translateX */}
+        {/* Sidebar panel - width comes from the CSS var, so it matches the
+        closed sidebar translateX */}
         <div
           className="bg-[#2B4257] flex flex-col pt-[26px] px-2 overflow-hidden"
           style={{ width: "var(--panel-w)" }}
@@ -127,7 +85,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
             />
           </Link>
           <nav className="flex flex-col gap-6">
-            {items.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.id}
                 href={item.link}
@@ -137,14 +95,14 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               >
                 {item.icon}
                 {item.name}
-                {item.link === "/message" && unreadCount > 0 ? (
+                {item.badge && item.badge > 0 ? (
                   <Badge
-                    variant="primary"
+                    variant={item.badgeVariant ?? "primary"}
                     shape="circle"
                     size="md"
-                    aria-label={`${unreadCount} unread`}
+                    aria-label={`${item.name}: ${item.badge}`}
                   >
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {item.badge > 9 ? "9+" : item.badge}
                   </Badge>
                 ) : null}
               </Link>
@@ -176,9 +134,9 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
         Nav items therefore always start at the same Y as the dark container top
       */}
       <div className="hidden lg:flex flex-col w-auto h-full pt-[23px] lg:px-[clamp(12px,1.5vw,24px)]">
-        {/* 
-          Fixed-height logo wrapper 
-          logo scales inside but the 68px area never shrinks 
+        {/*
+          Fixed-height logo wrapper
+          logo scales inside but the 68px area never shrinks
         */}
         <div className="h-[68px] flex items-center justify-center mb-[13px]">
           <Link href={homeLink} aria-label="Go to home">
@@ -192,8 +150,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
           </Link>
         </div>
         <nav className="flex flex-col gap-[18px]">
-          {/* Sidebar items list. Renders different list for parent vs student */}
-          {items.map((item) => (
+          {navItems.map((item) => (
             <SideBarBox
               key={item.id}
               id={item.id}
@@ -201,8 +158,8 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               state={activeId === item.id}
               link={item.link}
               icon={item.icon}
-              badge={item.link === "/message" ? unreadCount : undefined}
-              onSelect={() => setActiveId(item.id)}
+              badge={item.badge}
+              badgeVariant={item.badgeVariant}
             />
           ))}
         </nav>

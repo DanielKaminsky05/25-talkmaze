@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { Badge } from "@/src/components/ui/badge";
+import type { NavBadgeVariant } from "./types";
 
 type Props = {
   id: number;
@@ -11,20 +12,22 @@ type Props = {
   onSelect?: () => void;
   icon?: ReactNode;
   badge?: number;
+  badgeVariant?: NavBadgeVariant;
 };
 
 /**
- * An item the user can select in the Sidebar component of a student or parent
- * dashboard, to navigate to the page they want.
+ * A single selectable item in the dashboard `SideBar`. Purely presentational:
+ * the active state, badge count, and badge colour are all driven by props so
+ * any audience (families, coach) can reuse it.
  */
 export default function SideBarBox({
-  id,
   name,
   state,
   link,
   onSelect,
   icon,
   badge,
+  badgeVariant = "primary",
 }: Props) {
   const backgroundColor = state ? "bg-[#B1E7D6]" : "bg-[#1F2E3B]";
   const textColor = state ? "text-[#1F2E3B]" : "text-[#B1E7D6]";
@@ -45,10 +48,10 @@ export default function SideBarBox({
           <p className={`${textColor} text-center`}>{name}</p>
           {badge && badge > 0 ? (
             <Badge
-              variant="primary"
+              variant={badgeVariant}
               shape="circle"
               size="md"
-              aria-label={`${badge} unread`}
+              aria-label={`${name}: ${badge}`}
             >
               {badge > 9 ? "9+" : badge}
             </Badge>
