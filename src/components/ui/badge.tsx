@@ -11,6 +11,10 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        // solid mint (primary CTA colour) with navy text - high-emphasis pills
+        // and count badges
+        primary:
+          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
         accent:
           "border-transparent bg-accent text-accent-foreground [a&]:hover:bg-accent/80",
         secondary:
@@ -28,10 +32,22 @@ const badgeVariants = cva(
         sm: "px-2 py-0.5",
         md: "px-3 py-1",
       },
+      shape: {
+        // text label with horizontal padding - the default badge
+        pill: "",
+        // fixed-diameter round badge for counts / single glyphs; the per-size
+        // dimensions come from the compound variants below
+        circle: "p-0",
+      },
     },
+    compoundVariants: [
+      { shape: "circle", size: "sm", className: "h-5 min-w-5" },
+      { shape: "circle", size: "md", className: "h-6 min-w-6" },
+    ],
     defaultVariants: {
       variant: "secondary",
       size: "sm",
+      shape: "pill",
     },
   },
 );
@@ -40,6 +56,7 @@ function Badge({
   className,
   variant,
   size,
+  shape,
   asChild = false,
   ...props
 }: React.ComponentProps<"span"> &
@@ -50,7 +67,7 @@ function Badge({
     <Comp
       data-slot="badge"
       data-variant={variant}
-      className={cn(badgeVariants({ variant, size }), className)}
+      className={cn(badgeVariants({ variant, size, shape }), className)}
       {...props}
     />
   );

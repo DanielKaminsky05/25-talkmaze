@@ -408,13 +408,18 @@ migration (auth + profile forms) followed exactly this.
     full-tile-clickable cards (need pressed/active/nav state), bespoke glass/gradient
     panels, status banners/alerts, and `<main>`/page-layout shells.
   - shadcn **`Badge`** (text status pill): `variant` (surface/role —
-    `accent`/`secondary`/`light`/`warning`/`destructive`/`outline`, default
-    `secondary`) × `size` (`sm`/`md`), pill shape, `asChild`. Use for short
-    status/metadata labels ("Current plan", "Setup Required"); **not** for the
-    gamification artwork badges (`ClaimedBadge`/`GlowingBadge`), which are images.
-    The `warning` variant introduced a `--warning` semantic token aliased to the
-    brand coral (`--talkmaze-coral`) — solid coral stays for emphasis figures; the
-    pill uses a soft tint (`bg-warning/10` + `text-warning`).
+    `primary`/`accent`/`secondary`/`light`/`warning`/`destructive`/`outline`,
+    default `secondary`) × `size` (`sm`/`md`) × `shape` (`pill`/`circle`, default
+    `pill`), `asChild`. Use for short status/metadata labels ("Current plan",
+    "Setup Required"); **not** for the gamification artwork badges
+    (`ClaimedBadge`/`GlowingBadge`), which are images. The `warning` variant
+    introduced a `--warning` semantic token aliased to the brand coral
+    (`--talkmaze-coral`) — solid coral stays for emphasis figures; the pill uses a
+    soft tint (`bg-warning/10` + `text-warning`). `primary` is the solid mint
+    (`bg-primary`/`text-primary-foreground`) for high-emphasis pills and count
+    badges. `shape="circle"` is a fixed-diameter round badge (height + `min-w` per
+    `size`, so single glyphs are circular and two-char counts like "9+" widen to a
+    stadium) — used for the sidebar unread-message count.
   - **`Avatar`** (profile image + fallback): `size` (`sm`/`md`/`lg`/`xl`, also
     sets fallback text size) × `variant` (fallback surface — `navy` =
     `bg-card`/`text-accent`, `teal` = `bg-accent`/`text-card`, matching the Figma

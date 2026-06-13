@@ -14,8 +14,8 @@ type Props = {
 };
 
 /**
- * An item the user can select in the Sidebar component of a student or parent 
- * dashboard, to navigate to the page they want. 
+ * An item the user can select in the Sidebar component of a student or parent
+ * dashboard, to navigate to the page they want.
  */
 export default function SideBarBox({
   id,
@@ -44,7 +44,12 @@ export default function SideBarBox({
         <span className="flex items-center gap-2 lg:ml-[clamp(8px,calc(-16px+2.4vw),24px)]">
           <p className={`${textColor} text-center`}>{name}</p>
           {badge && badge > 0 ? (
-            <Badge variant="light" aria-label={`${badge} unread`}>
+            <Badge
+              variant="primary"
+              shape="circle"
+              size="md"
+              aria-label={`${badge} unread`}
+            >
               {badge > 9 ? "9+" : badge}
             </Badge>
           ) : null}

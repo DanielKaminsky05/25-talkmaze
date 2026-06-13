@@ -24,7 +24,12 @@ import { useUnread } from "../../_context/UnreadContext";
 const NAV_ITEMS = {
   student: [
     { id: 0, name: "Home", link: "/student", icon: <HomeIcon /> },
-    { id: 1, name: "Lessons", link: "/student/lessons", icon: <LessonsIcon /> },
+    {
+      id: 1,
+      name: "Lessons",
+      link: "/student/lessons",
+      icon: <LessonsIcon />,
+    },
     { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
     { id: 3, name: "Rewards", link: "/student/reward", icon: <RewardsIcon /> },
   ],
@@ -133,7 +138,12 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
                 {item.icon}
                 {item.name}
                 {item.link === "/message" && unreadCount > 0 ? (
-                  <Badge variant="light" aria-label={`${unreadCount} unread`}>
+                  <Badge
+                    variant="primary"
+                    shape="circle"
+                    size="md"
+                    aria-label={`${unreadCount} unread`}
+                  >
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 ) : null}
