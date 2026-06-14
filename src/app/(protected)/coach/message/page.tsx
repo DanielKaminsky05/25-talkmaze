@@ -3,11 +3,11 @@ import ConversationShell from "@/src/components/common/messaging/ConversationShe
 import ConversationMessageInput from "@/src/components/common/messaging/ConversationMessageInput";
 
 /**
- * Empty state for /message (no contact selected). Renders the same chatbox
+ * Empty state for /coach/message. Renders the same chatbox
  * shell as an active conversation, with a centered prompt and a disabled input
  * so the UI reads as "ready, just pick a contact" rather than blank.
  */
-const MessagePage = () => {
+export default function CoachMessagePage() {
   return (
     <ConversationShell>
       <div
@@ -25,6 +25,4 @@ const MessagePage = () => {
       />
     </ConversationShell>
   );
-};
-
-export default MessagePage;
+}

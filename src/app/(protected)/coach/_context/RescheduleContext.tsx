@@ -29,7 +29,7 @@ const RescheduleContext = createContext<RescheduleContextValue>({
  *
  * Today the count is server-seeded (no flash) and refetched whenever the coach
  * navigates — which covers approving/declining a request and then leaving the
- * page. The structure deliberately mirrors `UnreadProvider`: when the realtime
+ * page. The structure deliberately mirrors `UnreadMessagesProvider`: when the realtime
  * infra lands (a `sessions` trigger broadcasting to a `coach:<id>:reschedule`
  * channel + `realtime.messages` RLS), subscribe here and call `refetch()` on
  * each ping — nothing else needs to change.

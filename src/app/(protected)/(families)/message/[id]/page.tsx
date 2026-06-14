@@ -1,7 +1,9 @@
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { markConversationRead } from "@/src/lib/messaging/server/markConversationRead";
-import { ConversationClient } from "./_client";
+import { getConversationMessages } from "@/src/lib/messaging/server/getConversationMessages";
+import { getCurrentSender } from "@/src/lib/messaging/server/getCurrentSender";
+import { ConversationClient } from "@/src/components/common/messaging/ConversationClient";
 import { createClient } from "@/src/services/supabase/server";
 
 /**
@@ -37,7 +39,7 @@ export default async function CoachConversationPage({
     await markConversationRead(conversationId);
   }
 
-  const messages = await getMessages(conversationId);
+  const messages = await getConversationMessages(conversationId);
   const currentSender = await getCurrentSender(user.id, user.role, profile);
 
   return (
@@ -51,47 +53,6 @@ export default async function CoachConversationPage({
       messages={messages}
     />
   );
-}
-
-/**
- * Resolves sender display metadata for the current actor.
- * Uses the active parent/student profile for role=1 users,
- * or the coach profile linked to the account for coach/admin users.
- */
-async function getCurrentSender(
-  userId: string,
-  userRole: number,
-  profile: { id: string; type: "student" | "parent" } | null,
-): Promise<{ name: string; avatar_url: string | null }> {
-  const supabase = await createClient();
-
-  if (userRole === 1 && profile) {
-    const table = profile.type === "parent" ? "parents" : "students";
-    const { data } = await supabase
-      .from(table)
-      .select("first_name, last_name, avatar_url")
-      .eq("id", profile.id)
-      .single();
-    return {
-      name: data
-        ? `${data.first_name || ""} ${data.last_name || ""}`.trim()
-        : "Unknown",
-      avatar_url: data?.avatar_url ?? null,
-    };
-  }
-
-  // Coach or admin
-  const { data } = await supabase
-    .from("coaches")
-    .select("first_name, last_name, avatar_url")
-    .eq("account_id", userId)
-    .single();
-  return {
-    name: data
-      ? `${data.first_name || ""} ${data.last_name || ""}`.trim()
-      : "Unknown",
-    avatar_url: data?.avatar_url ?? null,
-  };
 }
 
 /**
@@ -194,90 +155,4 @@ async function getConversation(
     if (error) throw error;
     return conv.id;
   }
-}
-
-/**
- * Loads chronological messages for a conversation and along with the messages
- * get the message sender's name and avatar expected by ConversationClient.
- */
-async function getMessages(conversationId: string) {
-  const supabase = await createClient();
-
-  // Fetch conversation to know coach_id and profile_id/type
-  const { data: conv, error: convError } = await supabase
-    .from("conversations")
-    .select("coach_id, profile_id, profile_type")
-    .eq("id", conversationId)
-    .single();
-
-  if (convError || !conv) {
-    console.error("Error fetching conversation:", convError);
-    return [];
-  }
-
-  // Resolve the coach's account_id so we can identify coach messages
-  const { data: coach } = await supabase
-    .from("coaches")
-    .select("account_id, first_name, last_name, avatar_url")
-    .eq("id", conv.coach_id)
-    .single();
-
-  const { data, error } = await supabase
-    .from("messages")
-    .select("id, body, created_at, sender_id")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("Error fetching messages:", error);
-    return [];
-  }
-
-  const messages = await Promise.all(
-    data.map(async (m) => {
-      let name: string;
-      let avatar_url: string | null = null;
-
-      if (coach && m.sender_id === coach.account_id) {
-        // Sender is the coach
-        name =
-          `${coach.first_name || ""} ${coach.last_name || ""}`.trim() ||
-          "Unknown";
-        avatar_url = coach.avatar_url ?? null;
-      } else {
-        // Sender is the user profile
-        if (conv.profile_type === "student") {
-          const { data: student } = await supabase
-            .from("students")
-            .select("first_name, last_name, avatar_url")
-            .eq("id", conv.profile_id)
-            .maybeSingle();
-          name = student
-            ? `${student.first_name || ""} ${student.last_name || ""}`.trim()
-            : "Unknown";
-          avatar_url = student?.avatar_url ?? null;
-        } else {
-          const { data: parent } = await supabase
-            .from("parents")
-            .select("first_name, last_name, avatar_url")
-            .eq("id", conv.profile_id)
-            .maybeSingle();
-          name = parent
-            ? `${parent.first_name || ""} ${parent.last_name || ""}`.trim()
-            : "Unknown";
-          avatar_url = parent?.avatar_url ?? null;
-        }
-      }
-
-      return {
-        id: m.id,
-        text: m.body,
-        created_at: m.created_at,
-        sender_id: m.sender_id,
-        sender: { name, avatar_url },
-      };
-    }),
-  );
-
-  return messages;
 }

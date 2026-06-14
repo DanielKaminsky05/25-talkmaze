@@ -8,7 +8,7 @@ import {
   MessageCircleIcon,
   RewardsIcon,
 } from "@/src/components/ui/icons";
-import { useUnread } from "../../_context/UnreadContext";
+import { useUnreadMessages } from "@/src/components/common/messaging/UnreadMessagesContext";
 
 /**
  * Role-specific navigation items.
@@ -54,7 +54,7 @@ export default function FamiliesSideBar({
   isOpen,
   onToggle,
 }: Props) {
-  const { unreadCount } = useUnread();
+  const { unreadCount } = useUnreadMessages();
 
   const navItems = NAV_ITEMS[profileType].map((item) =>
     item.link === "/message" ? { ...item, badge: unreadCount } : item,

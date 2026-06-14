@@ -54,7 +54,12 @@ export default function ConversationMessageInput({
       onSubmit={handleSubmit}
     >
       {/* File attachment input (dummy) - TODO: implement file transfer */}
-      <input type="file" id="file-input" className="hidden" disabled={disabled} />
+      <input
+        type="file"
+        id="file-input"
+        className="hidden"
+        disabled={disabled}
+      />
       <label
         htmlFor="file-input"
         className={`flex items-center justify-center px-3 ${

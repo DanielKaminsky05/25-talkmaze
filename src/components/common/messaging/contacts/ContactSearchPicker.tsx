@@ -1,29 +1,38 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ContactsList from "./contact-list/ContactsList";
-import ContactsFilterInput from "./contact-list/ContactsFilterInput";
+import ContactsList from "./ContactsList";
+import ContactsFilterInput from "./ContactsFilterInput";
 import { Contact } from "@/src/lib/messaging/types";
 
 /**
- * This component renders the contact filter bar and the contact list
- * @param param0 Array of contacts to display when filter bar is focused
+ * Search field whose focus reveals a filterable dropdown of contacts; picking
+ * one navigates to that conversation. Composes `ContactsFilterInput` (input)
+ * and `ContactsList` (the results).
+ *
+ * @param contacts Contacts to display when the filter bar is focused
+ * @param basePath Route prefix a contact navigates to (`${basePath}/${id}`).
+ *   Defaults to the families `/message`; the coach passes `/coach/message`.
  */
-export default function Contacts({ contacts }: { contacts: Contact[] }) {
+export default function ContactSearchPicker({
+  contacts,
+  basePath = "/message",
+}: {
+  contacts: Contact[];
+  basePath?: string;
+}) {
   const [filter, setFilter] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const router = useRouter();
 
   const handleContactClick = (contactId: string) => {
-    router.push(`/message/${contactId}`);
+    router.push(`${basePath}/${contactId}`);
   };
 
   return (
     <div className="relative">
       {/* Overlay */}
-      {isFocused && (
-        <div className="fixed inset-0 bg-black/30 z-10" />
-      )}
+      {isFocused && <div className="fixed inset-0 bg-black/30 z-10" />}
 
       <div className="relative z-20">
         <ContactsFilterInput
@@ -38,6 +47,7 @@ export default function Contacts({ contacts }: { contacts: Contact[] }) {
             <ContactsList
               contacts={contacts}
               filter={filter}
+              basePath={basePath}
               onContactClick={handleContactClick}
             />
           </div>

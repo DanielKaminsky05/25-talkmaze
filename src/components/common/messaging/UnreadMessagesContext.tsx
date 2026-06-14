@@ -11,13 +11,14 @@ import {
 } from "react";
 import { createClient } from "@/src/services/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { getUnreadState } from "@/src/lib/messaging/actions/getUnreadState";
+import type { UnreadState } from "@/src/lib/messaging/actions/getUnreadState";
 
-type UnreadContextValue = {
+type UnreadMessagesContextValue = {
   unreadCount: number;
   /**
-   * Per-contact unread counts, keyed by coach account id (`Contact.id`). Only
-   * contacts with at least one unread message are present.
+   * Per-contact unread counts, keyed by `Contact.id` (coach account id for the
+   * family view; family profile id for the coach view). Only contacts with at
+   * least one unread message are present.
    */
   unreadByContact: Record<string, number>;
   /**
@@ -28,34 +29,36 @@ type UnreadContextValue = {
   setOpenConversation: (conversationId: string | null) => void;
 };
 
-const UnreadContext = createContext<UnreadContextValue>({
+const UnreadMessagesContext = createContext<UnreadMessagesContextValue>({
   unreadCount: 0,
   unreadByContact: {},
   setOpenConversation: () => {},
 });
 
 /**
- * Holds the total unread-message count for the active family profile and keeps
- * it live.
+ * Holds the total unread-message count for the viewer (a family profile or a
+ * coach) and keeps it live.
  *
- * Realtime is driven by a single per-profile "inbox" channel
- * (`profile:<type>:<id>:unread`) - one channel regardless of how many
- * conversations the user has, so the sidebar never grows the realtime channel
- * count. When a coach sends a message, the DB trigger pings this channel and
- * we refetch the total via a server action.
+ * Realtime is driven by a single per-viewer "inbox" channel (`topic`): one
+ * channel regardless of how many conversations the viewer has, so the sidebar
+ * never grows the realtime channel count. When the other party sends a message
+ * the DB trigger pings this channel and we refetch via `fetchUnread`.
  *
+ * The provider is audience-agnostic: callers pass the inbox `topic`
+ * (`profile:<type>:<id>:unread` or `coach:<accountId>:unread`) and a
+ * `fetchUnread` server action that returns the authoritative counts.
  */
-export function UnreadProvider({
+export function UnreadMessagesProvider({
   initialUnread,
   initialUnreadByContact,
-  profileId,
-  profileType,
+  topic,
+  fetchUnread,
   children,
 }: {
   initialUnread: number;
   initialUnreadByContact: Record<string, number>;
-  profileId: string | null;
-  profileType: "student" | "parent";
+  topic: string | null;
+  fetchUnread: () => Promise<UnreadState>;
   children: ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(initialUnread);
@@ -63,15 +66,15 @@ export function UnreadProvider({
     initialUnreadByContact,
   );
 
-  /** Fetches the total number of unread messages and push into React state */
+  /** Fetches the authoritative unread counts and pushes them into state. */
   const refetch = useCallback(() => {
-    getUnreadState()
+    fetchUnread()
       .then(({ total, byContact }) => {
         setUnreadCount(total);
         setUnreadByContact(byContact);
       })
       .catch((err) => console.error("Failed to refresh unread count:", err));
-  }, []);
+  }, [fetchUnread]);
 
   // The conversation currently visible in the chatbox
   const openConversationRef = useRef<string | null>(null);
@@ -87,18 +90,16 @@ export function UnreadProvider({
     [refetch],
   );
 
-  // Subscribe to the active profile's inbox channel. Refetch on mount/profile
-  // change (keeps the count correct across profile switches) and on each ping.
+  // Subscribe to the viewer's inbox channel. Refetch on mount/topic change
+  // (keeps the count correct across profile switches) and on each ping.
   useEffect(() => {
-    if (!profileId) return;
+    if (!topic) return;
 
     refetch();
 
     const supabase = createClient();
     let channel: RealtimeChannel | undefined;
     let cancel = false;
-
-    const topic = `profile:${profileType}:${profileId}:unread`;
 
     supabase.realtime
       .setAuth()
@@ -109,7 +110,7 @@ export function UnreadProvider({
           config: { private: true },
         });
 
-        // Refetch number unread messages on channel pings
+        // Refetch number of unread messages on channel pings
         channel
           .on("broadcast", { event: "UNREAD" }, async (payload) => {
             const conversationId = payload.payload?.conversation_id as
@@ -141,17 +142,17 @@ export function UnreadProvider({
         supabase.removeChannel(channel);
       }
     };
-  }, [profileId, profileType, refetch]);
+  }, [topic, refetch]);
 
   return (
-    <UnreadContext.Provider
+    <UnreadMessagesContext.Provider
       value={{ unreadCount, unreadByContact, setOpenConversation }}
     >
       {children}
-    </UnreadContext.Provider>
+    </UnreadMessagesContext.Provider>
   );
 }
 
-export function useUnread() {
-  return useContext(UnreadContext);
+export function useUnreadMessages() {
+  return useContext(UnreadMessagesContext);
 }

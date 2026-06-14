@@ -1,17 +1,24 @@
 "use client";
 import Link from "next/link";
 import { Contact } from "@/src/lib/messaging/types";
-import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 
 export type ContactsListProps = {
   contacts?: Contact[];
   filter?: string;
+  /** Route prefix a contact links to: `${basePath}/${contact.id}`. */
+  basePath?: string;
   onContactClick?: (contactId: string) => void;
 };
 
 export default function ContactsList({
   contacts = [],
   filter = "",
+  basePath = "/message",
   onContactClick,
 }: ContactsListProps) {
   const filterString = filter.trim().toLowerCase();
@@ -24,7 +31,7 @@ export default function ContactsList({
       {visible.map((c) => (
         <Link
           key={c.id}
-          href={`/message/${c.id}`}
+          href={`${basePath}/${c.id}`}
           onMouseDown={(e) => {
             e.preventDefault();
             onContactClick?.(c.id);
@@ -41,16 +48,4 @@ export default function ContactsList({
       ))}
     </div>
   );
-}
-
-{
-  /* Unread messages */
-}
-{
-  /* <div
-            className="w-6 h-6 rounded-full border-2 border-[#1F2E3B]
-           text-[#1F2E3B] text-center ml-auto"
-          >
-            1
-          </div> */
 }

@@ -9,9 +9,10 @@ import ProfileMenu, {
   type ProfileMenuItem,
 } from "@/src/components/common/navigation/ProfileMenu";
 import type { NavItem } from "@/src/components/common/navigation/types";
-import { HomeIcon } from "@/src/components/ui/icons";
+import { HomeIcon, MessageCircleIcon } from "@/src/components/ui/icons";
 import { signOut } from "@/src/lib/auth/actions/signOut";
 import { usePendingReschedules } from "../_context/RescheduleContext";
+import { useUnreadMessages } from "@/src/components/common/messaging/UnreadMessagesContext";
 
 type Props = {
   avatarUrl: string | null;
@@ -24,6 +25,7 @@ function getCoachPageTitle(pathname: string): string {
   if (pathname.startsWith("/coach/calendar")) return "Calendar";
   if (pathname.startsWith("/coach/reschedule-requests"))
     return "Reschedule Requests";
+  if (pathname.startsWith("/coach/message")) return "Messages";
   return "Coach Dashboard";
 }
 
@@ -38,6 +40,7 @@ export default function CoachLayoutShell({ avatarUrl, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { pendingCount } = usePendingReschedules();
+  const { unreadCount } = useUnreadMessages();
 
   const navItems: NavItem[] = [
     { id: 0, name: "Home", link: "/coach", icon: <HomeIcon /> },
@@ -55,6 +58,14 @@ export default function CoachLayoutShell({ avatarUrl, children }: Props) {
     },
     {
       id: 3,
+      name: "Messages",
+      link: "/coach/message",
+      icon: <MessageCircleIcon />,
+      badge: unreadCount,
+      badgeVariant: "primary",
+    },
+    {
+      id: 4,
       name: "Requests",
       link: "/coach/reschedule-requests",
       icon: <RotateCcw size={20} />,

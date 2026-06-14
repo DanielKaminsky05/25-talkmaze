@@ -9,7 +9,8 @@ import {
   ActiveProfile,
   ActiveProfileProvider,
 } from "../_context/ActiveProfileContext";
-import { UnreadProvider } from "../_context/UnreadContext";
+import { UnreadMessagesProvider } from "@/src/components/common/messaging/UnreadMessagesContext";
+import { getUnreadState } from "@/src/lib/messaging/actions/getUnreadState";
 
 type Props = {
   profileType: "student" | "parent";
@@ -21,7 +22,7 @@ type Props = {
 };
 
 /**
- * Client shell for the protected layout.
+ * Client shell for the student & parent dashboards layout.
  *
  * This component exists to separate two concerns:
  *   - The server layout (layout.tsx) reads the active profile cookie and
@@ -58,11 +59,15 @@ export default function FamiliesLayoutShell({
 
   return (
     <ActiveProfileProvider profile={activeProfile}>
-      <UnreadProvider
+      <UnreadMessagesProvider
         initialUnread={initialUnread}
         initialUnreadByContact={initialUnreadByContact}
-        profileId={activeProfile?.id ?? null}
-        profileType={profileType}
+        topic={
+          activeProfile?.id
+            ? `profile:${profileType}:${activeProfile.id}:unread`
+            : null
+        }
+        fetchUnread={getUnreadState}
       >
         <PageTitleProvider>
           <div className="flex flex-row w-screen h-screen overflow-hidden">
@@ -82,7 +87,7 @@ export default function FamiliesLayoutShell({
             </div>
           </div>
         </PageTitleProvider>
-      </UnreadProvider>
+      </UnreadMessagesProvider>
     </ActiveProfileProvider>
   );
 }
