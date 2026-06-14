@@ -1,5 +1,6 @@
-import type { ChangeEvent, FC } from "react";
-import { SearchIcon } from "@/src/components/ui/icons";
+import type { FC } from "react";
+import { SearchInput } from "@/src/components/ui/search-input";
+import { cn } from "@/src/utils/cn";
 
 export type ContactsFilterInputProps = {
   value: string;
@@ -10,34 +11,32 @@ export type ContactsFilterInputProps = {
   onBlur?: () => void;
 };
 
+/**
+ * Contacts filter field. Thin wrapper over the shared `SearchInput` primitive
+ * that keeps the messaging sidebar's transparent-on-dark look.
+ */
 const ContactsFilterInput: FC<ContactsFilterInputProps> = ({
   value,
   onChange,
   placeholder = "Search contacts",
+  className,
   onFocus,
   onBlur,
 }) => {
-  // Update the value for the controlled input
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
-
   return (
-    <div className="relative mb-3">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-        <SearchIcon size={20} />
-      </span>
-      <input
-        type="text"
-        value={value}
-        onChange={handleChange}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        className="w-full h-10 pl-10 pr-4 rounded-[9px] border border-gray-500
-         placeholder:text-gray-400 text-white"
-      />
-    </div>
+    <SearchInput
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      placeholder={placeholder}
+      variant="dark"
+      containerClassName="mb-3"
+      className={cn(
+        "h-10 rounded-[9px] border-gray-500 bg-transparent text-white placeholder:text-gray-400",
+        className,
+      )}
+    />
   );
 };
 

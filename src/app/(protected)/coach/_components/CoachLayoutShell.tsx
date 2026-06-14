@@ -43,7 +43,7 @@ export default function CoachLayoutShell({ avatarUrl, children }: Props) {
   const { unreadCount } = useUnreadMessages();
 
   const navItems: NavItem[] = [
-    { id: 0, name: "Home", link: "/coach", icon: <HomeIcon /> },
+    // { id: 0, name: "Home", link: "/coach", icon: <HomeIcon /> },
     {
       id: 1,
       name: "Students",

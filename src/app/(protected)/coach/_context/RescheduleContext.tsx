@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { getPendingRescheduleState } from "@/src/lib/scheduling/actions/getPendingRescheduleState";
 
 type RescheduleContextValue = {
   /** Pending reschedule requests addressed to the current coach. */
@@ -44,9 +43,19 @@ export function RescheduleProvider({
   const [pendingCount, setPendingCount] = useState(initialCount);
   const pathname = usePathname();
 
+  // Refetch via the plain route handler (not a Server Action): a Server Action
+  // triggers Next's automatic post-action route refresh, which on a redirect()
+  // page (e.g. /coach/students, /coach) re-runs the redirect and loops. A
+  // fetch() does not. `requests.length` is the same pending count the badge is
+  // seeded with server-side.
   const refetch = useCallback(() => {
-    getPendingRescheduleState()
-      .then(({ pending }) => setPendingCount(pending))
+    fetch("/api/coach/reschedule-requests")
+      .then((res) => (res.ok ? res.json() : { requests: [] }))
+      .then((data) =>
+        setPendingCount(
+          Array.isArray(data?.requests) ? data.requests.length : 0,
+        ),
+      )
       .catch((err) =>
         console.error("Failed to refresh reschedule count:", err),
       );

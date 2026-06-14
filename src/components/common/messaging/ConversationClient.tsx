@@ -48,8 +48,8 @@ export function ConversationClient({
   });
 
   // Mark the conversation read and tell the unread provider it is on screen.
-  // Marking happens here (not only in the route page) so that inline mounts
-  // such as the coach StudentDetails chat also clear unread. The read is
+  // Marking happens here (not only in the route page) so that any inline mount
+  // of the conversation also clears unread. The read is
   // committed before `setOpenConversation` refetches, so the now-read
   // conversation drops out of the counts without the badge ticking up.
   const { setOpenConversation } = useUnreadMessages();

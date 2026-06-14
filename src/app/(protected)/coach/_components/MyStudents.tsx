@@ -1,98 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import AssignCourseModal from "./AssignCourseModal";
-import type { CoachCourseListItem } from "./StudentDetails";
+import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import StudentListItem from "./students-list/StudentListItem";
+import { SearchInput } from "@/src/components/ui/search-input";
 import { fullName } from "@/src/utils/formatName";
-import type { Database } from "@/src/services/supabase/types/database";
-
-type Student = Database["public"]["Tables"]["students"]["Row"];
+import type { CoachStudent } from "../_lib/getCoachDashboardContext";
 
 interface MyStudentsProps {
-  students: Student[];
-  activeStudentId?: string | null;
-  onStudentClick?: (student: Student | null) => void;
-  onMessageClick?: (student: Student | null) => void;
-  coachId: string;
+  students: CoachStudent[];
 }
 
-const STUDENTS_PER_PAGE = 6;
-
-export default function MyStudents({
-  students,
-  activeStudentId,
-  onStudentClick,
-  onMessageClick,
-  coachId,
-}: MyStudentsProps) {
-  const [courses, setCourses] = useState<CoachCourseListItem[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(false);
-  const [coursesError, setCoursesError] = useState<string | null>(null);
-  const [isAssigningCourse, setIsAssigningCourse] = useState(false);
-  const [assigningStudent, setAssigningStudent] = useState<Student | null>(
-    null,
-  );
-  // Default to the page containing the active student so route navigations
-  // (clicking a student calls router.push, which re-mounts this component)
-  // don't reset back to page 1.
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (!activeStudentId) return 1;
-    const index = students.findIndex((s) => s.id === activeStudentId);
-    if (index < 0) return 1;
-    return Math.floor(index / STUDENTS_PER_PAGE) + 1;
-  });
+/**
+ * The persistent "My Students" list: a transparent panel that sits on the dark
+ * content container, filters in place, and scrolls (no pagination). Each row
+ * links to the student's Overview; selection is URL-driven, so the active
+ * student is read from the pathname (this list lives in a layout without the
+ * [studentId] param) rather than passed in.
+ */
+export default function MyStudents({ students }: MyStudentsProps) {
+  // /coach/students/<id>(/tab) -> <id>; /coach/students -> none selected.
+  const pathname = usePathname();
+  const activeStudentId =
+    pathname.match(/^\/coach\/students\/([^/]+)/)?.[1] ?? null;
   const [search, setSearch] = useState("");
-  const [launchingLessonSpaceId, setLaunchingLessonSpaceId] = useState<
-    string | null
-  >(null);
-  const [panelMessage, setPanelMessage] = useState<{
-    type: "error" | "success";
-    text: string;
-  } | null>(null);
-
-  const loadCourses = useCallback(async (studentId: string) => {
-    setCoursesLoading(true);
-    setCoursesError(null);
-    try {
-      const res = await fetch(
-        `/api/coach/courses?student_id=${studentId}`,
-      );
-      if (!res.ok) throw new Error("Failed to load courses");
-      const data = await res.json();
-      setCourses(
-        Array.isArray(data?.courses)
-          ? (data.courses as CoachCourseListItem[])
-          : [],
-      );
-    } catch (err: unknown) {
-      setCoursesError(
-        err instanceof Error ? err.message : "Failed to load courses",
-      );
-    } finally {
-      setCoursesLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!assigningStudent) return;
-    loadCourses(assigningStudent.id);
-  }, [assigningStudent, loadCourses]);
-
-  // Reset to page 1 when the search query is changed by the user (not on
-  // mount). Previously this was a `useEffect(..., [search])` which fired
-  // its first invocation on every mount — including the remount that
-  // happens after router.push to a new student URL — and clobbered the
-  // useState initializer's computed page.
-  const handleSearchChange = (next: string) => {
-    setSearch(next);
-    setCurrentPage(1);
-  };
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return students;
-
     return students.filter((student) =>
       fullName(student.first_name, student.last_name, "Unnamed Student")
         .toLowerCase()
@@ -100,165 +35,49 @@ export default function MyStudents({
     );
   }, [students, search]);
 
-  const pageCount = Math.max(
-    1,
-    Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE),
-  );
-
-  const currentPageStudents = filteredStudents.slice(
-    (currentPage - 1) * STUDENTS_PER_PAGE,
-    currentPage * STUDENTS_PER_PAGE,
-  );
-
-  async function handleLessonSpace(studentId: string) {
-    setPanelMessage(null);
-    setLaunchingLessonSpaceId(studentId);
-
-    try {
-      const res = await fetch(`/api/coach/lessonspace/${coachId}/${studentId}`);
-      if (!res.ok) {
-        setPanelMessage({
-          type: "error",
-          text: "Could not open Lesson Space. Please try again.",
-        });
-        return;
-      }
-
-      const { client_url } = await res.json();
-      setPanelMessage({
-        type: "success",
-        text: "Opening Lesson Space...",
-      });
-      window.location.href = client_url;
-    } catch {
-      setPanelMessage({
-        type: "error",
-        text: "Could not open Lesson Space. Please try again.",
-      });
-    } finally {
-      setLaunchingLessonSpaceId(null);
-    }
-  }
-
   return (
-    <>
-      <div className=" bg-white shadow-sm overflow-hidden flex flex-col flex-1">
-        <div className="px-5 py-3 md:py-4 border-b border-[#2B4257]/10 bg-[#65CFAD] flex items-center justify-between shrink-0">
-          <h2 className="text-base font-semibold text-[#1F2E3B]">
-            My Students
-          </h2>
-          <span className="bg-white/60 text-[#1F2E3B] text-xs font-semibold px-2.5 py-1 rounded-full">
-            {search.trim()
-              ? `${filteredStudents.length}/${students.length}`
-              : students.length}
-          </span>
-        </div>
-
-        <div className="min-h-0 flex flex-col flex-1">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              placeholder="Search students..."
-              aria-label="Search students"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30"
-            />
-            {panelMessage && (
-              <p
-                className={`mt-2 text-xs ${
-                  panelMessage.type === "error"
-                    ? "text-red-600"
-                    : "text-emerald-700"
-                }`}
-              >
-                {panelMessage.text}
-              </p>
-            )}
-          </div>
-
-          {students.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">
-              No students assigned yet.
-            </div>
-          ) : filteredStudents.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">
-              No students match your search.
-            </div>
-          ) : (
-            <>
-              {/* Scrollable list region. The pagination row below is sticky-
-                  bottom so it stays reachable even when the parent flex
-                  container is short (e.g. mobile-sm with the list capped at
-                  ~1/3 of the viewport). */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <ul className="divide-y divide-gray-100">
-                  {currentPageStudents.map((student) => (
-                    <StudentListItem
-                      key={student.id}
-                      student={student}
-                      isActive={student.id === activeStudentId}
-                      onSelect={(s) => onStudentClick?.(s)}
-                      onMessage={(s) => onMessageClick?.(s)}
-                      onLessonSpace={handleLessonSpace}
-                      onAssignCourse={(s) => {
-                        setAssigningStudent(s);
-                        setIsAssigningCourse(true);
-                      }}
-                      isLaunchingLessonSpace={
-                        launchingLessonSpaceId === student.id
-                      }
-                    />
-                  ))}
-                </ul>
-              </div>
-
-              {filteredStudents.length > STUDENTS_PER_PAGE && (
-                <div className="shrink-0 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
-                    {(currentPage - 1) * STUDENTS_PER_PAGE + 1}–
-                    {Math.min(
-                      currentPage * STUDENTS_PER_PAGE,
-                      filteredStudents.length,
-                    )}{" "}
-                    of {filteredStudents.length}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(p + 1, pageCount))
-                      }
-                      disabled={currentPage === pageCount}
-                      className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 px-3 py-1 rounded-md text-xs font-medium text-[#2B4257] bg-[#2B4257]/5 hover:bg-[#2B4257]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between px-4 pt-4 pb-3">
+        <h2 className="text-base font-semibold text-white">My Students</h2>
+        <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-[#B1E7D6]">
+          {search.trim()
+            ? `${filteredStudents.length}/${students.length}`
+            : students.length}
+        </span>
       </div>
 
-      {isAssigningCourse && assigningStudent && (
-        <AssignCourseModal
-          student={assigningStudent}
-          courses={courses}
-          coursesLoading={coursesLoading}
-          coursesError={coursesError}
-          setIsAssigningCourse={setIsAssigningCourse}
-          onAssignedMessage={(message) => setPanelMessage(message)}
-          onAssigned={() => loadCourses(assigningStudent.id)}
+      <div className="shrink-0 px-4 pb-3">
+        <SearchInput
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search students..."
+          aria-label="Search students"
+          variant="dark"
+          className="h-10 rounded-[9px] border-gray-500 bg-transparent text-white placeholder:text-gray-400"
         />
+      </div>
+
+      {students.length === 0 ? (
+        <div className="p-10 text-center text-sm text-white/40">
+          No students assigned yet.
+        </div>
+      ) : filteredStudents.length === 0 ? (
+        <div className="p-10 text-center text-sm text-white/40">
+          No students match your search.
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
+          <ul className="space-y-1">
+            {filteredStudents.map((student) => (
+              <StudentListItem
+                key={student.id}
+                student={student}
+                isActive={student.id === activeStudentId}
+              />
+            ))}
+          </ul>
+        </div>
       )}
-    </>
+    </div>
   );
 }

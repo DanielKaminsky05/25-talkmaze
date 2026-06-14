@@ -11,8 +11,9 @@ import { createClient } from "@/src/services/supabase/server";
  * is no user, no coach record, or on error — so callers can seed a badge
  * without extra guards.
  *
- * Seeds the coach sidebar "Requests" badge (server-rendered, no flash) and
- * backs the `getPendingRescheduleState` action used to refetch it.
+ * Seeds the coach sidebar "Requests" badge (server-rendered, no flash); the
+ * badge is later refetched client-side via GET /api/coach/reschedule-requests
+ * (its `requests.length` is this same count).
  */
 export async function getPendingRescheduleCount(): Promise<number> {
   const user = await getCurrentUser();

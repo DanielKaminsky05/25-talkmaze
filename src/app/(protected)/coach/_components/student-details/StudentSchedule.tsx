@@ -1,6 +1,6 @@
 "use client";
 
-import type { AttendanceStatus } from "../StudentDetails";
+import type { AttendanceStatus } from "./types";
 import { fmtLocalDate, fmtLocalTime } from "@/src/utils/formatDateTime";
 
 const STATUS_BUTTONS: {

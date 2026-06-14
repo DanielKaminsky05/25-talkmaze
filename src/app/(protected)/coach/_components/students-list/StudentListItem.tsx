@@ -1,102 +1,77 @@
-"use client";
-
-import { BookOpen } from "lucide-react";
-import { MessageCircleIcon } from "@/src/components/ui/icons/MessageCircleIcon";
-import { LessonsIcon } from "@/src/components/ui/icons/LessonsIcon";
-import type { Database } from "@/src/services/supabase/types/database";
-import { fullName } from "@/src/utils/formatName";
-
-type Student = Database["public"]["Tables"]["students"]["Row"];
+import Link from "next/link";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
+import type { CoachStudent } from "../../_lib/getCoachDashboardContext";
+import { cn } from "@/src/utils/cn";
+import { fullName, initials } from "@/src/utils/formatName";
 
 interface StudentListItemProps {
-  student: Student;
+  student: CoachStudent;
   isActive: boolean;
-  onSelect: (student: Student) => void;
-  onMessage: (student: Student) => void;
-  onLessonSpace: (studentId: string) => void;
-  onAssignCourse: (student: Student) => void;
-  isLaunchingLessonSpace?: boolean;
 }
 
+/**
+ * A single "My Students" row, styled as a compact profile card (avatar + name +
+ * active-course subtitle + status dot). The whole card links to the student's
+ * Overview; per-student quick actions now live in the header banner (Message /
+ * Start lesson) and the Courses tab (assign), to match the redesign.
+ */
 export default function StudentListItem({
   student,
   isActive,
-  onSelect,
-  onMessage,
-  onLessonSpace,
-  onAssignCourse,
-  isLaunchingLessonSpace = false,
 }: StudentListItemProps) {
   const studentFullName = fullName(
     student.first_name,
     student.last_name,
     "Unnamed Student",
   );
-  const initial = (student.first_name || student.last_name || "?")
-    .charAt(0)
-    .toUpperCase();
+
+  // Status dot reflects onboarding/active state from data already on the row.
+  // Green = active, amber = setup pending. (Easily re-pointed at subscription
+  // health later.)
+  const isActiveStatus = student.is_setup_complete !== false;
 
   return (
-    <li
-      className={`px-4 py-2 md:py-3.5 transition-all cursor-pointer ${
-        isActive ? "bg-[#65CFAD]/10" : "hover:bg-gray-50"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onSelect(student)}
-          aria-label={`Open details for ${studentFullName}`}
-          aria-current={isActive ? "page" : undefined}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35"
-        >
-          <span
-            className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${
-              isActive
-                ? "bg-[#65CFAD] text-[#1F2E3B]"
-                : "bg-[#2B4257]/10 text-[#2B4257]"
-            }`}
-            aria-hidden
-          >
-            {initial}
-          </span>
-          <span
-            className={`text-sm font-medium truncate ${
-              isActive ? "text-[#1F2E3B]" : "text-gray-800"
-            }`}
-          >
+    <li>
+      <Link
+        href={`/coach/students/${student.id}`}
+        aria-current={isActive ? "page" : undefined}
+        aria-label={`Open details for ${studentFullName}`}
+        className={cn(
+          "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+          isActive
+            ? "border-white/10 bg-white/10"
+            : "border-transparent hover:bg-white/5",
+        )}
+      >
+        <Avatar size="md" variant="teal" shape="circle">
+          <AvatarImage
+            src={student.avatar_url}
+            alt={studentFullName}
+            sizes="44px"
+          />
+          <AvatarFallback>{initials(studentFullName, 1)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">
             {studentFullName}
-          </span>
-        </button>
-
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            onClick={() => onMessage(student)}
-            aria-label={`Message ${studentFullName}`}
-            title={`Message ${studentFullName}`}
-            className="h-11 w-11 md:h-8 md:w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
-          >
-            <MessageCircleIcon size={16} />
-          </button>
-          <button
-            disabled={isLaunchingLessonSpace}
-            onClick={() => onLessonSpace(student.id)}
-            aria-label={`Start lesson with ${studentFullName}`}
-            title={`Start lesson with ${studentFullName}`}
-            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <LessonsIcon size={16} />
-          </button>
-          <button
-            onClick={() => onAssignCourse(student)}
-            aria-label={`Assign course to ${studentFullName}`}
-            title={`Assign course to ${studentFullName}`}
-            className="h-11 w-11 md:h-8 md:w-8 inline-flex items-center justify-center rounded-md text-[#2B4257]/50 hover:text-[#2B4257] hover:bg-[#2B4257]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B4257]/35 transition-colors"
-          >
-            <BookOpen size={16} />
-          </button>
+          </p>
+          <p className="truncate text-xs text-white/60">
+            {student.activeCourseTitle ?? "No active course"}
+          </p>
         </div>
-      </div>
+        <span
+          className={cn(
+            "h-2.5 w-2.5 shrink-0 rounded-full",
+            isActiveStatus ? "bg-[#65CFAD]" : "bg-amber-400",
+          )}
+          title={isActiveStatus ? "Active" : "Setup pending"}
+          aria-hidden
+        />
+      </Link>
     </li>
   );
 }
