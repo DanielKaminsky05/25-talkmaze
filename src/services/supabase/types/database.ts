@@ -260,23 +260,29 @@ export type Database = {
       conversations: {
         Row: {
           coach_id: string
+          coach_last_read_at: string | null
           created_at: string
           id: string
           profile_id: string
+          profile_last_read_at: string | null
           profile_type: string
         }
         Insert: {
           coach_id: string
+          coach_last_read_at?: string | null
           created_at?: string
           id?: string
           profile_id: string
+          profile_last_read_at?: string | null
           profile_type: string
         }
         Update: {
           coach_id?: string
+          coach_last_read_at?: string | null
           created_at?: string
           id?: string
           profile_id?: string
+          profile_last_read_at?: string | null
           profile_type?: string
         }
         Relationships: [
@@ -1149,7 +1155,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_profile_unread_by_contact: {
+        Args: { p_profile_id: string; p_profile_type: string }
+        Returns: {
+          contact_id: string
+          unread_count: number
+        }[]
+      }
+      get_profile_unread_total: {
+        Args: { p_profile_id: string; p_profile_type: string }
+        Returns: number
+      }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

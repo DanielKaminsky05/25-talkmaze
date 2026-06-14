@@ -1,376 +1,152 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "../styles/base.css";
+@import "../styles/rich-text.css";
+@import "../styles/fullcalendar.css";
+
+@custom-variant dark (&:is(.dark *));
 @tailwind utilities;
 
 /* Add your custom CSS below this, if any */
 
-/* Rich text content styles — applies to both the Tiptap editor and the read-only FeedbackDisplay */
-.ProseMirror ul,
-.rich-text ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin: 0.25rem 0;
-}
-
-.ProseMirror ol,
-.rich-text ol {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin: 0.25rem 0;
-}
-
-.ProseMirror li,
-.rich-text li {
-  margin: 0.125rem 0;
-}
-:root {
-  --background: #2b4257;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-roboto);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Figma grey ramp (grey 1 = lightest) text-grey-1, bg-grey-3, etc. */
+  --color-grey-1: var(--talkmaze-grey-1);
+  --color-grey-2: var(--talkmaze-grey-2);
+  --color-grey-3: var(--talkmaze-grey-3);
+  --color-grey-4: var(--talkmaze-grey-4);
+  --color-grey-5: var(--talkmaze-grey-5);
+
+  /* Figma typography scale  */
+  --text-h1: 2rem; /* 32 Bold */
+  --text-h1--font-weight: 700;
+  --text-h1--line-height: 1;
+  --text-h2: 2rem; /* 32 Regular */
+  --text-h2--font-weight: 400;
+  --text-h2--line-height: 1;
+  --text-h3: 1.375rem; /* 22 Bold */
+  --text-h3--font-weight: 700;
+  --text-h3--line-height: 1;
+  --text-b1: 1.25rem; /* 20 SemiBold */
+  --text-b1--font-weight: 600;
+  --text-b2: 1.25rem; /* 20 Regular */
+  --text-b2--font-weight: 400;
+  --text-b3: 1rem; /* 16 SemiBold */
+  --text-b3--font-weight: 600;
+  --text-b4: 1rem; /* 16 Regular */
+  --text-b4--font-weight: 400;
+  --text-b6: 0.875rem; /* 14 Regular */
+  --text-b6--font-weight: 400;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Official TalkMaze brand palette */
+  --talkmaze-dark-navy: #1f2e3b; /* dark surfaces, dark button */
+  --talkmaze-turquoise: #2b4257; /* app background, secondary button */
+  --talkmaze-deep-purple: #59288b;
+  --talkmaze-lavender: #7564c0;
+  --talkmaze-coral: #d55b40; /* emphasis number (e.g. sessions left) */
+  --talkmaze-mint: #65cfad; /* saturated teal: primary CTA */
+  --talkmaze-green-light: #b1e7d6; /* light mint: accent surfaces, badges */
+  /* Unofficial shade - selected / active state */
+  --talkmaze-mint-dark: #4db89a;
+
+  /* Figma grey ramp */
+  --talkmaze-grey-2: #bbbbbb;
+  --talkmaze-grey-3: #7b7b7b;
+  --talkmaze-grey-4: #4e4c4c;
+  --talkmaze-grey-5: #2e2e2e;
+
+  /* semantic tokens (shadcn) */
+  --background: var(--talkmaze-turquoise);
+  --foreground: #ffffff;
+  --card: var(--talkmaze-dark-navy);
+  --card-foreground: #ffffff;
+  --popover: var(--talkmaze-dark-navy);
+  --popover-foreground: #ffffff;
+  --primary: var(--talkmaze-mint);
+  --primary-foreground: var(--talkmaze-dark-navy);
+  --secondary: var(--talkmaze-turquoise);
+  --secondary-foreground: #ffffff;
+  --muted: var(--talkmaze-dark-navy);
+  --muted-foreground: #9ca3af;
+  --accent: var(--talkmaze-green-light);
+  --accent-foreground: var(--talkmaze-dark-navy);
+  --destructive: oklch(0.577 0.245 27.325);
+  --warning: var(--talkmaze-coral);
+  --warning-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.15);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: var(--talkmaze-mint);
+  --radius: 0.625rem;
+  --sidebar: var(--talkmaze-dark-navy);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--talkmaze-mint);
+  --sidebar-primary-foreground: var(--talkmaze-dark-navy);
+  --sidebar-accent: var(--talkmaze-turquoise);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: var(--talkmaze-mint);
+
+  /* Single button elevation token */
+  --shadow-button: 0 4px 8px rgba(0, 0, 0, 0.25);
+
+  /* Standard card elevation (Card `shadow="md"`) */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-roboto), sans-serif;
-  padding: 0px;
-}
-
-:where(
-  button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  a[href]:not([aria-disabled="true"]),
-  input[type="button"]:not(:disabled),
-  input[type="submit"]:not(:disabled),
-  input[type="reset"]:not(:disabled),
-  summary
-) {
-  cursor: pointer;
-}
-
-button:disabled,
-[role="button"][aria-disabled="true"],
-a[href][aria-disabled="true"],
-input[type="button"]:disabled,
-input[type="submit"]:disabled,
-input[type="reset"]:disabled {
-  cursor: not-allowed;
-}
-
-/* Subtle scrollbar -thin thumb only, no track or arrows */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-* {
-  scrollbar-width: auto;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-
-.no-scrollbar {
-  scrollbar-width: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── FullCalendar dark theme ── */
-
-/* FullCalendar zeroes border-top on all scrollgrid-section children. The liquid
-   body section (weeks 2+) therefore loses its top border, making the gap between
-   week 1 and week 2 only 1px wide — invisible at low-opacity colors. Restore it. */
-.admin-calendar .fc-scrollgrid-section-liquid > td {
-  border-top-width: 1px !important;
-}
-
-.admin-calendar .fc {
-  --fc-border-color: rgba(255, 255, 255, 0.08);
-  --fc-button-bg-color: #2b4257;
-  --fc-button-border-color: rgba(255, 255, 255, 0.12);
-  --fc-button-hover-bg-color: #3a5570;
-  --fc-button-hover-border-color: rgba(255, 255, 255, 0.2);
-  --fc-button-active-bg-color: #b1e7d6;
-  --fc-button-active-border-color: #b1e7d6;
-  --fc-today-bg-color: rgba(177, 231, 214, 0.08);
-  --fc-neutral-bg-color: transparent;
-  --fc-page-bg-color: transparent;
-  --fc-event-border-color: transparent;
-  --fc-highlight-color: rgba(177, 231, 214, 0.1);
-  --fc-now-indicator-color: #b1e7d6;
-  --fc-more-link-bg-color: #2b4257;
-  --fc-more-link-text-color: #b1e7d6;
-  --fc-non-business-color: rgba(0, 0, 0, 0.15);
-}
-.admin-calendar .fc-toolbar {
-  padding: 0.5rem 0;
-}
-.admin-calendar .fc-toolbar-title {
-  color: #fff !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-}
-.admin-calendar .fc-button {
-  color: rgba(255, 255, 255, 0.7) !important;
-  font-size: 0.65rem !important;
-  font-weight: 700 !important;
-  padding: 0.3rem 0.65rem !important;
-  border-radius: 0.5rem !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.admin-calendar .fc-button:hover {
-  color: #fff !important;
-}
-.admin-calendar .fc-button-active,
-.admin-calendar .fc-button-active:hover {
-  color: #1f2e3b !important;
-}
-.admin-calendar .fc-col-header-cell {
-  background: #2b4257 !important;
-  padding: 0.5rem 0 !important;
-}
-.admin-calendar .fc-col-header-cell-cushion {
-  color: rgba(177, 231, 214, 0.6) !important;
-  font-size: 0.6rem !important;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  text-decoration: none !important;
-}
-.admin-calendar .fc-daygrid-day-number {
-  color: rgba(255, 255, 255, 0.45) !important;
-  font-size: 0.72rem !important;
-  padding: 4px 7px !important;
-  text-decoration: none !important;
-}
-.admin-calendar .fc-day-today .fc-daygrid-day-number {
-  color: #b1e7d6 !important;
-  font-weight: 700;
-}
-.admin-calendar .fc-scrollgrid,
-.admin-calendar .fc-scrollgrid td,
-.admin-calendar .fc-scrollgrid th {
-  border-color: rgba(255, 255, 255, 0.07) !important;
-}
-.admin-calendar .fc-timegrid-slot-label-cushion {
-  color: rgba(255, 255, 255, 0.28) !important;
-  font-size: 0.62rem !important;
-}
-.admin-calendar .fc-timegrid-col.fc-day-today {
-  background: rgba(177, 231, 214, 0.04) !important;
-}
-.admin-calendar .fc-event {
-  border-radius: 6px !important;
-  font-size: 0.68rem !important;
-  font-weight: 600 !important;
-  border: none !important;
-}
-.admin-calendar .fc-event-title {
-  font-weight: 600;
-}
-.admin-calendar .fc-daygrid-day-events {
-  margin-top: 2px !important;
-}
-.admin-calendar .fc-daygrid-event-harness {
-  margin-top: 1px !important;
-}
-.admin-calendar .fc-daygrid-more-link {
-  color: #b1e7d6 !important;
-  font-size: 0.62rem !important;
-  font-weight: 700 !important;
-  background: rgba(43, 66, 87, 0.78);
-  border-radius: 6px;
-  padding: 1px 6px !important;
-}
-.admin-calendar .fc-daygrid-more-link:hover {
-  color: #dcfff4 !important;
-  background: rgba(58, 85, 112, 0.92);
-}
-.admin-calendar .fc-daygrid-event-dot {
-  border-color: #b1e7d6 !important;
-}
-.admin-calendar a {
-  color: inherit !important;
-  text-decoration: none !important;
-}
-.admin-calendar .fc-list-day-cushion {
-  background: #2b4257 !important;
-}
-.admin-calendar .fc-list-day-text,
-.admin-calendar .fc-list-day-side-text {
-  color: rgba(177, 231, 214, 0.7) !important;
-  font-size: 0.7rem !important;
-}
-.admin-calendar .fc-timegrid-now-indicator-line {
-  border-color: #b1e7d6 !important;
-}
-.admin-calendar .fc-timegrid-now-indicator-arrow {
-  border-top-color: #b1e7d6 !important;
-  border-bottom-color: #b1e7d6 !important;
-}
-.admin-calendar .fc-timegrid-slot {
-  height: 40px !important;
-}
-
-/* ── FullCalendar light theme (white-first surface) ── */
-.admin-calendar.admin-calendar--light .fc {
-  --fc-border-color: #c8d7d2;
-  --fc-button-bg-color: #ffffff;
-  --fc-button-border-color: #c8d7d2;
-  --fc-button-hover-bg-color: #f2f8f6;
-  --fc-button-hover-border-color: #b7cbc4;
-  --fc-button-active-bg-color: #65cfad;
-  --fc-button-active-border-color: #65cfad;
-  --fc-today-bg-color: rgba(101, 207, 173, 0.14);
-  --fc-neutral-bg-color: #f6fbf9;
-  --fc-page-bg-color: #ffffff;
-  --fc-event-border-color: transparent;
-  --fc-highlight-color: rgba(101, 207, 173, 0.16);
-  --fc-now-indicator-color: #65cfad;
-  --fc-more-link-bg-color: #e6f3ee;
-  --fc-more-link-text-color: #2b4257;
-  --fc-non-business-color: rgba(43, 66, 87, 0.05);
-}
-.admin-calendar.admin-calendar--light .fc-toolbar-title {
-  color: #1f2e3b !important;
-}
-.admin-calendar.admin-calendar--light .fc-button {
-  color: #2b4257 !important;
-}
-.admin-calendar.admin-calendar--light .fc-button:hover {
-  color: #1f2e3b !important;
-}
-.admin-calendar.admin-calendar--light .fc-button-active,
-.admin-calendar.admin-calendar--light .fc-button-active:hover {
-  color: #ffffff !important;
-}
-.admin-calendar.admin-calendar--light .fc-col-header-cell {
-  background: #f1f8f5 !important;
-}
-.admin-calendar.admin-calendar--light .fc-col-header-cell-cushion {
-  color: rgba(31, 46, 59, 0.68) !important;
-}
-.admin-calendar.admin-calendar--light .fc-daygrid-day-number {
-  color: rgba(43, 66, 87, 0.68) !important;
-}
-.admin-calendar.admin-calendar--light .fc-day-today .fc-daygrid-day-number {
-  color: #1f2e3b !important;
-}
-.admin-calendar.admin-calendar--light .fc-scrollgrid,
-.admin-calendar.admin-calendar--light .fc-scrollgrid td,
-.admin-calendar.admin-calendar--light .fc-scrollgrid th {
-  border-color: #c8d7d2 !important;
-}
-.admin-calendar.admin-calendar--light .fc-timegrid-slot-label-cushion {
-  color: rgba(31, 46, 59, 0.56) !important;
-}
-.admin-calendar.admin-calendar--light .fc-timegrid-col.fc-day-today {
-  background: rgba(101, 207, 173, 0.08) !important;
-}
-.admin-calendar.admin-calendar--light .fc-daygrid-more-link {
-  color: #2b4257 !important;
-  background: rgba(101, 207, 173, 0.22);
-}
-.admin-calendar.admin-calendar--light .fc-daygrid-more-link:hover {
-  color: #1f2e3b !important;
-  background: rgba(101, 207, 173, 0.34);
-}
-.admin-calendar.admin-calendar--light .fc-daygrid-event-dot {
-  border-color: #2b4257 !important;
-}
-.admin-calendar.admin-calendar--light .fc-list-day-cushion {
-  background: #edf7f3 !important;
-}
-.admin-calendar.admin-calendar--light .fc-list-day-text,
-.admin-calendar.admin-calendar--light .fc-list-day-side-text {
-  color: rgba(31, 46, 59, 0.68) !important;
-}
-.admin-calendar.admin-calendar--light .fc-timegrid-now-indicator-line {
-  border-color: #65cfad !important;
-}
-.admin-calendar.admin-calendar--light .fc-timegrid-now-indicator-arrow {
-  border-top-color: #65cfad !important;
-  border-bottom-color: #65cfad !important;
-}
-
-/* Parent sessions calendar: keep toolbar compact and wrap-safe on narrower desktop widths */
-.parent-sessions-calendar .fc-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.35rem;
-}
-.parent-sessions-calendar .fc-toolbar-chunk {
-  display: flex;
-  align-items: center;
-  gap: 0.22rem;
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-.parent-sessions-calendar .fc-toolbar-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.parent-sessions-calendar .fc-button {
-  font-size: 0.6rem !important;
-  padding: 0.24rem 0.45rem !important;
-  letter-spacing: 0.03em;
-}
-
-@media (max-width: 1279px) {
-  .parent-sessions-calendar .fc-toolbar {
-    flex-wrap: nowrap;
+  body {
+    @apply bg-background text-foreground;
   }
-  .parent-sessions-calendar .fc-toolbar-title {
-    font-size: 0.8rem !important;
-  }
-  .parent-sessions-calendar .fc-button {
-    font-size: 0.54rem !important;
-    padding: 0.2rem 0.35rem !important;
-  }
-  .parent-sessions-calendar .fc-toolbar-chunk {
-    gap: 0.18rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .parent-sessions-calendar .fc-toolbar-title {
-    font-size: 0.9rem !important;
-  }
-  .parent-sessions-calendar .fc-button {
-    font-size: 0.62rem !important;
-    padding: 0.26rem 0.5rem !important;
+  html {
+    @apply font-sans;
   }
 }

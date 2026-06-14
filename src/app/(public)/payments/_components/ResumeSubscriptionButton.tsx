@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
 
 export default function ResumeSubscriptionButton({
   studentId,
@@ -40,13 +41,15 @@ export default function ResumeSubscriptionButton({
   return (
     <div className="flex flex-col items-center gap-2">
       {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button
+      <Button
+        variant="default"
+        size="md"
+        rounded="full"
         onClick={handleResume}
         disabled={loading}
-        className="bg-[#65cfad] text-[#1f2e3b] rounded-full px-8 py-3 text-sm font-semibold shadow-md hover:bg-[#4db89a] transition-colors cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Resuming..." : "Resume auto-renewal"}
-      </button>
+      </Button>
     </div>
   );
 }

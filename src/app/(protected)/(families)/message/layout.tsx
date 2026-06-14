@@ -1,6 +1,7 @@
 "use server";
 import { ReactNode } from "react";
 import Contacts from "./_components/Contacts";
+import UnreadContacts from "./_components/UnreadContacts";
 import AssignedCoachSection, {
   type AssignedCoachEntry,
 } from "./_components/AssignedCoachSection";
@@ -25,6 +26,8 @@ export default async function Layout({ children }: { children: ReactNode }) {
       <div className="flex flex-col gap-4 max-w-[384px] md:basis-1/3">
         {/* Contacts filter bar*/}
         <Contacts contacts={contacts} />
+        {/* Contacts with unread messages */}
+        <UnreadContacts contacts={contacts} />
         {/* Assigned-coach paginator + card */}
         <AssignedCoachSection entries={coachEntries} />
       </div>

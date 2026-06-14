@@ -1,10 +1,19 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 import { createClient } from "@/src/services/supabase/client";
 import { updateStudentInfo } from "../actions";
 import { CaretIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
+import { FieldLabel } from "@/src/components/ui/field";
+import { Alert } from "@/src/components/ui/alert";
 
 type StudentData = {
   id: string;
@@ -34,13 +43,12 @@ export default function StudentProfilePageClient({
   return (
     <div className="bg-[#2b4257] min-h-screen flex flex-col">
       <header className="top-0 z-10 bg-[#2b4257] px-8 py-5 flex items-center">
-        <a
-          href="/student"
-          className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white no-underline text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors"
-        >
-          <CaretIcon direction="left" />
-          Return to Dashboard
-        </a>
+        <Button asChild variant="dark" size="lg" rounded="full" shadow>
+          <a href="/student">
+            <CaretIcon direction="left" />
+            Return to Dashboard
+          </a>
+        </Button>
       </header>
 
       <main className="bg-[#1f2e3b] rounded-3xl mx-8 mb-10 flex-1 px-10 py-8 xl:px-16">
@@ -101,7 +109,9 @@ function LeftPanel({ student }: { student: StudentData }) {
     const allowedExtensions = ["png", "jpg", "jpeg", "webp", "gif"];
     const fileExt = file.name.split(".").pop()?.toLowerCase();
     if (!fileExt || !allowedExtensions.includes(fileExt)) {
-      setError(`Invalid file extension. Please use: ${allowedExtensions.join(", ")}`);
+      setError(
+        `Invalid file extension. Please use: ${allowedExtensions.join(", ")}`,
+      );
       e.target.value = "";
       return;
     }
@@ -155,7 +165,9 @@ function LeftPanel({ student }: { student: StudentData }) {
 
     const publicUrl = urlData.publicUrl;
 
-    const result = await updateStudentInfo(student.id, { avatar_url: publicUrl });
+    const result = await updateStudentInfo(student.id, {
+      avatar_url: publicUrl,
+    });
     setUploading(false);
 
     if (result.success) {
@@ -197,18 +209,14 @@ function LeftPanel({ student }: { student: StudentData }) {
           className="group relative w-32 h-32 rounded-full overflow-hidden bg-[#2b4257] shadow-[0_4px_4px_rgba(0,0,0,0.25)] shrink-0 cursor-pointer focus:outline-none"
           aria-label="Change profile picture"
         >
-          {(pendingPreview ?? avatarUrl) ? (
-            <Image
-              src={pendingPreview ?? avatarUrl!}
+          <Avatar variant="navy" className="size-full text-3xl">
+            <AvatarImage
+              src={pendingPreview ?? avatarUrl}
               alt="Profile avatar"
-              fill
-              className="object-cover"
+              sizes="128px"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#B1E7D6] text-3xl font-bold">
-              {initials}
-            </div>
-          )}
+            <AvatarFallback className="font-bold">{initials}</AvatarFallback>
+          </Avatar>
           {!pendingFile && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 group-disabled:opacity-100 transition-opacity">
               <span className="text-white text-xs font-medium">
@@ -231,20 +239,24 @@ function LeftPanel({ student }: { student: StudentData }) {
               Use this photo?
             </p>
             <div className="flex gap-2 w-full">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleCancelPreview}
                 disabled={uploading}
-                className="flex-1 text-gray-400 hover:text-white text-sm py-1.5 border border-gray-600 rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleConfirmUpload}
                 disabled={uploading}
-                className="flex-1 bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm py-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="flex-1"
               >
                 {uploading ? "Uploading…" : "Confirm"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -260,66 +272,64 @@ function LeftPanel({ student }: { student: StudentData }) {
           <span className="text-white font-semibold text-sm">About</span>
           {editing ? (
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleCancel}
                 disabled={saving}
-                className="text-gray-400 hover:text-white text-sm px-3 py-1 transition-colors disabled:opacity-50"
+                className="text-white/50 hover:text-white"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm px-4 py-1 hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="text-[#B1E7D6] hover:text-white text-sm font-medium transition-colors"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
               Edit
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Bio */}
         {editing ? (
-          <div>
-            <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
-              Bio
-            </label>
-            <textarea
+          <Field label="Bio">
+            <Textarea
+              variant="dark"
+              size="sm"
+              className="bg-secondary"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={300}
               placeholder="Tell us a little about yourself…"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors resize-none"
             />
             <p className="text-gray-600 text-xs mt-1 text-right">
               {bio.length}/300
             </p>
-          </div>
+          </Field>
         ) : (
           bio && <p className="text-white text-sm">{bio}</p>
         )}
 
         {/* Location */}
         {editing ? (
-          <div>
-            <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
-              Location
-            </label>
-            <input
+          <Field label="Location">
+            <Input
+              variant="dark"
+              size="sm"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="City, Province"
-              className="w-full bg-[#2b4257] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors"
+              className="bg-secondary"
             />
-          </div>
+          </Field>
         ) : (
           location && (
             <div className="flex items-center gap-1.5 text-white text-sm">
@@ -330,9 +340,9 @@ function LeftPanel({ student }: { student: StudentData }) {
         )}
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500/40 text-red-300 px-3 py-2 rounded-lg text-xs">
+          <Alert variant="destructive" size="sm">
             {error}
-          </div>
+          </Alert>
         )}
       </div>
     </div>
@@ -392,10 +402,11 @@ function PersonalSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="First Name">
             {editing ? (
-              <input
+              <Input
+                variant="dark"
+                size="sm"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className={inputClass}
                 placeholder="First name"
               />
             ) : (
@@ -404,10 +415,11 @@ function PersonalSection({
           </Field>
           <Field label="Last Name">
             {editing ? (
-              <input
+              <Input
+                variant="dark"
+                size="sm"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className={inputClass}
                 placeholder="Last name"
               />
             ) : (
@@ -484,10 +496,11 @@ function AcademicSection({ student }: { student: StudentData }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Grade">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className={inputClass}
               placeholder="e.g. 3"
             />
           ) : (
@@ -496,14 +509,17 @@ function AcademicSection({ student }: { student: StudentData }) {
         </Field>
         <Field label="Date of Birth">
           {editing ? (
-            <input
+            <Input
+              variant="dark"
+              size="sm"
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className={inputClass}
             />
           ) : (
-            <ValueText>{dateOfBirth ? formatDate(dateOfBirth) : "—"}</ValueText>
+            <ValueText>
+              {dateOfBirth ? formatDate(dateOfBirth) : "—"}
+            </ValueText>
           )}
         </Field>
       </div>
@@ -542,35 +558,35 @@ function SectionCard({
         <h2 className="text-white font-semibold text-base">{title}</h2>
         {editing ? (
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onCancel}
               disabled={saving}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 transition-colors disabled:opacity-50"
+              className="text-white/50 hover:text-white"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               onClick={onSave}
               disabled={saving}
-              className="bg-[#B1E7D6] text-[#1F2E3B] rounded-lg font-semibold text-sm px-4 py-1.5 hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save"}
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            onClick={onEdit}
-            className="text-[#B1E7D6] hover:text-white text-sm font-medium transition-colors"
-          >
+          <Button variant="ghost" size="sm" onClick={onEdit}>
             Edit
-          </button>
+          </Button>
         )}
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-900/30 border border-red-500/40 text-red-300 px-4 py-2 rounded-lg text-sm">
+        <Alert variant="destructive" className="mb-4">
           {error}
-        </div>
+        </Alert>
       )}
 
       {children}
@@ -587,9 +603,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[#B1E7D6] text-xs font-medium mb-1.5 uppercase tracking-wide">
+      <FieldLabel className="mb-1.5 block w-full text-[#B1E7D6] text-xs font-medium uppercase tracking-wide">
         {label}
-      </label>
+      </FieldLabel>
       {children}
     </div>
   );
@@ -628,6 +644,3 @@ function LocationIcon() {
     </svg>
   );
 }
-
-const inputClass =
-  "w-full bg-[#1f2e3b] text-white text-sm border border-[#B1E7D6]/40 rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:border-[#B1E7D6] transition-colors";

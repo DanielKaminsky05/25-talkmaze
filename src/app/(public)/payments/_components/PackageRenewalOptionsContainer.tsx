@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CaretIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
+import { cn } from "@/src/utils/cn";
 
 interface Plan {
   id: string;
@@ -116,14 +119,14 @@ export const PackageRenewaloptionsContainer = ({
               </h4>
 
               {isCurrent && (
-                <span className="rounded-full bg-[#2b4257] px-3 py-1 text-xs font-bold text-white">
+                <Badge variant="secondary" size="md" className="font-bold">
                   Current plan
-                </span>
+                </Badge>
               )}
               {isPending && !isCurrent && (
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2b4257]">
+                <Badge variant="light" size="md" className="font-bold">
                   Plan change scheduled
-                </span>
+                </Badge>
               )}
 
               <div className="bg-white rounded-xl px-5 py-4 flex flex-col items-center gap-0.5 w-full shadow-[inset_0_0_4px_2px_rgba(0,0,0,0.10)]">
@@ -147,29 +150,17 @@ export const PackageRenewaloptionsContainer = ({
                 {plan.description}
               </p>
 
-              <button
-                className="rounded-full py-3 w-full text-base font-bold shadow-md transition-[filter] border-0"
+              <Button
+                size="lg"
+                rounded="full"
+                shadow
+                className={cn(
+                  "w-full",
+                  isSelected &&
+                    "bg-(--talkmaze-mint-dark) text-white hover:bg-(--talkmaze-mint-dark)",
+                )}
                 onClick={() => !isCurrent && setSelectedPlan(plan)}
                 disabled={isCurrent}
-                style={
-                  isCurrent
-                    ? {
-                        backgroundColor: "#9ca3af",
-                        color: "white",
-                        cursor: "default",
-                      }
-                    : isSelected
-                      ? {
-                          backgroundColor: "#4db89a",
-                          color: "white",
-                          cursor: "pointer",
-                        }
-                      : {
-                          backgroundColor: "#65cfad",
-                          color: "#1f2e3b",
-                          cursor: "pointer",
-                        }
-                }
               >
                 {isCurrent
                   ? "Current plan"
@@ -178,22 +169,24 @@ export const PackageRenewaloptionsContainer = ({
                     : isScheduleMode
                       ? "Select plan"
                       : "Select"}
-              </button>
+              </Button>
             </div>
           );
         })}
       </div>
 
       <div className="flex justify-end mt-1">
-        <button
-          className="bg-[#2b4257] text-white rounded-full px-9 py-3.5 text-base font-bold shadow-md hover:bg-[#1f2e3b] transition-colors border-0 cursor-pointer inline-flex items-center gap-2.5 disabled:cursor-not-allowed"
+        <Button
+          variant="secondary"
+          size="lg"
+          rounded="full"
+          shadow
           onClick={handleContinue}
           disabled={!selectedPlan}
-          style={{ opacity: !selectedPlan ? 0.5 : 1 }}
         >
           {isScheduleMode ? "Schedule next plan" : "Continue to payment"}
           <CaretIcon direction="right" />
-        </button>
+        </Button>
       </div>
     </div>
   );

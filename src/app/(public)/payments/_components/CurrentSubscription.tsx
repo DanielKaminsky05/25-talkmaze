@@ -4,6 +4,7 @@ import DonutChart from "@/src/components/common/charts/SessionsRemainingDonutCha
 import CancelSubscriptionButton from "./CancelSubscriptionButton";
 import CancelScheduleButton from "./CancelScheduleButton";
 import ResumeSubscriptionButton from "./ResumeSubscriptionButton";
+import { Card } from "@/src/components/ui/card";
 
 export default async function CurrentSubscription({
   studentId,
@@ -14,11 +15,17 @@ export default async function CurrentSubscription({
 
   if (!subscription) {
     return (
-      <div className="bg-[#b1e7d6] rounded-2xl p-7 border border-black/10 shadow-md mb-6">
+      <Card
+        variant="accent"
+        border
+        shadow="md"
+        padding="none"
+        className="p-7 mb-6"
+      >
         <p className="text-[#2b4257] italic text-sm">
           No active subscription found.
         </p>
-      </div>
+      </Card>
     );
   }
 
@@ -93,7 +100,13 @@ export default async function CurrentSubscription({
   }
 
   return (
-    <div className="bg-[#b1e7d6] rounded-2xl p-4 flex flex-row items-stretch gap-0 border border-black/10 shadow-md">
+    <Card
+      variant="accent"
+      border
+      shadow="md"
+      padding="sm"
+      className="flex-row items-stretch gap-0"
+    >
       {/* LEFT: plan name + description */}
       <div className="flex-1 flex flex-col gap-4 pr-8">
         <div className="bg-white rounded-xl px-5 py-3 text-xl text-center font-bold text-[#1f2e3b] shadow-[inset_0_0_4px_2px_rgba(0,0,0,0.12)]">
@@ -175,7 +188,7 @@ export default async function CurrentSubscription({
           />
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 

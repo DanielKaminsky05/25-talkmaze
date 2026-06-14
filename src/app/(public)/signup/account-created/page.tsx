@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import { Card } from "@/src/components/ui/card";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,7 +16,12 @@ export default async function AccountCreatedPage({
     <div
       className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
     >
-      <div className="w-full max-w-[480px] bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.1)] py-12 px-8 flex flex-col items-center gap-6">
+      <Card
+        variant="light"
+        shadow="md"
+        padding="none"
+        className="w-full max-w-120 rounded-xl py-12 px-8 items-center gap-6"
+      >
         <Image
           src="/images/logos/talkmaze-logo-horizontal-color.svg"
           alt="TalkMaze Logo"
@@ -49,7 +55,7 @@ export default async function AccountCreatedPage({
             Go to my account
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

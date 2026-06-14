@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fullName } from "@/src/utils/formatName";
+import { toDatetimeLocalValue } from "@/src/utils/formatDateTime";
 
 export interface RescheduleSession {
   id: number;
@@ -19,12 +20,6 @@ interface RescheduleSessionModalProps {
   onSaved: () => void;
 }
 
-function toDatetimeLocal(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString([], {
     month: "short",
@@ -40,10 +35,10 @@ export default function RescheduleSessionModal({
   onSaved,
 }: RescheduleSessionModalProps) {
   const [startVal, setStartVal] = useState(() =>
-    toDatetimeLocal(session.start_time),
+    toDatetimeLocalValue(session.start_time),
   );
   const [endVal, setEndVal] = useState(() =>
-    session.end_time ? toDatetimeLocal(session.end_time) : "",
+    session.end_time ? toDatetimeLocalValue(session.end_time) : "",
   );
   const [saving, setSaving] = useState(false);
   const [decisionLoading, setDecisionLoading] = useState<

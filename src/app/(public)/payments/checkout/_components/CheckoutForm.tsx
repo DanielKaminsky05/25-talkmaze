@@ -10,12 +10,12 @@ import {
 import { OverviewPanel } from "./OverviewPanel";
 import { ContactInfoSection } from "./ContactInfoSection";
 import { CaretIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
 
 export function CheckoutForm({
   amountDisplay,
   planName,
   prefill,
-  studentId,
   mode = "purchase",
   effectiveDate,
   onPaymentElementReady,
@@ -101,14 +101,17 @@ export function CheckoutForm({
   return (
     <>
       <header className="bg-[#2b4257] px-4 sm:px-8 py-5 flex items-center">
-        <button
+        <Button
           type="button"
+          variant="dark"
+          size="lg"
+          rounded="full"
+          shadow
           onClick={() => router.back()}
-          className="inline-flex items-center gap-2 bg-[#1f2e3b] text-white text-[1rem] font-semibold px-5 py-2.5 rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.25)] hover:bg-[#162230] transition-colors border-0 cursor-pointer"
         >
           <CaretIcon direction="left" />
           Return to package options
-        </button>
+        </Button>
       </header>
 
       <div className="mx-3 sm:mx-8 mb-10 px-0 sm:px-4 flex-1 grid grid-cols-1 lg:grid-cols-[5fr_5fr] gap-6">

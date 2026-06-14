@@ -3,12 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import LessonCard from "@/src/app/(protected)/(families)/lessons/_components/LessonCard";
-import ProgressCard from "@/src/app/(protected)/(families)/lessons/_components/ProgressCard";
+import LessonCard from "@/src/app/(protected)/(families)/student/lessons/_components/LessonCard";
+import ProgressCard from "@/src/app/(protected)/(families)/student/lessons/_components/ProgressCard";
 import RichTextDisplay from "@/src/components/common/rich-text/RichTextDisplay";
 import CoursePicker, {
   type CoursePickerOption,
 } from "@/src/components/common/CoursePicker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 
 export interface LessonProp {
   id: string;
@@ -44,7 +51,9 @@ export default function ParentStudentLessonsClient({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [selectedLesson, setSelectedLesson] = useState<LessonProp | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<LessonProp | null>(
+    null,
+  );
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 md:p-12 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -126,51 +135,26 @@ export default function ParentStudentLessonsClient({
 
       {/* Feedback modal */}
       {selectedLesson && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-          onClick={() => setSelectedLesson(null)}
+        <Dialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setSelectedLesson(null);
+          }}
         >
-          <div
-            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+          <DialogContent
+            variant="light"
+            size="lg"
+            className="flex max-h-[85vh] flex-col"
           >
-            {/* Modal header */}
-            <div
-              className="flex items-center justify-between px-6 py-4 rounded-t-2xl"
-              style={{ backgroundColor: "#2B4257" }}
-            >
-              <div>
-                <p className="text-white/60 text-xs uppercase tracking-wide font-medium">
-                  Lesson {selectedLesson.lessonNumber}
-                </p>
-                <h3 className="text-white font-bold text-lg leading-tight">
-                  {selectedLesson.title}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedLesson(null)}
-                className="text-white/60 hover:text-white transition-colors ml-4 shrink-0"
-                aria-label="Close"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-5 h-5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+            <DialogHeader>
+              <DialogTitle>{selectedLesson.title}</DialogTitle>
+              <DialogDescription>
+                Lesson {selectedLesson.lessonNumber}
+              </DialogDescription>
+            </DialogHeader>
 
             {/* Modal body */}
-            <div className="p-6 flex flex-col gap-4">
+            <div className="-mx-6 flex flex-1 flex-col gap-4 overflow-y-auto px-6">
               {selectedLesson.status === 3 ? (
                 <>
                   <RichTextDisplay
@@ -194,8 +178,8 @@ export default function ParentStudentLessonsClient({
                 </p>
               )}
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

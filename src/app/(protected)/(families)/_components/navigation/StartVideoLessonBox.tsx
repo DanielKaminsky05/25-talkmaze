@@ -1,6 +1,7 @@
 "use client";
 
 import { getLessonSpace } from "@/src/lib/lessonspace/actions/getLessonSpace";
+import { Button } from "@/src/components/ui/button";
 
 export default function StartVideoLessonBox() {
   async function handleClick() {
@@ -13,10 +14,13 @@ export default function StartVideoLessonBox() {
   }
 
   return (
-    <button
+    <Button
       onClick={handleClick}
       aria-label="Start Video Lesson"
-      className="text-[12px] md:text-[16px] md:font-semibold h-11 w-[120px] sm:w-[172px] md:w-[272.29px] md:h-[51px] border-[0.5px] rounded-[15px] bg-[#1F2E3B] border-[#1F2E3B] shadow-[0_4px_4px_rgba(0,0,0,0.25)] text-white flex justify-center items-center gap-2 sm:gap-2.5 shrink-0"
+      variant="dark"
+      size="lg"
+      shadow
+      className="w-30 sm:w-43 md:w-68 h-11 md:h-12.75 text-[12px] md:text-base gap-2 sm:gap-2.5 shrink-0"
     >
       <svg
         width="16"
@@ -32,6 +36,6 @@ export default function StartVideoLessonBox() {
       </svg>
       <span className="sm:hidden">Join Lesson</span>
       <span className="hidden sm:inline">Start Video Lesson</span>
-    </button>
+    </Button>
   );
 }

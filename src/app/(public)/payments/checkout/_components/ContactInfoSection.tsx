@@ -1,3 +1,15 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+
+// Bespoke checkout style: black hairline border + 5px radius, deliberately
+// distinct from the standard Input primitive (kept raw per component-architecture
+// §3 "genuine one-off"). The country-code select reuses these tokens via the
+// SelectTrigger override below.
 const inputClass =
   "w-full h-[45px] px-4 rounded-[5px] border-[0.5px] border-black text-base box-border bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#2b4257]";
 
@@ -27,27 +39,15 @@ export function ContactInfoSection({
       </h3>
 
       <div className="flex gap-[15px] mb-[10px]">
-        <div className="relative w-[40%]">
-          <select className={`${inputClass} w-full appearance-none pr-10`}>
-            <option>1+ United States</option>
-            <option>1+ Canada</option>
-          </select>
-          <svg
-            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M4 6l4 4 4-4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
+        <Select defaultValue="us">
+          <SelectTrigger className="w-[40%] h-[45px] rounded-[5px] border-[0.5px] border-black text-black focus:border-black focus:ring-2 focus:ring-[#2b4257]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="us">1+ United States</SelectItem>
+            <SelectItem value="ca">1+ Canada</SelectItem>
+          </SelectContent>
+        </Select>
         <input
           type="tel"
           placeholder="Phone Number *"

@@ -87,7 +87,7 @@ These accept `studentId` from query/body and act on it after only checking that 
 - `src/app/api/coach/sessions/route.ts` (GET, when `student_id` filter is provided)
 - `src/app/api/coach/conversation/route.ts` and `.../message/route.ts` — fetches conversation by `contactId`/`conversationId` without verifying it belongs to the calling coach.
 
-The check is one query: `coach_students` must contain `(coach_id, student_id)`. Add it as a helper in `src/lib/coach/server/`.
+The check is one query: `coach_students` must contain `(coach_id, student_id)`. This is now centralized as `assertCoachAssignedToStudent()` in `src/lib/auth/server/ownership.ts`.
 
 ---
 
@@ -204,7 +204,7 @@ Replace with a toast/modal pattern.
 
 ### Accessibility
 
-Modals lack `role="dialog"` / `aria-modal="true"` and most icon-only buttons lack `aria-label`. Modals checked (`Create*Modal.tsx`, `*DetailModal.tsx`, `AvailabilityModal.tsx`, `PendingBookingDetail.tsx`, `CreateAdminModal.tsx`, `CreateCoachModal.tsx`, `CreateCourseModal.tsx`, `CreatePlanModal.tsx`, `LessonDetailModal.tsx`, `EmployeeDetailModal.tsx`): 0 of 10 use `role="dialog"`; only 3 have an Escape-key handler; only ~16 `aria-label`s exist across the entire codebase.
+Modals lack `role="dialog"` / `aria-modal="true"` and most icon-only buttons lack `aria-label`. Modals checked (`Create*Modal.tsx`, `*DetailModal.tsx`, `EditStudentAvailabilityModal.tsx`, `PendingBookingDetail.tsx`, `CreateAdminModal.tsx`, `CreateCoachModal.tsx`, `CreateCourseModal.tsx`, `CreatePlanModal.tsx`, `CoachingSessionDetailModal.tsx`, `EmployeeDetailModal.tsx`): 0 of 10 use `role="dialog"`; only 3 have an Escape-key handler; only ~16 `aria-label`s exist across the entire codebase.
 
 ### Duplicated components
 

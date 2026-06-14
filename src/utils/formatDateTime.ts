@@ -15,7 +15,8 @@ export function fmtUtcTime(iso: string): string {
 /**
  * Formats a UTC ISO timestamp as a short date string.
  * @param iso - UTC ISO 8601 timestamp string.
- * @param includeWeekday - Whether to prepend the abbreviated weekday. Defaults to `true`.
+ * @param includeWeekday - Whether to prepend the abbreviated weekday. Defaults
+ *  to `true`.
  * @returns Date string, e.g. `"Mon, Jan 5"`
  *          or `"Jan 5"` when `includeWeekday` is false.
  */
@@ -54,4 +55,18 @@ export function fmtLocalDate(iso: string, includeWeekday = true): string {
     month: "short",
     day: "numeric",
   });
+}
+
+/**
+ * Converts an ISO timestamp to the value format required by an
+ * `<input type="datetime-local">`, in the viewer's local timezone.
+ * Unlike the `fmt*` formatters above (which return human-facing display
+ * strings), this returns a machine-readable control value.
+ * @param iso - ISO 8601 timestamp string.
+ * @returns Local datetime-local value, e.g. "2026-06-12T15:05"
+ */
+export function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

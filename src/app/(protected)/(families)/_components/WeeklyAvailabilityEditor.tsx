@@ -2,6 +2,7 @@
 
 import { WEEKDAYS } from "@/src/lib/scheduling/types";
 import TimeZoneSelect from "./TimeZoneSelect";
+import { Input } from "@/src/components/ui/input";
 
 /** Single contiguous availability window within a day, in "HH:mm" localtime. */
 export type AvailabilitySlot = { start: string; end: string };
@@ -126,22 +127,24 @@ export default function WeeklyAvailabilityEditor({
                     return (
                       <div key={idx} className="flex flex-col gap-1">
                         <div className="flex gap-2 items-center">
-                          <input
+                          <Input
                             type="time"
+                            size="sm"
+                            className="w-auto"
                             value={slot.start}
                             onChange={(e) =>
                               updateSlot(day, idx, "start", e.target.value)
                             }
-                            className="border border-[#1F2E3B]/20 rounded px-2 py-1 text-sm"
                           />
                           <span className="text-[#1F2E3B]/50">–</span>
-                          <input
+                          <Input
                             type="time"
+                            size="sm"
+                            className="w-auto"
                             value={slot.end}
                             onChange={(e) =>
                               updateSlot(day, idx, "end", e.target.value)
                             }
-                            className="border border-[#1F2E3B]/20 rounded px-2 py-1 text-sm"
                           />
                           <button
                             type="button"

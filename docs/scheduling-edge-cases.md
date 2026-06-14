@@ -192,7 +192,7 @@ A coach who is in unusual circumstances has no way to say "this one session is s
 - No timezone confirmation when DST changes — student isn't told their 3pm just became 4pm UTC.
 - `assignCoachToStudent` falling back to `success:false` produces no support ticket / admin alert.
 - Admin's "approve pending" UI has no warning for §4.5 schedule horizon overflow.
-- Refunded subscriptions still show sessions on the parent's "Upcoming sessions" view (parent/sessions reads all `sessions` for the account's students regardless of subscription state).
+- Refunded subscriptions still show sessions on the parent's "Upcoming sessions" view (parent/schedule reads all `sessions` for the account's students regardless of subscription state).
 - No "freeze account" / "pause subscription" state. Stripe pause + your DB has no representation.
 
 ---

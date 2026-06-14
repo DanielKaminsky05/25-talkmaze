@@ -11,6 +11,8 @@ import {
   MessageCircleIcon,
   RewardsIcon,
 } from "@/src/components/ui/icons";
+import { Badge } from "@/src/components/ui/badge";
+import { useUnread } from "../../_context/UnreadContext";
 
 /**
  * Role-specific navigation items.
@@ -22,9 +24,14 @@ import {
 const NAV_ITEMS = {
   student: [
     { id: 0, name: "Home", link: "/student", icon: <HomeIcon /> },
-    { id: 1, name: "Lessons", link: "/lessons", icon: <LessonsIcon /> },
+    {
+      id: 1,
+      name: "Lessons",
+      link: "/student/lessons",
+      icon: <LessonsIcon />,
+    },
     { id: 2, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
-    { id: 3, name: "Rewards", link: "/reward", icon: <RewardsIcon /> },
+    { id: 3, name: "Rewards", link: "/student/reward", icon: <RewardsIcon /> },
   ],
   parent: [
     { id: 0, name: "Home", link: "/parent", icon: <HomeIcon /> },
@@ -37,7 +44,7 @@ const NAV_ITEMS = {
     {
       id: 2,
       name: "Schedule",
-      link: "/parent/sessions",
+      link: "/parent/schedule",
       icon: <CalendarDays size={20} />,
     },
     { id: 3, name: "Messages", link: "/message", icon: <MessageCircleIcon /> },
@@ -60,6 +67,7 @@ type Props = {
 export default function SideBar({ profileType, isOpen, onToggle }: Props) {
   const pathname = usePathname();
   const [activeId, setActiveId] = useState(0);
+  const { unreadCount } = useUnread();
 
   // Pick the correct nav list for the active profile type (student or parent)
   const items = NAV_ITEMS[profileType];
@@ -129,6 +137,16 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               >
                 {item.icon}
                 {item.name}
+                {item.link === "/message" && unreadCount > 0 ? (
+                  <Badge
+                    variant="primary"
+                    shape="circle"
+                    size="md"
+                    aria-label={`${unreadCount} unread`}
+                  >
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Badge>
+                ) : null}
               </Link>
             ))}
           </nav>
@@ -183,6 +201,7 @@ export default function SideBar({ profileType, isOpen, onToggle }: Props) {
               state={activeId === item.id}
               link={item.link}
               icon={item.icon}
+              badge={item.link === "/message" ? unreadCount : undefined}
               onSelect={() => setActiveId(item.id)}
             />
           ))}

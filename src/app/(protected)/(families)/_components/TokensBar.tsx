@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
+import { Card } from "@/src/components/ui/card";
 
 type TokenRow = {
   id: string;
@@ -33,8 +34,11 @@ export default function TokenBar({
   const hiddenCount = earnedTokens.length - INITIAL_COUNT;
 
   return (
-    <div
-      className="relative bg-white rounded-xl shadow-[0px_4px_4px_rgba(0,0,0,0.25)] box-border w-full max-w-full sm:max-w-none sm:w-[402px] sm:shrink-0"
+    <Card
+      variant="light"
+      shadow="md"
+      padding="none"
+      className="relative rounded-xl box-border w-full max-w-full sm:max-w-none sm:w-100.5 sm:shrink-0"
       style={{
         outline: "7px solid var(--talkmaze_green_light, #B1E7D6)",
         outlineOffset: "-7px",
@@ -95,6 +99,6 @@ export default function TokenBar({
           )}
         </>
       )}
-    </div>
+    </Card>
   );
 }

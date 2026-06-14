@@ -2,19 +2,24 @@
 
 import { useState } from "react";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
-import LessonDetailModal from "./LessonDetailModal";
+import CoachingSessionDetailModal from "./CoachingSessionDetailModal";
+import { Card } from "@/src/components/ui/card";
 
 export default function ScheduleList({
   schedule,
 }: {
   schedule: CoachingSession[];
 }) {
-  const [selectedLesson, setSelectedLesson] = useState<CoachingSession | null>(
-    null,
-  );
+  const [selectedSession, setSelectedSession] =
+    useState<CoachingSession | null>(null);
 
   return (
-    <div className="w-full h-full max-h-full bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3 overflow-hidden">
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="w-full h-full max-h-full p-5 gap-3 overflow-hidden"
+    >
       <h3 className="font-semibold text-[#1F2E3B]">Schedule</h3>
 
       {/* Session list or empty state */}
@@ -42,7 +47,7 @@ export default function ScheduleList({
             return (
               <div
                 key={item.id}
-                onClick={() => setSelectedLesson(item)}
+                onClick={() => setSelectedSession(item)}
                 className="w-full min-h-[72px] p-4 border-[0.5px] rounded-xl font-semibold border-[#4E4C4C] shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] flex justify-between items-center bg-white text-[#2B4257] cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div>
@@ -66,12 +71,12 @@ export default function ScheduleList({
         )}
       </div>
 
-      {selectedLesson && (
-        <LessonDetailModal
-          lesson={selectedLesson}
-          onClose={() => setSelectedLesson(null)}
+      {selectedSession && (
+        <CoachingSessionDetailModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
         />
       )}
-    </div>
+    </Card>
   );
 }

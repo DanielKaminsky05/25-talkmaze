@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { signUpNewUser } from "./actions";
 import { useRouter } from "next/navigation";
 
@@ -131,11 +133,6 @@ export default function SignupPage() {
     }
   }
 
-  const inputClass = (hasError: boolean) =>
-    `w-full h-full px-5 text-[20px] text-[#1F2E3B] placeholder-[#1F2E3B]/60 border-[0.7px] ${
-      hasError ? "border-red-500" : "border-[#1F2E3B]"
-    } rounded-[10px] focus:outline-none focus:border-[#65CFAD] focus:ring-1 focus:ring-[#65CFAD] transition-colors`;
-
   return (
     <div
       className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
@@ -164,12 +161,14 @@ export default function SignupPage() {
 
               {/* Family First Name */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.familyFirstName}
                     type="text"
                     placeholder="First Name"
                     value={familyFirstName}
-                    className={inputClass(!!errors.familyFirstName)}
                     onChange={(e) => setFamilyFirstName(e.target.value)}
                   />
                 </div>
@@ -178,12 +177,14 @@ export default function SignupPage() {
 
               {/* Family Last Name */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.familyLastName}
                     type="text"
                     placeholder="Last Name"
                     value={familyLastName}
-                    className={inputClass(!!errors.familyLastName)}
                     onChange={(e) => setFamilyLastName(e.target.value)}
                   />
                 </div>
@@ -192,13 +193,15 @@ export default function SignupPage() {
 
               {/* Email */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.email}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
-                    className={inputClass(!!errors.email)}
                   />
                 </div>
                 <ErrorMessage message={errors.email} />
@@ -206,13 +209,15 @@ export default function SignupPage() {
 
               {/* Password */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.password}
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className={inputClass(!!errors.password)}
                   />
                   <button
                     type="button"
@@ -227,13 +232,15 @@ export default function SignupPage() {
 
               {/* Confirm Password */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.confirmPassword}
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={inputClass(!!errors.confirmPassword)}
                   />
                   <button
                     type="button"
@@ -254,12 +261,14 @@ export default function SignupPage() {
 
               {/* Student First Name */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.studentFirstName}
                     type="text"
                     placeholder="Student First Name"
                     value={studentFirstName}
-                    className={inputClass(!!errors.studentFirstName)}
                     onChange={(e) => setStudentFirstName(e.target.value)}
                   />
                 </div>
@@ -268,12 +277,14 @@ export default function SignupPage() {
 
               {/* Student Last Name */}
               <div className="flex flex-col gap-1">
-                <div className="relative h-[58px]">
-                  <input
+                <div className="relative">
+                  <Input
+                    variant="light"
+                    size="lg"
+                    error={!!errors.studentLastName}
                     type="text"
                     placeholder="Student Last Name"
                     value={studentLastName}
-                    className={inputClass(!!errors.studentLastName)}
                     onChange={(e) => setStudentLastName(e.target.value)}
                   />
                 </div>
@@ -284,13 +295,15 @@ export default function SignupPage() {
                 You can add more students later from your account.
               </p>
 
-              <button
+              <Button
                 type="submit"
+                variant="accent"
+                size="lg"
                 disabled={isSubmitting}
-                className="w-full h-11 md:h-[38px] mt-2 bg-[#B1E7D6] rounded-[12px] text-[20px] font-semibold text-[#1F2E3B] hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full h-11 md:h-[38px] mt-2 text-[20px]"
               >
                 {isSubmitting ? "Creating Account..." : "Create an Account"}
-              </button>
+              </Button>
 
               <div className="text-center mt-2">
                 <p className="text-[#1F2E3B]">

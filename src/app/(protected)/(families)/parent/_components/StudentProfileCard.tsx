@@ -1,6 +1,9 @@
 "use client";
 
 import { EditIcon, LocationPinFilledIcon } from "@/src/components/ui/icons";
+import { Card } from "@/src/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import { initials } from "@/src/utils/formatName";
 
 interface StudentProfileCardProps {
   name: string;
@@ -31,12 +34,14 @@ export default function StudentProfileCard({
   totalStudents = 1,
 }: StudentProfileCardProps) {
   return (
-    <div
-      className="rounded-2xl overflow-hidden shadow-[0_4px_4px_rgba(0,0,0,0.25)] relative"
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="rounded-2xl overflow-hidden relative h-full"
       style={{
-        height: "100%",
-        backgroundColor: "#B1E7D6",
-        backgroundImage: "url('/images/backgrounds/student-profile-card-bg.png')",
+        backgroundImage:
+          "url('/images/backgrounds/student-profile-card-bg.png')",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
       }}
@@ -82,29 +87,16 @@ export default function StudentProfileCard({
       </div>
 
       {/* Avatar — overlaps header */}
-      <div
-        className="absolute left-4 sm:left-6 top-[74px] z-20 flex flex-col items-center"
-      >
-        <div className="w-[96px] h-[96px] sm:w-[120px] sm:h-[120px] xl:w-[153px] xl:h-[153px] overflow-hidden rounded-full">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-[#2B4257] flex items-center justify-center">
-              <span className="text-white text-5xl font-bold select-none">
-                {name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
+      <div className="absolute left-4 sm:left-6 top-[74px] z-20 flex flex-col items-center">
+        <Avatar
+          variant="navy"
+          className="size-24 sm:size-30 xl:size-38.25 text-white"
+        >
+          <AvatarImage src={imageUrl} alt={name} sizes="153px" />
+          <AvatarFallback className="text-5xl font-bold">
+            {initials(name)}
+          </AvatarFallback>
+        </Avatar>
         <p
           className="text-[#2E2E2E] font-semibold text-[20px] mt-1 whitespace-nowrap"
           style={{ fontFamily: "Roboto, sans-serif" }}
@@ -155,7 +147,7 @@ export default function StudentProfileCard({
           <p>{description}</p>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 

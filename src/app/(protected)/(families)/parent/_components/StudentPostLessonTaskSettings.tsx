@@ -2,14 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/services/supabase/client";
+import { Card } from "@/src/components/ui/card";
 
-export default function StudentPostLessonTaskSettings({ studentId }: { studentId?: string }) {
+export default function StudentPostLessonTaskSettings({
+  studentId,
+}: {
+  studentId?: string;
+}) {
   const [enabled, setEnabled] = useState(true);
   const [days, setDays] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!studentId) { setLoading(false); return; }
+    if (!studentId) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
     supabase
       .from("students")
@@ -25,7 +33,10 @@ export default function StudentPostLessonTaskSettings({ studentId }: { studentId
       });
   }, [studentId]);
 
-  async function save(patch: { post_lesson_tasks_enabled?: boolean; post_lesson_days?: number }) {
+  async function save(patch: {
+    post_lesson_tasks_enabled?: boolean;
+    post_lesson_days?: number;
+  }) {
     if (!studentId) return;
     const supabase = createClient();
     await supabase.from("students").update(patch).eq("id", studentId);
@@ -43,9 +54,12 @@ export default function StudentPostLessonTaskSettings({ studentId }: { studentId
   }
 
   return (
-    <div
-      className="bg-[#B1E7D6] rounded-2xl shadow-[0_4px_4px_rgba(0,0,0,0.25)] flex flex-col justify-between px-8 py-[30px]"
-      style={{ height: "100%", fontFamily: "Roboto, sans-serif" }}
+    <Card
+      variant="accent"
+      shadow="md"
+      padding="none"
+      className="justify-between px-8 py-7.5 h-full"
+      style={{ fontFamily: "Roboto, sans-serif" }}
     >
       <p className="font-semibold text-[16px] text-[#1F2E3B] max-w-full">
         Do you want your child to have post-lesson tasks?
@@ -85,7 +99,9 @@ export default function StudentPostLessonTaskSettings({ studentId }: { studentId
           >
             −
           </button>
-          <span className="flex-1 text-center font-semibold text-[16px]">{days}</span>
+          <span className="flex-1 text-center font-semibold text-[16px]">
+            {days}
+          </span>
           <button
             disabled={loading}
             onClick={() => changeDays(1)}
@@ -95,6 +111,6 @@ export default function StudentPostLessonTaskSettings({ studentId }: { studentId
           </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
