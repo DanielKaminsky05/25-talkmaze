@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fullName } from "@/src/utils/formatName";
 import { fmtLocalDate } from "@/src/utils/formatDateTime";
-import type { CoachCourseListItem } from "./StudentDetails";
+import type { CoachCourseListItem } from "./student-details/types";
 import type { Database } from "@/src/services/supabase/types/database";
 
 type Student = Database["public"]["Tables"]["students"]["Row"];

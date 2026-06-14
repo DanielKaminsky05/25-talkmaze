@@ -8,7 +8,7 @@ import { createServerClient } from "@supabase/ssr";
  *      (sends unauthed users to /login except on whitelisted pages, sends
  *      authed users away from /login).
  *   2. Webhooks bypass everything below.
- *   3. Authed users on public-auth pages (/signup, /forgot-password, /) →
+ *   3. Authed users on public-auth pages (/signup, /forgot-password, /)
  *      redirected to their dashboard. /reset-password is the exception: an
  *      authenticated session lands there straight from the email link.
  *   4. RBAC: coaches/admins routed away from /profiles to their dashboard;
@@ -18,7 +18,7 @@ import { createServerClient } from "@supabase/ssr";
  *      /reset-password are carved out (reachable without a profile cookie).
  *   6. Profile-type gate: student profiles stay under /student; parent
  *      profiles stay under /parent.
- *   7. Subscription gate: student profile without active subscription →
+ *   7. Subscription gate: student profile without active subscription
  *      /payments.
  */
 export async function middleware(request: NextRequest) {
@@ -87,7 +87,7 @@ export async function middleware(request: NextRequest) {
   const isAdmin = role === 3;
 
   // Authed users on public-auth pages (/signup, /forgot-password, /) → dashboard.
-  // /reset-password is intentionally excluded — authenticated users may land
+  // /reset-password is intentionally excluded - authenticated users may land
   // here via a Supabase email link.
   const isPublicAuthPage =
     pathname === "/" ||
@@ -110,6 +110,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Coaches message from their own dashboard route. Send them off the family
+    // `/message` surface to `/coach/message`, preserving any conversation id.
+    if (isCoach && pathname.startsWith("/message")) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.replace(/^\/message/, "/coach/message");
+      return NextResponse.redirect(url);
+    }
+
     if (pathname.startsWith("/coach") && !isCoach) {
       const url = request.nextUrl.clone();
       url.pathname = "/student";
@@ -126,7 +134,9 @@ export async function middleware(request: NextRequest) {
   // Profile cookie gate (regular users only, on profile-locked routes).
   if (user && isRegularUser && isProfileLockedRoute) {
     const activeProfileId = request.cookies.get("active_profile_id")?.value;
-    const activeProfileType = request.cookies.get("active_profile_type")?.value;
+    const activeProfileType = request.cookies.get(
+      "active_profile_type",
+    )?.value;
 
     if (!activeProfileId) {
       const url = request.nextUrl.clone();

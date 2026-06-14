@@ -3,13 +3,34 @@
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { createClient } from "@/src/services/supabase/server";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import { assertConversationParticipant } from "../server/assertConversationParticipant";
 import type { Message } from "../types";
 
+/**
+ * Sends a message into a conversation on behalf of the current user.
+ *
+ * Authorizes that the caller is a participant of the conversation (via
+ * assertConversationParticipant) before inserting, since RLS is off in
+ * production. Resolves the sender's display name/avatar from the active family
+ * profile, or from the coach record when there is no active profile.
+ *
+ * @param data  The message payload.
+ * @param data.id  Optional client-supplied message id, used for optimistic
+ *                 rendering so realtime echo can be de-duplicated. A new id
+ *                 is generated when omitted.
+ * @param data.text  The message body. Empty/whitespace-only text is rejected.
+ * @param data.conversationId  The target conversation's id.
+ * @returns `{ error: false, message }` with inserted message on success, OR 
+ *          `{ error: true, message }` with a human-readable reason on failure
+ *          (not authenticated, empty text, not a participant, or insert error)
+ */
 export async function sendMessage(data: {
   id?: string;
   text: string;
   conversationId: string;
-}): Promise<{ error: false; message: Message } | { error: true; message: string }> {
+}): Promise<
+  { error: false; message: Message } | { error: true; message: string }
+> {
   const user = await getCurrentUser();
 
   if (user == null) {
@@ -21,6 +42,17 @@ export async function sendMessage(data: {
   }
 
   const supabase = await createClient();
+
+  // RLS is off in prod, so this is the only check stopping a caller writing
+  // a conversation they don't belong to. Must run before the insert.
+  const isParticipant = await assertConversationParticipant(
+    supabase,
+    user.id,
+    data.conversationId,
+  );
+  if (!isParticipant) {
+    return { error: true, message: "Forbidden" };
+  }
 
   const { data: insertedMessage, error } = await supabase
     .from("messages")
@@ -50,7 +82,8 @@ export async function sendMessage(data: {
         .eq("id", profile.id)
         .maybeSingle();
       if (student) {
-        senderName = `${student.first_name || ""} ${student.last_name || ""}`.trim();
+        senderName =
+          `${student.first_name || ""} ${student.last_name || ""}`.trim();
         avatarUrl = student.avatar_url ?? null;
       }
     } else {
@@ -60,7 +93,8 @@ export async function sendMessage(data: {
         .eq("id", profile.id)
         .maybeSingle();
       if (parent) {
-        senderName = `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
+        senderName =
+          `${parent.first_name || ""} ${parent.last_name || ""}`.trim();
         avatarUrl = parent.avatar_url ?? null;
       }
     }
@@ -71,7 +105,9 @@ export async function sendMessage(data: {
       .eq("account_id", user.id)
       .maybeSingle();
     if (coach)
-      senderName = `${coach.first_name || ""} ${coach.last_name || ""}`.trim() || "Unknown";
+      senderName =
+        `${coach.first_name || ""} ${coach.last_name || ""}`.trim() ||
+        "Unknown";
     avatarUrl = coach?.avatar_url ?? null;
   }
 

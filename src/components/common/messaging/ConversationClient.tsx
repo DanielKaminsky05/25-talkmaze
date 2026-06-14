@@ -1,12 +1,12 @@
 "use client";
 import { Message } from "@/src/lib/messaging/types";
-import ConversationMessage from "../_components/ConversationMessage";
-import ConversationMessageInput from "../_components/ConversationMessageInput";
-import ConversationShell from "../_components/ConversationShell";
+import ConversationMessage from "./ConversationMessage";
+import ConversationMessageInput from "./ConversationMessageInput";
+import ConversationShell from "./ConversationShell";
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/services/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { useUnread } from "../../_context/UnreadContext";
+import { useUnreadMessages } from "./UnreadMessagesContext";
 
 /**
  * Chatbox client displaying messages between this user and the contact they
@@ -47,13 +47,30 @@ export function ConversationClient({
     userId: user.id, // kept for hook signature compatibility
   });
 
-  // Tell the unread provider this conversation is on screen. While it is, the
-  // provider marks incoming messages read instead of counting them, so the
-  // sidebar badge doesn't tick up for messages the user is actively reading.
-  const { setOpenConversation } = useUnread();
+  // Mark the conversation read and tell the unread provider it is on screen.
+  // Marking happens here (not only in the route page) so that any inline mount
+  // of the conversation also clears unread. The read is
+  // committed before `setOpenConversation` refetches, so the now-read
+  // conversation drops out of the counts without the badge ticking up.
+  const { setOpenConversation } = useUnreadMessages();
   useEffect(() => {
-    setOpenConversation(conversation.id);
-    return () => setOpenConversation(null);
+    let cancelled = false;
+    const supabase = createClient();
+
+    (async () => {
+      const { error } = await supabase.rpc("mark_conversation_read", {
+        p_conversation_id: conversation.id,
+      });
+      if (error) console.error("Failed to mark conversation read:", error);
+      // Refetch only after the read commits, so the now-read conversation
+      // drops out of the counts instead of the badge briefly ticking up.
+      if (!cancelled) setOpenConversation(conversation.id);
+    })();
+
+    return () => {
+      cancelled = true;
+      setOpenConversation(null);
+    };
   }, [conversation.id, setOpenConversation]);
 
   // Optimistic rendering: track messages the user sends before server confirms

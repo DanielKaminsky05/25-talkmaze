@@ -1,36 +1,35 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { signOut } from "@/src/lib/auth/actions/signOut";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
 } from "@/src/components/ui/avatar";
 
-/**
- * Component rendering the Circular profile picture and the dropdown triangle,
- * and the dropdown menu.
- * Contained in the NavigiationBar.
- */
-const PROFILE_IMAGE = {
-  student: "/images/content/blank_profile.png",
-  parent: "/images/content/blank_profile.png",
+const FALLBACK_IMAGE = "/images/content/blank_profile.png";
+
+export type ProfileMenuItem = {
+  label: string;
+  onSelect: () => void;
 };
 
 type Props = {
-  profileType: "student" | "parent";
   avatarUrl: string | null;
+  /** Dropdown actions, e.g. Manage Profile / Switch Profiles / Sign Out. */
+  items: ProfileMenuItem[];
 };
 
-export default function AvatarIcon({ profileType, avatarUrl }: Props) {
+/**
+ * Circular avatar + caret that toggles a dropdown of actions. Lives in the
+ * `TopBar` of both the families and coach shells; the menu items are supplied
+ * by the caller so each audience can wire its own routes/actions.
+ */
+export default function ProfileMenu({ avatarUrl, items }: Props) {
   const [open, setOpen] = useState(false); // Dropdown menu visibility toggle
   const ref = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
-  // Add effect to close the dropdown menu, when the user clicks anywhere on the
-  // page outside of the dropdown menu
+  // Close the dropdown when the user clicks anywhere outside of it
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -54,7 +53,7 @@ export default function AvatarIcon({ profileType, avatarUrl }: Props) {
           className="size-11 md:size-16.5 shadow-[0_4px_4px_rgba(0,0,0,0.25)]"
         >
           <AvatarImage
-            src={avatarUrl ?? PROFILE_IMAGE[profileType]}
+            src={avatarUrl ?? FALLBACK_IMAGE}
             alt="Profile"
             sizes="66px"
           />
@@ -74,31 +73,18 @@ export default function AvatarIcon({ profileType, avatarUrl }: Props) {
       {/* Dropdown menu */}
       {open && (
         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg z-50 overflow-hidden">
-          <button
-            onClick={() => {
-              router.push(`/${profileType}/profile`);
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
-          >
-            Manage Profile
-          </button>
-
-          <button
-            onClick={() => {
-              router.push("/profiles");
-              setOpen(false);
-            }}
-            className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
-          >
-            Switch Profiles
-          </button>
-          <button
-            onClick={() => signOut()}
-            className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
-          >
-            Sign Out
-          </button>
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => {
+                item.onSelect();
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-100 text-sm font-medium"
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

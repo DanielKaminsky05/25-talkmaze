@@ -1155,6 +1155,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_coach_unread_by_contact: {
+        Args: never
+        Returns: {
+          contact_id: string
+          unread_count: number
+        }[]
+      }
+      get_coach_unread_total: { Args: never; Returns: number }
       get_profile_unread_by_contact: {
         Args: { p_profile_id: string; p_profile_type: string }
         Returns: {

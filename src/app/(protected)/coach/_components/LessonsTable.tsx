@@ -5,6 +5,14 @@ import Link from "next/link";
 
 import { ChevronRight } from "lucide-react";
 
+import { SearchInput } from "@/src/components/ui/search-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import ExternalLinkIcon from "./ui/ExternalLinkIcon";
 import type { Database } from "@/src/services/supabase/types/database";
 
@@ -194,12 +202,16 @@ export default function LessonsTable({
           <span className="bg-[#2B4257]/10 text-[#2B4257] text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
             {loading ? "..." : `${filtered.length} lessons`}
           </span>
-          <input
-            type="search"
-            placeholder="Search lessons…"
+          <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 w-full sm:w-44"
+            placeholder="Search lessons…"
+            aria-label="Search lessons"
+            variant="light"
+            size="sm"
+            iconSize={16}
+            containerClassName="w-full sm:w-44"
+            className="min-h-11 md:min-h-9"
           />
         </div>
       </div>
@@ -308,21 +320,27 @@ export default function LessonsTable({
                     {showProgress && (
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <select
-                            disabled={isUpdating}
-                            value={lesson.status}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                lesson.id,
-                                Number(e.target.value),
-                              )
+                          <Select
+                            value={String(lesson.status)}
+                            onValueChange={(v) =>
+                              handleStatusChange(lesson.id, Number(v))
                             }
-                            className="border border-gray-200 rounded-md text-xs py-1 px-2 min-h-11 md:min-h-0 focus:outline-none focus:ring-2 focus:ring-[#2B4257]/30 disabled:opacity-50 cursor-pointer"
+                            disabled={isUpdating}
                           >
-                            <option value={1}>Not Started</option>
-                            <option value={2}>In Progress</option>
-                            <option value={3}>Completed</option>
-                          </select>
+                            <SelectTrigger
+                              variant="light"
+                              size="sm"
+                              aria-label="Lesson status"
+                              className="w-36 min-h-11 md:min-h-9"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent variant="light">
+                              <SelectItem value="1">Not Started</SelectItem>
+                              <SelectItem value="2">In Progress</SelectItem>
+                              <SelectItem value="3">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
                           {isUpdating && (
                             <div className="w-3.5 h-3.5 border-2 border-[#2B4257] border-t-transparent rounded-full animate-spin" />
                           )}

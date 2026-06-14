@@ -2,14 +2,15 @@
 
 import { ReactNode, useState } from "react";
 import { usePathname } from "next/navigation";
-import NavigationBar from "./navigation/NavigationBar";
-import SideBar from "./navigation/Sidebar";
+import FamiliesTopBar from "./navigation/FamiliesTopBar";
+import FamiliesSideBar from "./navigation/FamiliesSideBar";
 import { PageTitleProvider } from "../_context/PageTitleContext";
 import {
   ActiveProfile,
   ActiveProfileProvider,
 } from "../_context/ActiveProfileContext";
-import { UnreadProvider } from "../_context/UnreadContext";
+import { UnreadMessagesProvider } from "@/src/components/common/messaging/UnreadMessagesContext";
+import { getUnreadState } from "@/src/lib/messaging/actions/getUnreadState";
 
 type Props = {
   profileType: "student" | "parent";
@@ -21,7 +22,7 @@ type Props = {
 };
 
 /**
- * Client shell for the protected layout.
+ * Client shell for the student & parent dashboards layout.
  *
  * This component exists to separate two concerns:
  *   - The server layout (layout.tsx) reads the active profile cookie and
@@ -58,28 +59,35 @@ export default function FamiliesLayoutShell({
 
   return (
     <ActiveProfileProvider profile={activeProfile}>
-      <UnreadProvider
+      <UnreadMessagesProvider
         initialUnread={initialUnread}
         initialUnreadByContact={initialUnreadByContact}
-        profileId={activeProfile?.id ?? null}
-        profileType={profileType}
+        topic={
+          activeProfile?.id
+            ? `profile:${profileType}:${activeProfile.id}:unread`
+            : null
+        }
+        fetchUnread={getUnreadState}
       >
         <PageTitleProvider>
           <div className="flex flex-row w-screen h-screen overflow-hidden">
-            <SideBar
+            <FamiliesSideBar
               profileType={profileType}
               isOpen={sidebarOpen}
               onToggle={() => setSidebarOpen((v) => !v)}
             />
             <div className="flex flex-1 flex-col overflow-hidden pr-0 lg:pr-6">
-              <NavigationBar profileType={profileType} avatarUrl={avatarUrl} />
+              <FamiliesTopBar
+                profileType={profileType}
+                avatarUrl={avatarUrl}
+              />
               <div className="bg-[#1f2e3b] w-full flex-1 min-h-0 min-w-0 rounded-none md:rounded-2xl shadow-none md:shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] mb-0 lg:mb-6 overflow-y-auto">
                 {children}
               </div>
             </div>
           </div>
         </PageTitleProvider>
-      </UnreadProvider>
+      </UnreadMessagesProvider>
     </ActiveProfileProvider>
   );
 }

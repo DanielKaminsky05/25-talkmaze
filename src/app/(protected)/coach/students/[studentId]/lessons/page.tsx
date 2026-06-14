@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
-import CoachPageClient from "../../../CoachPageClient";
+import { notFound } from "next/navigation";
+import LessonsTable from "../../../_components/LessonsTable";
 import { getCoachDashboardContext } from "../../../_lib/getCoachDashboardContext";
+import { fullName } from "@/src/utils/formatName";
 
 interface CoachStudentLessonsPageProps {
   params: Promise<{ studentId: string }>;
@@ -10,38 +11,16 @@ export default async function CoachStudentLessonsPage({
   params,
 }: CoachStudentLessonsPageProps) {
   const { studentId } = await params;
-  const { account, students } = await getCoachDashboardContext();
-
-  if (students.length === 0) {
-    return (
-      <CoachPageClient
-        currentUserId={account.id}
-        currentUserEmail={account.email}
-        selectedStudent={null}
-        assignedStudents={students}
-        selectedStudentId={null}
-        selectionNotice={null}
-        initialOpenChatTarget={null}
-        activeTab="lessons"
-      />
-    );
-  }
-
-  const selectedStudent = students.find((s) => s.id === studentId);
-  if (!selectedStudent) {
-    redirect(`/coach/students/${students[0].id}/lessons`);
-  }
+  const { students } = await getCoachDashboardContext();
+  const student = students.find((s) => s.id === studentId);
+  if (!student) notFound();
 
   return (
-    <CoachPageClient
-      currentUserId={account.id}
-      currentUserEmail={account.email}
-      selectedStudent={selectedStudent}
-      assignedStudents={students}
-      selectedStudentId={selectedStudent.id}
-      selectionNotice={null}
-      initialOpenChatTarget={null}
-      activeTab="lessons"
-    />
+    <div className="min-h-0 flex-1">
+      <LessonsTable
+        studentId={student.id}
+        studentName={fullName(student.first_name, student.last_name)}
+      />
+    </div>
   );
 }

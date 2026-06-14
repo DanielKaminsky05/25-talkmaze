@@ -7,16 +7,25 @@ import {
   AvatarFallback,
 } from "@/src/components/ui/avatar";
 import { Badge } from "@/src/components/ui/badge";
-import { useUnread } from "../../_context/UnreadContext";
+import { useUnreadMessages } from "./UnreadMessagesContext";
 
 /**
  * Contacts that currently have unread messages.
  * Reads the live per-contact unread map from the unread context, so rows
  * appear/update in realtime and drop off once their conversation is opened
  * (marked read). Renders nothing when there is no unread message.
+ *
+ * @param basePath Route prefix a row links to (`${basePath}/${id}`). Defaults
+ *   to the families `/message`; the coach passes `/coach/message`.
  */
-export default function UnreadContacts({ contacts }: { contacts: Contact[] }) {
-  const { unreadByContact } = useUnread();
+export default function UnreadContacts({
+  contacts,
+  basePath = "/message",
+}: {
+  contacts: Contact[];
+  basePath?: string;
+}) {
+  const { unreadByContact } = useUnreadMessages();
 
   const unread = contacts
     .map((c) => ({ contact: c, count: unreadByContact[c.id] ?? 0 }))
@@ -29,7 +38,7 @@ export default function UnreadContacts({ contacts }: { contacts: Contact[] }) {
       {unread.map(({ contact: c, count }) => (
         <Link
           key={c.id}
-          href={`/message/${c.id}`}
+          href={`${basePath}/${c.id}`}
           className="flex items-center w-full h-13 px-3 py-1.5
                      rounded-lg bg-white cursor-pointer"
         >

@@ -5,9 +5,12 @@ import { getProfileUnreadTotal } from "../server/getProfileUnreadTotal";
 import { getProfileUnreadByContact } from "../server/getProfileUnreadByContact";
 
 export type UnreadState = {
-  /** Total unread messages across all of the active profile's conversations */
+  /** Total unread messages across all of the viewer's conversations */
   total: number;
-  /** Per-contact unread counts, keyed by coach account id (`Contact.id`). */
+  /**
+   * Per-contact unread counts, keyed by `Contact.id` (the coach account id for
+   * the family view; the family profile id for the coach view).
+   */
   byContact: Record<string, number>;
 };
 
@@ -18,7 +21,7 @@ export type UnreadState = {
  * per-contact breakdown together so the sidebar badge and the unread-contacts
  * list stay in sync. Returns zeros when there is no active profile.
  *
- * Used by `UnreadContext` to refetch after a realtime ping or after navigating
+ * Used by `UnreadMessagesContext` to refetch after a realtime ping or after navigating
  * to a conversation (which marks it read server-side).
  */
 export async function getUnreadState(): Promise<UnreadState> {
