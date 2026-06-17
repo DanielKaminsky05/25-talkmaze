@@ -7,6 +7,9 @@ import { AttendanceItem } from "./_components/StudentAttendanceDetails";
 import type { CoachingSession } from "@/src/lib/scheduling/types";
 import { fullName } from "@/src/utils/formatName";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Parent Dashboard" };
 
 /**
  * Top-level page component for Parent Dashboard Home

@@ -5,6 +5,9 @@ import ParentScheduleClient, {
   type StudentProp,
   type SessionProp,
 } from "./_components/ParentScheduleClient";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Schedule" };
 
 /**
  * /parent/schedule — Server Component

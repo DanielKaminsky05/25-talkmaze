@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/src/services/supabase/server";
 import LessonDetailClient from "./LessonDetailClient";
+import { getCoachDashboardContext } from "../../../../_lib/getCoachDashboardContext";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ studentId: string; lessonId: string }>;
@@ -24,6 +26,25 @@ async function resolveStorageUrl(supabase: any, path: string | null) {
  *
  * Calls notFound() (404) if either the lesson or student doesn't exist.
  */
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { studentId, lessonId } = await params;
+  try {
+    const { students } = await getCoachDashboardContext();
+    if (!students.some((s) => s.id === studentId)) return { title: "Lesson" };
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("lessons")
+      .select("title")
+      .eq("id", lessonId)
+      .maybeSingle();
+    return { title: data?.title ?? "Lesson" };
+  } catch {
+    return { title: "Lesson" };
+  }
+}
+
 export default async function CoachLessonDetailPage({ params }: PageProps) {
   const { studentId, lessonId } = await params;
   const supabase = await createClient();

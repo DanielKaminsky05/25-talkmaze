@@ -5,6 +5,27 @@ import { getConversationMessages } from "@/src/lib/messaging/server/getConversat
 import { getCurrentSender } from "@/src/lib/messaging/server/getCurrentSender";
 import { ConversationClient } from "@/src/components/common/messaging/ConversationClient";
 import { createClient } from "@/src/services/supabase/server";
+import { fullName } from "@/src/utils/formatName";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const supabase = await createClient();
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("first_name, last_name")
+      .eq("account_id", id)
+      .maybeSingle();
+    return { title: fullName(coach?.first_name, coach?.last_name, "Messages") };
+  } catch {
+    return { title: "Messages" };
+  }
+}
 
 /**
  * Renders a conversation page for the given contact.

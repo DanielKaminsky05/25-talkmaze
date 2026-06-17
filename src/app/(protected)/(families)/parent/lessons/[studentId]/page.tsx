@@ -4,10 +4,34 @@ import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import ParentStudentLessonsClient, {
   LessonProp,
 } from "./ParentStudentLessonsClient";
+import { fullName } from "@/src/utils/formatName";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{ course_id?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { studentId } = await params;
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { title: "Lessons" };
+    const supabase = await createClient();
+    const { data: student } = await supabase
+      .from("students")
+      .select("first_name, last_name, account_id")
+      .eq("id", studentId)
+      .maybeSingle();
+    if (!student || student.account_id !== user.id) return { title: "Lessons" };
+    return {
+      title: fullName(student.first_name, student.last_name, "Lessons"),
+    };
+  } catch {
+    return { title: "Lessons" };
+  }
 }
 
 export default async function ParentStudentLessonsPage({
@@ -48,8 +72,12 @@ export default async function ParentStudentLessonsPage({
     .eq("isActive", true);
 
   const activeAssignments = (assignmentsRaw ?? []).filter(
-    (a): a is { course_id: string; courses: { id: string; title: string } | null } =>
-      !!a.course_id,
+    (
+      a,
+    ): a is {
+      course_id: string;
+      courses: { id: string; title: string } | null;
+    } => !!a.course_id,
   );
 
   if (activeAssignments.length === 0) {
@@ -70,7 +98,9 @@ export default async function ParentStudentLessonsPage({
         ? { course_id: a.course_id, course_title: a.courses.title }
         : null,
     )
-    .filter((o): o is { course_id: string; course_title: string } => o !== null);
+    .filter(
+      (o): o is { course_id: string; course_title: string } => o !== null,
+    );
 
   // Parent's URL ?course_id wins if it points to one of the active
   // assignments; otherwise default to the student's own active_course_id;

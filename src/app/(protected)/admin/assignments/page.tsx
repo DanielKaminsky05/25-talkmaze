@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 
 import CoachAssignmentCard from "./CoachAssignmentCard";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import type { Assignment, Coach, Student } from "../_types";
 
 export default function AssignmentsPage() {
+  useDocumentTitle("Assignments");
   const [employees, setEmployees] = useState<Coach[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -18,9 +20,15 @@ export default function AssignmentsPage() {
       fetch("/api/admin/assignments").then((r) => r.json()),
     ])
       .then(([empData, stuData, asnData]) => {
-        const empList = Array.isArray(empData?.employees) ? empData.employees : [];
-        const stuList = Array.isArray(stuData?.students) ? stuData.students : [];
-        const asnList = Array.isArray(asnData?.assignments) ? asnData.assignments : [];
+        const empList = Array.isArray(empData?.employees)
+          ? empData.employees
+          : [];
+        const stuList = Array.isArray(stuData?.students)
+          ? stuData.students
+          : [];
+        const asnList = Array.isArray(asnData?.assignments)
+          ? asnData.assignments
+          : [];
         setEmployees(empList);
         setStudents(
           stuList.length
@@ -76,7 +84,9 @@ export default function AssignmentsPage() {
       fetch("/api/admin/assignments")
         .then((r) => r.json())
         .then((body) =>
-          setAssignments(Array.isArray(body?.assignments) ? body.assignments : []),
+          setAssignments(
+            Array.isArray(body?.assignments) ? body.assignments : [],
+          ),
         );
     }
   };

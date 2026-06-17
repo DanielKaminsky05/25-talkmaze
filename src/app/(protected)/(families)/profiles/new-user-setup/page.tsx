@@ -9,6 +9,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Card } from "@/src/components/ui/card";
 import { completeNewUserSetup } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -30,6 +31,7 @@ const ErrorMsg = ({ msg }: { msg?: string[] }) =>
   ) : null;
 
 export default function NewUserSetupPage() {
+  useDocumentTitle("Account Setup");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);

@@ -10,11 +10,27 @@ import {
 } from "@/src/components/ui/card";
 import { getCoachDashboardContext } from "../../_lib/getCoachDashboardContext";
 import { getStudentOverview } from "../../_lib/getStudentOverview";
+import { fullName } from "@/src/utils/formatName";
+import type { Metadata } from "next";
 import OverviewAbout from "./_components/OverviewAbout";
 import OverviewUpcomingSessions from "./_components/OverviewUpcomingSessions";
 
 interface OverviewPageProps {
   params: Promise<{ studentId: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: OverviewPageProps): Promise<Metadata> {
+  const { studentId } = await params;
+  try {
+    const { students } = await getCoachDashboardContext();
+    const student = students.find((s) => s.id === studentId);
+    if (!student) return { title: "Student" };
+    return { title: fullName(student.first_name, student.last_name, "Student") };
+  } catch {
+    return { title: "Student" };
+  }
 }
 
 export default async function CoachStudentOverviewPage({

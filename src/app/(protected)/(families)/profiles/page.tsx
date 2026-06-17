@@ -6,6 +6,9 @@ import AddProfileCard from "./_components/AddProfileCard";
 import { selectProfile } from "@/src/lib/profiles/actions/selectProfile";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Profiles" };
 
 // Profile to select as the "active profile"
 type Profile = {
@@ -186,7 +189,9 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl={profile.avatarUrl ?? "/images/content/blank_profile.png"}
+                    imageUrl={
+                      profile.avatarUrl ?? "/images/content/blank_profile.png"
+                    }
                     hasPin={false}
                     asLink={true}
                   />
@@ -205,7 +210,9 @@ export default async function ProfilesPage({
                   <ProfileCard
                     id={profile.id}
                     name={profile.name}
-                    imageUrl={profile.avatarUrl ?? "/images/content/blank_profile.png"}
+                    imageUrl={
+                      profile.avatarUrl ?? "/images/content/blank_profile.png"
+                    }
                     hasPin={false}
                   />
                 </form>

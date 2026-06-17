@@ -1,6 +1,9 @@
 import { MessageCircleIcon } from "@/src/components/ui/icons";
 import ConversationShell from "@/src/components/common/messaging/ConversationShell";
 import ConversationMessageInput from "@/src/components/common/messaging/ConversationMessageInput";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Messages" };
 
 /**
  * Empty state for /coach/message. Renders the same chatbox

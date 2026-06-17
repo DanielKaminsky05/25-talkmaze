@@ -1,14 +1,19 @@
 "use client";
 
 import Pagination from "@/src/components/common/Pagination";
-import { usePendingBookings, ITEMS_PER_PAGE } from "./_hooks/usePendingBookings";
+import {
+  usePendingBookings,
+  ITEMS_PER_PAGE,
+} from "./_hooks/usePendingBookings";
 import PendingBookingCard from "./_components/PendingBookingCard";
 import PendingBookingDetail from "./_components/PendingBookingDetail";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 /**
  * Admin page for reviewing and approving pending session bookings.
  */
 export default function PendingPage() {
+  useDocumentTitle("Pending");
   const {
     pendingBookings,
     pendingBookingsLoading,
@@ -41,7 +46,8 @@ export default function PendingPage() {
         <div>
           <h2 className="text-white text-xl font-bold">Pending Bookings</h2>
           <p className="text-white/35 text-sm mt-1">
-            Edit a pending match and preview how approval will affect the coach calendar.
+            Edit a pending match and preview how approval will affect the coach
+            calendar.
           </p>
         </div>
         <button
@@ -73,7 +79,8 @@ export default function PendingPage() {
                   onClick={() => {
                     setSelectedPendingBookingId(booking.id);
                     // Exit edit mode when switching to a different booking.
-                    if (editingBookingId !== booking.id) cancelEditingPendingBooking();
+                    if (editingBookingId !== booking.id)
+                      cancelEditingPendingBooking();
                   }}
                 />
               ))}
@@ -102,8 +109,12 @@ export default function PendingPage() {
               initialCalendarDate={pendingPreviewInitialDate}
               onFormChange={updateEditingBookingForm}
               onSave={() => handleSavePendingBooking(selectedPendingBooking.id)}
-              onApprove={() => handleApprovePendingBooking(selectedPendingBooking.id)}
-              onStartEditing={() => startEditingPendingBooking(selectedPendingBooking)}
+              onApprove={() =>
+                handleApprovePendingBooking(selectedPendingBooking.id)
+              }
+              onStartEditing={() =>
+                startEditingPendingBooking(selectedPendingBooking)
+              }
             />
           )}
         </div>

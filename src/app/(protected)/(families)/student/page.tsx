@@ -11,12 +11,14 @@ import NextLessonCard from "./_components/UpNextLesson";
 import ScheduleList from "../_components/upcoming-schedule/ScheduleList";
 import CurrentLessonBanner from "./_components/CurrentLessonBanner";
 import { useHomeData } from "./_hooks/useHomeData";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 function lessonPath(lesson: { slug: string | null; id: string }) {
   return `/student/lessons/${lesson.slug ?? lesson.id}`;
 }
 
 export default function Home() {
+  useDocumentTitle("Student Dashboard");
   const router = useRouter();
   const profile = useActiveProfile();
   const {
