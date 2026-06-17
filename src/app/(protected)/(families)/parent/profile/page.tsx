@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 import { createClient } from "@/src/services/supabase/server";
 import { getCurrentUser } from "@/src/lib/auth/server/getCurrentUser";
 import ParentProfilePageClient from "./_components/ParentProfilePageClient";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Profile" };
 
 /**
  * Parent profile page server component

@@ -6,6 +6,8 @@ import { markConversationRead } from "@/src/lib/messaging/server/markConversatio
 import { getConversationMessages } from "@/src/lib/messaging/server/getConversationMessages";
 import { getCurrentSender } from "@/src/lib/messaging/server/getCurrentSender";
 import { ConversationClient } from "@/src/components/common/messaging/ConversationClient";
+import { getCoachContacts } from "@/src/lib/messaging/server/getCoachContacts";
+import type { Metadata } from "next";
 
 /**
  * Coach conversation page. `id` is the family profile id (student or parent).
@@ -13,6 +15,24 @@ import { ConversationClient } from "@/src/components/common/messaging/Conversati
  * assigned to the contact, marks it read for the coach, then hydrates the
  * shared chatbox with message history.
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const contact = (await getCoachContacts()).find((c) => c.id === id);
+    if (!contact) return { title: "Messages" };
+    const name = contact.email
+      ? contact.name.replace(` (${contact.email})`, "")
+      : contact.name;
+    return { title: name || "Messages" };
+  } catch {
+    return { title: "Messages" };
+  }
+}
+
 export default async function CoachConversationPage({
   params,
 }: {

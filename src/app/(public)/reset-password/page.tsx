@@ -9,6 +9,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Alert } from "@/src/components/ui/alert";
 import { updatePassword } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,6 +17,7 @@ const inter = Inter({
 });
 
 export default function ResetPasswordPage() {
+  useDocumentTitle("Reset Password");
   const router = useRouter();
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");

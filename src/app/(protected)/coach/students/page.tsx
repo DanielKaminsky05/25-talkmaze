@@ -1,4 +1,7 @@
 import { Users } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Students" };
 
 /**
  * Empty state for /coach/students: the list is shown by the layout on the left;

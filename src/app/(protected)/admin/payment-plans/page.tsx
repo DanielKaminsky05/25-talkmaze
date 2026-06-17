@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import PlanListItem from "./_components/PlanListItem";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import PlanDetailPanel from "./_components/PlanDetailPanel";
 import CreatePlanModal from "./_components/CreatePlanModal";
 import { useAdminMobileDetail } from "../_context/AdminMobileDetailContext";
@@ -13,6 +14,7 @@ const inputClass =
   "w-full bg-[#1F2E3B] border border-white/8 text-white placeholder:text-white/25 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#B1E7D6]/40 transition-colors";
 
 export default function PaymentPlansPage() {
+  useDocumentTitle("Payment Plans");
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("id");

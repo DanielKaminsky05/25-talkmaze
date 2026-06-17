@@ -6,6 +6,7 @@ import { createClient } from "@/src/services/supabase/client";
 import type { EventInput } from "@fullcalendar/core";
 
 import CoachListItem from "./_components/CoachListItem";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import EmptyDetail from "../_components/EmptyDetail";
 import AdminCalendar from "../_components/AdminCalendar";
 import Pagination from "@/src/components/common/Pagination";
@@ -27,6 +28,7 @@ function parseAvailabilityTime(val: string | null | undefined): string {
 }
 
 export default function CoachesPage() {
+  useDocumentTitle("Coaches");
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedCoachId = searchParams.get("id");

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLessonDetail } from "../_hooks/useLessonDetail";
 import { usePageTitle } from "@/src/app/(protected)/(families)/_context/PageTitleContext";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import ProgressCard from "../_components/ProgressCard";
 import TaskCard from "../_components/TaskCard";
 import { Card } from "@/src/components/ui/card";
@@ -43,6 +44,14 @@ export default function LessonDetailPage() {
       setTitle(`Lesson ${lessonNumber}: ${lesson.title}`);
     return () => setTitle(null);
   }, [lesson?.title, lessonNumber, setTitle]);
+
+  // Browser tab title. "Lesson" while loading rather than briefly falling back
+  // to the bare brand "Talkmaze"
+  const documentTitle =
+    lesson?.title && lessonNumber != null
+      ? `Lesson ${lessonNumber}: ${lesson.title}`
+      : "Lesson";
+  useDocumentTitle(documentTitle);
 
   if (loading) {
     return <PageSpinner />;

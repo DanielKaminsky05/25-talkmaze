@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRewardData, EarnedBadge } from "./_hooks/useRewardData";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import { TokenIcon } from "@/src/components/common/TokenIcon";
 import { TokenMysteryStar } from "@/src/components/ui/icons";
 import ClaimedBadge, { ClaimBadgeModal } from "./_components/ClaimedBadge";
@@ -23,6 +24,7 @@ const colors = {
 };
 
 export default function RewardPage() {
+  useDocumentTitle("Rewards");
   const {
     loading,
     allTokens,

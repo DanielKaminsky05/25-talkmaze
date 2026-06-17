@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { sendResetEmail } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,6 +15,7 @@ const inter = Inter({
 });
 
 export default function ForgotPasswordPage() {
+  useDocumentTitle("Forgot Password");
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{

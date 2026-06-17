@@ -6,6 +6,7 @@ import { createClient } from "@/src/services/supabase/client";
 import type { EventInput } from "@fullcalendar/core";
 
 import StudentListItem from "./_components/StudentListItem";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import EmptyDetail from "../_components/EmptyDetail";
 import AdminCalendar from "../_components/AdminCalendar";
 import Pagination from "@/src/components/common/Pagination";
@@ -19,6 +20,7 @@ const inputClass =
   "w-full bg-[#1F2E3B] border border-white/8 text-white placeholder:text-white/25 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#B1E7D6]/40 transition-colors";
 
 export default function StudentsPage() {
+  useDocumentTitle("Students");
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedStudentId = searchParams.get("id");

@@ -4,6 +4,9 @@ import CurrentSubscription from "./_components/CurrentSubscription";
 import { getActiveProfile } from "@/src/lib/profiles/server/getActiveProfile";
 import { CaretIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Payments" };
 
 interface Plan {
   id: string;

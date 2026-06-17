@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { Card } from "@/src/components/ui/card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Account Created" };
 
 const inter = Inter({ subsets: ["latin"] });
 

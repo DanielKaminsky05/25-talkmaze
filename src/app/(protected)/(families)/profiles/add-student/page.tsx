@@ -9,6 +9,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Card } from "@/src/components/ui/card";
 import { addStudent } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,6 +34,7 @@ const ErrorMsg = ({ msg }: { msg?: string[] }) =>
   ) : null;
 
 export default function AddStudentPage() {
+  useDocumentTitle("Add Student");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -83,9 +85,7 @@ export default function AddStudentPage() {
           </div>
 
           <div className="text-center mb-2">
-            <h1 className="text-2xl font-bold text-[#1F2E3B]">
-              Add a Student
-            </h1>
+            <h1 className="text-2xl font-bold text-[#1F2E3B]">Add a Student</h1>
             <p className="text-sm text-[#1F2E3B]/60 mt-2">
               Enter the student&apos;s name to continue to payment.
             </p>

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import CourseListItem from "./_components/CourseListItem";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import Avatar from "../_components/Avatar";
 import EmptyDetail from "../_components/EmptyDetail";
 import Pagination from "@/src/components/common/Pagination";
@@ -20,6 +21,7 @@ const inputClass =
   "w-full bg-[#1F2E3B] border border-white/8 text-white placeholder:text-white/25 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#B1E7D6]/40 transition-colors";
 
 export default function CoursesPage() {
+  useDocumentTitle("Courses");
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedCourseId = searchParams.get("id");

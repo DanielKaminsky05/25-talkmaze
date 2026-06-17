@@ -9,6 +9,7 @@ import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { signUpNewUser } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import { useRouter } from "next/navigation";
 
 const userSchema = z
@@ -72,6 +73,7 @@ type formErrors = {
 };
 
 export default function SignupPage() {
+  useDocumentTitle("Sign Up");
   const router = useRouter();
 
   const [familyFirstName, setFamilyFirstName] = useState<string>("");
@@ -308,7 +310,10 @@ export default function SignupPage() {
               <div className="text-center mt-2">
                 <p className="text-[#1F2E3B]">
                   Already have an account?{" "}
-                  <Link href="/login" className="font-bold hover:underline inline-flex items-center min-h-11 md:min-h-0 px-2 -mx-2">
+                  <Link
+                    href="/login"
+                    className="font-bold hover:underline inline-flex items-center min-h-11 md:min-h-0 px-2 -mx-2"
+                  >
                     Login
                   </Link>
                 </p>

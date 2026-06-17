@@ -8,6 +8,7 @@ import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { logInUser } from "./actions";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import { useRouter } from "next/navigation";
 
 const inter = Inter({
@@ -16,6 +17,7 @@ const inter = Inter({
 });
 
 export default function LoginPage() {
+  useDocumentTitle("Login");
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState<string>("");

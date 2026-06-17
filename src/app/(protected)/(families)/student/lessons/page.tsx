@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useLessons } from "./_hooks/useLessons";
+import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import PageSpinner from "@/src/components/ui/PageSpinner";
 import { Alert } from "@/src/components/ui/alert";
 import ProgressCard from "./_components/ProgressCard";
@@ -11,6 +12,7 @@ import CoursePicker from "@/src/components/common/CoursePicker";
 import { useActiveProfile } from "@/src/app/(protected)/(families)/_context/ActiveProfileContext";
 
 export default function LessonsPage() {
+  useDocumentTitle("Lessons");
   const profile = useActiveProfile();
   const {
     lessons,

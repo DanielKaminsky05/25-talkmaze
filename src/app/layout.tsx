@@ -13,8 +13,10 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Talkmaze",
-  description: "",
+  title: {
+    default: "Talkmaze",
+    template: "%s | Talkmaze",
+  },
 };
 
 export default function RootLayout({

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import SuccessClient from "./SuccessClient";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = { title: "Payment Successful" };
 
 export default async function PaymentSuccessPage({
   searchParams,
