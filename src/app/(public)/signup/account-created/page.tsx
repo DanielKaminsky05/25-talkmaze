@@ -1,12 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Inter } from "next/font/google";
 import { Card } from "@/src/components/ui/card";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Account Created" };
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default async function AccountCreatedPage({
   searchParams,
@@ -16,9 +13,7 @@ export default async function AccountCreatedPage({
   const { studentId } = await searchParams;
 
   return (
-    <div
-      className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
-    >
+    <div className="font-inter min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <Card
         variant="light"
         shadow="md"

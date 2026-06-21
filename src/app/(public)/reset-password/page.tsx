@@ -3,18 +3,12 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Alert } from "@/src/components/ui/alert";
 import { updatePassword } from "./actions";
 import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export default function ResetPasswordPage() {
   useDocumentTitle("Reset Password");
@@ -54,9 +48,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div
-      className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
-    >
+    <div className="font-inter min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <div className="flex w-full max-w-[1229px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)] min-h-[661px]">
         <div
           className="w-full lg:w-[568px] bg-white flex flex-col items-center justify-center py-12 px-8 relative z-10"

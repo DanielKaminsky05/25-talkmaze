@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Inter } from "next/font/google";
 import { z } from "zod";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
@@ -10,8 +9,6 @@ import { Input } from "@/src/components/ui/input";
 import { Card } from "@/src/components/ui/card";
 import { completeNewUserSetup } from "./actions";
 import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 const schema = z
   .object({
@@ -63,9 +60,7 @@ export default function NewUserSetupPage() {
   }
 
   return (
-    <div
-      className={`${inter.className} w-full min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
-    >
+    <div className="font-inter w-full min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <Card
         variant="light"
         shadow="md"

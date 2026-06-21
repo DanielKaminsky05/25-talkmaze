@@ -3,18 +3,12 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { logInUser } from "./actions";
 import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import { useRouter } from "next/navigation";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export default function LoginPage() {
   useDocumentTitle("Login");
@@ -23,19 +17,24 @@ export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoginError(null);
-    const result = await logInUser(email, password);
-    //Redirects the user to the home page if successful:
+    setIsSubmitting(true);
+    try {
+      const result = await logInUser(email, password);
 
-    console.log("Inside handle submit");
-    if (result?.success) {
-      router.push("/profiles");
-    } else {
-      console.log("Error: login failed", result);
-      setLoginError(result?.message ?? "Login failed. Please try again.");
+      if (result?.success) {
+        router.push("/profiles");
+      } else {
+        setLoginError(result?.message ?? "Login failed. Please try again.");
+        setIsSubmitting(false);
+      }
+    } catch {
+      setLoginError("Login failed. Please try again.");
+      setIsSubmitting(false);
     }
   }
 
@@ -47,9 +46,7 @@ export default function LoginPage() {
   });
 
   return (
-    <div
-      className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
-    >
+    <div className="font-inter min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <div className="flex w-full max-w-[1229px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)] min-h-[661px]">
         <div
           className="w-full lg:w-[568px] bg-white flex flex-col items-center justify-center py-12 px-8 relative z-10"
@@ -132,9 +129,10 @@ export default function LoginPage() {
                 type="submit"
                 variant="accent"
                 size="lg"
+                loading={isSubmitting}
                 className="w-full h-11 md:h-[38px] text-[20px] "
               >
-                Login
+                {isSubmitting ? "Logging in…" : "Login"}
               </Button>
 
               <Button
@@ -146,30 +144,6 @@ export default function LoginPage() {
                 <Link href="/signup">Create an Account</Link>
               </Button>
             </form>
-
-            <div className="relative h-[20px] w-full flex items-center justify-center my-2">
-              <div className="absolute left-0 w-[40%] border-t border-[#2B4257]"></div>
-              <span className="text-[20px] font-semibold text-[#1F2E3B] px-2">
-                or
-              </span>
-              <div className="absolute right-0 w-[40%] border-t border-[#2B4257]"></div>
-            </div>
-
-            <button
-              type="button"
-              className="w-full h-[49px] bg-white flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors border-[0.3px] border-[#1f2e3b] rounded-[10px]"
-            >
-              <Image
-                src="/images/brands/google_logo.svg"
-                alt="Google Logo"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-              <span className="text-[20px] font-semibold text-[#1F2E3B]">
-                Continue with Google
-              </span>
-            </button>
           </div>
         </div>
 

@@ -50,8 +50,7 @@ export default function StudentProfileCard({
       <div className="bg-[#65CFAD] min-h-[51px] w-full flex items-center justify-between gap-2 px-4 absolute top-0 left-0 right-0 z-10 py-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
           <h2
-            className="font-bold text-[#1F2E3B] text-base sm:text-lg md:text-[22px] leading-none"
-            style={{ fontFamily: "Inter, sans-serif" }}
+            className="font-inter font-bold text-[#1F2E3B] text-base sm:text-lg md:text-[22px] leading-none"
           >
             TalkMaze Student {totalStudents > 1 ? "Profiles" : "Profile"}
           </h2>
