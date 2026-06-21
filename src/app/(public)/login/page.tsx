@@ -46,7 +46,7 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
+    <div className="font-inter min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <div className="flex w-full max-w-[1229px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)] min-h-[661px]">
         <div
           className="w-full lg:w-[568px] bg-white flex flex-col items-center justify-center py-12 px-8 relative z-10"
