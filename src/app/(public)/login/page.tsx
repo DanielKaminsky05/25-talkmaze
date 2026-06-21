@@ -144,30 +144,6 @@ export default function LoginPage() {
                 <Link href="/signup">Create an Account</Link>
               </Button>
             </form>
-
-            <div className="relative h-[20px] w-full flex items-center justify-center my-2">
-              <div className="absolute left-0 w-[40%] border-t border-[#2B4257]"></div>
-              <span className="text-[20px] font-semibold text-[#1F2E3B] px-2">
-                or
-              </span>
-              <div className="absolute right-0 w-[40%] border-t border-[#2B4257]"></div>
-            </div>
-
-            <button
-              type="button"
-              className="w-full h-[49px] bg-white flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors border-[0.3px] border-[#1f2e3b] rounded-[10px]"
-            >
-              <Image
-                src="/images/brands/google_logo.svg"
-                alt="Google Logo"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-              <span className="text-[20px] font-semibold text-[#1F2E3B]">
-                Continue with Google
-              </span>
-            </button>
           </div>
         </div>
 
