@@ -3,18 +3,12 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Inter } from "next/font/google";
 import { EyeIcon } from "@/src/components/ui/icons";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { logInUser } from "./actions";
 import { useDocumentTitle } from "@/src/hooks/useDocumentTitle";
 import { useRouter } from "next/navigation";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export default function LoginPage() {
   useDocumentTitle("Login");
@@ -23,19 +17,24 @@ export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoginError(null);
-    const result = await logInUser(email, password);
-    //Redirects the user to the home page if successful:
+    setIsSubmitting(true);
+    try {
+      const result = await logInUser(email, password);
 
-    console.log("Inside handle submit");
-    if (result?.success) {
-      router.push("/profiles");
-    } else {
-      console.log("Error: login failed", result);
-      setLoginError(result?.message ?? "Login failed. Please try again.");
+      if (result?.success) {
+        router.push("/profiles");
+      } else {
+        setLoginError(result?.message ?? "Login failed. Please try again.");
+        setIsSubmitting(false);
+      }
+    } catch {
+      setLoginError("Login failed. Please try again.");
+      setIsSubmitting(false);
     }
   }
 
@@ -47,9 +46,7 @@ export default function LoginPage() {
   });
 
   return (
-    <div
-      className={`${inter.className} min-h-screen bg-[#2B4257] flex items-center justify-center p-4`}
-    >
+    <div className="min-h-screen bg-[#2B4257] flex items-center justify-center p-4">
       <div className="flex w-full max-w-[1229px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)] min-h-[661px]">
         <div
           className="w-full lg:w-[568px] bg-white flex flex-col items-center justify-center py-12 px-8 relative z-10"
@@ -132,9 +129,10 @@ export default function LoginPage() {
                 type="submit"
                 variant="accent"
                 size="lg"
+                loading={isSubmitting}
                 className="w-full h-11 md:h-[38px] text-[20px] "
               >
-                Login
+                {isSubmitting ? "Logging in…" : "Login"}
               </Button>
 
               <Button

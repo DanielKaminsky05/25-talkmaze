@@ -2,19 +2,16 @@
 
 import { createClient } from "@/src/services/supabase/server";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 export const logInUser = async (email: string, password: string) => {
   const cookieStore = await cookies();
   const supabase = await createClient();
 
-  console.log("Inside Login")
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  // Handle login error FIRST
   if (error || !data.user) {
     return {
       success: false,
@@ -24,8 +21,6 @@ export const logInUser = async (email: string, password: string) => {
 
   const id = data.user.id;
 
-  console.log("Setting cookie");
-  // Set cookie
   cookieStore.set({
     name: "account_id",
     value: id,
@@ -34,6 +29,5 @@ export const logInUser = async (email: string, password: string) => {
     sameSite: "lax",
   });
 
-  // Redirect AFTER success (need to redirect to /profiles for middleware to redirect)
-  redirect("/profiles");
+  return { success: true };
 };
