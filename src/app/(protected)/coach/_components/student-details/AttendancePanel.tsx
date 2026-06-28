@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import StudentSchedule from "./StudentSchedule";
 import CoachAttendanceSection from "./CoachAttendanceSection";
-import RescheduleSessionModal from "@/src/app/(protected)/coach/_components/RescheduleSessionModal";
+import RescheduleSessionModal from "../RescheduleSessionModal";
 import Pagination from "@/src/components/common/Pagination";
 import type { AttendanceStatus, CoachSession } from "./types";
 
@@ -38,9 +38,9 @@ export default function AttendancePanel({
   const [attendanceBySessionId, setAttendanceBySessionId] = useState<
     Record<number, AttendanceStatus>
   >({});
-  const [submittingSessionId, setSubmittingSessionId] = useState<number | null>(
-    null,
-  );
+  const [submittingSessionId, setSubmittingSessionId] = useState<
+    number | null
+  >(null);
   const [attendanceMessage, setAttendanceMessage] = useState<string | null>(
     null,
   );
@@ -48,9 +48,8 @@ export default function AttendancePanel({
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(true);
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [attendancePage, setAttendancePage] = useState(1);
-  const [rescheduleTarget, setRescheduleTarget] = useState<CoachSession | null>(
-    null,
-  );
+  const [rescheduleTarget, setRescheduleTarget] =
+    useState<CoachSession | null>(null);
 
   // Fetch all sessions + existing attendance records together.
   const loadSessionsAndAttendance = useCallback(async (id: string) => {
@@ -196,8 +195,8 @@ export default function AttendancePanel({
         {isScheduleOpen && (
           <>
             <p className="mb-3 text-xs text-gray-400">
-              Mark attendance directly from each session row. All times shown in
-              your local timezone.
+              Mark attendance directly from each session row. All times shown
+              in your local timezone.
             </p>
             {attendanceMessage && (
               <p

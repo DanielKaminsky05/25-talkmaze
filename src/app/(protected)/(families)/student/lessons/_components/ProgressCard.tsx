@@ -12,7 +12,7 @@ type Props = {
 /**
  * Shows the student's overall lesson completion as a progress bar.
  */
-const LessonProgressCard = memo(function LessonProgressCard({
+const ProgressCard = memo(function ProgressCard({
   completed,
   total,
   width,
@@ -48,4 +48,4 @@ const LessonProgressCard = memo(function LessonProgressCard({
   );
 });
 
-export default LessonProgressCard;
+export default ProgressCard;

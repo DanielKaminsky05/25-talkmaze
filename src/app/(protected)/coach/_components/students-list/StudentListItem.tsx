@@ -29,9 +29,10 @@ export default function StudentListItem({
     "Unnamed Student",
   );
 
-  // Status dot reflects subscription health.
-  // Green = active subscription, amber = no active subscription.
-  const isActiveStatus = student.hasActiveSubscription;
+  // Status dot reflects onboarding/active state from data already on the row.
+  // Green = active, amber = setup pending. (Easily re-pointed at subscription
+  // health later.)
+  const isActiveStatus = student.is_setup_complete !== false;
 
   return (
     <li>
@@ -65,11 +66,9 @@ export default function StudentListItem({
         <span
           className={cn(
             "h-2.5 w-2.5 shrink-0 rounded-full",
-            isActiveStatus ? "bg-[#65CFAD]" : "bg-[#bbbbbb]",
+            isActiveStatus ? "bg-[#65CFAD]" : "bg-amber-400",
           )}
-          title={
-            isActiveStatus ? "Active subscription" : "No active subscription"
-          }
+          title={isActiveStatus ? "Active" : "Setup pending"}
           aria-hidden
         />
       </Link>
