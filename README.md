@@ -1,82 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TalkMaze
 
-## Project Structure
+TalkMaze is a tutoring platform that connects students with coaches for live 1-on-1 video lessons. It handles the full lifecycle: family signup and onboarding, subscription billing, automated coach–student matchmaking, scheduling, in-app messaging, lesson delivery over an external video room, progress tracking, and a rewards system.
 
-The codebase uses route-level collocation for UI and route-only logic, with shared logic organized by domain.
+It is a [Next.js](https://nextjs.org) App Router application backed by Supabase, with Stripe for billing, LessonSpace for video, and Resend for transactional email.
 
-### Route Collocation
+> For deeper architecture and conventions, read [`CLAUDE.md`](./CLAUDE.md) and the canonical docs in [`docs/`](./docs).
 
-- `src/app/...` contains route segments, layouts, and page components.
-- Each route can include:
-	- `_components/` for route-only UI pieces
-	- `_hooks/` for route-only hooks
-	- `_context/` for route-only context
-	- `_lib/` for route-only non-component logic, data loaders, and helpers
-	- `_types/` or `types.ts` for route-only types
-	- `actions.ts` for route-scoped server actions
-- Keep `_lib/` flat while it is small. Split into `_lib/server/`, `_lib/utils/`, etc. once a route accumulates enough helpers for the distinction to clarify ownership.
+## Stack
 
-### API Routes
-
-- `src/app/api/` 
-- Organized by resource (`students/`, `coaches/`, `sessions/`, `courses/`, `payment-plans/`, ...) — the caller's role is enforced inside each handler, never encoded in the URL. See `docs/api-contract.md` ("URL & naming convention") and the role matrix in `docs/api-auth.md`.
-- Client fetches build URLs from the typed registry `src/lib/api/routes.ts` (never inline `/api/...` string literals).
-- `webhooks/` contains handlers for external provider callbacks 
-
-### Shared Code
-
-- `src/components/` holds reusable UI used across multiple routes.
-- `src/lib/` holds shared, app-specific domain logic grouped by feature. Keep route-specific logic in that route's `_lib/` until it is reused across route areas or APIs.
-	- Example domains: `lessons/`, `messaging/`, `scheduling/`, `profiles/`, `users/`, `payments/`, `rewards/`, `auth/`.
-	- A domain folder is organized into subfolders:
-		- `actions/` - named server action files (e.g. `signOut.ts`, `sendMessage.ts`)
-		- `server/` - server-only helpers that aren't actions (e.g. `getActiveProfile.ts`, `availability.ts`)
-		- `types.ts`, `schemas.ts` - top-level files for shared types and validation
-- `src/services/` is for third-party SDK clients and adapters (Supabase, Stripe, etc). Keep app logic out of this layer.
-	- `services` should be adapter-only:
-		- Allowed: SDK setup, HTTP request/response mapping, provider-specific payload formatting.
-		- Not allowed: setting profile cookies, database reads/writes, business workflow orchestration.
-	- Put business workflows in `src/lib/<domain>/server/` and call `src/services/*` from there.
-- `src/utils/` is for cross-domain helpers that are not tied to a single feature
-- `src/types/` is only for cross-domain primitives shared widely; keep domain types with their domain
-
-### Validation (Zod)
-
-- Collocate schemas with a route when only used there.
-- Move schemas into the domain folder in `src/lib/<domain>/` when reused across routes or APIs.
-- Use a top-level `src/validations/` only if a schema is shared across many domains.
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript (strict)
+- **Styling:** Tailwind v4 (CSS-only config) + shadcn/Radix primitives (`cva` + `cn`)
+- **Backend:** Supabase (Postgres, Auth, Storage)
+- **Billing:** Stripe (subscriptions via `SubscriptionSchedule`)
+- **Video:** LessonSpace (external rooms + webhooks)
+- **Email:** Resend + React Email
+- **Rich text:** Tiptap (StarterKit) with DOMPurify on render
+- **Calendars:** FullCalendar (dayGrid / timeGrid / interaction)
+- **Validation:** Zod
+- **Testing:** Vitest (unit + integration), Playwright (screenshots), MSW
+- **Package manager:** npm
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- npm
+- [Supabase CLI](https://supabase.com/docs/guides/cli) (for type generation and local integration tests)
+
+### Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # create this file; see Environment variables below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local` with the following:
 
-## Learn More
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Base URL used for building absolute links / redirects |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase browser (publishable) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key — **server/webhooks only**, bypasses RLS |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for the Stripe webhook |
+| `LESSONSPACE_API_KEY` | LessonSpace API key |
+| `LESSONSPACE_WEBHOOK_URL` | Callback URL registered with LessonSpace rooms |
+| `RESEND_API_KEY` | Resend transactional email key |
 
-To learn more about Next.js, take a look at the following resources:
+Integration tests additionally require a `.env.test` file and a running local Supabase instance — see [`docs/testing-coverage.md`](./docs/testing-coverage.md).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Commands
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev               # start dev server (http://localhost:3000)
+npm run build             # production build
+npm run start             # serve the production build
+npm run lint              # eslint (enforces custom layering rules)
+npm run gen-types         # regenerate Supabase types -> src/services/supabase/types/database.ts
 
-## Deploy on Vercel
+npm run test:unit         # vitest unit tests (no DB, ~10s)
+npm run test:integration  # vitest integration tests (needs `supabase start` + .env.test, ~60s)
+npm run test:coverage     # unit tests with v8 coverage
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+CI runs both test suites on every push and PR (`.github/workflows/test.yml`). Unit tests run unconditionally; integration tests are skipped on draft PRs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> `gen-types` has the Supabase project ID hard-coded. There is no Prettier — formatting is handled by ESLint only.
+
+## Project structure
+
+```
+src/
+  app/              Next.js App Router
+    (public)/       login, signup, password reset, payments/paywall
+    (protected)/
+      (families)/   student/parent: lessons, message, onboarding, parent, profiles, reward, student
+      coach/        coach dashboard
+      admin/        admin dashboard
+    api/            REST handlers, grouped by RESOURCE (never by audience)
+  components/        shared UI (ui/ = shadcn primitives, common/ = composite)
+  lib/              app-specific domain logic (auth, payments, scheduling, ...)
+  services/         third-party SDK adapters (supabase, lessonspace, ...) — adapter-only
+  utils/            cross-domain helpers
+docs/               canonical architecture & contract docs
+tests/              unit + integration tests
+```
+
+### Route collocation
+
+Each route segment under `src/app/` may colocate route-private code using underscore-prefixed folders (not routed by Next): `_components/`, `_hooks/`, `_context/`, `_lib/`, `_types/`, plus `actions.ts` for route-scoped server actions. Keep `_lib/` flat while small; split into `_lib/server/`, `_lib/utils/` as it grows. `loading.tsx` always renders `<PageSpinner />`.
+
+### Layering rules (enforced by ESLint)
+
+- Nothing under `src/**` may import from `@/src/app/api/**` — route handlers are HTTP endpoints, not a shared module. Put shared logic in `src/lib/<domain>/`.
+- Adapters in `src/services/**` are SDK/HTTP only — no DB access, no business logic, no cookie writes. Business workflows live in `src/lib/<domain>/server/` and call into `src/services/*` (not the reverse).
+- The path alias `@/*` resolves to the repo root, so imports include the explicit `src/` segment: `@/src/lib/...`.
+
+## Core concepts
+
+### Roles & access control
+
+Auth + RBAC run in middleware (`src/middleware.ts`) on every request. The `account.role` numeric code drives gating: `1` = family (parent/student), `2` = coach, `3` = admin. Family users select an **active profile** (`student` or `parent`), stored in httpOnly cookies, which further gates access (e.g. a student without an active subscription is routed to `/payments`). Webhook routes bypass both auth layers and verify signatures instead.
+
+### API contract
+
+Every gated route follows a four-stage shape: **`requireRole` → Zod `.strict()` validation → `assertOwns*` ownership check → execute.** List endpoints return named collections (`{ students: [...] }`), entity endpoints return `{ student: {...} }`, and errors return `{ error: string }` with a proper status code. Clients never hard-code `/api/...` strings — they build URLs from the typed registry in `src/lib/api/routes.ts`. The spec is canonical in [`docs/api-contract.md`](./docs/api-contract.md), [`docs/api-auth.md`](./docs/api-auth.md), and [`docs/api-ownership.md`](./docs/api-ownership.md).
+
+### Supabase clients
+
+Three clients in `src/services/supabase/` — pick by context:
+
+- `client.ts` — browser client, use in Client Components.
+- `server.ts` — cookie-wired server client, the default on the server (Server Components, Route Handlers, Server Actions).
+- `service.ts` — service-role client that bypasses RLS; **legitimately used only in webhooks**.
+
+### Key domain flows
+
+- **Signup → onboarding → payment → matchmaking** is a deliberate lazy chain: signup creates minimal rows; the Stripe customer is created in `/api/checkout`; the LessonSpace room and coach assignment happen only after `invoice.paid`.
+- **Matchmaking** (`assignCoachToStudent`) reserves a weekly slot as `pending`; admin approval materializes concrete `sessions` rows and activates the slot. DST is handled by re-anchoring wall-clock time per week.
+- **Subscriptions** support upgrade/downgrade via Stripe `SubscriptionSchedule` with a 28-day refund window.
+
+See [`docs/data-model.md`](./docs/data-model.md), [`docs/payments-flow.md`](./docs/payments-flow.md), [`docs/matchmaking.md`](./docs/matchmaking.md), and [`docs/lessonspace-runtime-flows.md`](./docs/lessonspace-runtime-flows.md).
+
+## Testing
+
+- **Unit** (`npm run test:unit`) — no database, fast feedback.
+- **Integration/contract** (`npm run test:integration`) — runs against a local Supabase instance; each test uses `beforeEach(resetAll)` and asserts side effects via helpers in `tests/helpers/`.
+
+Full details, coverage, and the role-gate auth matrix live in [`docs/testing-coverage.md`](./docs/testing-coverage.md).
+
+## Documentation
+
+| Doc | Contents |
+| --- | --- |
+| [`docs/api-contract.md`](./docs/api-contract.md) | Route shape, status codes, error format — the API spec |
+| [`docs/api-auth.md`](./docs/api-auth.md) | `requireRole`, role matrix per resource |
+| [`docs/api-ownership.md`](./docs/api-ownership.md) | `assertOwns*` helpers, 404-vs-403 rule |
+| [`docs/component-architecture.md`](./docs/component-architecture.md) | UI primitives, variant rules, two-tier tokens, shadcn workflow |
+| [`docs/data-model.md`](./docs/data-model.md) | Full table inventory and entity graph |
+| [`docs/payments-flow.md`](./docs/payments-flow.md) | Stripe checkout → invoice → schedule lifecycle |
+| [`docs/matchmaking.md`](./docs/matchmaking.md) | Coach/student matching algorithm |
+| [`docs/lessonspace-runtime-flows.md`](./docs/lessonspace-runtime-flows.md) | LessonSpace integration map |
+| [`docs/testing-coverage.md`](./docs/testing-coverage.md) | Test coverage, helpers, CI shape |
+| [`docs/repo-quality-audit.md`](./docs/repo-quality-audit.md) | Audit findings and tracked tech debt |
